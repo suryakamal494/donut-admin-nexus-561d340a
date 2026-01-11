@@ -1,5 +1,6 @@
 // Sortable Chapter Cell Component
 // Draggable chapter cell for reordering within a subject row
+// Mobile-optimized with 48px touch targets, long-press, and haptic feedback
 
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
@@ -7,6 +8,7 @@ import { Lock, ChevronRight, GripVertical, Pencil, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ChapterCellType } from "@/types/academicPlanner";
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
+import { useRef, useCallback, useState, useEffect } from "react";
 
 interface SortableChapterCellProps {
   id: string;
@@ -23,7 +25,18 @@ interface SortableChapterCellProps {
   colors: { bg: string; text: string; border: string };
   onClick?: () => void;
   onRemove?: () => void;
+  onLongPress?: () => void;
 }
+
+// Long press duration in ms
+const LONG_PRESS_DURATION = 500;
+
+// Trigger haptic feedback if available
+const triggerHaptic = (duration: number = 10) => {
+  if ('vibrate' in navigator) {
+    navigator.vibrate(duration);
+  }
+};
 
 export function SortableChapterCell({
   id,
@@ -40,6 +53,7 @@ export function SortableChapterCell({
   colors,
   onClick,
   onRemove,
+  onLongPress,
 }: SortableChapterCellProps) {
   const {
     attributes,
@@ -52,6 +66,61 @@ export function SortableChapterCell({
     id,
     disabled: !isDraggable || isPublished || isLocked,
   });
+
+  // Long press state
+  const longPressTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const [isLongPressing, setIsLongPressing] = useState(false);
+  const touchStartPosRef = useRef<{ x: number; y: number } | null>(null);
+
+  // Handle touch start for long press
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    if (isPublished || !onLongPress) return;
+    
+    const touch = e.touches[0];
+    touchStartPosRef.current = { x: touch.clientX, y: touch.clientY };
+    
+    longPressTimerRef.current = setTimeout(() => {
+      setIsLongPressing(true);
+      triggerHaptic(15); // Haptic feedback on long press
+      onLongPress();
+    }, LONG_PRESS_DURATION);
+  }, [isPublished, onLongPress]);
+
+  // Handle touch move - cancel long press if moved too much
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    if (!touchStartPosRef.current || !longPressTimerRef.current) return;
+    
+    const touch = e.touches[0];
+    const dx = Math.abs(touch.clientX - touchStartPosRef.current.x);
+    const dy = Math.abs(touch.clientY - touchStartPosRef.current.y);
+    
+    // Cancel if moved more than 10px
+    if (dx > 10 || dy > 10) {
+      if (longPressTimerRef.current) {
+        clearTimeout(longPressTimerRef.current);
+        longPressTimerRef.current = null;
+      }
+    }
+  }, []);
+
+  // Handle touch end
+  const handleTouchEnd = useCallback(() => {
+    if (longPressTimerRef.current) {
+      clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
+    touchStartPosRef.current = null;
+    setIsLongPressing(false);
+  }, []);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (longPressTimerRef.current) {
+        clearTimeout(longPressTimerRef.current);
+      }
+    };
+  }, []);
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -120,28 +189,41 @@ export function SortableChapterCell({
       ref={setNodeRef}
       style={style}
       className={cn(
-        "relative h-16 w-full flex items-center border text-xs transition-all group",
+        // Increased height for mobile touch (min 48px)
+        "relative min-h-[48px] md:h-16 w-full flex items-center border text-xs transition-all group touch-manipulation",
         isEmpty 
           ? "bg-muted/20 border-dashed border-muted-foreground/20" 
           : cn(colors.bg, colors.border, getOpacity(), getCellStyle()),
         isCurrent && "ring-2 ring-primary ring-offset-1",
         isDragging && "opacity-50 ring-2 ring-primary z-50 shadow-lg",
-        !isPublished && !isEmpty && !isLocked && "cursor-pointer hover:shadow-md",
+        !isPublished && !isEmpty && !isLocked && "cursor-pointer hover:shadow-md active:scale-[0.98]",
         isPublished && "cursor-default opacity-80",
         isLocked && "ring-1 ring-amber-400 cursor-not-allowed",
         // Modified indicator - left accent border
-        isModified && !isEmpty && "border-l-4 border-l-orange-400"
+        isModified && !isEmpty && "border-l-4 border-l-orange-400",
+        // Long press visual feedback
+        isLongPressing && "scale-[0.96] ring-2 ring-primary/50"
       )}
-      onClick={onClick}
+      onClick={(e) => {
+        // Only trigger click if not long pressing
+        if (!isLongPressing) {
+          triggerHaptic(5);
+          onClick?.();
+        }
+      }}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+      onTouchCancel={handleTouchEnd}
     >
-      {/* Drag Handle - Always visible on left side */}
+      {/* Drag Handle - Larger on mobile (32px) */}
       {showDragHandle && (
         <div
           {...attributes}
           {...listeners}
           className={cn(
-            "flex items-center justify-center w-6 h-full cursor-grab active:cursor-grabbing",
-            "bg-muted/30 hover:bg-muted/50 transition-colors",
+            "flex items-center justify-center w-8 md:w-6 h-full cursor-grab active:cursor-grabbing",
+            "bg-muted/30 hover:bg-muted/50 active:bg-muted/70 transition-colors",
             "border-r border-border/50",
             cellType === 'start' && "rounded-l-lg",
             cellType === 'single' && "rounded-l-lg",
@@ -149,13 +231,17 @@ export function SortableChapterCell({
           )}
           title="Drag to reorder"
           onClick={(e) => e.stopPropagation()}
+          onTouchStart={(e) => {
+            e.stopPropagation();
+            triggerHaptic(8);
+          }}
         >
-          <GripVertical className="w-3 h-3 text-muted-foreground" />
+          <GripVertical className="w-4 h-4 md:w-3 md:h-3 text-muted-foreground" />
         </div>
       )}
 
       {/* Cell Content */}
-      <div className="flex-1 flex flex-col items-center justify-center px-1 min-w-0">
+      <div className="flex-1 flex flex-col items-center justify-center px-1 min-w-0 py-1">
         {/* Modified Badge */}
         {isModified && !isEmpty && (cellType === 'start' || cellType === 'single' || cellType === 'full') && (
           <div className="absolute -top-1.5 right-1 bg-orange-500 text-white text-[8px] px-1 py-0.5 rounded-sm font-medium flex items-center gap-0.5 shadow-sm">
@@ -166,7 +252,7 @@ export function SortableChapterCell({
         {!isEmpty && (
           <>
             <div 
-              className={cn("font-medium truncate w-full text-center px-1", colors.text)}
+              className={cn("font-medium truncate w-full text-center px-1 text-[11px] md:text-xs", colors.text)}
               title={chapterName || undefined}
             >
               {chapterName}
@@ -183,23 +269,31 @@ export function SortableChapterCell({
         )}
       </div>
 
-      {/* Quick Delete Button - on hover */}
+      {/* Quick Delete Button - larger on mobile */}
       {!isEmpty && !isPublished && !isLocked && onRemove && (
         <button
-          className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-sm hover:bg-red-600 z-10"
+          className="absolute -top-2 -right-2 w-7 h-7 md:w-5 md:h-5 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 md:group-hover:opacity-100 transition-opacity shadow-sm hover:bg-red-600 active:bg-red-700 z-10"
           onClick={(e) => {
             e.stopPropagation();
+            triggerHaptic(10);
             onRemove();
           }}
           title="Remove from week"
         >
-          <Trash2 className="w-3 h-3" />
+          <Trash2 className="w-4 h-4 md:w-3 md:h-3" />
         </button>
+      )}
+
+      {/* Long press indicator for mobile */}
+      {!isEmpty && !isPublished && onLongPress && (
+        <div className="absolute bottom-0.5 right-0.5 md:hidden">
+          <span className="text-[8px] text-muted-foreground/50">hold to edit</span>
+        </div>
       )}
     </div>
   );
 
-  // Wrap with tooltip for full chapter name and modification info
+  // Wrap with tooltip for full chapter name and modification info (desktop only)
   if (!isEmpty) {
     return (
       <TooltipProvider>
@@ -207,7 +301,7 @@ export function SortableChapterCell({
           <TooltipTrigger asChild>
             {cellElement}
           </TooltipTrigger>
-          <TooltipContent side="top" className="max-w-[250px]">
+          <TooltipContent side="top" className="max-w-[250px] hidden md:block">
             <div className="text-xs space-y-1">
               <p className="font-medium">{chapterName}</p>
               <p className="text-muted-foreground">{hours} hours this week</p>
@@ -240,7 +334,7 @@ export function ChapterCellDragOverlay({
   return (
     <div
       className={cn(
-        "h-16 min-w-[100px] px-3 flex flex-col items-center justify-center border text-xs rounded-lg shadow-xl",
+        "min-h-[48px] md:h-16 min-w-[100px] px-3 flex flex-col items-center justify-center border text-xs rounded-lg shadow-xl",
         colors.bg, colors.border, "bg-opacity-90",
         "rotate-2 scale-105"
       )}
