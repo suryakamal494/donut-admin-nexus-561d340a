@@ -394,7 +394,7 @@ export const HomeworkBlockDialog = ({
             </DrawerTitle>
           </DrawerHeader>
           
-          <ScrollArea className="max-h-[55vh]">
+<ScrollArea className="h-[50vh]">
             {step === 'select' ? <TypeSelectionContent /> : <FormContent />}
           </ScrollArea>
           
@@ -417,7 +417,9 @@ export const HomeworkBlockDialog = ({
           </DialogTitle>
         </DialogHeader>
         
-        {step === 'select' ? <TypeSelectionContent /> : <FormContent />}
+        <ScrollArea className="h-[280px]">
+          {step === 'select' ? <TypeSelectionContent /> : <FormContent />}
+        </ScrollArea>
         
         <ActionButtons />
       </DialogContent>
