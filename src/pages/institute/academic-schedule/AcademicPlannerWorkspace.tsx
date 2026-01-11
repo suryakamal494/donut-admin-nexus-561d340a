@@ -315,6 +315,7 @@ export default function AcademicPlannerWorkspace() {
               monthWeeks={monthWeeks}
               currentWeekIndex={currentWeekIndex}
               publishedMonths={publishedMonths}
+              onAdjust={applyAdjustment}
               onCellClick={handleCellClick}
             />
           </CardContent>

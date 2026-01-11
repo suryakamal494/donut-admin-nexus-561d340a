@@ -185,15 +185,147 @@ export function useAcademicPlanGenerator({
     toast.info("Plan cleared");
   }, []);
   
-  // Apply adjustment
+  // Apply adjustment - modifies the plan in place
   const applyAdjustment = useCallback((adjustment: ChapterAdjustment) => {
+    if (!plan) return;
+    
     setAdjustments(prev => [...prev, adjustment]);
     
-    // TODO: Apply adjustment to plan
-    // This would modify the chapter assignments based on the adjustment type
+    // Create a deep copy of the plan to modify
+    const updatedPlan = JSON.parse(JSON.stringify(plan)) as BatchAcademicPlan;
     
-    toast.success(`Adjustment applied: ${adjustment.type}`);
-  }, []);
+    // Find the subject
+    const subjectIndex = updatedPlan.subjects.findIndex(s => s.subjectId === adjustment.subjectId);
+    if (subjectIndex === -1) return;
+    
+    const subject = updatedPlan.subjects[subjectIndex];
+    
+    // Find the chapter
+    const chapterIndex = subject.chapterAssignments.findIndex(c => c.chapterId === adjustment.chapterId);
+    if (chapterIndex === -1) return;
+    
+    const chapter = subject.chapterAssignments[chapterIndex];
+    
+    switch (adjustment.type) {
+      case 'extend': {
+        // Extend chapter by 1 week - push subsequent chapters
+        chapter.endWeekIndex += 1;
+        chapter.hoursPerWeek.push({
+          weekIndex: chapter.endWeekIndex,
+          hours: subject.weeklyHours,
+        });
+        chapter.plannedHours += subject.weeklyHours;
+        chapter.isPartialEnd = false;
+        
+        // Push all subsequent chapters by 1 week
+        for (let i = chapterIndex + 1; i < subject.chapterAssignments.length; i++) {
+          const nextChapter = subject.chapterAssignments[i];
+          nextChapter.startWeekIndex += 1;
+          nextChapter.endWeekIndex += 1;
+          nextChapter.hoursPerWeek = nextChapter.hoursPerWeek.map(h => ({
+            ...h,
+            weekIndex: h.weekIndex + 1,
+          }));
+        }
+        
+        toast.success(`Extended "${chapter.chapterName}" by 1 week`);
+        break;
+      }
+      
+      case 'compress': {
+        // Compress chapter by 1 week if possible
+        if (chapter.endWeekIndex > chapter.startWeekIndex) {
+          const removedHours = chapter.hoursPerWeek.find(h => h.weekIndex === chapter.endWeekIndex)?.hours || 0;
+          chapter.hoursPerWeek = chapter.hoursPerWeek.filter(h => h.weekIndex !== chapter.endWeekIndex);
+          chapter.endWeekIndex -= 1;
+          chapter.plannedHours -= removedHours;
+          
+          // Pull all subsequent chapters by 1 week
+          for (let i = chapterIndex + 1; i < subject.chapterAssignments.length; i++) {
+            const nextChapter = subject.chapterAssignments[i];
+            nextChapter.startWeekIndex -= 1;
+            nextChapter.endWeekIndex -= 1;
+            nextChapter.hoursPerWeek = nextChapter.hoursPerWeek.map(h => ({
+              ...h,
+              weekIndex: h.weekIndex - 1,
+            }));
+          }
+          
+          toast.success(`Compressed "${chapter.chapterName}" by 1 week`);
+        } else {
+          toast.error("Cannot compress further - chapter spans only 1 week");
+          return;
+        }
+        break;
+      }
+      
+      case 'lock': {
+        chapter.isLocked = true;
+        toast.success(`Locked "${chapter.chapterName}"`);
+        break;
+      }
+      
+      case 'unlock': {
+        chapter.isLocked = false;
+        toast.success(`Unlocked "${chapter.chapterName}"`);
+        break;
+      }
+      
+      case 'swap': {
+        // Swap with next chapter if exists
+        if (chapterIndex < subject.chapterAssignments.length - 1) {
+          const nextChapter = subject.chapterAssignments[chapterIndex + 1];
+          
+          // Store original positions
+          const origStart = chapter.startWeekIndex;
+          const origEnd = chapter.endWeekIndex;
+          const nextStart = nextChapter.startWeekIndex;
+          const nextEnd = nextChapter.endWeekIndex;
+          
+          // Calculate durations
+          const chapterDuration = origEnd - origStart;
+          const nextDuration = nextEnd - nextStart;
+          
+          // Swap positions
+          chapter.startWeekIndex = origStart;
+          chapter.endWeekIndex = origStart + nextDuration;
+          nextChapter.startWeekIndex = chapter.endWeekIndex + 1;
+          nextChapter.endWeekIndex = nextChapter.startWeekIndex + chapterDuration;
+          
+          // Recalculate hours per week
+          chapter.hoursPerWeek = [];
+          for (let w = chapter.startWeekIndex; w <= chapter.endWeekIndex; w++) {
+            chapter.hoursPerWeek.push({ weekIndex: w, hours: subject.weeklyHours });
+          }
+          
+          nextChapter.hoursPerWeek = [];
+          for (let w = nextChapter.startWeekIndex; w <= nextChapter.endWeekIndex; w++) {
+            nextChapter.hoursPerWeek.push({ weekIndex: w, hours: subject.weeklyHours });
+          }
+          
+          // Swap array positions
+          subject.chapterAssignments[chapterIndex] = nextChapter;
+          subject.chapterAssignments[chapterIndex + 1] = chapter;
+          
+          toast.success(`Swapped "${chapter.chapterName}" with "${nextChapter.chapterName}"`);
+        } else {
+          toast.error("No next chapter to swap with");
+          return;
+        }
+        break;
+      }
+    }
+    
+    // Update the end week index of the plan
+    const maxEndWeek = Math.max(
+      ...updatedPlan.subjects.flatMap(s => 
+        s.chapterAssignments.map(c => c.endWeekIndex)
+      )
+    );
+    updatedPlan.endWeekIndex = maxEndWeek;
+    
+    setPlan(updatedPlan);
+  }, [plan]);
   
   // Publish month
   const publishMonth = useCallback((monthIndex: number) => {
