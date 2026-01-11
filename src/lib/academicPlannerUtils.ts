@@ -10,6 +10,7 @@ import {
   ChapterCellType,
   WeekCellData,
   SubjectRowData,
+  PendingChapter,
   DEFAULT_WEEKLY_HOURS_PER_SUBJECT,
 } from "@/types/academicPlanner";
 import { Batch } from "@/data/instituteData";
@@ -95,6 +96,47 @@ export function getBatchSubjects(batch: Batch): { subjectId: string; subjectName
     { subjectId: "sci", subjectName: "Science" },
     { subjectId: "eng", subjectName: "English" },
   ];
+}
+
+// ============================================
+// Pending Chapters (for manual addition)
+// ============================================
+
+/**
+ * Get chapters that are not yet assigned in the plan for a specific subject
+ */
+export function getPendingChaptersForSubject(
+  subjectId: string,
+  plan: BatchAcademicPlan | null,
+  allSetups: AcademicScheduleSetup[]
+): PendingChapter[] {
+  // Find the setup for this subject
+  const setup = allSetups.find(s => s.subjectId === subjectId);
+  if (!setup || !setup.chapters.length) {
+    return [];
+  }
+
+  // Get assigned chapter IDs from the plan
+  const assignedChapterIds = new Set<string>();
+  if (plan) {
+    const subjectPlan = plan.subjects.find(s => s.subjectId === subjectId);
+    if (subjectPlan) {
+      subjectPlan.chapterAssignments.forEach(a => {
+        assignedChapterIds.add(a.chapterId);
+      });
+    }
+  }
+
+  // Return chapters that are not assigned
+  return setup.chapters
+    .filter(ch => !assignedChapterIds.has(ch.chapterId))
+    .map(ch => ({
+      chapterId: ch.chapterId,
+      chapterName: ch.chapterName,
+      plannedHours: ch.plannedHours,
+      order: ch.order,
+    }))
+    .sort((a, b) => a.order - b.order);
 }
 
 // ============================================

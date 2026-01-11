@@ -47,6 +47,7 @@ interface UseAcademicPlanGeneratorReturn {
   publishMonth: (monthIndex: number) => void;
   loadExistingPlan: () => void;
   reorderChapters: (subjectId: string, fromIndex: number, toIndex: number) => void;
+  addChapterManually: (subjectId: string, chapterId: string, weekIndex: number, hours: number) => void;
   
   // Computed
   batch: Batch | null;
@@ -331,6 +332,73 @@ export function useAcademicPlanGenerator({
     const chapter = subject.chapterAssignments[chapterIndex];
     
     switch (adjustment.type) {
+      case 'addHours': {
+        const hoursToAdd = adjustment.hours || 1;
+        const weekHourEntry = chapter.hoursPerWeek.find(h => h.weekIndex === adjustment.weekIndex);
+        if (weekHourEntry) {
+          weekHourEntry.hours += hoursToAdd;
+        } else {
+          chapter.hoursPerWeek.push({ weekIndex: adjustment.weekIndex, hours: hoursToAdd });
+        }
+        chapter.plannedHours += hoursToAdd;
+        chapter.isModified = true;
+        chapter.modificationTypes = [...(chapter.modificationTypes || []), 'addHours'];
+        toast.success(`Added ${hoursToAdd}h to "${chapter.chapterName}"`);
+        break;
+      }
+      
+      case 'removeHours': {
+        const hoursToRemove = adjustment.hours || 1;
+        const weekHourEntry = chapter.hoursPerWeek.find(h => h.weekIndex === adjustment.weekIndex);
+        if (weekHourEntry && weekHourEntry.hours > hoursToRemove) {
+          weekHourEntry.hours -= hoursToRemove;
+          chapter.plannedHours -= hoursToRemove;
+          chapter.isModified = true;
+          chapter.modificationTypes = [...(chapter.modificationTypes || []), 'removeHours'];
+          toast.success(`Removed ${hoursToRemove}h from "${chapter.chapterName}"`);
+        } else {
+          toast.error("Cannot remove more hours than assigned");
+          return;
+        }
+        break;
+      }
+      
+      case 'setHours': {
+        const newHours = adjustment.hours || 1;
+        const weekHourEntry = chapter.hoursPerWeek.find(h => h.weekIndex === adjustment.weekIndex);
+        const oldHours = weekHourEntry?.hours || 0;
+        if (weekHourEntry) {
+          weekHourEntry.hours = newHours;
+        } else {
+          chapter.hoursPerWeek.push({ weekIndex: adjustment.weekIndex, hours: newHours });
+        }
+        chapter.plannedHours += (newHours - oldHours);
+        chapter.isModified = true;
+        chapter.modificationTypes = [...(chapter.modificationTypes || []), 'addHours'];
+        toast.success(`Set "${chapter.chapterName}" to ${newHours}h this week`);
+        break;
+      }
+      
+      case 'removeFromWeek': {
+        // Remove hours from this specific week
+        const hourEntry = chapter.hoursPerWeek.find(h => h.weekIndex === adjustment.weekIndex);
+        if (hourEntry) {
+          chapter.plannedHours -= hourEntry.hours;
+          chapter.hoursPerWeek = chapter.hoursPerWeek.filter(h => h.weekIndex !== adjustment.weekIndex);
+          
+          // Recalculate start/end
+          if (chapter.hoursPerWeek.length > 0) {
+            chapter.startWeekIndex = Math.min(...chapter.hoursPerWeek.map(h => h.weekIndex));
+            chapter.endWeekIndex = Math.max(...chapter.hoursPerWeek.map(h => h.weekIndex));
+          }
+          
+          chapter.isModified = true;
+          chapter.modificationTypes = [...(chapter.modificationTypes || []), 'removeFromWeek'];
+          toast.success(`Removed "${chapter.chapterName}" from this week`);
+        }
+        break;
+      }
+      
       case 'extend': {
         // Extend chapter by 1 week - push subsequent chapters
         chapter.endWeekIndex += 1;
@@ -591,6 +659,59 @@ export function useAcademicPlanGenerator({
     toast.success(`Moved "${movedChapter.chapterName}" to position ${toIndex + 1}`);
   }, [plan]);
   
+  // Add chapter manually to a specific week
+  const addChapterManually = useCallback((
+    subjectId: string,
+    chapterId: string,
+    weekIndex: number,
+    hours: number
+  ) => {
+    if (!plan) return;
+    
+    const updatedPlan = JSON.parse(JSON.stringify(plan)) as BatchAcademicPlan;
+    const subjectIndex = updatedPlan.subjects.findIndex(s => s.subjectId === subjectId);
+    if (subjectIndex === -1) return;
+    
+    const subject = updatedPlan.subjects[subjectIndex];
+    
+    // Check if chapter already exists
+    const existingIndex = subject.chapterAssignments.findIndex(c => c.chapterId === chapterId);
+    if (existingIndex !== -1) {
+      toast.error("Chapter already assigned");
+      return;
+    }
+    
+    // Find chapter info from setups
+    const setup = academicScheduleSetups.find(s => s.subjectId === subjectId);
+    const chapterInfo = setup?.chapters.find(c => c.chapterId === chapterId);
+    
+    if (!chapterInfo) {
+      toast.error("Chapter not found");
+      return;
+    }
+    
+    // Add new assignment
+    const newAssignment: import("@/types/academicPlanner").ChapterWeekAssignment = {
+      chapterId,
+      chapterName: chapterInfo.chapterName,
+      plannedHours: hours,
+      startWeekIndex: weekIndex,
+      endWeekIndex: weekIndex,
+      hoursPerWeek: [{ weekIndex, hours }],
+      isLocked: false,
+      isPartialStart: false,
+      isPartialEnd: hours < chapterInfo.plannedHours,
+      isModified: true,
+      modificationTypes: ['manualAdd'],
+    };
+    
+    subject.chapterAssignments.push(newAssignment);
+    subject.chapterAssignments.sort((a, b) => a.startWeekIndex - b.startWeekIndex);
+    
+    setPlan(updatedPlan);
+    toast.success(`Added "${chapterInfo.chapterName}" to week ${weekIndex + 1}`);
+  }, [plan]);
+  
   return {
     plan,
     isGenerating,
@@ -604,6 +725,7 @@ export function useAcademicPlanGenerator({
     publishMonth,
     loadExistingPlan,
     reorderChapters,
+    addChapterManually,
     batch,
     weeklyHours,
     hasValidSetup,
