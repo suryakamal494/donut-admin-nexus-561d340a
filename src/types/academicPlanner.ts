@@ -17,6 +17,8 @@ export interface ChapterWeekAssignment {
   isLocked: boolean; // Prevent regeneration changes
   isPartialStart: boolean; // Continues from previous week
   isPartialEnd: boolean; // Continues to next week
+  isModified?: boolean; // Track if manually adjusted
+  modificationTypes?: ('reorder' | 'extend' | 'compress' | 'swap')[]; // Types of modifications applied
 }
 
 export interface SubjectPlanData {
