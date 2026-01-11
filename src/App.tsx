@@ -1,4 +1,4 @@
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -24,6 +24,12 @@ const StudentRoutes = lazy(() => import("./routes/StudentRoutes"));
 
 const queryClient = new QueryClient();
 
+// Preload critical modules after initial render
+function preloadModules() {
+  // Preload Institute module (most commonly accessed)
+  import("./routes/InstituteRoutes").catch(() => {});
+}
+
 // Module boundary wrapper with error handling and loading state
 function ModuleBoundary({ children }: { children: React.ReactNode }) {
   return (
@@ -35,34 +41,47 @@ function ModuleBoundary({ children }: { children: React.ReactNode }) {
   );
 }
 
+// Root component with preloading
+function AppContent() {
+  useEffect(() => {
+    // Preload after 1.5s to not block initial render
+    const timer = setTimeout(preloadModules, 1500);
+    return () => clearTimeout(timer);
+  }, []);
+
+  return (
+    <BrowserRouter>
+      <Routes>
+        {/* Landing Page - Portal Selection */}
+        <Route path="/" element={<Landing />} />
+        
+        {/* Module Boundaries - Only one loads at a time */}
+        <Route path="/superadmin/*" element={
+          <ModuleBoundary><SuperAdminRoutes /></ModuleBoundary>
+        } />
+        <Route path="/institute/*" element={
+          <ModuleBoundary><InstituteRoutes /></ModuleBoundary>
+        } />
+        <Route path="/teacher/*" element={
+          <ModuleBoundary><TeacherRoutes /></ModuleBoundary>
+        } />
+        <Route path="/student/*" element={
+          <ModuleBoundary><StudentRoutes /></ModuleBoundary>
+        } />
+        
+        {/* 404 */}
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </BrowserRouter>
+  );
+}
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <BrowserRouter>
-        <Routes>
-          {/* Landing Page - Portal Selection */}
-          <Route path="/" element={<Landing />} />
-          
-          {/* Module Boundaries - Only one loads at a time */}
-          <Route path="/superadmin/*" element={
-            <ModuleBoundary><SuperAdminRoutes /></ModuleBoundary>
-          } />
-          <Route path="/institute/*" element={
-            <ModuleBoundary><InstituteRoutes /></ModuleBoundary>
-          } />
-          <Route path="/teacher/*" element={
-            <ModuleBoundary><TeacherRoutes /></ModuleBoundary>
-          } />
-          <Route path="/student/*" element={
-            <ModuleBoundary><StudentRoutes /></ModuleBoundary>
-          } />
-          
-          {/* 404 */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
+      <AppContent />
     </TooltipProvider>
   </QueryClientProvider>
 );

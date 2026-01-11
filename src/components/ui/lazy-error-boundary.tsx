@@ -122,7 +122,12 @@ class LazyErrorBoundary extends Component<Props, State> {
       );
     }
 
-    return this.props.children;
+    // KEY FIX: Use retryCount as key to force complete remount & fresh import
+    return (
+      <div key={`lazy-boundary-${this.state.retryCount}`}>
+        {this.props.children}
+      </div>
+    );
   }
 }
 
