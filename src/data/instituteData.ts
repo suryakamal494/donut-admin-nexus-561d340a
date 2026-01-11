@@ -58,6 +58,8 @@ export interface Teacher {
 
 export interface Student {
   id: string;
+  
+  // Basic Info
   name: string;
   username: string;
   rollNumber: string;
@@ -66,6 +68,48 @@ export interface Student {
   className: string;
   status: "active" | "inactive";
   createdAt: string;
+  
+  // Personal Information
+  dateOfBirth?: string;
+  gender?: "male" | "female" | "other";
+  bloodGroup?: "A+" | "A-" | "B+" | "B-" | "O+" | "O-" | "AB+" | "AB-";
+  aadharNumber?: string;
+  
+  // Contact Information
+  studentMobile?: string;
+  studentEmail?: string;
+  whatsappNumber?: string;
+  
+  // Parent/Guardian Information
+  fatherName?: string;
+  fatherMobile?: string;
+  fatherOccupation?: string;
+  motherName?: string;
+  motherMobile?: string;
+  guardianName?: string;
+  guardianMobile?: string;
+  guardianRelation?: string;
+  
+  // Address Information
+  addressLine1?: string;
+  addressLine2?: string;
+  city?: string;
+  state?: string;
+  pincode?: string;
+  country?: string;
+  
+  // Academic Information
+  previousSchool?: string;
+  admissionDate?: string;
+  admissionNumber?: string;
+  transportRequired?: boolean;
+  
+  // Emergency & Medical
+  emergencyContactName?: string;
+  emergencyContactNumber?: string;
+  emergencyContactRelation?: string;
+  medicalConditions?: string;
+  allergies?: string;
 }
 
 export interface TimetableSlot {
