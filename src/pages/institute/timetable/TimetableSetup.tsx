@@ -11,6 +11,7 @@ import {
   TeacherLoadTab,
   TeacherConstraintsTab,
   FacilitiesTab,
+  ExamScheduleTab,
   SetupProgressBar,
   AdvancedModeToggle,
 } from "@/components/timetable/setup";
@@ -115,7 +116,12 @@ const TimetableSetup = () => {
           />
         </TabsContent>
 
-        {/* Tab 5: Teacher Constraints (Advanced) */}
+        {/* Tab 5: Exam Schedule */}
+        <TabsContent value="exam-schedule">
+          <ExamScheduleTab />
+        </TabsContent>
+
+        {/* Tab 6: Teacher Constraints (Advanced) */}
         {setup.isAdvancedMode && (
           <TabsContent value="teacher-constraints">
             <TeacherConstraintsTab

@@ -14,7 +14,7 @@ import {
 } from "@/data/timetableData";
 import { Holiday } from "@/components/timetable/HolidayCalendarDialog";
 import { toast } from "sonner";
-import { Clock, Layers, CalendarDays, User, AlertTriangle, Building2 } from "lucide-react";
+import { Clock, Layers, CalendarDays, User, AlertTriangle, Building2, ClipboardList } from "lucide-react";
 
 const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
@@ -61,6 +61,8 @@ export function useTimetableSetup() {
         return holidays.length > 0 ? 'complete' : 'partial';
       case 'teacher-load':
         return teacherLoadData.length > 0 ? 'complete' : 'empty';
+      case 'exam-schedule':
+        return 'complete'; // Always shows as complete since it's self-contained
       case 'teacher-constraints':
         return teacherConstraints.length > 0 ? 'complete' : 'empty';
       case 'facilities':
@@ -164,6 +166,7 @@ export function useTimetableSetup() {
     { id: 'period-types', label: 'Period Types', icon: Layers },
     { id: 'holidays', label: 'Holidays', icon: CalendarDays },
     { id: 'teacher-load', label: 'Teacher Load', icon: User },
+    { id: 'exam-schedule', label: 'Exam Schedule', icon: ClipboardList },
   ];
 
   const advancedTabs: TabConfig[] = [

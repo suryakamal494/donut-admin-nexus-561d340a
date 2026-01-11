@@ -39,7 +39,7 @@ const InstituteTimetableSetup = lazy(() => import("@/pages/institute/timetable/T
 const InstituteTimetableUpload = lazy(() => import("@/pages/institute/timetable/TimetableUpload"));
 const InstituteViewTimetable = lazy(() => import("@/pages/institute/timetable/ViewTimetable"));
 const InstituteSubstitution = lazy(() => import("@/pages/institute/timetable/Substitution"));
-const InstituteExamSchedule = lazy(() => import("@/pages/institute/timetable/ExamSchedule"));
+// ExamSchedule moved to TimetableSetup tab - keeping route for backwards compatibility
 
 // Questions
 const InstituteQuestions = lazy(() => import("@/pages/institute/questions/Questions"));
@@ -117,7 +117,7 @@ export default function InstituteRoutes() {
         <Route path="timetable/upload" element={<LazyPage><InstituteTimetableUpload /></LazyPage>} />
         <Route path="timetable/view" element={<LazyPage><InstituteViewTimetable /></LazyPage>} />
         <Route path="timetable/substitution" element={<LazyPage><InstituteSubstitution /></LazyPage>} />
-        <Route path="timetable/exam-schedule" element={<LazyPage><InstituteExamSchedule /></LazyPage>} />
+        <Route path="timetable/exam-schedule" element={<Navigate to="/institute/timetable/setup" replace />} />
         
         {/* Questions */}
         <Route path="questions" element={<LazyPage><InstituteQuestions /></LazyPage>} />
