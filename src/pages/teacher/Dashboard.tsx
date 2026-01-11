@@ -12,7 +12,8 @@ import {
   FileText,
   Sparkles,
   TrendingUp,
-  Bell
+  Bell,
+  AlertTriangle
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -21,6 +22,8 @@ import { cn } from "@/lib/utils";
 import { CurrentClassWidget } from "@/components/teacher/CurrentClassWidget";
 import { TeachingConfirmationDialog } from "@/components/teacher/TeachingConfirmationDialog";
 import { ClassCard } from "@/components/teacher/ClassCard";
+import { TeacherNotificationCard } from "@/components/teacher/notifications";
+import { useTeacherNotifications } from "@/hooks/useTeacherNotifications";
 import { 
   currentTeacher, 
   teacherTodayTimetable, 
@@ -36,6 +39,9 @@ const TeacherDashboard = () => {
   const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
   const [confirmationDialogOpen, setConfirmationDialogOpen] = useState(false);
   const [slotToConfirm, setSlotToConfirm] = useState<TeacherTimetableSlot | null>(null);
+  
+  // Get urgent alerts from notifications
+  const { urgentAlerts, markAsRead } = useTeacherNotifications();
 
   // Get greeting based on time
   const getGreeting = () => {
@@ -262,40 +268,92 @@ const TeacherDashboard = () => {
             </CardContent>
           </Card>
 
-          {/* Pending Actions */}
+          {/* Alerts & Pending Actions */}
           <Card className="card-premium">
             <CardHeader className="pb-2 sm:pb-3 px-3 sm:px-6 pt-3 sm:pt-6">
               <CardTitle className="text-sm sm:text-base flex items-center gap-2">
-                <AlertCircle className="w-4 h-4 text-amber-500" />
-                Pending Actions
+                <AlertTriangle className="w-4 h-4 text-amber-500" />
+                Alerts & Tasks
                 <Badge variant="secondary" className="ml-auto text-[10px]">
-                  {teacherPendingActions.length}
+                  {urgentAlerts.length + teacherPendingActions.length}
                 </Badge>
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-2 sm:space-y-3 px-3 sm:px-6 pb-3 sm:pb-6">
-              {teacherPendingActions.map((action) => {
-                const Icon = getActionIcon(action.type);
-                return (
-                  <div 
-                    key={action.id}
-                    className={cn(
-                      "p-2.5 sm:p-3 rounded-xl border cursor-pointer transition-all duration-200 hover:shadow-md active:scale-[0.98]",
-                      getPriorityColor(action.priority)
-                    )}
-                  >
-                    <div className="flex items-start gap-2.5 sm:gap-3">
-                      <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-background/50 flex items-center justify-center flex-shrink-0">
-                        <Icon className="w-4 h-4" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium text-sm truncate">{action.title}</p>
-                        <p className="text-xs opacity-70 truncate">{action.description}</p>
-                      </div>
-                    </div>
+            <CardContent className="space-y-3 sm:space-y-4 px-3 sm:px-6 pb-3 sm:pb-6">
+              {/* Urgent Alerts Section */}
+              {urgentAlerts.length > 0 && (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-xs font-semibold text-red-600 uppercase tracking-wide">
+                      Urgent ({urgentAlerts.length})
+                    </h4>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="h-6 text-xs text-primary px-2"
+                      onClick={() => navigate("/teacher/notifications")}
+                    >
+                      View All
+                    </Button>
                   </div>
-                );
-              })}
+                  <div className="space-y-1.5">
+                    {urgentAlerts.slice(0, 2).map((alert) => (
+                      <TeacherNotificationCard
+                        key={alert.id}
+                        notification={alert}
+                        onMarkAsRead={markAsRead}
+                        compact
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              {/* Divider if both sections have content */}
+              {urgentAlerts.length > 0 && teacherPendingActions.length > 0 && (
+                <div className="border-t border-border" />
+              )}
+              
+              {/* Tasks Section */}
+              {teacherPendingActions.length > 0 && (
+                <div className="space-y-2">
+                  <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                    Tasks ({teacherPendingActions.length})
+                  </h4>
+                  <div className="space-y-2 sm:space-y-3">
+                    {teacherPendingActions.slice(0, urgentAlerts.length > 0 ? 2 : 4).map((action) => {
+                      const Icon = getActionIcon(action.type);
+                      return (
+                        <div 
+                          key={action.id}
+                          className={cn(
+                            "p-2.5 sm:p-3 rounded-xl border cursor-pointer transition-all duration-200 hover:shadow-md active:scale-[0.98]",
+                            getPriorityColor(action.priority)
+                          )}
+                        >
+                          <div className="flex items-start gap-2.5 sm:gap-3">
+                            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-background/50 flex items-center justify-center flex-shrink-0">
+                              <Icon className="w-4 h-4" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium text-sm truncate">{action.title}</p>
+                              <p className="text-xs opacity-70 truncate">{action.description}</p>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+              
+              {/* Empty State */}
+              {urgentAlerts.length === 0 && teacherPendingActions.length === 0 && (
+                <div className="text-center py-6 text-muted-foreground">
+                  <CheckCircle2 className="w-10 h-10 mx-auto mb-2 text-emerald-500" />
+                  <p className="text-sm">All caught up!</p>
+                </div>
+              )}
             </CardContent>
           </Card>
 

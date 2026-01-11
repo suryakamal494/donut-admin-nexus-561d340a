@@ -18,6 +18,9 @@ export { teacherHomework } from './homework';
 export { teacherExams } from './exams';
 export * from './examResults';
 
+// Notifications
+export { teacherNotifications, getUnreadNotifications, getUrgentAlerts } from './notifications';
+
 
 // Stats & Actions
 export { 
