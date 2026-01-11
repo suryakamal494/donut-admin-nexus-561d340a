@@ -8,7 +8,10 @@ import {
   BookOpen,
   AlertCircle,
   CheckCircle2,
-  ExternalLink
+  ExternalLink,
+  Pencil,
+  Timer,
+  FolderOpen
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -22,7 +25,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
-import type { TeacherHomework } from "@/data/teacherData";
+import type { TeacherHomework, HomeworkType } from "@/data/teacherData";
 
 interface HomeworkCardProps {
   homework: TeacherHomework;
@@ -61,6 +64,32 @@ const getStatusConfig = (status: TeacherHomework["status"]) => {
   }
 };
 
+// Homework type configuration for badges
+const getHomeworkTypeConfig = (type?: HomeworkType) => {
+  switch (type) {
+    case "practice":
+      return {
+        label: "Practice",
+        icon: Pencil,
+        className: "bg-blue-50 text-blue-700 border-blue-200",
+      };
+    case "test":
+      return {
+        label: "Test",
+        icon: Timer,
+        className: "bg-purple-50 text-purple-700 border-purple-200",
+      };
+    case "project":
+      return {
+        label: "Project",
+        icon: FolderOpen,
+        className: "bg-orange-50 text-orange-700 border-orange-200",
+      };
+    default:
+      return null;
+  }
+};
+
 export const HomeworkCard = ({
   homework,
   onEdit,
@@ -70,6 +99,7 @@ export const HomeworkCard = ({
 }: HomeworkCardProps) => {
   const statusConfig = getStatusConfig(homework.status);
   const StatusIcon = statusConfig.icon;
+  const typeConfig = getHomeworkTypeConfig(homework.homeworkType);
   const submissionRate = Math.round((homework.submissionCount / homework.totalStudents) * 100);
   
   const daysUntilDue = Math.ceil(
@@ -82,11 +112,22 @@ export const HomeworkCard = ({
       homework.status === "overdue" && "border-red-200"
     )}>
       <CardContent className="p-4">
+        {/* Header with status and type badges */}
         <div className="flex items-start justify-between mb-3">
-          <Badge className={statusConfig.className}>
-            <StatusIcon className="w-3 h-3 mr-1" />
-            {statusConfig.label}
-          </Badge>
+          <div className="flex items-center gap-2 flex-wrap">
+            <Badge className={statusConfig.className}>
+              <StatusIcon className="w-3 h-3 mr-1" />
+              {statusConfig.label}
+            </Badge>
+            
+            {/* Homework Type Badge */}
+            {typeConfig && (
+              <Badge variant="outline" className={cn("gap-1", typeConfig.className)}>
+                <typeConfig.icon className="w-3 h-3" />
+                {typeConfig.label}
+              </Badge>
+            )}
+          </div>
           
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
