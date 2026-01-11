@@ -20,7 +20,7 @@ export interface LessonPlanBlock {
   duration?: number;
   source: BlockSource;
   sourceId?: string;
-  sourceType?: string;
+  sourceType?: string; // Extended to support content types + homework types (practice/test/project)
   questions?: string[];
   attachmentUrl?: string;
   aiGenerated?: boolean;
