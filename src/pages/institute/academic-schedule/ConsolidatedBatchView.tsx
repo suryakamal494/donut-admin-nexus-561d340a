@@ -412,13 +412,13 @@ export default function ConsolidatedBatchView() {
                                 ) : isCurrentChapter ? (
                                   <div className="w-4 h-4 rounded-full border-2 border-primary shrink-0" />
                                 ) : (
-                                  <div className="w-4 h-4 rounded-full border-2 border-muted shrink-0" />
+                                  <div className="w-4 h-4 rounded-full border-2 border-sky-300 shrink-0" />
                                 )}
                                 <Tooltip>
                                   <TooltipTrigger asChild>
                                     <span className={cn(
                                       "text-sm truncate cursor-help",
-                                      isCompleted && "text-muted-foreground line-through",
+                                      isCompleted && "text-muted-foreground",
                                       isCurrentChapter && "font-medium text-primary"
                                     )}>
                                       {chapter.chapterName}
@@ -483,10 +483,10 @@ export default function ConsolidatedBatchView() {
                                             }}
                                             className={cn(
                                               "h-4 rounded cursor-pointer transition-all hover:scale-y-125 hover:shadow-sm",
-                                              isCompleted ? "bg-emerald-200 hover:bg-emerald-300" :
-                                              isCurrentChapter && isCurrentWeek ? "bg-primary/50 hover:bg-primary/60" :
-                                              isCurrentChapter ? "bg-primary/30 hover:bg-primary/40" :
-                                              isPastWeek ? "bg-muted hover:bg-muted/80" : "bg-muted/50 hover:bg-muted/70",
+                                              isCompleted ? "bg-emerald-300 hover:bg-emerald-400" :
+                                              isCurrentChapter && isCurrentWeek ? "bg-primary hover:bg-primary/90" :
+                                              isCurrentChapter ? "bg-primary/40 hover:bg-primary/50" :
+                                              "bg-sky-200 hover:bg-sky-300",
                                               // Rounded corners for first/last week
                                               isFirstWeek && "rounded-l-md ml-1",
                                               isLastWeek && "rounded-r-md mr-1",
@@ -520,6 +520,22 @@ export default function ConsolidatedBatchView() {
                     </div>
                     <ScrollBar orientation="horizontal" />
                   </ScrollArea>
+                  
+                  {/* Color-Coded Legend */}
+                  <div className="flex items-center justify-center gap-6 pt-4 border-t mt-4">
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-3 rounded bg-emerald-300" />
+                      <span className="text-xs text-muted-foreground">Completed</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-3 rounded bg-primary" />
+                      <span className="text-xs text-muted-foreground">In Progress</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-3 rounded bg-sky-200" />
+                      <span className="text-xs text-muted-foreground">Upcoming</span>
+                    </div>
+                  </div>
                 </div>
               )}
             </CardContent>
