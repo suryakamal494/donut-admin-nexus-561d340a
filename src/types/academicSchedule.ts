@@ -172,3 +172,57 @@ export const NO_TEACH_REASON_LABELS: Record<NoTeachReason, string> = {
   cancelled: "Class Cancelled",
   other: "Other",
 };
+
+// ============================================
+// Drift Management Types
+// ============================================
+
+export type DriftSeverity = "minor" | "significant" | "critical";
+
+export type AdjustmentAction = 
+  | "extend_chapter"      // Push completion date
+  | "compress_future"     // Cover more per period
+  | "add_compensatory"    // Extra class
+  | "accept_variance";    // Acknowledge, no action
+
+export interface ChapterDriftStatus {
+  batchId: string;
+  subjectId: string;
+  chapterId: string;
+  chapterName: string;
+  plannedHours: number;
+  actualHours: number;
+  driftHours: number;           // Positive = over plan, Negative = behind
+  driftPercentage: number;
+  severity: DriftSeverity;
+  isResolved: boolean;
+  lastAdjustmentId?: string;
+}
+
+export interface ScheduleAdjustment {
+  id: string;
+  batchId: string;
+  subjectId: string;
+  subjectName: string;
+  chapterId: string;
+  chapterName: string;
+  action: AdjustmentAction;
+  driftHoursBefore: number;     // Drift at time of adjustment
+  impactDescription: string;    // What happens as a result
+  notes?: string;               // Admin notes
+  adjustedBy: string;           // User who made adjustment
+  adjustedAt: string;           // ISO date
+}
+
+export const ADJUSTMENT_ACTION_LABELS: Record<AdjustmentAction, string> = {
+  extend_chapter: "Extend Chapter Timeline",
+  compress_future: "Compress Future Teaching",
+  add_compensatory: "Add Compensatory Class",
+  accept_variance: "Accept Current Variance",
+};
+
+export const DRIFT_THRESHOLDS = {
+  minor: 2,      // 1-2 hours drift
+  significant: 4, // 3-4 hours drift
+  critical: 5,    // 5+ hours drift
+} as const;
