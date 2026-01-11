@@ -1,9 +1,9 @@
 // Academic Planner Workspace
-// Batch-First Auto-Sequence Monthly Grid Planner
-// Replaces the old clumsy WeeklyPlans component
+// Batch-specific view for generating and editing academic plans
+// Redesigned to work without timetable dependency
 
 import { useState, useMemo, useCallback } from "react";
-import { Link } from "react-router-dom";
+import { Link, useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -20,12 +20,14 @@ import {
   Loader2,
   BookOpen,
   Settings,
+  Lock,
+  FileEdit,
+  History,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
 // Components
-import { BatchPlanSelector } from "@/components/academic-schedule/BatchPlanSelector";
 import { MonthNavigator } from "@/components/academic-schedule/MonthNavigator";
 import { MonthPlanGrid } from "@/components/academic-schedule/MonthPlanGrid";
 
@@ -33,11 +35,11 @@ import { MonthPlanGrid } from "@/components/academic-schedule/MonthPlanGrid";
 import { useAcademicPlanGenerator } from "@/hooks/useAcademicPlanGenerator";
 import { academicWeeks, currentWeekIndex } from "@/data/academicScheduleData";
 import { getWeeksForMonth } from "@/lib/academicPlannerUtils";
-import { ChapterAdjustment } from "@/types/academicPlanner";
+import { loadPlanForBatch } from "@/data/academicPlannerData";
 
 export default function AcademicPlannerWorkspace() {
-  // Batch selection
-  const [selectedBatchId, setSelectedBatchId] = useState<string | null>(null);
+  const { batchId } = useParams<{ batchId: string }>();
+  const navigate = useNavigate();
   
   // Month navigation
   const [selectedMonthIndex, setSelectedMonthIndex] = useState(() => {
@@ -61,20 +63,22 @@ export default function AcademicPlannerWorkspace() {
     return months.get(currentKey) || 0;
   });
 
-  // Plan generator hook
+  // Plan generator hook - now uses batchId from URL params
   const {
     plan,
     isGenerating,
     validation,
     publishedMonths,
+    hasExistingPlan,
     generatePlan,
     clearPlan,
     applyAdjustment,
     publishMonth,
     batch,
     hasValidSetup,
-    hasValidTimetable,
-  } = useAcademicPlanGenerator({ batchId: selectedBatchId });
+    canEditWeek,
+    getWeekStatus,
+  } = useAcademicPlanGenerator({ batchId: batchId || null });
 
   // Get weeks for current month
   const monthWeeks = useMemo(() => {
@@ -95,14 +99,12 @@ export default function AcademicPlannerWorkspace() {
     return publishedMonths.has(date.getMonth());
   }, [monthWeeks, publishedMonths]);
 
-  // Handle batch change
-  const handleBatchChange = useCallback((batchId: string) => {
-    setSelectedBatchId(batchId);
-    // Clear existing plan when batch changes
-    if (plan) {
-      clearPlan();
-    }
-  }, [plan, clearPlan]);
+  // Get actual month number for publishing
+  const currentActualMonth = useMemo(() => {
+    if (monthWeeks.weeksInMonth.length === 0) return 0;
+    const date = new Date(monthWeeks.weeksInMonth[0].startDate);
+    return date.getMonth();
+  }, [monthWeeks]);
 
   // Handle cell click
   const handleCellClick = useCallback((subjectId: string, chapterId: string | null, weekIndex: number) => {
@@ -110,14 +112,29 @@ export default function AcademicPlannerWorkspace() {
       toast.info("No chapter planned for this week");
       return;
     }
-    // TODO: Open adjustment popover
     console.log("Cell clicked:", { subjectId, chapterId, weekIndex });
   }, []);
 
   // Handle publish month
   const handlePublishMonth = useCallback(() => {
-    publishMonth(selectedMonthIndex);
-  }, [publishMonth, selectedMonthIndex]);
+    publishMonth(currentActualMonth);
+  }, [publishMonth, currentActualMonth]);
+
+  // Published months display
+  const publishedMonthsDisplay = useMemo(() => {
+    if (publishedMonths.size === 0) return null;
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return Array.from(publishedMonths)
+      .sort((a, b) => a - b)
+      .map(m => monthNames[m])
+      .join(', ');
+  }, [publishedMonths]);
+
+  // No batch selected - redirect to hub
+  if (!batchId) {
+    navigate('/institute/academic-schedule/plans');
+    return null;
+  }
 
   return (
     <div className="space-y-4">
@@ -125,13 +142,18 @@ export default function AcademicPlannerWorkspace() {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-2 min-w-0">
           <Link 
-            to="/institute/academic-schedule/batches" 
+            to="/institute/academic-schedule/plans" 
             className="text-muted-foreground hover:text-foreground transition-colors shrink-0"
           >
             <ChevronLeft className="w-4 h-4" />
           </Link>
-          <h1 className="text-lg sm:text-xl font-semibold truncate">Academic Planner</h1>
-          <Badge variant="secondary" className="bg-primary/10 text-primary gap-1 hidden sm:flex">
+          <div className="min-w-0">
+            <h1 className="text-lg sm:text-xl font-semibold truncate">
+              {batch?.className} - {batch?.name}
+            </h1>
+            <p className="text-xs text-muted-foreground">Academic Planner</p>
+          </div>
+          <Badge variant="secondary" className="bg-primary/10 text-primary gap-1 hidden sm:flex ml-2">
             <Sparkles className="w-3 h-3" />
             Auto-Sequence
           </Badge>
@@ -154,59 +176,106 @@ export default function AcademicPlannerWorkspace() {
         </div>
       </div>
 
-      {/* Control Bar */}
-      <div className="bg-card border border-border/50 rounded-xl p-3 space-y-3">
-        {/* Row 1: Batch Selection + Generate */}
-        <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-          <div className="flex items-center gap-2 flex-1">
-            <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide shrink-0 w-12">
-              Batch
-            </span>
-            <BatchPlanSelector
-              selectedBatchId={selectedBatchId}
-              onBatchChange={handleBatchChange}
-            />
-          </div>
-          
-          <div className="flex items-center gap-2">
-            {plan && (
-              <Button
-                variant="outline"
-                size="sm"
-                className="gap-1.5 h-8"
-                onClick={clearPlan}
-              >
-                <RefreshCw className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">Clear & Regenerate</span>
-                <span className="sm:hidden">Clear</span>
-              </Button>
+      {/* Plan Status Section */}
+      {(plan || hasExistingPlan) && (
+        <div className="bg-card border border-border/50 rounded-xl p-3">
+          <div className="flex flex-wrap items-center gap-3">
+            {/* Status Badge */}
+            <Badge 
+              variant="outline" 
+              className={cn(
+                "gap-1.5",
+                plan?.status === 'published' 
+                  ? "bg-green-100 text-green-700 border-green-200"
+                  : "bg-amber-100 text-amber-700 border-amber-200"
+              )}
+            >
+              {plan?.status === 'published' ? (
+                <>
+                  <Lock className="w-3 h-3" />
+                  Published
+                </>
+              ) : (
+                <>
+                  <FileEdit className="w-3 h-3" />
+                  Draft
+                </>
+              )}
+            </Badge>
+
+            {/* Published Months */}
+            {publishedMonthsDisplay && (
+              <div className="flex items-center gap-1.5 text-sm">
+                <Check className="w-4 h-4 text-green-600" />
+                <span className="text-green-700">{publishedMonthsDisplay}</span>
+              </div>
             )}
-            
+
+            {/* Stats */}
+            {plan && (
+              <>
+                <Separator orientation="vertical" className="h-4" />
+                <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <BookOpen className="w-3.5 h-3.5" />
+                  <span>{plan.subjects.length} subjects</span>
+                </div>
+                <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <Calendar className="w-3.5 h-3.5" />
+                  <span>
+                    {plan.subjects.reduce((sum, s) => sum + s.chapterAssignments.length, 0)} chapters
+                  </span>
+                </div>
+              </>
+            )}
+
+            {/* Actions */}
+            <div className="ml-auto flex items-center gap-2">
+              {plan && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-1.5 h-7 text-xs"
+                  onClick={clearPlan}
+                >
+                  <RefreshCw className="w-3 h-3" />
+                  <span className="hidden sm:inline">Regenerate</span>
+                </Button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Control Bar - Generate/Month Navigation */}
+      <div className="bg-card border border-border/50 rounded-xl p-3 space-y-3">
+        {/* Generate Row (if no plan) */}
+        {!plan && validation.isValid && (
+          <div className="flex items-center justify-center gap-3 py-4">
             <Button
-              size="sm"
-              className="gap-1.5 h-8"
+              size="default"
+              className="gap-2"
               onClick={generatePlan}
-              disabled={!selectedBatchId || isGenerating || !validation.isValid}
+              disabled={isGenerating}
             >
               {isGenerating ? (
                 <>
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  <Loader2 className="w-4 h-4 animate-spin" />
                   Generating...
                 </>
               ) : (
                 <>
-                  <Sparkles className="w-3.5 h-3.5" />
+                  <Sparkles className="w-4 h-4" />
                   Generate Plan
                 </>
               )}
             </Button>
+            <p className="text-sm text-muted-foreground hidden sm:block">
+              Auto-sequence chapters based on academic setup
+            </p>
           </div>
-        </div>
-
-        {/* Divider */}
-        {plan && <div className="w-full h-px bg-border/40" />}
+        )}
         
-        {/* Row 2: Month Navigation (only when plan exists) */}
+        {/* Month Navigation (when plan exists) */}
         {plan && (
           <div className="flex items-center gap-2">
             <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide shrink-0 w-12">
@@ -218,6 +287,7 @@ export default function AcademicPlannerWorkspace() {
                 currentWeekIndex={currentWeekIndex}
                 selectedMonthIndex={selectedMonthIndex}
                 onMonthChange={setSelectedMonthIndex}
+                publishedMonths={publishedMonths}
               />
             </div>
           </div>
@@ -225,22 +295,15 @@ export default function AcademicPlannerWorkspace() {
       </div>
 
       {/* Validation Errors */}
-      {selectedBatchId && !validation.isValid && (
+      {!validation.isValid && (
         <div className="space-y-2">
           {validation.errors.map((error, idx) => (
             <Alert key={idx} variant="destructive">
               <AlertCircle className="h-4 w-4" />
-              <AlertTitle>
-                {error.type === 'missing_timetable' ? 'Timetable Required' : 'Setup Required'}
-              </AlertTitle>
+              <AlertTitle>Setup Required</AlertTitle>
               <AlertDescription className="flex items-center justify-between">
                 <span>{error.message}</span>
-                <Link 
-                  to={error.type === 'missing_timetable' 
-                    ? '/institute/timetable' 
-                    : '/institute/academic-schedule/setup'
-                  }
-                >
+                <Link to="/institute/academic-schedule/setup">
                   <Button size="sm" variant="outline" className="ml-2">
                     Configure Now
                   </Button>
@@ -252,7 +315,7 @@ export default function AcademicPlannerWorkspace() {
       )}
 
       {/* Validation Warnings */}
-      {selectedBatchId && validation.warnings.length > 0 && validation.isValid && (
+      {validation.warnings.length > 0 && validation.isValid && !plan && (
         <Alert>
           <AlertTriangle className="h-4 w-4" />
           <AlertTitle>Warnings</AlertTitle>
@@ -266,41 +329,15 @@ export default function AcademicPlannerWorkspace() {
         </Alert>
       )}
 
-      {/* Empty State - No Batch Selected */}
-      {!selectedBatchId && (
-        <Card className="p-8">
-          <div className="text-center text-muted-foreground">
-            <Calendar className="w-12 h-12 mx-auto mb-3 opacity-30" />
-            <p className="font-medium">Select a Batch to Start</p>
-            <p className="text-sm mt-1">
-              Choose a batch from the dropdown above to generate or view its academic plan
-            </p>
-          </div>
-        </Card>
-      )}
-
-      {/* Empty State - Batch Selected but No Plan */}
-      {selectedBatchId && !plan && validation.isValid && (
+      {/* Empty State - No Plan Yet */}
+      {!plan && validation.isValid && !isGenerating && (
         <Card className="p-8">
           <div className="text-center text-muted-foreground">
             <Sparkles className="w-12 h-12 mx-auto mb-3 opacity-30" />
             <p className="font-medium">Ready to Generate Plan</p>
             <p className="text-sm mt-1 mb-4">
-              Click "Generate Plan" to auto-sequence chapters based on timetable and setup data
+              Click "Generate Plan" to auto-sequence chapters based on academic setup data
             </p>
-            <Button onClick={generatePlan} disabled={isGenerating}>
-              {isGenerating ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Generating...
-                </>
-              ) : (
-                <>
-                  <Sparkles className="w-4 h-4 mr-2" />
-                  Generate Plan
-                </>
-              )}
-            </Button>
           </div>
         </Card>
       )}
@@ -335,30 +372,11 @@ export default function AcademicPlannerWorkspace() {
         </div>
       )}
 
-      {/* Stats Summary */}
-      {plan && (
-        <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
-          <div className="flex items-center gap-1.5">
-            <span className="font-medium">Batch:</span>
-            <span>{batch?.className} - {batch?.name}</span>
-          </div>
-          <Separator orientation="vertical" className="h-4" />
-          <div className="flex items-center gap-1.5">
-            <span className="font-medium">Subjects:</span>
-            <span>{plan.subjects.length}</span>
-          </div>
-          <Separator orientation="vertical" className="h-4" />
-          <div className="flex items-center gap-1.5">
-            <span className="font-medium">Total Chapters:</span>
-            <span>
-              {plan.subjects.reduce((sum, s) => sum + s.chapterAssignments.length, 0)}
-            </span>
-          </div>
-          <Separator orientation="vertical" className="h-4" />
-          <div className="flex items-center gap-1.5">
-            <span className="font-medium">Weeks Spanned:</span>
-            <span>{plan.endWeekIndex - plan.startWeekIndex + 1}</span>
-          </div>
+      {/* Already Published Notice */}
+      {plan && isCurrentMonthPublished && (
+        <div className="flex items-center justify-end gap-2 text-sm text-green-600">
+          <Lock className="w-4 h-4" />
+          <span>{currentMonthName} is published (read-only)</span>
         </div>
       )}
     </div>
