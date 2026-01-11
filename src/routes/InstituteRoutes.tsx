@@ -66,6 +66,7 @@ const InstituteRoles = lazy(() => import("@/pages/institute/roles/Roles"));
 
 // Academic Schedule - Consolidated
 const AcademicScheduleSetup = lazy(() => import("@/pages/institute/academic-schedule/Setup"));
+const AcademicPlannerHub = lazy(() => import("@/pages/institute/academic-schedule/AcademicPlannerHub"));
 const AcademicPlannerWorkspace = lazy(() => import("@/pages/institute/academic-schedule/AcademicPlannerWorkspace"));
 const BatchHub = lazy(() => import("@/pages/institute/academic-schedule/BatchHub"));
 const ConsolidatedBatchView = lazy(() => import("@/pages/institute/academic-schedule/ConsolidatedBatchView"));
@@ -145,7 +146,8 @@ export default function InstituteRoutes() {
         
         {/* Academic Schedule - Consolidated */}
         <Route path="academic-schedule/setup" element={<LazyPage><AcademicScheduleSetup /></LazyPage>} />
-        <Route path="academic-schedule/plans" element={<LazyPage><AcademicPlannerWorkspace /></LazyPage>} />
+        <Route path="academic-schedule/plans" element={<LazyPage><AcademicPlannerHub /></LazyPage>} />
+        <Route path="academic-schedule/planner/:batchId" element={<LazyPage><AcademicPlannerWorkspace /></LazyPage>} />
         <Route path="academic-schedule/batches" element={<LazyPage><BatchHub /></LazyPage>} />
         <Route path="academic-schedule/batches/:batchId" element={<LazyPage><ConsolidatedBatchView /></LazyPage>} />
         

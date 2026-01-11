@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { ChevronLeft, ChevronRight, Calendar } from "lucide-react";
+import { ChevronLeft, ChevronRight, Calendar, Lock, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { AcademicWeek } from "@/types/academicSchedule";
@@ -9,6 +9,7 @@ interface MonthNavigatorProps {
   currentWeekIndex: number;
   selectedMonthIndex: number;
   onMonthChange: (index: number) => void;
+  publishedMonths?: Set<number>; // Optional: month numbers (0-11) that are published
 }
 
 interface MonthData {
@@ -26,14 +27,16 @@ export function MonthNavigator({
   currentWeekIndex,
   selectedMonthIndex,
   onMonthChange,
+  publishedMonths = new Set(),
 }: MonthNavigatorProps) {
   // Group weeks by month
   const months = useMemo(() => {
-    const monthMap = new Map<string, MonthData>();
+    const monthMap = new Map<string, MonthData & { monthNumber: number; isPublished: boolean }>();
     
     weeks.forEach((week, index) => {
       const date = new Date(week.startDate);
-      const monthKey = `${date.getFullYear()}-${date.getMonth()}`;
+      const monthNumber = date.getMonth();
+      const monthKey = `${date.getFullYear()}-${monthNumber}`;
       const monthName = date.toLocaleDateString('en-US', { month: 'long' });
       const shortName = date.toLocaleDateString('en-US', { month: 'short' });
       const year = date.getFullYear();
@@ -47,6 +50,8 @@ export function MonthNavigator({
           endWeekIndex: index,
           weeksInMonth: [week],
           isCurrent: false,
+          monthNumber,
+          isPublished: publishedMonths.has(monthNumber),
         });
       } else {
         const monthData = monthMap.get(monthKey)!;
@@ -67,7 +72,7 @@ export function MonthNavigator({
     }
     
     return Array.from(monthMap.values());
-  }, [weeks, currentWeekIndex]);
+  }, [weeks, currentWeekIndex, publishedMonths]);
 
   // Find current month index
   const currentMonthIdx = useMemo(() => {
@@ -116,17 +121,20 @@ export function MonthNavigator({
             key={`${month.year}-${month.name}`}
             onClick={() => onMonthChange(month.originalIndex)}
             className={cn(
-              "px-3 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap transition-all",
+              "px-3 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap transition-all flex items-center gap-1",
               month.originalIndex === selectedMonthIndex
                 ? "bg-primary text-primary-foreground shadow-sm"
+                : month.isPublished
+                ? "bg-green-100 text-green-700 border border-green-200"
                 : month.isCurrent
                 ? "bg-primary/10 text-primary border border-primary/30"
                 : "hover:bg-muted text-muted-foreground hover:text-foreground"
             )}
           >
+            {month.isPublished && <Check className="w-3 h-3" />}
             <span className="hidden sm:inline">{month.name}</span>
             <span className="sm:hidden">{month.shortName}</span>
-            {month.isCurrent && month.originalIndex !== selectedMonthIndex && (
+            {month.isCurrent && month.originalIndex !== selectedMonthIndex && !month.isPublished && (
               <span className="ml-1 text-xs">●</span>
             )}
           </button>
