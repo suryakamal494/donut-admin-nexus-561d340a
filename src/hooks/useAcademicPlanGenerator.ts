@@ -46,6 +46,7 @@ interface UseAcademicPlanGeneratorReturn {
   applyAdjustment: (adjustment: ChapterAdjustment) => void;
   publishMonth: (monthIndex: number) => void;
   loadExistingPlan: () => void;
+  reorderChapters: (subjectId: string, fromIndex: number, toIndex: number) => void;
   
   // Computed
   batch: Batch | null;
@@ -501,6 +502,69 @@ export function useAcademicPlanGenerator({
     );
   }, [publishedMonths]);
   
+  // Reorder chapters within a subject
+  const reorderChapters = useCallback((
+    subjectId: string,
+    fromIndex: number,
+    toIndex: number
+  ) => {
+    if (!plan) return;
+    if (fromIndex === toIndex) return;
+    
+    // Create a deep copy of the plan
+    const updatedPlan = JSON.parse(JSON.stringify(plan)) as BatchAcademicPlan;
+    
+    // Find the subject
+    const subjectIndex = updatedPlan.subjects.findIndex(s => s.subjectId === subjectId);
+    if (subjectIndex === -1) return;
+    
+    const subject = updatedPlan.subjects[subjectIndex];
+    
+    if (fromIndex < 0 || fromIndex >= subject.chapterAssignments.length) return;
+    if (toIndex < 0 || toIndex >= subject.chapterAssignments.length) return;
+    
+    // Swap the two chapters
+    const temp = subject.chapterAssignments[fromIndex];
+    subject.chapterAssignments[fromIndex] = subject.chapterAssignments[toIndex];
+    subject.chapterAssignments[toIndex] = temp;
+    
+    // Recalculate all week positions for the subject
+    let currentWeekStart = 0;
+    
+    // Find the minimum startWeekIndex from the original plan
+    const originalMinStart = Math.min(
+      ...plan.subjects[subjectIndex].chapterAssignments.map(c => c.startWeekIndex)
+    );
+    currentWeekStart = originalMinStart;
+    
+    subject.chapterAssignments.forEach((chapter) => {
+      const duration = chapter.endWeekIndex - chapter.startWeekIndex;
+      chapter.startWeekIndex = currentWeekStart;
+      chapter.endWeekIndex = currentWeekStart + duration;
+      
+      // Recalculate hoursPerWeek
+      chapter.hoursPerWeek = [];
+      for (let w = chapter.startWeekIndex; w <= chapter.endWeekIndex; w++) {
+        chapter.hoursPerWeek.push({ weekIndex: w, hours: subject.weeklyHours });
+      }
+      
+      currentWeekStart = chapter.endWeekIndex + 1;
+    });
+    
+    // Update the end week index of the plan
+    const maxEndWeek = Math.max(
+      ...updatedPlan.subjects.flatMap(s => 
+        s.chapterAssignments.map(c => c.endWeekIndex)
+      )
+    );
+    updatedPlan.endWeekIndex = maxEndWeek;
+    
+    setPlan(updatedPlan);
+    
+    const movedChapter = subject.chapterAssignments[toIndex];
+    toast.success(`Moved "${movedChapter.chapterName}" to position ${toIndex + 1}`);
+  }, [plan]);
+  
   return {
     plan,
     isGenerating,
@@ -513,6 +577,7 @@ export function useAcademicPlanGenerator({
     applyAdjustment,
     publishMonth,
     loadExistingPlan,
+    reorderChapters,
     batch,
     weeklyHours,
     hasValidSetup,
