@@ -11,8 +11,6 @@ import {
   Clock,
   GripVertical,
   Plus,
-  Trash2,
-  Copy,
   HelpCircle,
 } from "lucide-react";
 import { SetupProgressMatrix } from "@/components/academic-schedule";
@@ -25,6 +23,25 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+  useSortable,
+} from "@dnd-kit/sortable";
+import { restrictToVerticalAxis } from "@dnd-kit/modifiers";
+import { CSS } from "@dnd-kit/utilities";
+import type { ChapterHourAllocation } from "@/types/academicSchedule";
 
 // Unified subject colors using shorthand IDs (consistent across the platform)
 const SUBJECT_COLORS: Record<string, string> = {
@@ -46,10 +63,90 @@ const SUBJECT_COLORS: Record<string, string> = {
   jee_che: "bg-emerald-100 text-emerald-700 border-emerald-200 hover:bg-emerald-200",
 };
 
+// Sortable Chapter Row Component
+interface SortableChapterRowProps {
+  chapter: ChapterHourAllocation;
+  index: number;
+  selectedSubject: string;
+}
+
+function SortableChapterRow({ chapter, index, selectedSubject }: SortableChapterRowProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: chapter.chapterId });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+    zIndex: isDragging ? 10 : 1,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={cn(
+        "flex items-center gap-3 p-3 rounded-lg border bg-muted/30 hover:bg-muted/50 transition-colors",
+        isDragging && "shadow-lg ring-2 ring-primary/20 rotate-1"
+      )}
+    >
+      <div
+        {...attributes}
+        {...listeners}
+        className="touch-none cursor-grab active:cursor-grabbing"
+      >
+        <GripVertical className="w-4 h-4 text-muted-foreground/50 shrink-0" />
+      </div>
+      
+      <Badge variant="outline" className="shrink-0 text-xs">
+        Ch {index + 1}
+      </Badge>
+      
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-medium truncate">
+          {chapter.chapterName}
+        </p>
+        {/* Show English transliteration for Hindi chapters */}
+        {selectedSubject === "8" && chapter.chapterName.match(/[\u0900-\u097F]/) && (
+          <p className="text-xs text-muted-foreground truncate">
+            {hindiChapters.find(h => h.id === chapter.chapterId)?.name || ''}
+          </p>
+        )}
+      </div>
+      
+      <div className="flex items-center gap-2 shrink-0">
+        <Input
+          type="number"
+          defaultValue={chapter.plannedHours}
+          className="w-16 h-8 text-center text-sm"
+          min={1}
+          max={50}
+        />
+        <span className="text-xs text-muted-foreground">hrs</span>
+      </div>
+    </div>
+  );
+}
+
 export default function Setup() {
   const [selectedTrack, setSelectedTrack] = useState<"cbse" | "jee">("cbse");
-  const [selectedClass, setSelectedClass] = useState<string>("1"); // Start with Class 6
-  const [selectedSubject, setSelectedSubject] = useState<string>("mat"); // Math exists for all classes (shorthand ID)
+  const [selectedClass, setSelectedClass] = useState<string>("1");
+  const [selectedSubject, setSelectedSubject] = useState<string>("mat");
+  const [chapters, setChapters] = useState<ChapterHourAllocation[]>([]);
+
+  // Sensors for drag and drop
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
   // Get classes for the selected track
   const classes = useMemo(() => {
@@ -90,18 +187,38 @@ export default function Setup() {
     );
   }, [selectedClass, selectedSubject]);
 
+  // Update chapters state when setup changes
+  useEffect(() => {
+    if (currentSetup) {
+      setChapters([...currentSetup.chapters]);
+    } else {
+      setChapters([]);
+    }
+  }, [currentSetup]);
+
   // Reset selected subject when class or track changes to first available subject
   useEffect(() => {
     if (subjects.length > 0) {
-      // Check if current subject exists for new class
       const subjectExists = subjects.some(s => s.id === selectedSubject);
       if (!subjectExists) {
-        // Default to Math ("mat") if available, otherwise first subject
         const mathSubject = subjects.find(s => s.id === "mat");
         setSelectedSubject(mathSubject ? mathSubject.id : subjects[0].id);
       }
     }
   }, [selectedClass, selectedTrack, subjects]);
+
+  // Handle drag end for reordering
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    
+    if (over && active.id !== over.id) {
+      setChapters((items) => {
+        const oldIndex = items.findIndex(item => item.chapterId === active.id);
+        const newIndex = items.findIndex(item => item.chapterId === over.id);
+        return arrayMove(items, oldIndex, newIndex);
+      });
+    }
+  };
 
   // Build progress matrix data
   const progressMatrix = useMemo(() => {
@@ -126,8 +243,6 @@ export default function Setup() {
         classId: cls.id,
         className: `Class ${cls.name}`,
         subjects: classSubjects.map(s => {
-          // Check if any setup exists for this class + subject combination
-          // Now uses aligned class IDs
           const hasSetup = academicScheduleSetups.some(
             setup => setup.classId === cls.id && setup.subjectId === s.id
           );
@@ -142,9 +257,9 @@ export default function Setup() {
   }, [selectedTrack]);
 
   // Calculate total hours for current setup
-  const totalPlannedHours = currentSetup?.chapters.reduce(
+  const totalPlannedHours = chapters.reduce(
     (sum, ch) => sum + ch.plannedHours, 0
-  ) || 0;
+  );
 
   return (
     <div className="space-y-6">
@@ -214,24 +329,9 @@ export default function Setup() {
           {/* Subject Selector */}
           <Card className="p-4">
             <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <h3 className="font-medium text-sm text-muted-foreground">
-                  Select Subject
-                </h3>
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button variant="ghost" size="sm" className="gap-1.5 text-xs">
-                        <Copy className="w-3.5 h-3.5" />
-                        Copy from Previous
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Copy hours allocation from another class</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              </div>
+              <h3 className="font-medium text-sm text-muted-foreground">
+                Select Subject
+              </h3>
               
               <div className="flex flex-wrap gap-2">
                 {subjects.map(subject => {
@@ -280,52 +380,32 @@ export default function Setup() {
               </div>
             </CardHeader>
             <CardContent>
-              {currentSetup ? (
+              {chapters.length > 0 ? (
                 <div className="space-y-2">
-                  {currentSetup.chapters.map((chapter, index) => (
-                    <div
-                      key={chapter.chapterId}
-                      className="flex items-center gap-3 p-3 rounded-lg border bg-muted/30 hover:bg-muted/50 transition-colors group"
+                  <DndContext
+                    sensors={sensors}
+                    collisionDetection={closestCenter}
+                    onDragEnd={handleDragEnd}
+                    modifiers={[restrictToVerticalAxis]}
+                  >
+                    <SortableContext
+                      items={chapters.map(c => c.chapterId)}
+                      strategy={verticalListSortingStrategy}
                     >
-                      <GripVertical className="w-4 h-4 text-muted-foreground/50 cursor-grab shrink-0" />
-                      
-                      <Badge variant="outline" className="shrink-0 text-xs">
-                        Ch {index + 1}
-                      </Badge>
-                      
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium truncate">
-                          {chapter.chapterName}
-                        </p>
-                        {/* Show English transliteration for Hindi chapters */}
-                        {selectedSubject === "8" && chapter.chapterName.match(/[\u0900-\u097F]/) && (
-                          <p className="text-xs text-muted-foreground truncate">
-                            {hindiChapters.find(h => h.id === chapter.chapterId)?.name || ''}
-                          </p>
-                        )}
-                      </div>
-                      
-                      <div className="flex items-center gap-2 shrink-0">
-                        <Input
-                          type="number"
-                          defaultValue={chapter.plannedHours}
-                          className="w-16 h-8 text-center text-sm"
-                          min={1}
-                          max={50}
+                      {chapters.map((chapter, index) => (
+                        <SortableChapterRow
+                          key={chapter.chapterId}
+                          chapter={chapter}
+                          index={index}
+                          selectedSubject={selectedSubject}
                         />
-                        <span className="text-xs text-muted-foreground">hrs</span>
-                        
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
+                      ))}
+                    </SortableContext>
+                  </DndContext>
                   
+                  <p className="text-xs text-muted-foreground text-center pt-2">
+                    Drag to reorder chapters
+                  </p>
                 </div>
               ) : (
                 <div className="text-center py-12">
@@ -346,11 +426,11 @@ export default function Setup() {
           </Card>
 
           {/* Hours Distribution Preview */}
-          {currentSetup && (
+          {chapters.length > 0 && (
             <Card className="p-4">
               <h4 className="text-sm font-medium mb-3">Hours Distribution</h4>
               <div className="flex gap-1 h-4 rounded-full overflow-hidden bg-muted">
-                {currentSetup.chapters.map((chapter, index) => {
+                {chapters.map((chapter, index) => {
                   const widthPercent = (chapter.plannedHours / totalPlannedHours) * 100;
                   const colors = [
                     "bg-blue-500", "bg-purple-500", "bg-emerald-500", 
@@ -377,7 +457,7 @@ export default function Setup() {
                 })}
               </div>
               <div className="flex flex-wrap gap-3 mt-3">
-                {currentSetup.chapters.slice(0, 4).map((chapter, index) => {
+                {chapters.slice(0, 4).map((chapter, index) => {
                   const colors = ["bg-blue-500", "bg-purple-500", "bg-emerald-500", "bg-orange-500"];
                   return (
                     <div key={chapter.chapterId} className="flex items-center gap-1.5 text-xs">
@@ -388,9 +468,9 @@ export default function Setup() {
                     </div>
                   );
                 })}
-                {currentSetup.chapters.length > 4 && (
+                {chapters.length > 4 && (
                   <span className="text-xs text-muted-foreground">
-                    +{currentSetup.chapters.length - 4} more
+                    +{chapters.length - 4} more
                   </span>
                 )}
               </div>
