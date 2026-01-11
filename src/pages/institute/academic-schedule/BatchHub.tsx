@@ -19,6 +19,8 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { batchProgressSummaries, pendingConfirmations } from "@/data/academicScheduleData";
+import { useInstituteDriftSummary } from "@/hooks/useInstituteDriftSummary";
+import { DriftSummarySheet } from "@/components/academic-schedule/DriftSummarySheet";
 
 // Status configuration
 const getStatusConfig = (status: string) => {
@@ -65,6 +67,10 @@ export default function BatchHub() {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedClass, setSelectedClass] = useState<string>("all");
+  const [driftSheetOpen, setDriftSheetOpen] = useState(false);
+  
+  // Get institute-wide drift summary
+  const driftSummary = useInstituteDriftSummary();
 
   // Get unique classes
   const classOptions = useMemo(() => {
@@ -119,7 +125,7 @@ export default function BatchHub() {
       />
 
       {/* Quick Stats Row */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3">
         <Card className="bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20">
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
@@ -187,6 +193,36 @@ export default function BatchHub() {
               <div>
                 <p className="text-2xl font-bold">{stats.pendingCount}</p>
                 <p className="text-xs text-muted-foreground">Pending</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Drift Issues Card - NEW */}
+        <Card 
+          className={cn(
+            "cursor-pointer transition-all hover:shadow-md",
+            driftSummary.hasAnyDrift 
+              ? driftSummary.criticalCount > 0
+                ? "border-red-300 bg-red-50/50 hover:border-red-400"
+                : "border-amber-300 bg-amber-50/50 hover:border-amber-400"
+              : "hover:border-primary/30"
+          )}
+          onClick={() => setDriftSheetOpen(true)}
+        >
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2">
+              <AlertTriangle className={cn(
+                "w-5 h-5",
+                driftSummary.criticalCount > 0 
+                  ? "text-red-600" 
+                  : driftSummary.hasAnyDrift 
+                    ? "text-amber-600" 
+                    : "text-muted-foreground"
+              )} />
+              <div>
+                <p className="text-2xl font-bold">{driftSummary.totalIssues}</p>
+                <p className="text-xs text-muted-foreground">Drift Issues</p>
               </div>
             </div>
           </CardContent>
@@ -321,6 +357,12 @@ export default function BatchHub() {
       <div className="text-sm text-muted-foreground text-center">
         Showing {filteredBatches.length} of {batchProgressSummaries.length} batches
       </div>
+
+      {/* Drift Summary Sheet */}
+      <DriftSummarySheet 
+        open={driftSheetOpen} 
+        onOpenChange={setDriftSheetOpen} 
+      />
     </div>
   );
 }
