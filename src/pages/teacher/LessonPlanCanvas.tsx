@@ -227,6 +227,8 @@ const LessonPlanCanvas = () => {
         activeBlock={activeBlockType}
         chapter={context.chapter}
         subject={context.subject}
+        batchId={context.batchId}
+        batchName={context.batchName}
       />
 
       <WorkspaceCanvas
