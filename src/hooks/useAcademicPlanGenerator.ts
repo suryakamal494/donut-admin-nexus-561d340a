@@ -1,22 +1,30 @@
 // Academic Plan Generator Hook
 // Handles the auto-sequence algorithm and plan state management
+// Now decoupled from timetable data - uses academic setup and standalone mock data
 
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useEffect } from "react";
 import { Batch, batches } from "@/data/instituteData";
 import { academicScheduleSetups, academicWeeks, currentWeekIndex } from "@/data/academicScheduleData";
-import { timetableEntries } from "@/data/timetableData";
 import {
   BatchAcademicPlan,
   ChapterAdjustment,
   PlannerValidation,
   PlannerError,
   PlannerWarning,
+  SubjectPlanData,
+  DEFAULT_WEEKLY_HOURS_PER_SUBJECT,
 } from "@/types/academicPlanner";
 import {
-  generateBatchPlan,
-  getWeeklyHoursForBatch,
+  generateSubjectPlan,
   getBatchSubjects,
 } from "@/lib/academicPlannerUtils";
+import {
+  loadPlanForBatch,
+  SavedAcademicPlan,
+  publishMonthForPlan,
+  getWeekEditabilityStatus,
+  WeekEditabilityStatus,
+} from "@/data/academicPlannerData";
 import { toast } from "sonner";
 
 interface UseAcademicPlanGeneratorProps {
@@ -30,18 +38,21 @@ interface UseAcademicPlanGeneratorReturn {
   validation: PlannerValidation;
   adjustments: ChapterAdjustment[];
   publishedMonths: Set<number>;
+  hasExistingPlan: boolean;
   
   // Actions
   generatePlan: () => void;
   clearPlan: () => void;
   applyAdjustment: (adjustment: ChapterAdjustment) => void;
   publishMonth: (monthIndex: number) => void;
+  loadExistingPlan: () => void;
   
   // Computed
   batch: Batch | null;
   weeklyHours: Record<string, number>;
   hasValidSetup: boolean;
-  hasValidTimetable: boolean;
+  canEditWeek: (weekIndex: number, weekStartDate: Date) => boolean;
+  getWeekStatus: (weekIndex: number, weekStartDate: Date) => WeekEditabilityStatus;
 }
 
 export function useAcademicPlanGenerator({
@@ -51,24 +62,38 @@ export function useAcademicPlanGenerator({
   const [isGenerating, setIsGenerating] = useState(false);
   const [adjustments, setAdjustments] = useState<ChapterAdjustment[]>([]);
   const [publishedMonths, setPublishedMonths] = useState<Set<number>>(new Set());
+  const [hasExistingPlan, setHasExistingPlan] = useState(false);
   
   // Get batch data
   const batch = useMemo(() => {
     return batches.find(b => b.id === batchId) || null;
   }, [batchId]);
   
-  // Get weekly hours from timetable
+  // Get weekly hours from academic setup (not timetable!)
+  // Calculate based on total planned hours / estimated weeks
   const weeklyHours = useMemo(() => {
-    if (!batchId) return {};
-    return getWeeklyHoursForBatch(batchId, timetableEntries);
-  }, [batchId]);
-  
-  // Check if batch has valid timetable data
-  const hasValidTimetable = useMemo(() => {
-    if (!batchId) return false;
-    const hours = Object.values(weeklyHours);
-    return hours.length > 0 && hours.some(h => h > 0);
-  }, [batchId, weeklyHours]);
+    if (!batch) return {};
+    
+    const batchSubjects = getBatchSubjects(batch);
+    const hoursBySubject: Record<string, number> = {};
+    
+    batchSubjects.forEach(({ subjectId }) => {
+      // Find setup for this subject
+      const setup = academicScheduleSetups.find(s => s.subjectId === subjectId);
+      
+      if (setup && setup.chapters.length > 0) {
+        // Calculate total hours from setup
+        const totalHours = setup.chapters.reduce((sum, ch) => sum + ch.plannedHours, 0);
+        // Estimate weekly hours (assuming ~20 weeks per term)
+        const estimatedWeeks = 20;
+        hoursBySubject[subjectId] = Math.ceil(totalHours / estimatedWeeks);
+      } else {
+        hoursBySubject[subjectId] = DEFAULT_WEEKLY_HOURS_PER_SUBJECT;
+      }
+    });
+    
+    return hoursBySubject;
+  }, [batch]);
   
   // Check if batch has valid academic setup
   const hasValidSetup = useMemo(() => {
@@ -85,7 +110,44 @@ export function useAcademicPlanGenerator({
     return subjectsWithSetup.length > 0;
   }, [batch]);
   
-  // Validation
+  // Load existing plan on batch change
+  useEffect(() => {
+    if (batchId) {
+      const existingPlan = loadPlanForBatch(batchId);
+      if (existingPlan) {
+        setHasExistingPlan(true);
+        // Convert saved plan to BatchAcademicPlan format
+        setPlan({
+          id: existingPlan.id,
+          batchId: existingPlan.batchId,
+          batchName: existingPlan.batchName,
+          classId: `class-${existingPlan.className.match(/\d+/)?.[0] || '0'}`,
+          className: existingPlan.className,
+          academicYear: existingPlan.academicYear,
+          subjects: existingPlan.subjects,
+          startWeekIndex: existingPlan.startWeekIndex,
+          endWeekIndex: existingPlan.endWeekIndex,
+          status: existingPlan.status,
+          generatedAt: existingPlan.createdAt,
+          publishedAt: existingPlan.status === 'published' ? existingPlan.lastModifiedAt : undefined,
+        });
+        setPublishedMonths(new Set(existingPlan.publishedMonths));
+        setAdjustments([]);
+      } else {
+        setHasExistingPlan(false);
+        setPlan(null);
+        setPublishedMonths(new Set());
+        setAdjustments([]);
+      }
+    } else {
+      setHasExistingPlan(false);
+      setPlan(null);
+      setPublishedMonths(new Set());
+      setAdjustments([]);
+    }
+  }, [batchId]);
+  
+  // Validation - simplified without timetable requirement
   const validation = useMemo((): PlannerValidation => {
     const errors: PlannerError[] = [];
     const warnings: PlannerWarning[] = [];
@@ -94,12 +156,8 @@ export function useAcademicPlanGenerator({
       return { isValid: false, errors: [], warnings: [] };
     }
     
-    if (!hasValidTimetable) {
-      errors.push({
-        type: 'missing_timetable',
-        message: 'No timetable configured for this batch. Please set up the timetable first.',
-      });
-    }
+    // We no longer require timetable data!
+    // Just check for academic setup
     
     if (!hasValidSetup) {
       errors.push({
@@ -130,9 +188,33 @@ export function useAcademicPlanGenerator({
       errors,
       warnings,
     };
-  }, [batchId, batch, hasValidTimetable, hasValidSetup]);
+  }, [batchId, batch, hasValidSetup]);
   
-  // Generate plan
+  // Load existing plan
+  const loadExistingPlan = useCallback(() => {
+    if (!batchId) return;
+    
+    const existingPlan = loadPlanForBatch(batchId);
+    if (existingPlan) {
+      setPlan({
+        id: existingPlan.id,
+        batchId: existingPlan.batchId,
+        batchName: existingPlan.batchName,
+        classId: `class-${existingPlan.className.match(/\d+/)?.[0] || '0'}`,
+        className: existingPlan.className,
+        academicYear: existingPlan.academicYear,
+        subjects: existingPlan.subjects,
+        startWeekIndex: existingPlan.startWeekIndex,
+        endWeekIndex: existingPlan.endWeekIndex,
+        status: existingPlan.status,
+        generatedAt: existingPlan.createdAt,
+      });
+      setPublishedMonths(new Set(existingPlan.publishedMonths));
+      toast.success("Loaded existing plan");
+    }
+  }, [batchId]);
+  
+  // Generate plan - now uses academic setup hours instead of timetable
   const generatePlan = useCallback(() => {
     if (!batch) {
       toast.error("Please select a batch first");
@@ -146,36 +228,77 @@ export function useAcademicPlanGenerator({
     
     setIsGenerating(true);
     
-    // Simulate async generation (in real app, this might call an API)
+    // Simulate async generation
     setTimeout(() => {
-      const generatedPlan = generateBatchPlan(
-        batch,
-        academicScheduleSetups,
-        timetableEntries,
-        academicWeeks,
-        0 // Start from first week
+      const batchSubjects = getBatchSubjects(batch);
+      const subjects: SubjectPlanData[] = [];
+      
+      batchSubjects.forEach(({ subjectId, subjectName }) => {
+        const setup = academicScheduleSetups.find(s => s.subjectId === subjectId);
+        
+        if (!setup || !setup.chapters.length) {
+          subjects.push({
+            subjectId,
+            subjectName,
+            weeklyHours: weeklyHours[subjectId] || DEFAULT_WEEKLY_HOURS_PER_SUBJECT,
+            totalPlannedHours: 0,
+            chapterAssignments: [],
+          });
+          return;
+        }
+        
+        const subjectWeeklyHours = weeklyHours[subjectId] || DEFAULT_WEEKLY_HOURS_PER_SUBJECT;
+        const subjectPlan = generateSubjectPlan(
+          subjectId,
+          subjectName,
+          setup.chapters,
+          subjectWeeklyHours,
+          0, // Start from first week
+          academicWeeks.length
+        );
+        
+        subjects.push(subjectPlan);
+      });
+      
+      // Calculate end week index
+      const maxEndWeek = Math.max(
+        ...subjects.flatMap(s => 
+          s.chapterAssignments.map(c => c.endWeekIndex)
+        ).filter(w => w !== undefined),
+        0
       );
       
-      if (generatedPlan) {
-        setPlan(generatedPlan);
-        setAdjustments([]);
-        
-        const totalChapters = generatedPlan.subjects.reduce(
-          (sum, s) => sum + s.chapterAssignments.length, 
-          0
-        );
-        const totalWeeks = generatedPlan.endWeekIndex - generatedPlan.startWeekIndex + 1;
-        
-        toast.success(
-          `Plan generated: ${generatedPlan.subjects.length} subjects, ${totalChapters} chapters across ${totalWeeks} weeks`
-        );
-      } else {
-        toast.error("Failed to generate plan");
-      }
+      const generatedPlan: BatchAcademicPlan = {
+        id: `plan-${batch.id}-${Date.now()}`,
+        batchId: batch.id,
+        batchName: batch.name,
+        classId: batch.classId,
+        className: batch.className,
+        academicYear: batch.academicYear,
+        subjects,
+        startWeekIndex: 0,
+        endWeekIndex: maxEndWeek,
+        status: 'draft',
+        generatedAt: new Date().toISOString(),
+      };
+      
+      setPlan(generatedPlan);
+      setAdjustments([]);
+      setPublishedMonths(new Set());
+      
+      const totalChapters = subjects.reduce(
+        (sum, s) => sum + s.chapterAssignments.length, 
+        0
+      );
+      const totalWeeks = maxEndWeek + 1;
+      
+      toast.success(
+        `Plan generated: ${subjects.length} subjects, ${totalChapters} chapters across ${totalWeeks} weeks`
+      );
       
       setIsGenerating(false);
     }, 500);
-  }, [batch, validation.isValid]);
+  }, [batch, validation.isValid, weeklyHours]);
   
   // Clear plan
   const clearPlan = useCallback(() => {
@@ -329,7 +452,21 @@ export function useAcademicPlanGenerator({
   
   // Publish month
   const publishMonth = useCallback((monthIndex: number) => {
-    setPublishedMonths(prev => new Set([...prev, monthIndex]));
+    if (!batchId) return;
+    
+    // Get the actual month number from the month index
+    const monthWeeks = academicWeeks.filter((week, idx) => {
+      const date = new Date(week.startDate);
+      // Group by month and check index
+      return true; // We need to map monthIndex to actual month
+    });
+    
+    // For now, use monthIndex directly as month number (0 = Jan, etc.)
+    // In production, this should map to actual calendar months
+    const actualMonth = monthIndex;
+    
+    setPublishedMonths(prev => new Set([...prev, actualMonth]));
+    publishMonthForPlan(batchId, actualMonth);
     
     if (plan) {
       setPlan({
@@ -340,7 +477,29 @@ export function useAcademicPlanGenerator({
     }
     
     toast.success("Month published successfully");
-  }, [plan]);
+  }, [plan, batchId]);
+  
+  // Check if a week can be edited
+  const canEditWeek = useCallback((weekIndex: number, weekStartDate: Date): boolean => {
+    // Past weeks cannot be edited
+    if (weekIndex < currentWeekIndex) return false;
+    
+    // Published months cannot be edited
+    const weekMonth = weekStartDate.getMonth();
+    if (publishedMonths.has(weekMonth)) return false;
+    
+    return true;
+  }, [publishedMonths]);
+  
+  // Get week editability status
+  const getWeekStatus = useCallback((weekIndex: number, weekStartDate: Date): WeekEditabilityStatus => {
+    return getWeekEditabilityStatus(
+      weekIndex,
+      currentWeekIndex,
+      Array.from(publishedMonths),
+      weekStartDate
+    );
+  }, [publishedMonths]);
   
   return {
     plan,
@@ -348,13 +507,16 @@ export function useAcademicPlanGenerator({
     validation,
     adjustments,
     publishedMonths,
+    hasExistingPlan,
     generatePlan,
     clearPlan,
     applyAdjustment,
     publishMonth,
+    loadExistingPlan,
     batch,
     weeklyHours,
     hasValidSetup,
-    hasValidTimetable,
+    canEditWeek,
+    getWeekStatus,
   };
 }
