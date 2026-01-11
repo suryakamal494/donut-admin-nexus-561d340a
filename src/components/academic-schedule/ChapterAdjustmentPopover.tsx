@@ -1,7 +1,6 @@
 // Chapter Adjustment Popover Component
 // Quick adjustment actions when clicking a chapter cell
 
-import { useState } from "react";
 import {
   Popover,
   PopoverContent,
@@ -18,7 +17,6 @@ import {
   Info,
 } from "lucide-react";
 import { ChapterAdjustment, AdjustmentType } from "@/types/academicPlanner";
-import { cn } from "@/lib/utils";
 
 interface ChapterAdjustmentPopoverProps {
   isOpen: boolean;
