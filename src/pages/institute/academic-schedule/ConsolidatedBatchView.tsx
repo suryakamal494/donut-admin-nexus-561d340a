@@ -7,6 +7,11 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
@@ -331,16 +336,46 @@ export default function ConsolidatedBatchView() {
                                 const showBar = chapterIdx <= weekIdx && weekIdx < chapterIdx + 2;
                                 const weekIndex = academicWeeks.findIndex(w => w.startDate === week.startDate);
                                 const isPast = weekIndex < currentWeekIndex;
+                                const isCurrent = weekIndex === currentWeekIndex;
+                                
+                                // Calculate estimated hours for this bar segment
+                                const hoursPerWeek = Math.ceil(chapter.plannedHours / 2);
+                                const isFirstBar = weekIdx === chapterIdx;
+                                const isLastBar = weekIdx === chapterIdx + 1;
+                                
+                                // Format dates for tooltip
+                                const startDate = new Date(week.startDate);
+                                const endDate = new Date(week.endDate);
+                                const formatDate = (d: Date) => d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+                                
+                                // Determine status text
+                                const statusText = isCompleted ? "✓ Completed" : 
+                                  isCurrent && isPast ? "In Progress" : 
+                                  isPast ? "Planned" : "Upcoming";
                                 
                                 return (
                                   <div key={week.startDate} className="h-6 flex items-center justify-center">
                                     {showBar && (
-                                      <div className={cn(
-                                        "h-4 w-full rounded mx-1",
-                                        isCompleted ? "bg-emerald-200" :
-                                        isCurrent ? "bg-primary/30" :
-                                        isPast ? "bg-muted" : "bg-muted/50"
-                                      )} />
+                                      <Tooltip>
+                                        <TooltipTrigger asChild>
+                                          <div className={cn(
+                                            "h-4 w-full rounded mx-1 cursor-pointer transition-all hover:scale-y-125 hover:shadow-sm",
+                                            isCompleted ? "bg-emerald-200 hover:bg-emerald-300" :
+                                            isCurrent ? "bg-primary/30 hover:bg-primary/40" :
+                                            isPast ? "bg-muted hover:bg-muted/80" : "bg-muted/50 hover:bg-muted/70"
+                                          )} />
+                                        </TooltipTrigger>
+                                        <TooltipContent side="top" className="max-w-xs">
+                                          <div className="space-y-1">
+                                            <p className="font-semibold text-sm">{chapter.chapterName}</p>
+                                            <div className="text-xs text-muted-foreground space-y-0.5">
+                                              <p>📅 {formatDate(startDate)} - {formatDate(endDate)}</p>
+                                              <p>⏱️ {hoursPerWeek}h {isFirstBar ? "(start)" : isLastBar ? "(end)" : ""}</p>
+                                              <p>📊 {statusText}</p>
+                                            </div>
+                                          </div>
+                                        </TooltipContent>
+                                      </Tooltip>
                                     )}
                                   </div>
                                 );
