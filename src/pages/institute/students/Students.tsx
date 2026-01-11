@@ -178,7 +178,7 @@ const StudentRow = React.memo(({
         </div>
       </div>
     </TableCell>
-    <TableCell className="text-sm">{student.rollNumber}</TableCell>
+    <TableCell className="text-sm">{student.studentMobile}</TableCell>
     <TableCell className="text-muted-foreground hidden sm:table-cell text-sm">
       @{student.username}
     </TableCell>
@@ -288,7 +288,7 @@ const Students = () => {
           (student) =>
             student.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
             student.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            student.rollNumber.includes(searchQuery)
+            student.studentMobile?.includes(searchQuery)
         );
 
         if (filteredStudents.length > 0 || !searchQuery) {
