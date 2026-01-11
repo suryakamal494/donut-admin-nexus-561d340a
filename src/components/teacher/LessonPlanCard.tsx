@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import { type LessonPlan } from "@/data/teacherData";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface LessonPlanCardProps {
   plan: LessonPlan;
@@ -41,15 +42,16 @@ const blockTypeIcons = {
   homework: ClipboardList,
 };
 
-const blockTypeColors = {
-  explain: "text-[hsl(var(--donut-coral))] bg-[hsl(var(--donut-coral))]/10",
-  demonstrate: "text-[hsl(var(--donut-orange))] bg-[hsl(var(--donut-orange))]/10",
-  quiz: "text-[hsl(var(--donut-pink))] bg-[hsl(var(--donut-pink))]/10",
-  homework: "text-purple-600 bg-purple-50",
+const blockTypeLabels = {
+  explain: "Explain",
+  demonstrate: "Demo",
+  quiz: "Quiz",
+  homework: "HW",
 };
 
 export const LessonPlanCard = ({ plan, onClone, onDelete }: LessonPlanCardProps) => {
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
 
   // Calculate block counts by type
   const blockCounts = plan.blocks.reduce((acc, block) => {
@@ -69,21 +71,24 @@ export const LessonPlanCard = ({ plan, onClone, onDelete }: LessonPlanCardProps)
       case "draft":
         return { 
           label: "Draft", 
-          className: "bg-amber-50 text-amber-700 border-amber-200" 
+          className: "bg-amber-50 text-amber-700 border-amber-200",
+          dotColor: "bg-amber-500"
         };
       case "ready":
         return { 
           label: "Ready", 
-          className: "bg-emerald-50 text-emerald-700 border-emerald-200" 
+          className: "bg-emerald-50 text-emerald-700 border-emerald-200",
+          dotColor: "bg-emerald-500"
         };
       case "used":
         return { 
           label: "Used", 
           className: "bg-blue-50 text-blue-700 border-blue-200",
-          icon: CheckCircle2
+          icon: CheckCircle2,
+          dotColor: "bg-blue-500"
         };
       default:
-        return { label: status, className: "bg-muted text-muted-foreground" };
+        return { label: status, className: "bg-muted text-muted-foreground", dotColor: "bg-muted-foreground" };
     }
   };
 
@@ -112,20 +117,26 @@ export const LessonPlanCard = ({ plan, onClone, onDelete }: LessonPlanCardProps)
 
   return (
     <Card 
-      className="card-premium group hover:shadow-lg transition-all duration-300 cursor-pointer overflow-hidden"
+      className="card-premium group hover:shadow-lg transition-all duration-300 cursor-pointer overflow-hidden border-0 shadow-sm"
       onClick={handleViewPlan}
     >
-      <CardContent className="p-0">
+      {/* Subtle Gradient Header */}
+      <div className="h-1 bg-gradient-to-r from-teal-400 via-cyan-400 to-teal-400" />
+      
+      <CardContent className={cn("p-0", isMobile ? "p-0" : "p-0")}>
         {/* Header with Status and Actions */}
-        <div className="flex items-center justify-between p-3 pb-0">
+        <div className={cn(
+          "flex items-center justify-between",
+          isMobile ? "px-3 pt-2.5" : "px-4 pt-3"
+        )}>
           <div className="flex items-center gap-2">
-            <Badge variant="outline" className={cn("text-[10px] font-medium", statusConfig.className)}>
+            <Badge variant="outline" className={cn("text-[10px] font-medium px-2 py-0.5", statusConfig.className)}>
               {StatusIcon && <StatusIcon className="w-3 h-3 mr-1" />}
               {statusConfig.label}
             </Badge>
             {plan.usedDate && (
               <span className="text-[10px] text-muted-foreground">
-                • Used {new Date(plan.usedDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                {new Date(plan.usedDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
               </span>
             )}
           </div>
@@ -135,7 +146,10 @@ export const LessonPlanCard = ({ plan, onClone, onDelete }: LessonPlanCardProps)
               <Button 
                 variant="ghost" 
                 size="icon" 
-                className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
+                className={cn(
+                  "h-7 w-7 transition-opacity",
+                  isMobile ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+                )}
               >
                 <MoreVertical className="w-4 h-4" />
               </Button>
@@ -159,58 +173,46 @@ export const LessonPlanCard = ({ plan, onClone, onDelete }: LessonPlanCardProps)
         </div>
 
         {/* Main Content */}
-        <div className="p-3 pt-2">
-          {/* Chapter Badge */}
-          <div className="flex items-center gap-2 mb-2">
-            <Badge variant="secondary" className="text-[10px] bg-muted/50 font-normal">
-              📚 {plan.chapter}
-            </Badge>
-          </div>
+        <div className={cn(
+          isMobile ? "px-3 pt-2 pb-2" : "px-4 pt-2.5 pb-2.5"
+        )}>
+          {/* Chapter Name - Primary colored text */}
+          <p className="text-xs font-medium text-teal-600 mb-1.5">
+            📚 {plan.chapter}
+          </p>
 
           {/* Title */}
-          <h3 className="font-semibold text-foreground text-sm line-clamp-1 mb-1.5">
+          <h3 className={cn(
+            "font-semibold text-foreground mb-3",
+            isMobile ? "text-sm line-clamp-1" : "text-sm line-clamp-2"
+          )}>
             {plan.title}
           </h3>
 
-          {/* Topics */}
-          <div className="space-y-1 mb-3">
-            {plan.topics?.slice(0, 2).map((topic, idx) => (
-              <p key={idx} className="text-xs text-muted-foreground line-clamp-1 flex items-center gap-1.5">
-                <span className="w-1 h-1 rounded-full bg-muted-foreground/50" />
-                {topic}
-              </p>
-            ))}
-            {plan.topics && plan.topics.length > 2 && (
-              <p className="text-[10px] text-muted-foreground">
-                +{plan.topics.length - 2} more topics
-              </p>
-            )}
-          </div>
-
-          {/* Block Type Summary */}
-          <div className="flex items-center gap-1.5 mb-3">
+          {/* Block Type Summary - Compact inline row */}
+          <div className="flex items-center gap-1.5 flex-wrap mb-3">
             {Object.entries(blockCounts).map(([type, count]) => {
               const Icon = blockTypeIcons[type as keyof typeof blockTypeIcons];
-              const colorClass = blockTypeColors[type as keyof typeof blockTypeColors];
+              const label = blockTypeLabels[type as keyof typeof blockTypeLabels];
               if (!Icon) return null;
               
               return (
                 <div 
                   key={type}
-                  className={cn(
-                    "flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-medium",
-                    colorClass
-                  )}
+                  className="flex items-center gap-1 px-2 py-1 rounded-full bg-muted/60 text-muted-foreground text-[10px] font-medium"
                 >
                   <Icon className="w-3 h-3" />
-                  <span>{count}</span>
+                  <span>{label} {count}</span>
                 </div>
               );
             })}
           </div>
 
           {/* Meta Info */}
-          <div className="flex items-center gap-3 text-[11px] text-muted-foreground border-t border-border/50 pt-2.5">
+          <div className={cn(
+            "flex items-center gap-3 text-muted-foreground border-t border-border/40 pt-2.5",
+            isMobile ? "text-[10px]" : "text-[11px]"
+          )}>
             <span className="flex items-center gap-1">
               <Users className="w-3 h-3" />
               {plan.batchName}
@@ -219,7 +221,7 @@ export const LessonPlanCard = ({ plan, onClone, onDelete }: LessonPlanCardProps)
               <Clock className="w-3 h-3" />
               {totalDuration || plan.totalDuration}m
             </span>
-            <span className="flex items-center gap-1">
+            <span className="flex items-center gap-1 ml-auto">
               <Calendar className="w-3 h-3" />
               {new Date(plan.scheduledDate).toLocaleDateString('en-US', { 
                 month: 'short', 
@@ -230,11 +232,14 @@ export const LessonPlanCard = ({ plan, onClone, onDelete }: LessonPlanCardProps)
         </div>
 
         {/* Footer with View Button */}
-        <div className="px-3 pb-3 pt-0">
+        <div className={cn(
+          "pt-0",
+          isMobile ? "px-3 pb-3" : "px-4 pb-3"
+        )}>
           <Button 
             variant="outline" 
             size="sm" 
-            className="w-full h-8 text-xs group-hover:bg-primary group-hover:text-primary-foreground transition-colors"
+            className="w-full h-8 text-xs border-teal-200 text-teal-700 hover:bg-teal-50 hover:text-teal-800 hover:border-teal-300 transition-colors"
             onClick={handleViewPlan}
           >
             <Eye className="w-3 h-3 mr-1.5" />
