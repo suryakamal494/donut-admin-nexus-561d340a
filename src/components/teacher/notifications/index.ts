@@ -5,3 +5,4 @@ export { TeacherNotificationFilters } from './TeacherNotificationFilters';
 export { TeacherNotificationList } from './TeacherNotificationList';
 export { PushNotificationBanner } from './PushNotificationBanner';
 export { PushNotificationSettings } from './PushNotificationSettings';
+export { NotificationPreferences } from './NotificationPreferences';

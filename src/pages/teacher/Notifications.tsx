@@ -5,7 +5,8 @@ import { Badge } from "@/components/ui/badge";
 import { 
   TeacherNotificationFilters, 
   TeacherNotificationList,
-  PushNotificationSettings 
+  PushNotificationSettings,
+  NotificationPreferences 
 } from "@/components/teacher/notifications";
 import { useTeacherNotifications } from "@/hooks/useTeacherNotifications";
 
@@ -82,9 +83,10 @@ const TeacherNotifications = () => {
           />
         </div>
         
-        {/* Push Notification Settings */}
-        <div className="mb-6">
+        {/* Settings Section */}
+        <div className="space-y-4 mb-6">
           <PushNotificationSettings />
+          <NotificationPreferences />
         </div>
         
         {/* Notification List */}
