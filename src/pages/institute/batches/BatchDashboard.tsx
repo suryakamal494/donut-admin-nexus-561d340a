@@ -251,7 +251,7 @@ const BatchDashboard = () => {
                       </div>
                       <div>
                         <p className="text-sm font-medium text-foreground">{student.name}</p>
-                        <p className="text-xs text-muted-foreground">Roll: {student.rollNumber}</p>
+                        <p className="text-xs text-muted-foreground">@{student.username}</p>
                       </div>
                     </div>
                     <Badge

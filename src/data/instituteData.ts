@@ -62,23 +62,20 @@ export interface Student {
   // Basic Info
   name: string;
   username: string;
-  rollNumber: string;
   batchId: string;
   batchName: string;
   className: string;
   status: "active" | "inactive";
   createdAt: string;
   
-  // Personal Information
-  dateOfBirth?: string;
-  gender?: "male" | "female" | "other";
-  bloodGroup?: "A+" | "A-" | "B+" | "B-" | "O+" | "O-" | "AB+" | "AB-";
-  aadharNumber?: string;
+  // Personal Information (Required)
+  dateOfBirth: string;
+  gender: "male" | "female" | "other";
+  studentMobile: string;
+  studentEmail: string;
   
-  // Contact Information
-  studentMobile?: string;
-  studentEmail?: string;
-  whatsappNumber?: string;
+  // Personal Information (Optional)
+  aadharNumber?: string;
   
   // Parent/Guardian Information
   fatherName?: string;
@@ -103,13 +100,6 @@ export interface Student {
   admissionDate?: string;
   admissionNumber?: string;
   transportRequired?: boolean;
-  
-  // Emergency & Medical
-  emergencyContactName?: string;
-  emergencyContactNumber?: string;
-  emergencyContactRelation?: string;
-  medicalConditions?: string;
-  allergies?: string;
 }
 
 export interface TimetableSlot {
@@ -608,46 +598,46 @@ export const teachers: Teacher[] = [
 // Sample Students - Expanded dataset for scalability testing
 export const students: Student[] = [
   // Class 10 - Section A (batch-10a)
-  { id: "student-1", name: "Aarav Patel", username: "aarav.patel", rollNumber: "001", batchId: "batch-10a", batchName: "Section A", className: "Class 10", status: "active", createdAt: "2024-04-01" },
-  { id: "student-2", name: "Diya Sharma", username: "diya.sharma", rollNumber: "002", batchId: "batch-10a", batchName: "Section A", className: "Class 10", status: "active", createdAt: "2024-04-01" },
-  { id: "student-3", name: "Arjun Singh", username: "arjun.singh", rollNumber: "003", batchId: "batch-10a", batchName: "Section A", className: "Class 10", status: "active", createdAt: "2024-04-01" },
-  { id: "student-4", name: "Ananya Gupta", username: "ananya.gupta", rollNumber: "004", batchId: "batch-10a", batchName: "Section A", className: "Class 10", status: "active", createdAt: "2024-04-01" },
-  { id: "student-5", name: "Kavya Nair", username: "kavya.nair", rollNumber: "005", batchId: "batch-10a", batchName: "Section A", className: "Class 10", status: "active", createdAt: "2024-04-01" },
-  { id: "student-6", name: "Rohan Desai", username: "rohan.desai", rollNumber: "006", batchId: "batch-10a", batchName: "Section A", className: "Class 10", status: "inactive", createdAt: "2024-04-01" },
+  { id: "student-1", name: "Aarav Patel", username: "aarav.patel", batchId: "batch-10a", batchName: "Section A", className: "Class 10", status: "active", createdAt: "2024-04-01", dateOfBirth: "2010-05-15", gender: "male", studentMobile: "9876543210", studentEmail: "aarav.patel@school.com" },
+  { id: "student-2", name: "Diya Sharma", username: "diya.sharma", batchId: "batch-10a", batchName: "Section A", className: "Class 10", status: "active", createdAt: "2024-04-01", dateOfBirth: "2010-08-22", gender: "female", studentMobile: "9876543211", studentEmail: "diya.sharma@school.com" },
+  { id: "student-3", name: "Arjun Singh", username: "arjun.singh", batchId: "batch-10a", batchName: "Section A", className: "Class 10", status: "active", createdAt: "2024-04-01", dateOfBirth: "2010-03-10", gender: "male", studentMobile: "9876543212", studentEmail: "arjun.singh@school.com" },
+  { id: "student-4", name: "Ananya Gupta", username: "ananya.gupta", batchId: "batch-10a", batchName: "Section A", className: "Class 10", status: "active", createdAt: "2024-04-01", dateOfBirth: "2010-11-05", gender: "female", studentMobile: "9876543213", studentEmail: "ananya.gupta@school.com" },
+  { id: "student-5", name: "Kavya Nair", username: "kavya.nair", batchId: "batch-10a", batchName: "Section A", className: "Class 10", status: "active", createdAt: "2024-04-01", dateOfBirth: "2010-07-18", gender: "female", studentMobile: "9876543214", studentEmail: "kavya.nair@school.com" },
+  { id: "student-6", name: "Rohan Desai", username: "rohan.desai", batchId: "batch-10a", batchName: "Section A", className: "Class 10", status: "inactive", createdAt: "2024-04-01", dateOfBirth: "2010-01-25", gender: "male", studentMobile: "9876543215", studentEmail: "rohan.desai@school.com" },
   
   // Class 10 - Section B (batch-10b)
-  { id: "student-7", name: "Vihaan Kumar", username: "vihaan.kumar", rollNumber: "001", batchId: "batch-10b", batchName: "Section B", className: "Class 10", status: "active", createdAt: "2024-04-01" },
-  { id: "student-8", name: "Aanya Mehta", username: "aanya.mehta", rollNumber: "002", batchId: "batch-10b", batchName: "Section B", className: "Class 10", status: "active", createdAt: "2024-04-01" },
-  { id: "student-9", name: "Advait Rao", username: "advait.rao", rollNumber: "003", batchId: "batch-10b", batchName: "Section B", className: "Class 10", status: "active", createdAt: "2024-04-01" },
-  { id: "student-10", name: "Myra Kapoor", username: "myra.kapoor", rollNumber: "004", batchId: "batch-10b", batchName: "Section B", className: "Class 10", status: "active", createdAt: "2024-04-01" },
+  { id: "student-7", name: "Vihaan Kumar", username: "vihaan.kumar", batchId: "batch-10b", batchName: "Section B", className: "Class 10", status: "active", createdAt: "2024-04-01", dateOfBirth: "2010-04-12", gender: "male", studentMobile: "9876543216", studentEmail: "vihaan.kumar@school.com" },
+  { id: "student-8", name: "Aanya Mehta", username: "aanya.mehta", batchId: "batch-10b", batchName: "Section B", className: "Class 10", status: "active", createdAt: "2024-04-01", dateOfBirth: "2010-09-30", gender: "female", studentMobile: "9876543217", studentEmail: "aanya.mehta@school.com" },
+  { id: "student-9", name: "Advait Rao", username: "advait.rao", batchId: "batch-10b", batchName: "Section B", className: "Class 10", status: "active", createdAt: "2024-04-01", dateOfBirth: "2010-06-08", gender: "male", studentMobile: "9876543218", studentEmail: "advait.rao@school.com" },
+  { id: "student-10", name: "Myra Kapoor", username: "myra.kapoor", batchId: "batch-10b", batchName: "Section B", className: "Class 10", status: "active", createdAt: "2024-04-01", dateOfBirth: "2010-02-14", gender: "female", studentMobile: "9876543219", studentEmail: "myra.kapoor@school.com" },
   
   // Class 9 - Section A (batch-9a)
-  { id: "student-11", name: "Ishaan Reddy", username: "ishaan.reddy", rollNumber: "001", batchId: "batch-9a", batchName: "Section A", className: "Class 9", status: "active", createdAt: "2024-04-01" },
-  { id: "student-12", name: "Saanvi Joshi", username: "saanvi.joshi", rollNumber: "002", batchId: "batch-9a", batchName: "Section A", className: "Class 9", status: "active", createdAt: "2024-04-01" },
-  { id: "student-13", name: "Vivaan Malhotra", username: "vivaan.malhotra", rollNumber: "003", batchId: "batch-9a", batchName: "Section A", className: "Class 9", status: "active", createdAt: "2024-04-01" },
-  { id: "student-14", name: "Anika Saxena", username: "anika.saxena", rollNumber: "004", batchId: "batch-9a", batchName: "Section A", className: "Class 9", status: "inactive", createdAt: "2024-04-01" },
-  { id: "student-15", name: "Dhruv Pandey", username: "dhruv.pandey", rollNumber: "005", batchId: "batch-9a", batchName: "Section A", className: "Class 9", status: "active", createdAt: "2024-04-01" },
+  { id: "student-11", name: "Ishaan Reddy", username: "ishaan.reddy", batchId: "batch-9a", batchName: "Section A", className: "Class 9", status: "active", createdAt: "2024-04-01", dateOfBirth: "2011-03-20", gender: "male", studentMobile: "9876543220", studentEmail: "ishaan.reddy@school.com" },
+  { id: "student-12", name: "Saanvi Joshi", username: "saanvi.joshi", batchId: "batch-9a", batchName: "Section A", className: "Class 9", status: "active", createdAt: "2024-04-01", dateOfBirth: "2011-07-15", gender: "female", studentMobile: "9876543221", studentEmail: "saanvi.joshi@school.com" },
+  { id: "student-13", name: "Vivaan Malhotra", username: "vivaan.malhotra", batchId: "batch-9a", batchName: "Section A", className: "Class 9", status: "active", createdAt: "2024-04-01", dateOfBirth: "2011-11-02", gender: "male", studentMobile: "9876543222", studentEmail: "vivaan.malhotra@school.com" },
+  { id: "student-14", name: "Anika Saxena", username: "anika.saxena", batchId: "batch-9a", batchName: "Section A", className: "Class 9", status: "inactive", createdAt: "2024-04-01", dateOfBirth: "2011-05-28", gender: "female", studentMobile: "9876543223", studentEmail: "anika.saxena@school.com" },
+  { id: "student-15", name: "Dhruv Pandey", username: "dhruv.pandey", batchId: "batch-9a", batchName: "Section A", className: "Class 9", status: "active", createdAt: "2024-04-01", dateOfBirth: "2011-09-10", gender: "male", studentMobile: "9876543224", studentEmail: "dhruv.pandey@school.com" },
   
   // Class 9 - Section B (batch-9b)
-  { id: "student-16", name: "Kiara Bhat", username: "kiara.bhat", rollNumber: "001", batchId: "batch-9b", batchName: "Section B", className: "Class 9", status: "active", createdAt: "2024-04-01" },
-  { id: "student-17", name: "Reyansh Menon", username: "reyansh.menon", rollNumber: "002", batchId: "batch-9b", batchName: "Section B", className: "Class 9", status: "active", createdAt: "2024-04-01" },
-  { id: "student-18", name: "Tara Kulkarni", username: "tara.kulkarni", rollNumber: "003", batchId: "batch-9b", batchName: "Section B", className: "Class 9", status: "active", createdAt: "2024-04-01" },
+  { id: "student-16", name: "Kiara Bhat", username: "kiara.bhat", batchId: "batch-9b", batchName: "Section B", className: "Class 9", status: "active", createdAt: "2024-04-01", dateOfBirth: "2011-01-18", gender: "female", studentMobile: "9876543225", studentEmail: "kiara.bhat@school.com" },
+  { id: "student-17", name: "Reyansh Menon", username: "reyansh.menon", batchId: "batch-9b", batchName: "Section B", className: "Class 9", status: "active", createdAt: "2024-04-01", dateOfBirth: "2011-08-05", gender: "male", studentMobile: "9876543226", studentEmail: "reyansh.menon@school.com" },
+  { id: "student-18", name: "Tara Kulkarni", username: "tara.kulkarni", batchId: "batch-9b", batchName: "Section B", className: "Class 9", status: "active", createdAt: "2024-04-01", dateOfBirth: "2011-12-22", gender: "female", studentMobile: "9876543227", studentEmail: "tara.kulkarni@school.com" },
   
   // Class 8 - Section A (batch-8a)
-  { id: "student-19", name: "Reyansh Mehta", username: "reyansh.mehta", rollNumber: "001", batchId: "batch-8a", batchName: "Section A", className: "Class 8", status: "active", createdAt: "2024-04-01" },
-  { id: "student-20", name: "Zara Shah", username: "zara.shah", rollNumber: "002", batchId: "batch-8a", batchName: "Section A", className: "Class 8", status: "active", createdAt: "2024-04-01" },
-  { id: "student-21", name: "Aadhya Pillai", username: "aadhya.pillai", rollNumber: "003", batchId: "batch-8a", batchName: "Section A", className: "Class 8", status: "active", createdAt: "2024-04-01" },
-  { id: "student-22", name: "Kabir Chatterjee", username: "kabir.chatterjee", rollNumber: "004", batchId: "batch-8a", batchName: "Section A", className: "Class 8", status: "active", createdAt: "2024-04-01" },
+  { id: "student-19", name: "Reyansh Mehta", username: "reyansh.mehta", batchId: "batch-8a", batchName: "Section A", className: "Class 8", status: "active", createdAt: "2024-04-01", dateOfBirth: "2012-04-15", gender: "male", studentMobile: "9876543228", studentEmail: "reyansh.mehta@school.com" },
+  { id: "student-20", name: "Zara Shah", username: "zara.shah", batchId: "batch-8a", batchName: "Section A", className: "Class 8", status: "active", createdAt: "2024-04-01", dateOfBirth: "2012-10-30", gender: "female", studentMobile: "9876543229", studentEmail: "zara.shah@school.com" },
+  { id: "student-21", name: "Aadhya Pillai", username: "aadhya.pillai", batchId: "batch-8a", batchName: "Section A", className: "Class 8", status: "active", createdAt: "2024-04-01", dateOfBirth: "2012-06-12", gender: "female", studentMobile: "9876543230", studentEmail: "aadhya.pillai@school.com" },
+  { id: "student-22", name: "Kabir Chatterjee", username: "kabir.chatterjee", batchId: "batch-8a", batchName: "Section A", className: "Class 8", status: "active", createdAt: "2024-04-01", dateOfBirth: "2012-02-08", gender: "male", studentMobile: "9876543231", studentEmail: "kabir.chatterjee@school.com" },
   
   // Class 11 - Section A (batch-11a)
-  { id: "student-23", name: "Arnav Bhatt", username: "arnav.bhatt", rollNumber: "001", batchId: "batch-11a", batchName: "Section A", className: "Class 11", status: "active", createdAt: "2024-04-01" },
-  { id: "student-24", name: "Ira Shetty", username: "ira.shetty", rollNumber: "002", batchId: "batch-11a", batchName: "Section A", className: "Class 11", status: "active", createdAt: "2024-04-01" },
-  { id: "student-25", name: "Yash Bansal", username: "yash.bansal", rollNumber: "003", batchId: "batch-11a", batchName: "Section A", className: "Class 11", status: "active", createdAt: "2024-04-01" },
+  { id: "student-23", name: "Arnav Bhatt", username: "arnav.bhatt", batchId: "batch-11a", batchName: "Section A", className: "Class 11", status: "active", createdAt: "2024-04-01", dateOfBirth: "2009-07-25", gender: "male", studentMobile: "9876543232", studentEmail: "arnav.bhatt@school.com" },
+  { id: "student-24", name: "Ira Shetty", username: "ira.shetty", batchId: "batch-11a", batchName: "Section A", className: "Class 11", status: "active", createdAt: "2024-04-01", dateOfBirth: "2009-03-18", gender: "female", studentMobile: "9876543233", studentEmail: "ira.shetty@school.com" },
+  { id: "student-25", name: "Yash Bansal", username: "yash.bansal", batchId: "batch-11a", batchName: "Section A", className: "Class 11", status: "active", createdAt: "2024-04-01", dateOfBirth: "2009-11-08", gender: "male", studentMobile: "9876543234", studentEmail: "yash.bansal@school.com" },
   
   // Class 12 - Section A (batch-12a)
-  { id: "student-26", name: "Riya Verma", username: "riya.verma", rollNumber: "001", batchId: "batch-12a", batchName: "Section A", className: "Class 12", status: "active", createdAt: "2024-04-01" },
-  { id: "student-27", name: "Ayaan Khanna", username: "ayaan.khanna", rollNumber: "002", batchId: "batch-12a", batchName: "Section A", className: "Class 12", status: "active", createdAt: "2024-04-01" },
-  { id: "student-28", name: "Navya Iyer", username: "navya.iyer", rollNumber: "003", batchId: "batch-12a", batchName: "Section A", className: "Class 12", status: "inactive", createdAt: "2024-04-01" },
+  { id: "student-26", name: "Riya Verma", username: "riya.verma", batchId: "batch-12a", batchName: "Section A", className: "Class 12", status: "active", createdAt: "2024-04-01", dateOfBirth: "2008-05-10", gender: "female", studentMobile: "9876543235", studentEmail: "riya.verma@school.com" },
+  { id: "student-27", name: "Ayaan Khanna", username: "ayaan.khanna", batchId: "batch-12a", batchName: "Section A", className: "Class 12", status: "active", createdAt: "2024-04-01", dateOfBirth: "2008-09-22", gender: "male", studentMobile: "9876543236", studentEmail: "ayaan.khanna@school.com" },
+  { id: "student-28", name: "Navya Iyer", username: "navya.iyer", batchId: "batch-12a", batchName: "Section A", className: "Class 12", status: "inactive", createdAt: "2024-04-01", dateOfBirth: "2008-01-05", gender: "female", studentMobile: "9876543237", studentEmail: "navya.iyer@school.com" },
 ];
 
 // Sample Timetable for Class 10 Section A

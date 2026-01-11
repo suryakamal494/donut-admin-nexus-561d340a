@@ -13,19 +13,17 @@ import {
   X,
   AlertCircle,
   Trash2,
-  Phone,
   MapPin,
   GraduationCap,
-  Heart,
   Lock,
   UserCircle,
   Users2,
+  Mail,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import {
   Select,
@@ -50,6 +48,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
 import { PageHeader } from "@/components/ui/page-header";
 import { batches, students, Student } from "@/data/instituteData";
 import { toast } from "sonner";
@@ -57,28 +56,27 @@ import { cn } from "@/lib/utils";
 
 interface ParsedStudent {
   name: string;
-  rollNumber: string;
+  dateOfBirth: string;
+  gender: string;
+  studentMobile: string;
+  studentEmail: string;
   username: string;
-  fatherName?: string;
-  fatherMobile?: string;
+  password: string;
   isValid: boolean;
   errors: string[];
 }
 
 interface StudentFormData {
-  // Personal
+  // Required fields
   name: string;
   dateOfBirth: string;
   gender: string;
-  bloodGroup: string;
-  aadharNumber: string;
-  
-  // Contact
   studentMobile: string;
   studentEmail: string;
-  whatsappNumber: string;
+  username: string;
+  password: string;
   
-  // Parent/Guardian
+  // Optional - Parent/Guardian
   fatherName: string;
   fatherMobile: string;
   fatherOccupation: string;
@@ -88,7 +86,7 @@ interface StudentFormData {
   guardianMobile: string;
   guardianRelation: string;
   
-  // Address
+  // Optional - Address
   addressLine1: string;
   addressLine2: string;
   city: string;
@@ -96,34 +94,22 @@ interface StudentFormData {
   pincode: string;
   country: string;
   
-  // Academic
+  // Optional - Academic
   previousSchool: string;
   admissionDate: string;
   admissionNumber: string;
   transportRequired: boolean;
-  
-  // Emergency & Medical
-  emergencyContactName: string;
-  emergencyContactNumber: string;
-  emergencyContactRelation: string;
-  medicalConditions: string;
-  allergies: string;
-  
-  // Login
-  rollNumber: string;
-  username: string;
-  password: string;
+  aadharNumber: string;
 }
 
 const initialFormData: StudentFormData = {
   name: "",
   dateOfBirth: "",
   gender: "",
-  bloodGroup: "",
-  aadharNumber: "",
   studentMobile: "",
   studentEmail: "",
-  whatsappNumber: "",
+  username: "",
+  password: "",
   fatherName: "",
   fatherMobile: "",
   fatherOccupation: "",
@@ -142,14 +128,7 @@ const initialFormData: StudentFormData = {
   admissionDate: "",
   admissionNumber: "",
   transportRequired: false,
-  emergencyContactName: "",
-  emergencyContactNumber: "",
-  emergencyContactRelation: "",
-  medicalConditions: "",
-  allergies: "",
-  rollNumber: "",
-  username: "",
-  password: "",
+  aadharNumber: "",
 };
 
 const generatePassword = () => {
@@ -174,8 +153,6 @@ const INDIAN_STATES = [
   "Delhi", "Jammu and Kashmir", "Ladakh", "Puducherry", "Chandigarh"
 ];
 
-const BLOOD_GROUPS = ["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"];
-
 const AddStudent = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -192,7 +169,7 @@ const AddStudent = () => {
     password: generatePassword(),
   });
   const [showPassword, setShowPassword] = useState(false);
-  const [expandedSections, setExpandedSections] = useState<string[]>(["personal", "parent", "login"]);
+  const [expandedSections, setExpandedSections] = useState<string[]>(["required"]);
 
   // Bulk upload state
   const [pasteData, setPasteData] = useState("");
@@ -207,15 +184,12 @@ const AddStudent = () => {
       setFormData({
         ...initialFormData,
         name: existingStudent.name,
-        rollNumber: existingStudent.rollNumber,
         username: existingStudent.username,
         dateOfBirth: existingStudent.dateOfBirth || "",
         gender: existingStudent.gender || "",
-        bloodGroup: existingStudent.bloodGroup || "",
-        aadharNumber: existingStudent.aadharNumber || "",
         studentMobile: existingStudent.studentMobile || "",
         studentEmail: existingStudent.studentEmail || "",
-        whatsappNumber: existingStudent.whatsappNumber || "",
+        aadharNumber: existingStudent.aadharNumber || "",
         fatherName: existingStudent.fatherName || "",
         fatherMobile: existingStudent.fatherMobile || "",
         fatherOccupation: existingStudent.fatherOccupation || "",
@@ -234,11 +208,6 @@ const AddStudent = () => {
         admissionDate: existingStudent.admissionDate || "",
         admissionNumber: existingStudent.admissionNumber || "",
         transportRequired: existingStudent.transportRequired || false,
-        emergencyContactName: existingStudent.emergencyContactName || "",
-        emergencyContactNumber: existingStudent.emergencyContactNumber || "",
-        emergencyContactRelation: existingStudent.emergencyContactRelation || "",
-        medicalConditions: existingStudent.medicalConditions || "",
-        allergies: existingStudent.allergies || "",
         password: "",
       });
       setSelectedBatchId(existingStudent.batchId);
@@ -260,13 +229,45 @@ const AddStudent = () => {
     });
   };
 
+  const validateMandatoryFields = () => {
+    if (!formData.name.trim()) {
+      toast.error("Please enter student name");
+      return false;
+    }
+    if (!formData.dateOfBirth) {
+      toast.error("Please select date of birth");
+      return false;
+    }
+    if (!formData.gender) {
+      toast.error("Please select gender");
+      return false;
+    }
+    if (!formData.studentMobile || formData.studentMobile.length !== 10) {
+      toast.error("Please enter a valid 10-digit mobile number");
+      return false;
+    }
+    if (!formData.studentEmail || !formData.studentEmail.includes("@")) {
+      toast.error("Please enter a valid email address");
+      return false;
+    }
+    if (!formData.username.trim()) {
+      toast.error("Please enter username");
+      return false;
+    }
+    if (!isEditMode && !formData.password.trim()) {
+      toast.error("Please enter password");
+      return false;
+    }
+    return true;
+  };
+
   const handleSubmit = () => {
     if (!selectedBatchId) {
       toast.error("Please select a batch");
       return;
     }
-    if (!formData.name.trim()) {
-      toast.error("Please enter student name");
+    
+    if (!validateMandatoryFields()) {
       return;
     }
 
@@ -288,16 +289,22 @@ const AddStudent = () => {
         : line.split(",").map((p) => p.trim());
 
       const errors: string[] = [];
-      const [name = "", rollNumber = "", fatherName = "", fatherMobile = ""] = parts;
+      const [name = "", dob = "", gender = "", mobile = "", email = "", username = "", password = ""] = parts;
 
       if (!name) errors.push("Name is required");
+      if (!dob) errors.push("Date of birth is required");
+      if (!gender || !["male", "female", "other"].includes(gender.toLowerCase())) errors.push("Valid gender is required");
+      if (!mobile || mobile.length !== 10) errors.push("Valid 10-digit mobile is required");
+      if (!email || !email.includes("@")) errors.push("Valid email is required");
 
       parsed.push({
         name,
-        rollNumber: rollNumber || String(parsed.length + 1).padStart(3, "0"),
-        username: generateUsername(name),
-        fatherName: fatherName || undefined,
-        fatherMobile: fatherMobile || undefined,
+        dateOfBirth: dob,
+        gender: gender.toLowerCase(),
+        studentMobile: mobile,
+        studentEmail: email,
+        username: username || generateUsername(name),
+        password: password || generatePassword(),
         isValid: errors.length === 0,
         errors,
       });
@@ -395,15 +402,23 @@ const AddStudent = () => {
           onValueChange={setExpandedSections}
           className="w-full"
         >
-          {/* Personal Information */}
-          <AccordionItem value="personal" className="border-b">
+          {/* Required Student Details */}
+          <AccordionItem value="required" className="border-b">
             <AccordionTrigger className="px-4 sm:px-6 hover:no-underline hover:bg-muted/50">
               <div className="flex items-center gap-2">
                 <UserCircle className="h-4 w-4 text-primary" />
-                <span className="font-medium">Personal Information</span>
+                <span className="font-medium">Student Details (Required)</span>
                 <SectionBadge 
-                  filled={[formData.name, formData.dateOfBirth, formData.gender].filter(Boolean).length}
-                  total={3}
+                  filled={[
+                    formData.name, 
+                    formData.dateOfBirth, 
+                    formData.gender,
+                    formData.studentMobile,
+                    formData.studentEmail,
+                    formData.username,
+                    formData.password || isEditMode
+                  ].filter(Boolean).length}
+                  total={7}
                 />
               </div>
             </AccordionTrigger>
@@ -418,7 +433,7 @@ const AddStudent = () => {
                   />
                 </FormField>
                 
-                <FormField label="Date of Birth" id="dateOfBirth">
+                <FormField label="Date of Birth" id="dateOfBirth" required>
                   <Input
                     id="dateOfBirth"
                     type="date"
@@ -427,7 +442,7 @@ const AddStudent = () => {
                   />
                 </FormField>
 
-                <FormField label="Gender" id="gender">
+                <FormField label="Gender" id="gender" required>
                   <Select 
                     value={formData.gender} 
                     onValueChange={(value) => updateFormData("gender", value)}
@@ -443,53 +458,7 @@ const AddStudent = () => {
                   </Select>
                 </FormField>
 
-                <FormField label="Blood Group" id="bloodGroup">
-                  <Select 
-                    value={formData.bloodGroup} 
-                    onValueChange={(value) => updateFormData("bloodGroup", value)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select blood group" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {BLOOD_GROUPS.map(bg => (
-                        <SelectItem key={bg} value={bg}>{bg}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </FormField>
-
-                <FormField label="Aadhar Number" id="aadharNumber" className="sm:col-span-2">
-                  <Input
-                    id="aadharNumber"
-                    placeholder="12-digit Aadhar number"
-                    value={formData.aadharNumber}
-                    onChange={(e) => {
-                      const value = e.target.value.replace(/\D/g, "").slice(0, 12);
-                      updateFormData("aadharNumber", value);
-                    }}
-                    maxLength={12}
-                  />
-                </FormField>
-              </div>
-            </AccordionContent>
-          </AccordionItem>
-
-          {/* Contact Details */}
-          <AccordionItem value="contact" className="border-b">
-            <AccordionTrigger className="px-4 sm:px-6 hover:no-underline hover:bg-muted/50">
-              <div className="flex items-center gap-2">
-                <Phone className="h-4 w-4 text-blue-500" />
-                <span className="font-medium">Contact Details</span>
-                <SectionBadge 
-                  filled={[formData.studentMobile, formData.studentEmail].filter(Boolean).length}
-                  total={2}
-                />
-              </div>
-            </AccordionTrigger>
-            <AccordionContent className="px-4 sm:px-6 pb-6">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <FormField label="Student Mobile" id="studentMobile">
+                <FormField label="Mobile Number" id="studentMobile" required>
                   <Input
                     id="studentMobile"
                     type="tel"
@@ -503,7 +472,7 @@ const AddStudent = () => {
                   />
                 </FormField>
 
-                <FormField label="Student Email" id="studentEmail">
+                <FormField label="Email ID" id="studentEmail" required className="sm:col-span-2">
                   <Input
                     id="studentEmail"
                     type="email"
@@ -513,29 +482,60 @@ const AddStudent = () => {
                   />
                 </FormField>
 
-                <FormField label="WhatsApp Number" id="whatsappNumber" className="sm:col-span-2">
+                <FormField label="Username" id="username" required>
                   <Input
-                    id="whatsappNumber"
-                    type="tel"
-                    placeholder="WhatsApp number (if different from mobile)"
-                    value={formData.whatsappNumber}
-                    onChange={(e) => {
-                      const value = e.target.value.replace(/\D/g, "").slice(0, 10);
-                      updateFormData("whatsappNumber", value);
-                    }}
-                    maxLength={10}
+                    id="username"
+                    placeholder="Auto-generated from name"
+                    value={formData.username}
+                    onChange={(e) => updateFormData("username", e.target.value)}
                   />
+                </FormField>
+
+                <FormField label={isEditMode ? "New Password (leave blank to keep current)" : "Password"} id="password" required={!isEditMode}>
+                  <div className="flex gap-2">
+                    <div className="relative flex-1">
+                      <Input
+                        id="password"
+                        type={showPassword ? "text" : "password"}
+                        value={formData.password}
+                        onChange={(e) => updateFormData("password", e.target.value)}
+                        placeholder={isEditMode ? "Leave blank to keep current" : ""}
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="absolute right-0 top-0 h-full"
+                        onClick={() => setShowPassword(!showPassword)}
+                      >
+                        {showPassword ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
+                      </Button>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      onClick={() => updateFormData("password", generatePassword())}
+                      className="shrink-0"
+                    >
+                      <RefreshCw className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </FormField>
               </div>
             </AccordionContent>
           </AccordionItem>
 
-          {/* Parent/Guardian Information */}
+          {/* Parent/Guardian Information - Optional */}
           <AccordionItem value="parent" className="border-b">
             <AccordionTrigger className="px-4 sm:px-6 hover:no-underline hover:bg-muted/50">
               <div className="flex items-center gap-2">
                 <Users2 className="h-4 w-4 text-violet-500" />
-                <span className="font-medium">Parent/Guardian Information</span>
+                <span className="font-medium">Parent/Guardian Info (Optional)</span>
                 <SectionBadge 
                   filled={[formData.fatherName, formData.fatherMobile, formData.motherName].filter(Boolean).length}
                   total={3}
@@ -652,12 +652,12 @@ const AddStudent = () => {
             </AccordionContent>
           </AccordionItem>
 
-          {/* Address */}
+          {/* Address - Optional */}
           <AccordionItem value="address" className="border-b">
             <AccordionTrigger className="px-4 sm:px-6 hover:no-underline hover:bg-muted/50">
               <div className="flex items-center gap-2">
                 <MapPin className="h-4 w-4 text-orange-500" />
-                <span className="font-medium">Address</span>
+                <span className="font-medium">Address (Optional)</span>
                 <SectionBadge 
                   filled={[formData.addressLine1, formData.city, formData.state, formData.pincode].filter(Boolean).length}
                   total={4}
@@ -735,15 +735,15 @@ const AddStudent = () => {
             </AccordionContent>
           </AccordionItem>
 
-          {/* Academic Details */}
-          <AccordionItem value="academic" className="border-b">
+          {/* Academic Details - Optional */}
+          <AccordionItem value="academic" className="border-b-0">
             <AccordionTrigger className="px-4 sm:px-6 hover:no-underline hover:bg-muted/50">
               <div className="flex items-center gap-2">
                 <GraduationCap className="h-4 w-4 text-emerald-500" />
-                <span className="font-medium">Academic Details</span>
+                <span className="font-medium">Academic Details (Optional)</span>
                 <SectionBadge 
-                  filled={[formData.previousSchool, formData.admissionDate].filter(Boolean).length}
-                  total={2}
+                  filled={[formData.previousSchool, formData.admissionDate, formData.aadharNumber].filter(Boolean).length}
+                  total={3}
                 />
               </div>
             </AccordionTrigger>
@@ -776,7 +776,20 @@ const AddStudent = () => {
                   />
                 </FormField>
 
-                <div className="sm:col-span-2 flex items-center justify-between p-4 rounded-lg bg-muted/50">
+                <FormField label="Aadhar Number" id="aadharNumber">
+                  <Input
+                    id="aadharNumber"
+                    placeholder="12-digit Aadhar number"
+                    value={formData.aadharNumber}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/\D/g, "").slice(0, 12);
+                      updateFormData("aadharNumber", value);
+                    }}
+                    maxLength={12}
+                  />
+                </FormField>
+
+                <div className="flex items-center justify-between p-4 rounded-lg bg-muted/50">
                   <div className="space-y-0.5">
                     <Label htmlFor="transportRequired" className="text-sm font-medium">
                       Transport Required
@@ -791,141 +804,6 @@ const AddStudent = () => {
                     onCheckedChange={(checked) => updateFormData("transportRequired", checked)}
                   />
                 </div>
-              </div>
-            </AccordionContent>
-          </AccordionItem>
-
-          {/* Emergency & Medical */}
-          <AccordionItem value="emergency" className="border-b">
-            <AccordionTrigger className="px-4 sm:px-6 hover:no-underline hover:bg-muted/50">
-              <div className="flex items-center gap-2">
-                <Heart className="h-4 w-4 text-rose-500" />
-                <span className="font-medium">Emergency & Medical</span>
-                <SectionBadge 
-                  filled={[formData.emergencyContactName, formData.emergencyContactNumber].filter(Boolean).length}
-                  total={2}
-                />
-              </div>
-            </AccordionTrigger>
-            <AccordionContent className="px-4 sm:px-6 pb-6">
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <FormField label="Emergency Contact Name" id="emergencyContactName">
-                  <Input
-                    id="emergencyContactName"
-                    placeholder="Contact person name"
-                    value={formData.emergencyContactName}
-                    onChange={(e) => updateFormData("emergencyContactName", e.target.value)}
-                  />
-                </FormField>
-
-                <FormField label="Emergency Contact Number" id="emergencyContactNumber">
-                  <Input
-                    id="emergencyContactNumber"
-                    type="tel"
-                    placeholder="10-digit mobile"
-                    value={formData.emergencyContactNumber}
-                    onChange={(e) => {
-                      const value = e.target.value.replace(/\D/g, "").slice(0, 10);
-                      updateFormData("emergencyContactNumber", value);
-                    }}
-                    maxLength={10}
-                  />
-                </FormField>
-
-                <FormField label="Relation" id="emergencyContactRelation">
-                  <Input
-                    id="emergencyContactRelation"
-                    placeholder="e.g., Uncle, Neighbor"
-                    value={formData.emergencyContactRelation}
-                    onChange={(e) => updateFormData("emergencyContactRelation", e.target.value)}
-                  />
-                </FormField>
-
-                <FormField label="Medical Conditions" id="medicalConditions" className="sm:col-span-2">
-                  <Textarea
-                    id="medicalConditions"
-                    placeholder="Any known medical conditions..."
-                    value={formData.medicalConditions}
-                    onChange={(e) => updateFormData("medicalConditions", e.target.value)}
-                    rows={2}
-                  />
-                </FormField>
-
-                <FormField label="Allergies" id="allergies">
-                  <Input
-                    id="allergies"
-                    placeholder="Any allergies"
-                    value={formData.allergies}
-                    onChange={(e) => updateFormData("allergies", e.target.value)}
-                  />
-                </FormField>
-              </div>
-            </AccordionContent>
-          </AccordionItem>
-
-          {/* Login Credentials */}
-          <AccordionItem value="login" className="border-b-0">
-            <AccordionTrigger className="px-4 sm:px-6 hover:no-underline hover:bg-muted/50">
-              <div className="flex items-center gap-2">
-                <Lock className="h-4 w-4 text-slate-500" />
-                <span className="font-medium">Login Credentials</span>
-              </div>
-            </AccordionTrigger>
-            <AccordionContent className="px-4 sm:px-6 pb-6">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <FormField label="Roll Number" id="rollNumber">
-                  <Input
-                    id="rollNumber"
-                    placeholder="e.g., 001"
-                    value={formData.rollNumber}
-                    onChange={(e) => updateFormData("rollNumber", e.target.value)}
-                  />
-                </FormField>
-
-                <FormField label="Username" id="username">
-                  <Input
-                    id="username"
-                    placeholder="Auto-generated from name"
-                    value={formData.username}
-                    onChange={(e) => updateFormData("username", e.target.value)}
-                  />
-                </FormField>
-
-                <FormField label={isEditMode ? "New Password (leave blank to keep current)" : "Password"} id="password" className="sm:col-span-2">
-                  <div className="flex flex-col sm:flex-row gap-2">
-                    <div className="relative flex-1">
-                      <Input
-                        id="password"
-                        type={showPassword ? "text" : "password"}
-                        value={formData.password}
-                        onChange={(e) => updateFormData("password", e.target.value)}
-                        placeholder={isEditMode ? "Leave blank to keep current" : ""}
-                      />
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="absolute right-0 top-0 h-full"
-                        onClick={() => setShowPassword(!showPassword)}
-                      >
-                        {showPassword ? (
-                          <EyeOff className="h-4 w-4" />
-                        ) : (
-                          <Eye className="h-4 w-4" />
-                        )}
-                      </Button>
-                    </div>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="icon"
-                      onClick={() => updateFormData("password", generatePassword())}
-                      className="shrink-0"
-                    >
-                      <RefreshCw className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </FormField>
               </div>
             </AccordionContent>
           </AccordionItem>
@@ -960,7 +838,7 @@ const AddStudent = () => {
   );
 
   return (
-    <div className="space-y-6 md:space-y-8">
+    <div className="space-y-6 md:space-y-8 pb-20">
       <PageHeader
         title={isEditMode ? "Edit Student" : "Add Students"}
         description={isEditMode 
@@ -1028,20 +906,19 @@ const AddStudent = () => {
               <CardHeader>
                 <CardTitle className="text-lg">Paste Student Data</CardTitle>
                 <CardDescription>
-                  Copy rows from Excel, Google Sheets, or any table. Each row: Name, Roll Number, Father Name, Father Mobile (optional)
+                  Copy rows from Excel, Google Sheets, or any table. Each row should contain mandatory fields.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="p-4 bg-muted/50 rounded-lg">
-                  <p className="text-sm font-medium mb-2">Expected Format:</p>
+                  <p className="text-sm font-medium mb-2">Required Format (7 columns):</p>
                   <pre className="text-xs text-muted-foreground whitespace-pre-wrap bg-background p-3 rounded border overflow-x-auto">
-{`Name    Roll Number    Father Name    Father Mobile
-Aarav Patel    001    Rajesh Patel    9876543210
-Diya Sharma    002    Vikram Sharma
-Arjun Singh`}
+{`Name, DOB, Gender, Mobile, Email, Username, Password
+Aarav Patel, 2010-05-15, male, 9876543210, aarav@email.com, aarav.patel, Pass123
+Diya Sharma, 2010-08-22, female, 9876543211, diya@email.com, diya.sharma, Pass456`}
                   </pre>
                   <p className="text-xs text-muted-foreground mt-2">
-                    💡 Roll number, father name and mobile are optional - roll numbers will be auto-generated if empty
+                    💡 All 7 fields are mandatory. Gender should be: male, female, or other
                   </p>
                 </div>
 
@@ -1049,9 +926,8 @@ Arjun Singh`}
                   placeholder="Paste your data here...
 
 Example:
-Aarav Patel	001	Rajesh Patel	9876543210
-Diya Sharma	002	Vikram Sharma
-Arjun Singh	003"
+Aarav Patel	2010-05-15	male	9876543210	aarav@email.com	aarav.patel	Pass123
+Diya Sharma	2010-08-22	female	9876543211	diya@email.com	diya.sharma	Pass456"
                   value={pasteData}
                   onChange={(e) => setPasteData(e.target.value)}
                   className="min-h-[150px] font-mono text-sm"
@@ -1101,14 +977,16 @@ Arjun Singh	003"
                 </CardHeader>
                 <CardContent>
                   <div className="overflow-x-auto -mx-4 sm:mx-0">
-                    <Table className="min-w-[550px]">
+                    <Table className="min-w-[700px]">
                       <TableHeader>
                         <TableRow>
                           <TableHead className="w-[30px]">Status</TableHead>
                           <TableHead>Name</TableHead>
-                          <TableHead>Roll No.</TableHead>
-                          <TableHead className="hidden sm:table-cell">Father Name</TableHead>
-                          <TableHead className="hidden md:table-cell">Father Mobile</TableHead>
+                          <TableHead>DOB</TableHead>
+                          <TableHead>Gender</TableHead>
+                          <TableHead>Mobile</TableHead>
+                          <TableHead className="hidden md:table-cell">Email</TableHead>
+                          <TableHead className="hidden lg:table-cell">Username</TableHead>
                           <TableHead className="w-[50px]"></TableHead>
                         </TableRow>
                       </TableHeader>
@@ -1122,21 +1000,25 @@ Arjun Singh	003"
                               {student.isValid ? (
                                 <Check className="h-4 w-4 text-emerald-600" />
                               ) : (
-                                <AlertCircle className="h-4 w-4 text-destructive" />
+                                <div className="group relative">
+                                  <AlertCircle className="h-4 w-4 text-destructive" />
+                                  <div className="absolute left-0 bottom-full mb-2 hidden group-hover:block z-10 bg-popover border rounded-md p-2 text-xs shadow-lg min-w-[150px]">
+                                    {student.errors.join(", ")}
+                                  </div>
+                                </div>
                               )}
                             </TableCell>
                             <TableCell className="font-medium">
                               {student.name || "-"}
-                              <span className="text-xs text-muted-foreground sm:hidden block">
-                                {student.fatherName && `Father: ${student.fatherName}`}
-                              </span>
                             </TableCell>
-                            <TableCell>{student.rollNumber}</TableCell>
-                            <TableCell className="text-muted-foreground hidden sm:table-cell">
-                              {student.fatherName || "-"}
+                            <TableCell>{student.dateOfBirth || "-"}</TableCell>
+                            <TableCell className="capitalize">{student.gender || "-"}</TableCell>
+                            <TableCell>{student.studentMobile || "-"}</TableCell>
+                            <TableCell className="hidden md:table-cell text-muted-foreground">
+                              {student.studentEmail || "-"}
                             </TableCell>
-                            <TableCell className="text-muted-foreground hidden md:table-cell">
-                              {student.fatherMobile || "-"}
+                            <TableCell className="hidden lg:table-cell text-muted-foreground">
+                              {student.username || "-"}
                             </TableCell>
                             <TableCell>
                               <Button
