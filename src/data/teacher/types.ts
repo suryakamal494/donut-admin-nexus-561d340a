@@ -39,7 +39,7 @@ export interface LessonPlanBlock {
   duration?: number; // in minutes
   source: 'library' | 'ai' | 'custom';
   sourceId?: string; // Reference to content/question ID
-  sourceType?: 'video' | 'pdf' | 'ppt' | 'animation' | 'iframe';
+  sourceType?: 'video' | 'pdf' | 'ppt' | 'animation' | 'iframe' | 'practice' | 'test' | 'project'; // Extended for homework types
   questions?: string[]; // Question IDs for quiz blocks
   questionCount?: number; // For display
   embedUrl?: string; // For custom embeds

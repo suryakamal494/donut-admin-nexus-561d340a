@@ -13,7 +13,9 @@ import {
   Sparkles,
   FileText,
   Video,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Timer,
+  FolderOpen
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -43,6 +45,31 @@ const sourceIconMap = {
   image: ImageIcon,
 };
 
+// Homework type configuration for visual indicators
+type HomeworkType = 'practice' | 'test' | 'project';
+
+const homeworkTypeConfig: Record<HomeworkType, { 
+  label: string; 
+  icon: typeof Pencil; 
+  className: string;
+}> = {
+  practice: {
+    label: 'Practice',
+    icon: Pencil,
+    className: 'bg-blue-50 text-blue-700 border-blue-200',
+  },
+  test: {
+    label: 'Test',
+    icon: Timer,
+    className: 'bg-purple-50 text-purple-700 border-purple-200',
+  },
+  project: {
+    label: 'Project',
+    icon: FolderOpen,
+    className: 'bg-orange-50 text-orange-700 border-orange-200',
+  },
+};
+
 export const WorkspaceBlock = ({ 
   block, 
   index, 
@@ -52,6 +79,11 @@ export const WorkspaceBlock = ({
 }: WorkspaceBlockProps) => {
   const config = blockTypeConfig[block.type];
   const Icon = iconMap[block.type];
+  
+  // Get homework type from sourceType field (set by HomeworkBlockDialog)
+  const homeworkType = block.type === 'homework' && block.sourceType 
+    ? homeworkTypeConfig[block.sourceType as HomeworkType] 
+    : null;
   
   const {
     attributes,
@@ -132,6 +164,20 @@ export const WorkspaceBlock = ({
               </Badge>
             )}
             
+            {/* Homework Type Badge */}
+            {homeworkType && (
+              <Badge 
+                variant="outline" 
+                className={cn(
+                  "text-[10px] px-1.5 py-0.5 gap-0.5 font-medium",
+                  homeworkType.className
+                )}
+              >
+                <homeworkType.icon className="w-2.5 h-2.5" />
+                {homeworkType.label}
+              </Badge>
+            )}
+            
             {block.aiGenerated && (
               <Badge 
                 variant="secondary" 
@@ -147,10 +193,11 @@ export const WorkspaceBlock = ({
             {block.title || "Untitled block"}
           </h4>
           
+          {/* Source label - hide sourceType for homework since we show it as badge */}
           {block.source && (
             <p className="text-xs text-muted-foreground mt-0.5">
               {getSourceLabel()}
-              {block.sourceType && ` • ${block.sourceType}`}
+              {block.sourceType && block.type !== 'homework' && ` • ${block.sourceType}`}
             </p>
           )}
           

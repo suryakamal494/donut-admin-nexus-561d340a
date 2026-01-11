@@ -82,6 +82,7 @@ export const teacherLessonPlans: LessonPlan[] = [
         content: "Solve exercises 5.1 to 5.5 from NCERT textbook. Focus on numerical problems involving F=ma calculations.",
         duration: 8,
         source: "custom",
+        sourceType: "practice", // Homework type
       },
     ],
     createdAt: "2024-01-05T10:00:00Z",
@@ -205,7 +206,7 @@ export const teacherLessonPlans: LessonPlan[] = [
         content: "PDF worksheet with 10 numerical problems on kinetic and potential energy",
         duration: 8,
         source: "library",
-        sourceType: "pdf",
+        sourceType: "practice", // Homework type
         sourceId: "worksheet-energy-001",
       },
     ],
@@ -284,6 +285,7 @@ export const teacherLessonPlans: LessonPlan[] = [
         content: "List 5 applications of friction in daily life. Explain how friction helps and how it can be reduced when needed. Submit as a 1-page report.",
         duration: 10,
         source: "custom",
+        sourceType: "project", // Homework type
       },
     ],
     createdAt: "2024-01-05T10:00:00Z",
@@ -406,6 +408,7 @@ export const teacherLessonPlans: LessonPlan[] = [
         content: "AI-generated practice problems on calculating induced EMF using Lenz's Law",
         duration: 12,
         source: "ai",
+        sourceType: "test", // Homework type
         aiGenerated: true,
       },
     ],
