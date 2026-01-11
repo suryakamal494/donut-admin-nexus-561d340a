@@ -10,7 +10,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { ContentCard, ContentItem } from "@/components/content/ContentCard";
 import { ContentPagination } from "@/components/content/ContentPagination";
 import { ContentPreviewDialog } from "@/components/content/ContentPreviewDialog";
-import { ContentCreationSheet, ContentCreationOnboardingTour, useContentCreationTour } from "@/components/teacher/content";
+import { ContentCreationSheet } from "@/components/teacher/content";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -128,9 +128,6 @@ const Content = () => {
   const [showCreateSheet, setShowCreateSheet] = useState(false);
   const [deleteContent, setDeleteContent] = useState<ContentItem | null>(null);
   const [localTeacherContent, setLocalTeacherContent] = useState<ContentItem[]>(teacherCreatedContent);
-  
-  // Onboarding tour
-  const { showTour, completeTour, skipTour } = useContentCreationTour();
 
   const ITEMS_PER_PAGE = 15;
 
@@ -254,11 +251,6 @@ const Content = () => {
 
   return (
     <div className="space-y-4 sm:space-y-6 pb-20 md:pb-6">
-      {/* Onboarding Tour */}
-      {showTour && showCreateSheet && (
-        <ContentCreationOnboardingTour onComplete={completeTour} onSkip={skipTour} />
-      )}
-
       {/* Header */}
       <div className="flex flex-col gap-4">
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
