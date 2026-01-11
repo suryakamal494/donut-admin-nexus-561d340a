@@ -56,7 +56,6 @@ const navItems: NavItem[] = [
       { title: "Setup", icon: Settings, href: "/institute/timetable/setup" },
       { title: "Workspace", icon: Wrench, href: "/institute/timetable" },
       { title: "View Timetable", icon: Eye, href: "/institute/timetable/view" },
-      { title: "Exam Schedule", icon: ClipboardList, href: "/institute/timetable/exam-schedule" },
       { title: "Substitution", icon: UserCheck, href: "/institute/timetable/substitution" },
     ]
   },
