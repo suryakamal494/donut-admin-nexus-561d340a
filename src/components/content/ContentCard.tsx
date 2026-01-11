@@ -1,5 +1,5 @@
 import { memo } from "react";
-import { Eye, Edit, MoreVertical, Download, Trash2, Lock, Building2 } from "lucide-react";
+import { Eye, Edit, MoreVertical, Download, Trash2, Lock, Building2, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ContentThumbnail } from "./ContentThumbnail";
 import { ContentStatusBadge } from "./ContentStatusBadge";
@@ -49,6 +49,7 @@ interface ContentCardProps {
   onPreview: (content: ContentItem) => void;
   onEdit?: (content: ContentItem) => void;
   onDelete?: (content: ContentItem) => void;
+  onAssign?: (content: ContentItem) => void; // For teacher mode - to share content with batches
   className?: string;
 }
 
@@ -58,7 +59,8 @@ export const ContentCard = memo(function ContentCard({
   currentTeacherId,
   onPreview, 
   onEdit, 
-  onDelete, 
+  onDelete,
+  onAssign,
   className 
 }: ContentCardProps) {
   const meta = content.duration 
@@ -176,6 +178,19 @@ export const ContentCard = memo(function ContentCard({
             Preview
           </Button>
           
+          {/* Assign button - Teacher mode only */}
+          {isTeacherMode && onAssign && (
+            <Button 
+              variant="ghost" 
+              size="sm"
+              className="h-7 sm:h-8 text-[10px] sm:text-xs px-1.5 sm:px-2"
+              onClick={() => onAssign(content)}
+            >
+              <Share2 className="w-3 h-3 sm:w-3.5 sm:h-3.5 mr-0.5 sm:mr-1.5" />
+              Assign
+            </Button>
+          )}
+          
           {canEdit && (
             <Button 
               variant="ghost" 
@@ -199,6 +214,12 @@ export const ContentCard = memo(function ContentCard({
                 <Eye className="w-4 h-4 mr-2" />
                 Preview
               </DropdownMenuItem>
+              {isTeacherMode && onAssign && (
+                <DropdownMenuItem onClick={() => onAssign(content)}>
+                  <Share2 className="w-4 h-4 mr-2" />
+                  Assign to Batches
+                </DropdownMenuItem>
+              )}
               {canEdit && (
                 <DropdownMenuItem onClick={() => onEdit?.(content)}>
                   <Edit className="w-4 h-4 mr-2" />

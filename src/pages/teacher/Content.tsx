@@ -10,7 +10,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { ContentCard, ContentItem } from "@/components/content/ContentCard";
 import { ContentPagination } from "@/components/content/ContentPagination";
 import { ContentPreviewDialog } from "@/components/content/ContentPreviewDialog";
-import { ContentCreationSheet } from "@/components/teacher/content";
+import { ContentCreationSheet, AssignContentDialog } from "@/components/teacher/content";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -23,7 +23,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { instituteContent, InstituteContentItem } from "@/data/instituteData";
-import { currentTeacher } from "@/data/teacherData";
+import { currentTeacher, teacherBatches } from "@/data/teacher/profile";
 import { physicsChapters, cbseTopics } from "@/data/cbseMasterData";
 
 // Get unique chapters for Physics (teacher's subject)
@@ -128,6 +128,7 @@ const Content = () => {
   const [showCreateSheet, setShowCreateSheet] = useState(false);
   const [deleteContent, setDeleteContent] = useState<ContentItem | null>(null);
   const [localTeacherContent, setLocalTeacherContent] = useState<ContentItem[]>(teacherCreatedContent);
+  const [assignContent, setAssignContent] = useState<ContentItem | null>(null);
 
   const ITEMS_PER_PAGE = 15;
 
@@ -235,6 +236,15 @@ const Content = () => {
       });
       setDeleteContent(null);
     }
+  };
+
+  const handleAssign = (content: ContentItem) => {
+    setAssignContent(content);
+  };
+
+  const handleConfirmAssign = (contentId: string, batchIds: string[]) => {
+    console.log(`Assigning content ${contentId} to batches:`, batchIds);
+    // In production, this would call an API to save the assignment
   };
 
   const clearFilters = () => {
@@ -500,6 +510,7 @@ const Content = () => {
                 onPreview={handlePreview}
                 onEdit={handleEdit}
                 onDelete={handleDeleteClick}
+                onAssign={handleAssign}
               />
             ))}
           </div>
@@ -544,6 +555,15 @@ const Content = () => {
       <ContentCreationSheet 
         open={showCreateSheet} 
         onOpenChange={setShowCreateSheet} 
+      />
+
+      {/* Assign Content Dialog */}
+      <AssignContentDialog
+        open={!!assignContent}
+        onOpenChange={(open) => !open && setAssignContent(null)}
+        content={assignContent}
+        teacherBatches={teacherBatches}
+        onAssign={handleConfirmAssign}
       />
 
       {/* Delete Confirmation Dialog */}

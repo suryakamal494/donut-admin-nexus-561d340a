@@ -11,3 +11,10 @@ export const currentTeacher: TeacherProfile = {
   assignedBatches: ["batch-10a", "batch-10b", "batch-11a"],
   assignedClasses: ["Class 10", "Class 11"],
 };
+
+// Detailed batch data for content assignment
+export const teacherBatches = [
+  { id: "batch-10a", name: "10A - Physics Morning", students: 35, class: "Class 10" },
+  { id: "batch-10b", name: "10B - Physics Evening", students: 32, class: "Class 10" },
+  { id: "batch-11a", name: "11A - JEE Physics", students: 45, class: "Class 11" },
+];
