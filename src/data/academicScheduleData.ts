@@ -1048,6 +1048,50 @@ export const weeklyChapterPlans: WeeklyChapterPlan[] = [
 // ============================================
 
 export const teachingConfirmations: TeachingConfirmation[] = [
+  // ========================
+  // Batch 6a - Mathematics (creates drift for demo)
+  // Planned hours: mat-6-1 = 6h, mat-6-2 = 5h, mat-6-3 = 6h, mat-6-4 = 5h, mat-6-5 = 6h, mat-6-6 = 6h
+  // ========================
+  // Chapter 1: Knowing Our Numbers - Planned 6h, Actual 8h = +2h drift (completed)
+  { id: "conf-6a-mat-1", batchId: "batch-6a", batchName: "Class 6 - Section A", subjectId: "mat", subjectName: "Mathematics", date: "2025-01-06", teacherId: "teacher-mat-6", teacherName: "Mrs. Gupta", didTeach: true, chapterId: "mat-6-1", chapterName: "Knowing Our Numbers", periodsCount: 2, confirmedAt: "2025-01-06", confirmedBy: "teacher" },
+  { id: "conf-6a-mat-2", batchId: "batch-6a", batchName: "Class 6 - Section A", subjectId: "mat", subjectName: "Mathematics", date: "2025-01-07", teacherId: "teacher-mat-6", teacherName: "Mrs. Gupta", didTeach: true, chapterId: "mat-6-1", chapterName: "Knowing Our Numbers", periodsCount: 2, confirmedAt: "2025-01-07", confirmedBy: "teacher" },
+  { id: "conf-6a-mat-3", batchId: "batch-6a", batchName: "Class 6 - Section A", subjectId: "mat", subjectName: "Mathematics", date: "2025-01-08", teacherId: "teacher-mat-6", teacherName: "Mrs. Gupta", didTeach: true, chapterId: "mat-6-1", chapterName: "Knowing Our Numbers", periodsCount: 2, confirmedAt: "2025-01-08", confirmedBy: "teacher" },
+  { id: "conf-6a-mat-4", batchId: "batch-6a", batchName: "Class 6 - Section A", subjectId: "mat", subjectName: "Mathematics", date: "2025-01-09", teacherId: "teacher-mat-6", teacherName: "Mrs. Gupta", didTeach: true, chapterId: "mat-6-1", chapterName: "Knowing Our Numbers", periodsCount: 2, confirmedAt: "2025-01-09", confirmedBy: "teacher" },
+  
+  // Chapter 2: Whole Numbers - Planned 5h, Actual 5h = on track (completed)
+  { id: "conf-6a-mat-5", batchId: "batch-6a", batchName: "Class 6 - Section A", subjectId: "mat", subjectName: "Mathematics", date: "2025-01-13", teacherId: "teacher-mat-6", teacherName: "Mrs. Gupta", didTeach: true, chapterId: "mat-6-2", chapterName: "Whole Numbers", periodsCount: 2, confirmedAt: "2025-01-13", confirmedBy: "teacher" },
+  { id: "conf-6a-mat-6", batchId: "batch-6a", batchName: "Class 6 - Section A", subjectId: "mat", subjectName: "Mathematics", date: "2025-01-14", teacherId: "teacher-mat-6", teacherName: "Mrs. Gupta", didTeach: true, chapterId: "mat-6-2", chapterName: "Whole Numbers", periodsCount: 2, confirmedAt: "2025-01-14", confirmedBy: "teacher" },
+  { id: "conf-6a-mat-7", batchId: "batch-6a", batchName: "Class 6 - Section A", subjectId: "mat", subjectName: "Mathematics", date: "2025-01-15", teacherId: "teacher-mat-6", teacherName: "Mrs. Gupta", didTeach: true, chapterId: "mat-6-2", chapterName: "Whole Numbers", periodsCount: 1, confirmedAt: "2025-01-15", confirmedBy: "teacher" },
+  
+  // Chapter 3: Playing with Numbers - Planned 6h, Actual 9h = +3h drift (resolved via adjustment)
+  { id: "conf-6a-mat-8", batchId: "batch-6a", batchName: "Class 6 - Section A", subjectId: "mat", subjectName: "Mathematics", date: "2025-01-16", teacherId: "teacher-mat-6", teacherName: "Mrs. Gupta", didTeach: true, chapterId: "mat-6-3", chapterName: "Playing with Numbers", periodsCount: 2, confirmedAt: "2025-01-16", confirmedBy: "teacher" },
+  { id: "conf-6a-mat-9", batchId: "batch-6a", batchName: "Class 6 - Section A", subjectId: "mat", subjectName: "Mathematics", date: "2025-01-17", teacherId: "teacher-mat-6", teacherName: "Mrs. Gupta", didTeach: true, chapterId: "mat-6-3", chapterName: "Playing with Numbers", periodsCount: 2, confirmedAt: "2025-01-17", confirmedBy: "teacher" },
+  { id: "conf-6a-mat-10", batchId: "batch-6a", batchName: "Class 6 - Section A", subjectId: "mat", subjectName: "Mathematics", date: "2025-01-20", teacherId: "teacher-mat-6", teacherName: "Mrs. Gupta", didTeach: true, chapterId: "mat-6-3", chapterName: "Playing with Numbers", periodsCount: 2, confirmedAt: "2025-01-20", confirmedBy: "teacher" },
+  { id: "conf-6a-mat-11", batchId: "batch-6a", batchName: "Class 6 - Section A", subjectId: "mat", subjectName: "Mathematics", date: "2025-01-21", teacherId: "teacher-mat-6", teacherName: "Mrs. Gupta", didTeach: true, chapterId: "mat-6-3", chapterName: "Playing with Numbers", periodsCount: 2, confirmedAt: "2025-01-21", confirmedBy: "teacher" },
+  { id: "conf-6a-mat-12", batchId: "batch-6a", batchName: "Class 6 - Section A", subjectId: "mat", subjectName: "Mathematics", date: "2025-01-22", teacherId: "teacher-mat-6", teacherName: "Mrs. Gupta", didTeach: true, chapterId: "mat-6-3", chapterName: "Playing with Numbers", periodsCount: 1, confirmedAt: "2025-01-22", confirmedBy: "teacher" },
+  
+  // Chapter 4: Basic Geometrical Ideas - Planned 5h, Actual 7h = +2h drift (UNRESOLVED - will show badge)
+  { id: "conf-6a-mat-13", batchId: "batch-6a", batchName: "Class 6 - Section A", subjectId: "mat", subjectName: "Mathematics", date: "2025-01-23", teacherId: "teacher-mat-6", teacherName: "Mrs. Gupta", didTeach: true, chapterId: "mat-6-4", chapterName: "Basic Geometrical Ideas", periodsCount: 2, confirmedAt: "2025-01-23", confirmedBy: "teacher" },
+  { id: "conf-6a-mat-14", batchId: "batch-6a", batchName: "Class 6 - Section A", subjectId: "mat", subjectName: "Mathematics", date: "2025-01-24", teacherId: "teacher-mat-6", teacherName: "Mrs. Gupta", didTeach: true, chapterId: "mat-6-4", chapterName: "Basic Geometrical Ideas", periodsCount: 2, confirmedAt: "2025-01-24", confirmedBy: "teacher" },
+  { id: "conf-6a-mat-15", batchId: "batch-6a", batchName: "Class 6 - Section A", subjectId: "mat", subjectName: "Mathematics", date: "2025-01-27", teacherId: "teacher-mat-6", teacherName: "Mrs. Gupta", didTeach: true, chapterId: "mat-6-4", chapterName: "Basic Geometrical Ideas", periodsCount: 2, confirmedAt: "2025-01-27", confirmedBy: "teacher" },
+  { id: "conf-6a-mat-16", batchId: "batch-6a", batchName: "Class 6 - Section A", subjectId: "mat", subjectName: "Mathematics", date: "2025-01-28", teacherId: "teacher-mat-6", teacherName: "Mrs. Gupta", didTeach: true, chapterId: "mat-6-4", chapterName: "Basic Geometrical Ideas", periodsCount: 1, confirmedAt: "2025-01-28", confirmedBy: "teacher" },
+  
+  // Chapter 5: Understanding Elementary Shapes - Planned 6h, Actual 4h = -2h behind (UNRESOLVED - will show badge)
+  { id: "conf-6a-mat-17", batchId: "batch-6a", batchName: "Class 6 - Section A", subjectId: "mat", subjectName: "Mathematics", date: "2025-01-29", teacherId: "teacher-mat-6", teacherName: "Mrs. Gupta", didTeach: true, chapterId: "mat-6-5", chapterName: "Understanding Elementary Shapes", periodsCount: 2, confirmedAt: "2025-01-29", confirmedBy: "teacher" },
+  { id: "conf-6a-mat-18", batchId: "batch-6a", batchName: "Class 6 - Section A", subjectId: "mat", subjectName: "Mathematics", date: "2025-01-30", teacherId: "teacher-mat-6", teacherName: "Mrs. Gupta", didTeach: false, noTeachReason: "teacher_absent", noTeachNote: "Mrs. Gupta on medical leave", periodsCount: 2, confirmedAt: "2025-01-30", confirmedBy: "academic_incharge" },
+  { id: "conf-6a-mat-19", batchId: "batch-6a", batchName: "Class 6 - Section A", subjectId: "mat", subjectName: "Mathematics", date: "2025-01-31", teacherId: "teacher-mat-6", teacherName: "Mrs. Gupta", didTeach: true, chapterId: "mat-6-5", chapterName: "Understanding Elementary Shapes", periodsCount: 2, confirmedAt: "2025-01-31", confirmedBy: "teacher" },
+
+  // ========================
+  // Batch 6a - Science (creates drift for demo)
+  // ========================
+  // Chapter 1: Food - Planned 5h, Actual 6h = +1h drift (UNRESOLVED)
+  { id: "conf-6a-sci-1", batchId: "batch-6a", batchName: "Class 6 - Section A", subjectId: "sci", subjectName: "Science", date: "2025-01-06", teacherId: "teacher-sci-6", teacherName: "Mr. Patel", didTeach: true, chapterId: "sci-6-1", chapterName: "Food: Where Does It Come From?", periodsCount: 2, confirmedAt: "2025-01-06", confirmedBy: "teacher" },
+  { id: "conf-6a-sci-2", batchId: "batch-6a", batchName: "Class 6 - Section A", subjectId: "sci", subjectName: "Science", date: "2025-01-08", teacherId: "teacher-sci-6", teacherName: "Mr. Patel", didTeach: true, chapterId: "sci-6-1", chapterName: "Food: Where Does It Come From?", periodsCount: 2, confirmedAt: "2025-01-08", confirmedBy: "teacher" },
+  { id: "conf-6a-sci-3", batchId: "batch-6a", batchName: "Class 6 - Section A", subjectId: "sci", subjectName: "Science", date: "2025-01-10", teacherId: "teacher-sci-6", teacherName: "Mr. Patel", didTeach: true, chapterId: "sci-6-1", chapterName: "Food: Where Does It Come From?", periodsCount: 2, confirmedAt: "2025-01-10", confirmedBy: "teacher" },
+
+  // ========================
+  // Original batch-9a and batch-10a confirmations
+  // ========================
   { id: "conf-w1-1", batchId: "batch-9a", batchName: "Class 9 - Section A", subjectId: "phy", subjectName: "Physics", date: "2025-01-06", teacherId: "teacher-1", teacherName: "Dr. Sharma", didTeach: true, chapterId: "phy-9-1", chapterName: "Motion", periodsCount: 2, confirmedAt: "2025-01-06", confirmedBy: "teacher" },
   { id: "conf-w1-2", batchId: "batch-9a", batchName: "Class 9 - Section A", subjectId: "mat", subjectName: "Mathematics", date: "2025-01-07", teacherId: "teacher-2", teacherName: "Prof. Verma", didTeach: true, chapterId: "mat-9-1", chapterName: "Number Systems", periodsCount: 2, confirmedAt: "2025-01-07", confirmedBy: "teacher" },
   { id: "conf-w1-3", batchId: "batch-10a", batchName: "Class 10 - Section A", subjectId: "phy", subjectName: "Physics", date: "2025-01-08", teacherId: "teacher-1", teacherName: "Dr. Sharma", didTeach: true, chapterId: "phy-10-1", chapterName: "Light - Reflection and Refraction", periodsCount: 2, confirmedAt: "2025-01-08", confirmedBy: "teacher" },
