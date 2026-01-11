@@ -90,11 +90,11 @@ function ChapterRow({ chapter, index }: { chapter: ChapterInfo; index: number })
   );
 }
 
-function SheetContent({ section, onClose }: { section: SectionProgress; onClose: () => void }) {
+function SheetContent({ section }: { section: SectionProgress }) {
   return (
-    <>
+    <div className="flex flex-col h-full overflow-hidden">
       {/* Header Stats */}
-      <div className="bg-gradient-to-r from-teal-50 to-cyan-50 p-4 border-b border-teal-100/50">
+      <div className="bg-gradient-to-r from-teal-50 to-cyan-50 p-4 border-b border-teal-100/50 shrink-0">
         <div className="grid grid-cols-3 gap-4 text-center">
           <div>
             <p className="text-2xl font-bold text-foreground">
@@ -126,9 +126,9 @@ function SheetContent({ section, onClose }: { section: SectionProgress; onClose:
         </div>
       </div>
 
-      {/* Chapter List */}
-      <ScrollArea className="flex-1 p-4">
-        <div className="space-y-3 pb-8">
+      {/* Chapter List - Scrollable */}
+      <ScrollArea className="flex-1 min-h-0">
+        <div className="p-4 space-y-3 pb-8">
           {section.chapters.map((chapter, idx) => (
             <ChapterRow key={chapter.chapterId} chapter={chapter} index={idx} />
           ))}
@@ -141,7 +141,7 @@ function SheetContent({ section, onClose }: { section: SectionProgress; onClose:
           )}
         </div>
       </ScrollArea>
-    </>
+    </div>
   );
 }
 
@@ -153,8 +153,8 @@ export function ChapterDetailSheet({ section, open, onClose }: ChapterDetailShee
   if (isMobile) {
     return (
       <Drawer open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
-        <DrawerContent className="max-h-[85vh]">
-          <DrawerHeader className="border-b">
+        <DrawerContent className="max-h-[85vh] flex flex-col">
+          <DrawerHeader className="border-b shrink-0">
             <div className="flex items-center justify-between">
               <DrawerTitle className="text-left">
                 {section.batchName}
@@ -166,7 +166,9 @@ export function ChapterDetailSheet({ section, open, onClose }: ChapterDetailShee
               </DrawerClose>
             </div>
           </DrawerHeader>
-          <SheetContent section={section} onClose={onClose} />
+          <div className="flex-1 min-h-0 overflow-hidden">
+            <SheetContent section={section} />
+          </div>
         </DrawerContent>
       </Drawer>
     );
@@ -174,11 +176,13 @@ export function ChapterDetailSheet({ section, open, onClose }: ChapterDetailShee
 
   return (
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
-      <DialogContent className="max-w-md max-h-[80vh] flex flex-col p-0 gap-0">
-        <DialogHeader className="p-4 border-b">
+      <DialogContent className="max-w-md h-[80vh] max-h-[600px] flex flex-col p-0 gap-0">
+        <DialogHeader className="p-4 border-b shrink-0">
           <DialogTitle>{section.batchName}</DialogTitle>
         </DialogHeader>
-        <SheetContent section={section} onClose={onClose} />
+        <div className="flex-1 min-h-0 overflow-hidden">
+          <SheetContent section={section} />
+        </div>
       </DialogContent>
     </Dialog>
   );
