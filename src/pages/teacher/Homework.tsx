@@ -26,6 +26,7 @@ import {
 import { PageHeader } from "@/components/ui/page-header";
 import { HomeworkCard } from "@/components/teacher/HomeworkCard";
 import { CreateHomeworkDialog } from "@/components/teacher/CreateHomeworkDialog";
+import { ReviewSubmissionsDialog } from "@/components/teacher/ReviewSubmissionsDialog";
 import { teacherHomework, type TeacherHomework } from "@/data/teacherData";
 
 const Homework = () => {
@@ -35,6 +36,8 @@ const Homework = () => {
   const [batchFilter, setBatchFilter] = useState<string>("all");
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [homeworkList, setHomeworkList] = useState<TeacherHomework[]>(teacherHomework);
+  const [selectedHomework, setSelectedHomework] = useState<TeacherHomework | null>(null);
+  const [showReviewDialog, setShowReviewDialog] = useState(false);
 
   const filteredHomework = homeworkList.filter((hw) => {
     const matchesSearch = hw.title.toLowerCase().includes(searchQuery.toLowerCase());
@@ -53,6 +56,11 @@ const Homework = () => {
 
   const handleHomeworkCreated = (newHomework: TeacherHomework) => {
     setHomeworkList(prev => [newHomework, ...prev]);
+  };
+
+  const handleViewSubmissions = (hw: TeacherHomework) => {
+    setSelectedHomework(hw);
+    setShowReviewDialog(true);
   };
 
   return (
@@ -195,6 +203,13 @@ const Homework = () => {
         onCreated={handleHomeworkCreated}
       />
 
+      {/* Review Submissions Dialog */}
+      <ReviewSubmissionsDialog
+        open={showReviewDialog}
+        onOpenChange={setShowReviewDialog}
+        homework={selectedHomework}
+      />
+
       {/* Mobile FAB */}
       <div className="fixed bottom-20 right-4 md:hidden">
         <Button 
@@ -213,11 +228,13 @@ const Homework = () => {
 const HomeworkGrid = ({ 
   homework, 
   navigate,
-  onDelete 
+  onDelete,
+  onViewSubmissions 
 }: { 
   homework: TeacherHomework[]; 
   navigate: any;
   onDelete: (id: string) => void;
+  onViewSubmissions: (hw: TeacherHomework) => void;
 }) => {
   if (homework.length === 0) {
     return (
