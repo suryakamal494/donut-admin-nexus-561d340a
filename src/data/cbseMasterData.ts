@@ -12,6 +12,7 @@ export interface CBSEChapter {
   classId: string;
   subjectId: string;
   order: number;
+  allocatedHours?: number;      // Teaching hours required for this chapter
   isCourseOwned?: boolean;      // If true, this chapter belongs only to a course
   courseId?: string;            // Course ID if this is a course-owned chapter
 }
@@ -151,38 +152,38 @@ export const mathematicsChapters: CBSEChapter[] = [
 // PHYSICS - Classes 11-12 (NCERT)
 // ============================================
 export const physicsChapters: CBSEChapter[] = [
-  // Class 11 Physics
-  { id: "phy-11-1", name: "Physical World", curriculumId: "cbse", classId: "6", subjectId: "1", order: 1 },
-  { id: "phy-11-2", name: "Units and Measurements", curriculumId: "cbse", classId: "6", subjectId: "1", order: 2 },
-  { id: "phy-11-3", name: "Motion in a Straight Line", curriculumId: "cbse", classId: "6", subjectId: "1", order: 3 },
-  { id: "phy-11-4", name: "Motion in a Plane", curriculumId: "cbse", classId: "6", subjectId: "1", order: 4 },
-  { id: "phy-11-5", name: "Laws of Motion", curriculumId: "cbse", classId: "6", subjectId: "1", order: 5 },
-  { id: "phy-11-6", name: "Work, Energy and Power", curriculumId: "cbse", classId: "6", subjectId: "1", order: 6 },
-  { id: "phy-11-7", name: "System of Particles and Rotational Motion", curriculumId: "cbse", classId: "6", subjectId: "1", order: 7 },
-  { id: "phy-11-8", name: "Gravitation", curriculumId: "cbse", classId: "6", subjectId: "1", order: 8 },
-  { id: "phy-11-9", name: "Mechanical Properties of Solids", curriculumId: "cbse", classId: "6", subjectId: "1", order: 9 },
-  { id: "phy-11-10", name: "Mechanical Properties of Fluids", curriculumId: "cbse", classId: "6", subjectId: "1", order: 10 },
-  { id: "phy-11-11", name: "Thermal Properties of Matter", curriculumId: "cbse", classId: "6", subjectId: "1", order: 11 },
-  { id: "phy-11-12", name: "Thermodynamics", curriculumId: "cbse", classId: "6", subjectId: "1", order: 12 },
-  { id: "phy-11-13", name: "Kinetic Theory", curriculumId: "cbse", classId: "6", subjectId: "1", order: 13 },
-  { id: "phy-11-14", name: "Oscillations", curriculumId: "cbse", classId: "6", subjectId: "1", order: 14 },
-  { id: "phy-11-15", name: "Waves", curriculumId: "cbse", classId: "6", subjectId: "1", order: 15 },
+  // Class 11 Physics (Total: ~180 hours for entire syllabus)
+  { id: "phy-11-1", name: "Physical World", curriculumId: "cbse", classId: "6", subjectId: "1", order: 1, allocatedHours: 3 },
+  { id: "phy-11-2", name: "Units and Measurements", curriculumId: "cbse", classId: "6", subjectId: "1", order: 2, allocatedHours: 8 },
+  { id: "phy-11-3", name: "Motion in a Straight Line", curriculumId: "cbse", classId: "6", subjectId: "1", order: 3, allocatedHours: 12 },
+  { id: "phy-11-4", name: "Motion in a Plane", curriculumId: "cbse", classId: "6", subjectId: "1", order: 4, allocatedHours: 12 },
+  { id: "phy-11-5", name: "Laws of Motion", curriculumId: "cbse", classId: "6", subjectId: "1", order: 5, allocatedHours: 14 },
+  { id: "phy-11-6", name: "Work, Energy and Power", curriculumId: "cbse", classId: "6", subjectId: "1", order: 6, allocatedHours: 12 },
+  { id: "phy-11-7", name: "System of Particles and Rotational Motion", curriculumId: "cbse", classId: "6", subjectId: "1", order: 7, allocatedHours: 16 },
+  { id: "phy-11-8", name: "Gravitation", curriculumId: "cbse", classId: "6", subjectId: "1", order: 8, allocatedHours: 10 },
+  { id: "phy-11-9", name: "Mechanical Properties of Solids", curriculumId: "cbse", classId: "6", subjectId: "1", order: 9, allocatedHours: 8 },
+  { id: "phy-11-10", name: "Mechanical Properties of Fluids", curriculumId: "cbse", classId: "6", subjectId: "1", order: 10, allocatedHours: 10 },
+  { id: "phy-11-11", name: "Thermal Properties of Matter", curriculumId: "cbse", classId: "6", subjectId: "1", order: 11, allocatedHours: 10 },
+  { id: "phy-11-12", name: "Thermodynamics", curriculumId: "cbse", classId: "6", subjectId: "1", order: 12, allocatedHours: 12 },
+  { id: "phy-11-13", name: "Kinetic Theory", curriculumId: "cbse", classId: "6", subjectId: "1", order: 13, allocatedHours: 8 },
+  { id: "phy-11-14", name: "Oscillations", curriculumId: "cbse", classId: "6", subjectId: "1", order: 14, allocatedHours: 12 },
+  { id: "phy-11-15", name: "Waves", curriculumId: "cbse", classId: "6", subjectId: "1", order: 15, allocatedHours: 14 },
 
-  // Class 12 Physics
-  { id: "phy-12-1", name: "Electric Charges and Fields", curriculumId: "cbse", classId: "7", subjectId: "1", order: 1 },
-  { id: "phy-12-2", name: "Electrostatic Potential and Capacitance", curriculumId: "cbse", classId: "7", subjectId: "1", order: 2 },
-  { id: "phy-12-3", name: "Current Electricity", curriculumId: "cbse", classId: "7", subjectId: "1", order: 3 },
-  { id: "phy-12-4", name: "Moving Charges and Magnetism", curriculumId: "cbse", classId: "7", subjectId: "1", order: 4 },
-  { id: "phy-12-5", name: "Magnetism and Matter", curriculumId: "cbse", classId: "7", subjectId: "1", order: 5 },
-  { id: "phy-12-6", name: "Electromagnetic Induction", curriculumId: "cbse", classId: "7", subjectId: "1", order: 6 },
-  { id: "phy-12-7", name: "Alternating Current", curriculumId: "cbse", classId: "7", subjectId: "1", order: 7 },
-  { id: "phy-12-8", name: "Electromagnetic Waves", curriculumId: "cbse", classId: "7", subjectId: "1", order: 8 },
-  { id: "phy-12-9", name: "Ray Optics and Optical Instruments", curriculumId: "cbse", classId: "7", subjectId: "1", order: 9 },
-  { id: "phy-12-10", name: "Wave Optics", curriculumId: "cbse", classId: "7", subjectId: "1", order: 10 },
-  { id: "phy-12-11", name: "Dual Nature of Radiation and Matter", curriculumId: "cbse", classId: "7", subjectId: "1", order: 11 },
-  { id: "phy-12-12", name: "Atoms", curriculumId: "cbse", classId: "7", subjectId: "1", order: 12 },
-  { id: "phy-12-13", name: "Nuclei", curriculumId: "cbse", classId: "7", subjectId: "1", order: 13 },
-  { id: "phy-12-14", name: "Semiconductor Electronics: Materials, Devices and Simple Circuits", curriculumId: "cbse", classId: "7", subjectId: "1", order: 14 },
+  // Class 12 Physics (Total: ~180 hours for entire syllabus)
+  { id: "phy-12-1", name: "Electric Charges and Fields", curriculumId: "cbse", classId: "7", subjectId: "1", order: 1, allocatedHours: 12 },
+  { id: "phy-12-2", name: "Electrostatic Potential and Capacitance", curriculumId: "cbse", classId: "7", subjectId: "1", order: 2, allocatedHours: 12 },
+  { id: "phy-12-3", name: "Current Electricity", curriculumId: "cbse", classId: "7", subjectId: "1", order: 3, allocatedHours: 14 },
+  { id: "phy-12-4", name: "Moving Charges and Magnetism", curriculumId: "cbse", classId: "7", subjectId: "1", order: 4, allocatedHours: 12 },
+  { id: "phy-12-5", name: "Magnetism and Matter", curriculumId: "cbse", classId: "7", subjectId: "1", order: 5, allocatedHours: 8 },
+  { id: "phy-12-6", name: "Electromagnetic Induction", curriculumId: "cbse", classId: "7", subjectId: "1", order: 6, allocatedHours: 12 },
+  { id: "phy-12-7", name: "Alternating Current", curriculumId: "cbse", classId: "7", subjectId: "1", order: 7, allocatedHours: 10 },
+  { id: "phy-12-8", name: "Electromagnetic Waves", curriculumId: "cbse", classId: "7", subjectId: "1", order: 8, allocatedHours: 6 },
+  { id: "phy-12-9", name: "Ray Optics and Optical Instruments", curriculumId: "cbse", classId: "7", subjectId: "1", order: 9, allocatedHours: 14 },
+  { id: "phy-12-10", name: "Wave Optics", curriculumId: "cbse", classId: "7", subjectId: "1", order: 10, allocatedHours: 10 },
+  { id: "phy-12-11", name: "Dual Nature of Radiation and Matter", curriculumId: "cbse", classId: "7", subjectId: "1", order: 11, allocatedHours: 8 },
+  { id: "phy-12-12", name: "Atoms", curriculumId: "cbse", classId: "7", subjectId: "1", order: 12, allocatedHours: 8 },
+  { id: "phy-12-13", name: "Nuclei", curriculumId: "cbse", classId: "7", subjectId: "1", order: 13, allocatedHours: 8 },
+  { id: "phy-12-14", name: "Semiconductor Electronics: Materials, Devices and Simple Circuits", curriculumId: "cbse", classId: "7", subjectId: "1", order: 14, allocatedHours: 14 },
 ];
 
 // ============================================

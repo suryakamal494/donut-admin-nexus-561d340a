@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
-import { Outlet } from "react-router-dom";
+import { Outlet, useNavigate } from "react-router-dom";
 import TeacherSidebar from "./TeacherSidebar";
 import TeacherBottomNav from "./TeacherBottomNav";
 import { cn } from "@/lib/utils";
-import { Bell, Search, User, ChevronDown, Menu } from "lucide-react";
+import { Bell, Search, User, ChevronDown, Menu, KeyRound, LogOut, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -15,11 +15,22 @@ import {
 import { useIsMobile } from "@/hooks/use-mobile";
 import { currentTeacher } from "@/data/teacherData";
 import { Badge } from "@/components/ui/badge";
+import { ProfileEditDialog, PasswordResetDialog } from "@/components/teacher";
+import { toast } from "sonner";
 
 const TeacherLayout = () => {
+  const navigate = useNavigate();
   const isMobile = useIsMobile();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [editProfileOpen, setEditProfileOpen] = useState(false);
+  const [resetPasswordOpen, setResetPasswordOpen] = useState(false);
+
+  const handleLogout = () => {
+    // Clear any local state/tokens (in real app, call supabase.auth.signOut())
+    toast.success("Signed out successfully");
+    navigate("/login");
+  };
 
   // Auto-collapse sidebar on smaller screens
   useEffect(() => {
@@ -152,11 +163,27 @@ const TeacherLayout = () => {
                   <ChevronDown className="w-4 h-4 text-muted-foreground hidden md:block" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuItem>My Profile</DropdownMenuItem>
-                <DropdownMenuItem>Settings</DropdownMenuItem>
+              <DropdownMenuContent align="end" className="w-56 bg-popover z-50">
+                <DropdownMenuItem 
+                  onClick={() => setEditProfileOpen(true)}
+                  className="cursor-pointer"
+                >
+                  <Pencil className="w-4 h-4 mr-2" />
+                  Edit Profile
+                </DropdownMenuItem>
+                <DropdownMenuItem 
+                  onClick={() => setResetPasswordOpen(true)}
+                  className="cursor-pointer"
+                >
+                  <KeyRound className="w-4 h-4 mr-2" />
+                  Reset Password
+                </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem className="text-destructive">
+                <DropdownMenuItem 
+                  onClick={handleLogout}
+                  className="text-destructive cursor-pointer focus:text-destructive"
+                >
+                  <LogOut className="w-4 h-4 mr-2" />
                   Sign Out
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -172,6 +199,18 @@ const TeacherLayout = () => {
 
       {/* Bottom Navigation - Mobile Only */}
       {isMobile && <TeacherBottomNav />}
+
+      {/* Profile Edit Dialog */}
+      <ProfileEditDialog 
+        open={editProfileOpen} 
+        onOpenChange={setEditProfileOpen} 
+      />
+
+      {/* Password Reset Dialog */}
+      <PasswordResetDialog 
+        open={resetPasswordOpen} 
+        onOpenChange={setResetPasswordOpen} 
+      />
     </div>
   );
 };

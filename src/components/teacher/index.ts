@@ -9,6 +9,8 @@ export { CreateHomeworkDialog } from "./CreateHomeworkDialog";
 export { CurrentClassWidget } from "./CurrentClassWidget";
 export { TeacherTimetableCell } from "./TeacherTimetableCell";
 export { TeacherTimetableGrid } from "./TeacherTimetableGrid";
+export { ProfileEditDialog } from "./ProfileEditDialog";
+export { PasswordResetDialog } from "./PasswordResetDialog";
 
 // Lesson Workspace exports
 export * from "./lesson-workspace";
