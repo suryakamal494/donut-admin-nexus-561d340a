@@ -25,6 +25,12 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+} from "@/components/ui/drawer";
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -34,6 +40,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { blockTypeConfig, detectLinkType, type BlockType, type LessonPlanBlock, type LinkType } from "./types";
 
 interface BlockDialogProps {
@@ -170,6 +177,7 @@ export const BlockDialog = ({
   chapter,
   subject,
 }: BlockDialogProps) => {
+  const isMobile = useIsMobile();
   const [activeTab, setActiveTab] = useState<'library' | 'ai' | 'custom'>('library');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedContentType, setSelectedContentType] = useState<string>('all');
@@ -272,6 +280,265 @@ export const BlockDialog = ({
     onOpenChange(false);
   };
 
+  // Shared dialog content
+  const dialogContent = (
+    <div className="flex-1 overflow-hidden flex flex-col">
+      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="flex flex-col flex-1">
+        <div className="px-4">
+          <TabsList className="w-full grid grid-cols-3">
+            <TabsTrigger value="library" className="text-xs gap-1.5">
+              <FileText className="w-3.5 h-3.5" />
+              Library
+            </TabsTrigger>
+            <TabsTrigger value="ai" className="text-xs gap-1.5">
+              <Sparkles className="w-3.5 h-3.5" />
+              AI
+            </TabsTrigger>
+            <TabsTrigger value="custom" className="text-xs gap-1.5">
+              <Upload className="w-3.5 h-3.5" />
+              Custom
+            </TabsTrigger>
+          </TabsList>
+        </div>
+        
+        {/* Library Tab */}
+        <TabsContent value="library" className="mt-0 flex-1 flex flex-col min-h-0">
+          {/* Filters */}
+          <div className="px-4 py-3 space-y-2 border-b shrink-0">
+            {/* Search */}
+            <div className="relative">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                placeholder="Search content..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9 h-9"
+              />
+            </div>
+            
+            {/* Type filter */}
+            <Select value={selectedContentType} onValueChange={setSelectedContentType}>
+              <SelectTrigger className="h-8 text-xs">
+                <Filter className="w-3.5 h-3.5 mr-1.5" />
+                <SelectValue placeholder="Filter by type" />
+              </SelectTrigger>
+              <SelectContent className="bg-popover">
+                <SelectItem value="all" className="text-xs">All Types</SelectItem>
+                <SelectItem value="video" className="text-xs">Videos</SelectItem>
+                <SelectItem value="presentation" className="text-xs">Presentations</SelectItem>
+                <SelectItem value="document" className="text-xs">Documents</SelectItem>
+                <SelectItem value="animation" className="text-xs">Animations</SelectItem>
+                <SelectItem value="simulation" className="text-xs">Simulations</SelectItem>
+              </SelectContent>
+            </Select>
+            
+            {chapter && (
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-muted-foreground">Context:</span>
+                <Badge variant="secondary" className="text-xs">
+                  {subject} • {chapter}
+                </Badge>
+              </div>
+            )}
+          </div>
+          
+          {/* Content List - with proper scroll container */}
+          <ScrollArea className={cn("flex-1 min-h-0", isMobile ? "h-[50vh]" : "h-[280px]")}>
+            <div className="p-2 space-y-1">
+              {filteredContent.length > 0 ? (
+                filteredContent.map((item) => (
+                  <ContentItem
+                    key={item.id}
+                    item={item}
+                    onSelect={() => handleLibrarySelect(item)}
+                  />
+                ))
+              ) : (
+                <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+                  <Search className="w-10 h-10 mb-3 opacity-50" />
+                  <p className="text-sm font-medium">No content found</p>
+                  <p className="text-xs">Try adjusting your filters</p>
+                </div>
+              )}
+            </div>
+          </ScrollArea>
+        </TabsContent>
+        
+        {/* AI Tab */}
+        <TabsContent value="ai" className="mt-0 p-4 space-y-4">
+          <div>
+            <label className="text-sm font-medium text-muted-foreground mb-2 block">
+              Describe what you want to teach
+            </label>
+            <Textarea
+              placeholder={`e.g., "Explain Newton's second law with real-world examples..."`}
+              value={aiPrompt}
+              onChange={(e) => setAiPrompt(e.target.value)}
+              className="min-h-[100px] text-sm resize-none"
+            />
+          </div>
+          
+          {chapter && (
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-muted-foreground">Context:</span>
+              <Badge variant="secondary" className="text-xs">
+                {subject} • {chapter}
+              </Badge>
+            </div>
+          )}
+          
+          <Button
+            className="w-full gradient-button gap-2"
+            onClick={handleAIGenerate}
+            disabled={!aiPrompt.trim() || isGenerating}
+          >
+            {isGenerating ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Generating...
+              </>
+            ) : (
+              <>
+                <Sparkles className="w-4 h-4" />
+                Generate Content
+              </>
+            )}
+          </Button>
+        </TabsContent>
+        
+        {/* Custom Tab */}
+        <TabsContent value="custom" className="mt-0 p-4 space-y-4">
+          {/* Input Mode Toggle */}
+          <div className="flex gap-2">
+            <Button
+              variant={inputMode === 'upload' ? 'default' : 'outline'}
+              size="sm"
+              className={cn("flex-1 h-9", inputMode === 'upload' && "gradient-button")}
+              onClick={() => setInputMode('upload')}
+            >
+              <Upload className="w-4 h-4 mr-1.5" />
+              Upload File
+            </Button>
+            <Button
+              variant={inputMode === 'link' ? 'default' : 'outline'}
+              size="sm"
+              className={cn("flex-1 h-9", inputMode === 'link' && "gradient-button")}
+              onClick={() => setInputMode('link')}
+            >
+              <LinkIcon className="w-4 h-4 mr-1.5" />
+              Add Link
+            </Button>
+          </div>
+          
+          <div>
+            <label className="text-sm font-medium text-muted-foreground mb-2 block">
+              Block Title {inputMode === 'link' && '(optional)'}
+            </label>
+            <Input
+              placeholder="Enter title..."
+              value={customTitle}
+              onChange={(e) => setCustomTitle(e.target.value)}
+              className="h-10"
+            />
+          </div>
+          
+          <div>
+            <label className="text-sm font-medium text-muted-foreground mb-2 block">
+              Duration (minutes)
+            </label>
+            <Input
+              type="number"
+              placeholder="10"
+              value={customDuration}
+              onChange={(e) => setCustomDuration(e.target.value)}
+              className="h-10 w-28"
+              min={1}
+              max={60}
+            />
+          </div>
+          
+          {inputMode === 'upload' ? (
+            <div className="border-2 border-dashed border-border rounded-lg p-6 text-center">
+              <Upload className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
+              <p className="text-sm text-muted-foreground">
+                Drag & drop files or click to browse
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">
+                PDF, PPT, DOC, MP4, Images
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <div className="relative">
+                <LinkIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  placeholder="Paste YouTube, Vimeo, or any URL..."
+                  value={linkUrl}
+                  onChange={(e) => handleLinkChange(e.target.value)}
+                  className="pl-10 h-10"
+                />
+              </div>
+              
+              {linkUrl && (
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-muted-foreground">Detected:</span>
+                  <Badge 
+                    variant="outline" 
+                    className={cn("text-xs", linkTypeBadges[detectedLinkType].className)}
+                  >
+                    {linkTypeBadges[detectedLinkType].label}
+                  </Badge>
+                </div>
+              )}
+              
+              <p className="text-xs text-muted-foreground">
+                Supports: YouTube, Vimeo, Google Drive, Google Slides, or any iframe embed
+              </p>
+            </div>
+          )}
+          
+          <Button
+            className="w-full"
+            onClick={handleCustomAdd}
+            disabled={inputMode === 'upload' ? !customTitle.trim() : !linkUrl.trim()}
+          >
+            {inputMode === 'upload' ? (
+              <>
+                <Upload className="w-4 h-4 mr-2" />
+                Add Block
+              </>
+            ) : (
+              <>
+                <LinkIcon className="w-4 h-4 mr-2" />
+                Add Link
+              </>
+            )}
+          </Button>
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
+
+  // Mobile: Drawer
+  if (isMobile) {
+    return (
+      <Drawer open={open} onOpenChange={onOpenChange}>
+        <DrawerContent className="max-h-[90vh] flex flex-col">
+          <DrawerHeader className="pb-2">
+            <DrawerTitle>Add {config.label} Block</DrawerTitle>
+            <p className="text-sm text-muted-foreground">
+              {activeTab === 'library' 
+                ? `${filteredContent.length} items available`
+                : 'Choose a content source'}
+            </p>
+          </DrawerHeader>
+          {dialogContent}
+        </DrawerContent>
+      </Drawer>
+    );
+  }
+
+  // Desktop: Dialog
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px] max-h-[85vh] flex flex-col p-0">
@@ -283,242 +550,7 @@ export const BlockDialog = ({
               : 'Choose a content source'}
           </p>
         </DialogHeader>
-        
-        <div className="flex-1 overflow-hidden flex flex-col">
-          <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="flex flex-col flex-1">
-            <div className="px-4">
-              <TabsList className="w-full grid grid-cols-3">
-                <TabsTrigger value="library" className="text-xs gap-1.5">
-                  <FileText className="w-3.5 h-3.5" />
-                  Library
-                </TabsTrigger>
-                <TabsTrigger value="ai" className="text-xs gap-1.5">
-                  <Sparkles className="w-3.5 h-3.5" />
-                  AI
-                </TabsTrigger>
-                <TabsTrigger value="custom" className="text-xs gap-1.5">
-                  <Upload className="w-3.5 h-3.5" />
-                  Custom
-                </TabsTrigger>
-              </TabsList>
-            </div>
-            
-            {/* Library Tab */}
-            <TabsContent value="library" className="mt-0 flex-1 flex flex-col min-h-0">
-              {/* Filters */}
-              <div className="px-4 py-3 space-y-2 border-b shrink-0">
-                {/* Search */}
-                <div className="relative">
-                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Search content..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-9 h-9"
-                  />
-                </div>
-                
-                {/* Type filter */}
-                <Select value={selectedContentType} onValueChange={setSelectedContentType}>
-                  <SelectTrigger className="h-8 text-xs">
-                    <Filter className="w-3.5 h-3.5 mr-1.5" />
-                    <SelectValue placeholder="Filter by type" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-popover">
-                    <SelectItem value="all" className="text-xs">All Types</SelectItem>
-                    <SelectItem value="video" className="text-xs">Videos</SelectItem>
-                    <SelectItem value="presentation" className="text-xs">Presentations</SelectItem>
-                    <SelectItem value="document" className="text-xs">Documents</SelectItem>
-                    <SelectItem value="animation" className="text-xs">Animations</SelectItem>
-                    <SelectItem value="simulation" className="text-xs">Simulations</SelectItem>
-                  </SelectContent>
-                </Select>
-                
-                {chapter && (
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-muted-foreground">Context:</span>
-                    <Badge variant="secondary" className="text-xs">
-                      {subject} • {chapter}
-                    </Badge>
-                  </div>
-                )}
-              </div>
-              
-              {/* Content List - with proper scroll container */}
-              <ScrollArea className="flex-1 min-h-0 h-[280px]">
-                <div className="p-2 space-y-1">
-                  {filteredContent.length > 0 ? (
-                    filteredContent.map((item) => (
-                      <ContentItem
-                        key={item.id}
-                        item={item}
-                        onSelect={() => handleLibrarySelect(item)}
-                      />
-                    ))
-                  ) : (
-                    <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
-                      <Search className="w-10 h-10 mb-3 opacity-50" />
-                      <p className="text-sm font-medium">No content found</p>
-                      <p className="text-xs">Try adjusting your filters</p>
-                    </div>
-                  )}
-                </div>
-              </ScrollArea>
-            </TabsContent>
-            
-            {/* AI Tab */}
-            <TabsContent value="ai" className="mt-0 p-4 space-y-4">
-              <div>
-                <label className="text-sm font-medium text-muted-foreground mb-2 block">
-                  Describe what you want to teach
-                </label>
-                <Textarea
-                  placeholder={`e.g., "Explain Newton's second law with real-world examples..."`}
-                  value={aiPrompt}
-                  onChange={(e) => setAiPrompt(e.target.value)}
-                  className="min-h-[100px] text-sm resize-none"
-                />
-              </div>
-              
-              {chapter && (
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-muted-foreground">Context:</span>
-                  <Badge variant="secondary" className="text-xs">
-                    {subject} • {chapter}
-                  </Badge>
-                </div>
-              )}
-              
-              <Button
-                className="w-full gradient-button gap-2"
-                onClick={handleAIGenerate}
-                disabled={!aiPrompt.trim() || isGenerating}
-              >
-                {isGenerating ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    Generating...
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="w-4 h-4" />
-                    Generate Content
-                  </>
-                )}
-              </Button>
-            </TabsContent>
-            
-            {/* Custom Tab */}
-            <TabsContent value="custom" className="mt-0 p-4 space-y-4">
-              {/* Input Mode Toggle */}
-              <div className="flex gap-2">
-                <Button
-                  variant={inputMode === 'upload' ? 'default' : 'outline'}
-                  size="sm"
-                  className={cn("flex-1 h-9", inputMode === 'upload' && "gradient-button")}
-                  onClick={() => setInputMode('upload')}
-                >
-                  <Upload className="w-4 h-4 mr-1.5" />
-                  Upload File
-                </Button>
-                <Button
-                  variant={inputMode === 'link' ? 'default' : 'outline'}
-                  size="sm"
-                  className={cn("flex-1 h-9", inputMode === 'link' && "gradient-button")}
-                  onClick={() => setInputMode('link')}
-                >
-                  <LinkIcon className="w-4 h-4 mr-1.5" />
-                  Add Link
-                </Button>
-              </div>
-              
-              <div>
-                <label className="text-sm font-medium text-muted-foreground mb-2 block">
-                  Block Title {inputMode === 'link' && '(optional)'}
-                </label>
-                <Input
-                  placeholder="Enter title..."
-                  value={customTitle}
-                  onChange={(e) => setCustomTitle(e.target.value)}
-                  className="h-10"
-                />
-              </div>
-              
-              <div>
-                <label className="text-sm font-medium text-muted-foreground mb-2 block">
-                  Duration (minutes)
-                </label>
-                <Input
-                  type="number"
-                  placeholder="10"
-                  value={customDuration}
-                  onChange={(e) => setCustomDuration(e.target.value)}
-                  className="h-10 w-28"
-                  min={1}
-                  max={60}
-                />
-              </div>
-              
-              {inputMode === 'upload' ? (
-                <div className="border-2 border-dashed border-border rounded-lg p-6 text-center">
-                  <Upload className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
-                  <p className="text-sm text-muted-foreground">
-                    Drag & drop files or click to browse
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    PDF, PPT, DOC, MP4, Images
-                  </p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  <div className="relative">
-                    <LinkIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    <Input
-                      placeholder="Paste YouTube, Vimeo, or any URL..."
-                      value={linkUrl}
-                      onChange={(e) => handleLinkChange(e.target.value)}
-                      className="pl-10 h-10"
-                    />
-                  </div>
-                  
-                  {linkUrl && (
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs text-muted-foreground">Detected:</span>
-                      <Badge 
-                        variant="outline" 
-                        className={cn("text-xs", linkTypeBadges[detectedLinkType].className)}
-                      >
-                        {linkTypeBadges[detectedLinkType].label}
-                      </Badge>
-                    </div>
-                  )}
-                  
-                  <p className="text-xs text-muted-foreground">
-                    Supports: YouTube, Vimeo, Google Drive, Google Slides, or any iframe embed
-                  </p>
-                </div>
-              )}
-              
-              <Button
-                className="w-full"
-                onClick={handleCustomAdd}
-                disabled={inputMode === 'upload' ? !customTitle.trim() : !linkUrl.trim()}
-              >
-                {inputMode === 'upload' ? (
-                  <>
-                    <Upload className="w-4 h-4 mr-2" />
-                    Add Block
-                  </>
-                ) : (
-                  <>
-                    <LinkIcon className="w-4 h-4 mr-2" />
-                    Add Link
-                  </>
-                )}
-              </Button>
-            </TabsContent>
-          </Tabs>
-        </div>
+        {dialogContent}
       </DialogContent>
     </Dialog>
   );
