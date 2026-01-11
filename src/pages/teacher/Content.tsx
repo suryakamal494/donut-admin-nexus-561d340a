@@ -219,10 +219,6 @@ const Content = () => {
     // Only allow editing teacher-created content
     if (content.source === "teacher" && content.createdByTeacherId === currentTeacher.id) {
       navigate(`/teacher/content/edit/${content.id}`);
-      toast({
-        title: "Edit Mode",
-        description: `Editing "${content.title}"`,
-      });
     }
   };
 
