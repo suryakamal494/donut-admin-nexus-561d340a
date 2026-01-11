@@ -1,7 +1,7 @@
 // Month Plan Grid Component
 // Main grid visualization for the Academic Planner workspace
 
-import { useMemo } from "react";
+import { useState, useMemo } from "react";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
@@ -12,6 +12,7 @@ import {
   BatchAcademicPlan,
   SubjectPlanData,
   ChapterCellType,
+  ChapterAdjustment,
   SUBJECT_COLORS,
   SUBJECT_ICONS,
 } from "@/types/academicPlanner";
@@ -20,6 +21,7 @@ import {
   getHoursForWeek,
   getWeekNumberInMonth,
 } from "@/lib/academicPlannerUtils";
+import { ChapterAdjustmentPopover } from "./ChapterAdjustmentPopover";
 
 interface MonthPlanGridProps {
   plan: BatchAcademicPlan;
@@ -27,6 +29,7 @@ interface MonthPlanGridProps {
   monthWeeks: { startWeekIndex: number; endWeekIndex: number; weeksInMonth: AcademicWeek[] };
   currentWeekIndex: number;
   publishedMonths: Set<number>;
+  onAdjust?: (adjustment: ChapterAdjustment) => void;
   onCellClick?: (subjectId: string, chapterId: string | null, weekIndex: number) => void;
 }
 
@@ -36,6 +39,7 @@ export function MonthPlanGrid({
   monthWeeks,
   currentWeekIndex,
   publishedMonths,
+  onAdjust,
   onCellClick,
 }: MonthPlanGridProps) {
   // Get month name
@@ -112,6 +116,7 @@ export function MonthPlanGrid({
               monthWeeks={monthWeeks}
               currentWeekIndex={currentWeekIndex}
               isPublished={isMonthPublished}
+              onAdjust={onAdjust}
               onCellClick={onCellClick}
             />
           ))}
@@ -136,6 +141,10 @@ export function MonthPlanGrid({
           </div>
           <span>Continues next</span>
         </div>
+        <div className="flex items-center gap-1.5">
+          <Lock className="w-3 h-3 text-amber-600" />
+          <span>Locked</span>
+        </div>
       </div>
     </div>
   );
@@ -148,6 +157,7 @@ interface SubjectRowProps {
   monthWeeks: { startWeekIndex: number; endWeekIndex: number; weeksInMonth: AcademicWeek[] };
   currentWeekIndex: number;
   isPublished: boolean;
+  onAdjust?: (adjustment: ChapterAdjustment) => void;
   onCellClick?: (subjectId: string, chapterId: string | null, weekIndex: number) => void;
 }
 
@@ -157,6 +167,7 @@ function SubjectRow({
   monthWeeks,
   currentWeekIndex,
   isPublished,
+  onAdjust,
   onCellClick,
 }: SubjectRowProps) {
   const colors = SUBJECT_COLORS[subject.subjectId] || SUBJECT_COLORS.mat;
@@ -205,16 +216,19 @@ function SubjectRow({
         const isCurrent = absoluteIndex === currentWeekIndex;
         
         return (
-          <ChapterCell
+          <ChapterCellWithPopover
             key={week.weekNumber}
+            subjectId={subject.subjectId}
             chapterId={foundAssignment?.chapterId || null}
             chapterName={foundAssignment?.chapterName || null}
             hours={hours}
+            weekIndex={absoluteIndex}
             cellType={cellType}
             isCurrent={isCurrent}
             isLocked={foundAssignment?.isLocked || false}
             isPublished={isPublished}
             colors={colors}
+            onAdjust={onAdjust}
             onClick={() => onCellClick?.(subject.subjectId, foundAssignment?.chapterId || null, absoluteIndex)}
           />
         );
@@ -223,30 +237,37 @@ function SubjectRow({
   );
 }
 
-// Chapter Cell Component
-interface ChapterCellProps {
+// Chapter Cell with Popover Component
+interface ChapterCellWithPopoverProps {
+  subjectId: string;
   chapterId: string | null;
   chapterName: string | null;
   hours: number;
+  weekIndex: number;
   cellType: ChapterCellType;
   isCurrent: boolean;
   isLocked: boolean;
   isPublished: boolean;
   colors: { bg: string; text: string; border: string };
+  onAdjust?: (adjustment: ChapterAdjustment) => void;
   onClick?: () => void;
 }
 
-function ChapterCell({
+function ChapterCellWithPopover({
+  subjectId,
   chapterId,
   chapterName,
   hours,
+  weekIndex,
   cellType,
   isCurrent,
   isLocked,
   isPublished,
   colors,
+  onAdjust,
   onClick,
-}: ChapterCellProps) {
+}: ChapterCellWithPopoverProps) {
+  const [isPopoverOpen, setIsPopoverOpen] = useState(false);
   const isEmpty = cellType === 'empty';
   
   // Determine visual style based on cell type
@@ -283,54 +304,88 @@ function ChapterCell({
     }
   };
 
+  const cellContent = (
+    <button
+      onClick={() => {
+        if (!isEmpty && !isPublished) {
+          setIsPopoverOpen(true);
+        } else {
+          onClick?.();
+        }
+      }}
+      disabled={isPublished}
+      className={cn(
+        "h-16 w-full flex flex-col items-center justify-center border text-xs transition-all",
+        isEmpty 
+          ? "bg-muted/20 border-dashed border-muted-foreground/20 hover:bg-muted/40" 
+          : cn(colors.bg, colors.border, getOpacity(), getCellStyle()),
+        isCurrent && "ring-2 ring-primary ring-offset-1",
+        !isPublished && !isEmpty && "hover:shadow-md cursor-pointer",
+        isPublished && "cursor-default opacity-80",
+        isLocked && "ring-1 ring-amber-400"
+      )}
+    >
+      {!isEmpty && (
+        <>
+          <div className={cn("font-medium truncate max-w-full px-1", colors.text)}>
+            {chapterName?.split(' ').slice(0, 2).join(' ')}
+            {(cellType === 'middle' || cellType === 'end') && '...'}
+          </div>
+          <div className="text-[10px] text-muted-foreground flex items-center gap-1">
+            {hours}h
+            {isLocked && <Lock className="w-2.5 h-2.5 text-amber-600" />}
+            {cellType === 'end' && <ChevronRight className="w-2.5 h-2.5" />}
+          </div>
+        </>
+      )}
+      {isEmpty && (
+        <span className="text-muted-foreground/50">—</span>
+      )}
+    </button>
+  );
+
+  // If empty or published, just show tooltip
+  if (isEmpty || isPublished) {
+    return (
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            {cellContent}
+          </TooltipTrigger>
+          <TooltipContent side="top" className="max-w-[200px]">
+            {isEmpty ? (
+              <p>No chapter planned</p>
+            ) : (
+              <div className="text-xs">
+                <p className="font-medium">{chapterName}</p>
+                <p className="text-muted-foreground">{hours} hours this week</p>
+                {isPublished && <p className="text-green-600">✓ Published (read-only)</p>}
+              </div>
+            )}
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    );
+  }
+
+  // Show popover for adjustable cells
   return (
-    <TooltipProvider>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <button
-            onClick={onClick}
-            disabled={isPublished}
-            className={cn(
-              "h-16 w-full flex flex-col items-center justify-center border text-xs transition-all",
-              isEmpty 
-                ? "bg-muted/20 border-dashed border-muted-foreground/20 hover:bg-muted/40" 
-                : cn(colors.bg, colors.border, getOpacity(), getCellStyle()),
-              isCurrent && "ring-2 ring-primary ring-offset-1",
-              !isPublished && !isEmpty && "hover:shadow-md cursor-pointer",
-              isPublished && "cursor-default opacity-80"
-            )}
-          >
-            {!isEmpty && (
-              <>
-                <div className={cn("font-medium truncate max-w-full px-1", colors.text)}>
-                  {chapterName?.split(' ').slice(0, 2).join(' ')}
-                  {(cellType === 'middle' || cellType === 'end') && '...'}
-                </div>
-                <div className="text-[10px] text-muted-foreground flex items-center gap-1">
-                  {hours}h
-                  {isLocked && <Lock className="w-2.5 h-2.5" />}
-                  {cellType === 'end' && <ChevronRight className="w-2.5 h-2.5" />}
-                </div>
-              </>
-            )}
-            {isEmpty && (
-              <span className="text-muted-foreground/50">—</span>
-            )}
-          </button>
-        </TooltipTrigger>
-        <TooltipContent side="top" className="max-w-[200px]">
-          {isEmpty ? (
-            <p>No chapter planned</p>
-          ) : (
-            <div className="text-xs">
-              <p className="font-medium">{chapterName}</p>
-              <p className="text-muted-foreground">{hours} hours this week</p>
-              {isLocked && <p className="text-amber-600">🔒 Locked</p>}
-              {isPublished && <p className="text-green-600">✓ Published</p>}
-            </div>
-          )}
-        </TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
+    <ChapterAdjustmentPopover
+      isOpen={isPopoverOpen}
+      onOpenChange={setIsPopoverOpen}
+      chapterId={chapterId!}
+      chapterName={chapterName!}
+      subjectId={subjectId}
+      weekIndex={weekIndex}
+      hours={hours}
+      isLocked={isLocked}
+      isPublished={isPublished}
+      onAdjust={(adjustment) => {
+        onAdjust?.(adjustment);
+        setIsPopoverOpen(false);
+      }}
+    >
+      {cellContent}
+    </ChapterAdjustmentPopover>
   );
 }
