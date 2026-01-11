@@ -19,6 +19,7 @@ import TeacherHomework from "@/pages/teacher/Homework";
 import TeacherContent from "@/pages/teacher/Content";
 import TeacherReference from "@/pages/teacher/Reference";
 import TeacherProfile from "@/pages/teacher/Profile";
+import TeacherNotifications from "@/pages/teacher/Notifications";
 
 // Heavy pages - LAZY LOADED
 const LessonPlanCanvas = lazy(() => import("@/pages/teacher/LessonPlanCanvas"));
@@ -62,6 +63,7 @@ export default function TeacherRoutes() {
         <Route path="content/edit/:id" element={<LazyPage><TeacherEditContent /></LazyPage>} />
         <Route path="reference" element={<TeacherReference />} />
         <Route path="profile" element={<TeacherProfile />} />
+        <Route path="notifications" element={<TeacherNotifications />} />
       </Route>
     </Routes>
   );

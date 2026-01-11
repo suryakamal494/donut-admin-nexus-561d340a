@@ -3,7 +3,7 @@ import { Outlet, useNavigate } from "react-router-dom";
 import TeacherSidebar from "./TeacherSidebar";
 import TeacherBottomNav from "./TeacherBottomNav";
 import { cn } from "@/lib/utils";
-import { Bell, Search, User, ChevronDown, Menu, KeyRound, LogOut, Pencil } from "lucide-react";
+import { Bell, Search, User, ChevronDown, Menu, KeyRound, LogOut, Pencil, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -17,6 +17,8 @@ import { currentTeacher } from "@/data/teacherData";
 import { Badge } from "@/components/ui/badge";
 import { ProfileEditDialog, PasswordResetDialog } from "@/components/teacher";
 import { toast } from "sonner";
+import { useTeacherNotifications } from "@/hooks/useTeacherNotifications";
+import { TeacherNotificationCard } from "@/components/teacher/notifications";
 
 const TeacherLayout = () => {
   const navigate = useNavigate();
@@ -25,6 +27,9 @@ const TeacherLayout = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [editProfileOpen, setEditProfileOpen] = useState(false);
   const [resetPasswordOpen, setResetPasswordOpen] = useState(false);
+  
+  // Get notifications
+  const { notifications, unreadCount, markAsRead } = useTeacherNotifications();
 
   const handleLogout = () => {
     // Clear any local state/tokens (in real app, call supabase.auth.signOut())
@@ -129,13 +134,54 @@ const TeacherLayout = () => {
               <Search className="w-5 h-5 text-muted-foreground" />
             </Button>
             
-            {/* Notifications */}
-            <Button variant="ghost" size="icon" className="relative hover:bg-muted/50">
-              <Bell className="w-5 h-5 text-muted-foreground" />
-              <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-primary text-white text-[10px] font-bold rounded-full flex items-center justify-center">
-                2
-              </span>
-            </Button>
+            {/* Notifications Dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="relative hover:bg-muted/50">
+                  <Bell className="w-5 h-5 text-muted-foreground" />
+                  {unreadCount > 0 && (
+                    <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-primary text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+                      {unreadCount > 9 ? '9+' : unreadCount}
+                    </span>
+                  )}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-80 sm:w-96 p-0">
+                <div className="flex items-center justify-between p-3 border-b border-border bg-muted/30">
+                  <h4 className="font-semibold text-sm">Notifications</h4>
+                  {unreadCount > 0 && (
+                    <Badge variant="secondary" className="text-xs">
+                      {unreadCount} unread
+                    </Badge>
+                  )}
+                </div>
+                <div className="max-h-80 overflow-y-auto p-2 space-y-1.5">
+                  {notifications.slice(0, 5).map((notification) => (
+                    <TeacherNotificationCard
+                      key={notification.id}
+                      notification={notification}
+                      onMarkAsRead={markAsRead}
+                      compact
+                    />
+                  ))}
+                  {notifications.length === 0 && (
+                    <div className="py-8 text-center text-sm text-muted-foreground">
+                      No notifications
+                    </div>
+                  )}
+                </div>
+                <div className="border-t border-border p-2">
+                  <Button 
+                    variant="ghost" 
+                    className="w-full justify-center text-sm h-9"
+                    onClick={() => navigate("/teacher/notifications")}
+                  >
+                    View All Notifications
+                    <ChevronRight className="w-4 h-4 ml-1" />
+                  </Button>
+                </div>
+              </DropdownMenuContent>
+            </DropdownMenu>
             
             {/* Profile Dropdown */}
             <DropdownMenu>
