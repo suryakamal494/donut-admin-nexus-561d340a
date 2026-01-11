@@ -1,14 +1,16 @@
 import { MapPin, Clock, AlertCircle, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 import { ChapterDotsIndicator } from "./ChapterDotsIndicator";
 import type { SectionProgress } from "@/hooks/useTeacherSyllabusProgress";
 
 interface SectionProgressRowProps {
   section: SectionProgress;
   onTap?: () => void;
+  onConfirmTap?: () => void;
 }
 
-export function SectionProgressRow({ section, onTap }: SectionProgressRowProps) {
+export function SectionProgressRow({ section, onTap, onConfirmTap }: SectionProgressRowProps) {
   const statusColors = {
     ahead: "border-l-blue-500 bg-blue-50/30",
     on_track: "border-l-emerald-500 bg-emerald-50/30",
@@ -28,6 +30,11 @@ export function SectionProgressRow({ section, onTap }: SectionProgressRowProps) 
     on_track: "On Track",
     lagging: "Behind",
     critical: "Critical",
+  };
+
+  const handleConfirmClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onConfirmTap?.();
   };
 
   return (
@@ -57,14 +64,6 @@ export function SectionProgressRow({ section, onTap }: SectionProgressRowProps) 
           </div>
         </div>
         
-        {/* Pending Badge */}
-        {section.pendingConfirmations > 0 && (
-          <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-amber-100 text-amber-700 shrink-0">
-            <AlertCircle className="w-3 h-3" />
-            <span className="text-xs font-medium">{section.pendingConfirmations}</span>
-          </div>
-        )}
-        
         <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
       </div>
 
@@ -91,21 +90,15 @@ export function SectionProgressRow({ section, onTap }: SectionProgressRowProps) 
         </div>
       </div>
 
-      {/* Hours Progress */}
-      <div className="flex items-center gap-4">
-        <div className="flex items-center gap-1.5">
+      {/* Hours Progress + Pending Action */}
+      <div className="flex items-center gap-3">
+        <div className="flex items-center gap-1.5 shrink-0">
           <Clock className="w-3.5 h-3.5 text-muted-foreground" />
           <span className="text-sm">
             <span className="font-semibold text-foreground">{section.hoursTaken}h</span>
             <span className="text-muted-foreground"> / {section.hoursAllotted}h</span>
           </span>
         </div>
-        
-        {section.hoursRemaining > 0 && (
-          <span className="text-xs text-muted-foreground">
-            {section.hoursRemaining}h left
-          </span>
-        )}
         
         {/* Progress Bar Mini */}
         <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
@@ -120,9 +113,22 @@ export function SectionProgressRow({ section, onTap }: SectionProgressRowProps) 
             style={{ width: `${section.percentComplete}%` }}
           />
         </div>
-        <span className="text-xs font-medium text-muted-foreground">
+        <span className="text-xs font-medium text-muted-foreground shrink-0">
           {section.percentComplete}%
         </span>
+
+        {/* Pending Confirmation Button */}
+        {section.pendingConfirmations > 0 && (
+          <Button
+            size="sm"
+            variant="outline"
+            className="h-8 px-2.5 gap-1.5 bg-amber-50 border-amber-200 text-amber-700 hover:bg-amber-100 hover:text-amber-800 shrink-0"
+            onClick={handleConfirmClick}
+          >
+            <AlertCircle className="w-3.5 h-3.5" />
+            <span className="text-xs font-medium">{section.pendingConfirmations} Pending</span>
+          </Button>
+        )}
       </div>
     </div>
   );

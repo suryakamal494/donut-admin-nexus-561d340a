@@ -1,8 +1,6 @@
 import { useState } from "react";
 import { PageHeader } from "@/components/ui/page-header";
 import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import {
   Select,
   SelectContent,
@@ -18,18 +16,23 @@ import {
   Calendar,
   Filter,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
 import { useTeacherSyllabusProgress, type SectionProgress } from "@/hooks/useTeacherSyllabusProgress";
 import {
   WeekContextBanner,
   SubjectProgressCard,
   ChapterDetailSheet,
 } from "@/components/teacher/syllabus-progress";
+import { TeachingConfirmationDialog } from "@/components/teacher/TeachingConfirmationDialog";
+import { toast } from "sonner";
 
 export default function TeacherAcademicProgress() {
   const [selectedSubject, setSelectedSubject] = useState<string>("all");
   const [selectedSection, setSelectedSection] = useState<SectionProgress | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
+  
+  // Teaching confirmation dialog state
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+  const [confirmingSection, setConfirmingSection] = useState<SectionProgress | null>(null);
 
   const progressData = useTeacherSyllabusProgress();
 
@@ -41,6 +44,57 @@ export default function TeacherAcademicProgress() {
   const handleSectionTap = (section: SectionProgress) => {
     setSelectedSection(section);
     setSheetOpen(true);
+  };
+
+  const handleConfirmTap = (section: SectionProgress) => {
+    setConfirmingSection(section);
+    setConfirmDialogOpen(true);
+  };
+
+  const handleConfirmSubmit = (data: {
+    didTeach: boolean;
+    chapterId?: string;
+    chapterName?: string;
+    topicIds?: string[];
+    topicNames?: string[];
+    noTeachReason?: string;
+    noTeachNote?: string;
+  }) => {
+    // TODO: Integrate with backend to save confirmation
+    console.log("Teaching confirmation:", {
+      section: confirmingSection?.batchName,
+      ...data,
+    });
+    
+    if (data.didTeach) {
+      toast.success(`Confirmed: ${data.chapterName || "Chapter"} taught to ${confirmingSection?.batchName}`);
+    } else {
+      toast.info(`Marked as not taught: ${confirmingSection?.batchName}`);
+    }
+    
+    setConfirmDialogOpen(false);
+    setConfirmingSection(null);
+  };
+
+  // Get chapters for the confirming section (mock data for now)
+  const getChaptersForSection = (section: SectionProgress | null) => {
+    if (!section) return [];
+    return section.chapters.map((ch, idx) => ({
+      chapterId: ch.chapterId,
+      chapterName: ch.chapterName,
+      order: idx + 1,
+      hoursAllocated: ch.plannedHours,
+      plannedHours: ch.plannedHours,
+    }));
+  };
+
+  // Get subject name for the confirming section
+  const getSubjectNameForSection = (section: SectionProgress | null) => {
+    if (!section) return "";
+    const subject = progressData.subjects.find(s => 
+      s.sections.some(sec => sec.batchName === section.batchName)
+    );
+    return subject?.subjectName || "";
   };
 
   return (
@@ -144,6 +198,7 @@ export default function TeacherAcademicProgress() {
             key={subject.subjectId}
             subject={subject}
             onSectionTap={handleSectionTap}
+            onConfirmTap={handleConfirmTap}
           />
         ))}
       </div>
@@ -170,6 +225,19 @@ export default function TeacherAcademicProgress() {
         section={selectedSection}
         open={sheetOpen}
         onClose={() => setSheetOpen(false)}
+      />
+
+      {/* Teaching Confirmation Dialog */}
+      <TeachingConfirmationDialog
+        open={confirmDialogOpen}
+        onOpenChange={setConfirmDialogOpen}
+        batchName={confirmingSection?.batchName || ""}
+        subjectName={getSubjectNameForSection(confirmingSection)}
+        date={new Date().toISOString()}
+        periodsCount={1}
+        chapters={getChaptersForSection(confirmingSection)}
+        suggestedChapter={confirmingSection?.chapters.find(ch => ch.status === "in_progress")?.chapterId}
+        onConfirm={handleConfirmSubmit}
       />
     </div>
   );

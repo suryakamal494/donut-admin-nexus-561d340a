@@ -7,9 +7,10 @@ import type { TeacherSubjectSummary, SectionProgress } from "@/hooks/useTeacherS
 interface SubjectProgressCardProps {
   subject: TeacherSubjectSummary;
   onSectionTap?: (section: SectionProgress) => void;
+  onConfirmTap?: (section: SectionProgress) => void;
 }
 
-export function SubjectProgressCard({ subject, onSectionTap }: SubjectProgressCardProps) {
+export function SubjectProgressCard({ subject, onSectionTap, onConfirmTap }: SubjectProgressCardProps) {
   // Subject icons based on name
   const getSubjectIcon = (name: string) => {
     const lower = name.toLowerCase();
@@ -63,6 +64,7 @@ export function SubjectProgressCard({ subject, onSectionTap }: SubjectProgressCa
             key={section.batchId}
             section={section}
             onTap={() => onSectionTap?.(section)}
+            onConfirmTap={() => onConfirmTap?.(section)}
           />
         ))}
       </CardContent>
