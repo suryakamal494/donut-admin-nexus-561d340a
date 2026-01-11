@@ -12,6 +12,13 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+} from "@/components/ui/sheet";
+import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
@@ -28,6 +35,10 @@ import {
   User,
   Calendar,
   Check,
+  Target,
+  BookMarked,
+  GraduationCap,
+  Timer,
 } from "lucide-react";
 import { 
   batchProgressSummaries, 
@@ -38,8 +49,49 @@ import {
   currentWeekIndex,
 } from "@/data/academicScheduleData";
 import { cn } from "@/lib/utils";
-import { NO_TEACH_REASON_LABELS } from "@/types/academicSchedule";
+import { NO_TEACH_REASON_LABELS, ChapterHourAllocation } from "@/types/academicSchedule";
 import { MonthNavigator, getCompactWeekLabel } from "@/components/academic-schedule/MonthNavigator";
+
+// Mock topic data for chapters (in real app, this would come from masterData)
+const MOCK_TOPICS: Record<string, { id: string; name: string; duration: string; status: "completed" | "in_progress" | "pending" }[]> = {
+  "phy-10-1": [
+    { id: "t1", name: "Reflection of Light", duration: "2h", status: "completed" },
+    { id: "t2", name: "Spherical Mirrors", duration: "3h", status: "completed" },
+    { id: "t3", name: "Refraction of Light", duration: "2h", status: "completed" },
+    { id: "t4", name: "Refraction by Spherical Lenses", duration: "3h", status: "completed" },
+  ],
+  "phy-10-2": [
+    { id: "t1", name: "Human Eye", duration: "2h", status: "completed" },
+    { id: "t2", name: "Defects of Vision", duration: "2h", status: "completed" },
+    { id: "t3", name: "Dispersion of Light", duration: "2h", status: "in_progress" },
+  ],
+  "phy-10-3": [
+    { id: "t1", name: "Electric Current and Circuit", duration: "2h", status: "in_progress" },
+    { id: "t2", name: "Electric Potential and Potential Difference", duration: "2h", status: "pending" },
+    { id: "t3", name: "Ohm's Law", duration: "3h", status: "pending" },
+    { id: "t4", name: "Resistance and Resistivity", duration: "2h", status: "pending" },
+    { id: "t5", name: "Heating Effect of Electric Current", duration: "2h", status: "pending" },
+  ],
+  "mat-6-6": [
+    { id: "t1", name: "Introduction to Integers", duration: "1h", status: "completed" },
+    { id: "t2", name: "Representation of Integers on Number Line", duration: "1h", status: "completed" },
+    { id: "t3", name: "Addition of Integers", duration: "2h", status: "in_progress" },
+    { id: "t4", name: "Subtraction of Integers", duration: "2h", status: "pending" },
+  ],
+};
+
+// Get mock topics for a chapter (falls back to generated topics)
+const getTopicsForChapter = (chapterId: string, chapterName: string) => {
+  if (MOCK_TOPICS[chapterId]) {
+    return MOCK_TOPICS[chapterId];
+  }
+  // Generate placeholder topics
+  return [
+    { id: "t1", name: `Introduction to ${chapterName.split(' ').slice(0, 3).join(' ')}`, duration: "2h", status: "pending" as const },
+    { id: "t2", name: "Core Concepts", duration: "2h", status: "pending" as const },
+    { id: "t3", name: "Practice Problems", duration: "2h", status: "pending" as const },
+  ];
+};
 
 // Status helpers
 const getStatusConfig = (status: string) => {
@@ -71,11 +123,20 @@ const SUBJECT_COLORS: Record<string, { bg: string; text: string; border: string 
   sci: { bg: "bg-cyan-100", text: "text-cyan-700", border: "border-cyan-200" },
 };
 
+// Chapter detail type for the sheet
+interface ChapterDetail {
+  chapter: ChapterHourAllocation & { weeksNeeded: number; startWeek: number; endWeek: number };
+  isCompleted: boolean;
+  isCurrent: boolean;
+  subjectName: string;
+}
+
 export default function ConsolidatedBatchView() {
   const { batchId } = useParams();
   const navigate = useNavigate();
   const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
   const [lostDaysOpen, setLostDaysOpen] = useState<Record<string, boolean>>({});
+  const [selectedChapter, setSelectedChapter] = useState<ChapterDetail | null>(null);
   const [selectedMonthIndex, setSelectedMonthIndex] = useState(() => {
     // Find the month containing the current week
     const currentWeek = academicWeeks[currentWeekIndex];
@@ -411,6 +472,15 @@ export default function ConsolidatedBatchView() {
                                       <Tooltip>
                                         <TooltipTrigger asChild>
                                           <div 
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              setSelectedChapter({
+                                                chapter,
+                                                isCompleted,
+                                                isCurrent: isCurrentChapter,
+                                                subjectName: currentSubject.subjectName,
+                                              });
+                                            }}
                                             className={cn(
                                               "h-4 rounded cursor-pointer transition-all hover:scale-y-125 hover:shadow-sm",
                                               isCompleted ? "bg-emerald-200 hover:bg-emerald-300" :
@@ -434,6 +504,7 @@ export default function ConsolidatedBatchView() {
                                               <p>{statusText}</p>
                                               {isFirstWeek && chapter.weeksNeeded > 1 && <p>🚀 Week 1 of {chapter.weeksNeeded}</p>}
                                               {isLastWeek && chapter.weeksNeeded > 1 && <p>🏁 Week {chapter.weeksNeeded} of {chapter.weeksNeeded}</p>}
+                                              <p className="text-primary mt-1">Click for details →</p>
                                             </div>
                                           </div>
                                         </TooltipContent>
@@ -666,6 +737,149 @@ export default function ConsolidatedBatchView() {
           </div>
         </CardContent>
       </Card>
+      {/* Chapter Detail Sheet */}
+      <Sheet open={!!selectedChapter} onOpenChange={(open) => !open && setSelectedChapter(null)}>
+        <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
+          {selectedChapter && (
+            <>
+              <SheetHeader className="pb-4">
+                <div className="flex items-center gap-3">
+                  <div className={cn(
+                    "w-12 h-12 rounded-xl flex items-center justify-center",
+                    selectedChapter.isCompleted ? "bg-emerald-100" :
+                    selectedChapter.isCurrent ? "bg-primary/20" : "bg-muted"
+                  )}>
+                    {selectedChapter.isCompleted ? (
+                      <CheckCircle className="w-6 h-6 text-emerald-600" />
+                    ) : selectedChapter.isCurrent ? (
+                      <BookOpen className="w-6 h-6 text-primary" />
+                    ) : (
+                      <BookMarked className="w-6 h-6 text-muted-foreground" />
+                    )}
+                  </div>
+                  <div>
+                    <SheetTitle className="text-left">{selectedChapter.chapter.chapterName}</SheetTitle>
+                    <SheetDescription className="text-left">
+                      {selectedChapter.subjectName} • Chapter {selectedChapter.chapter.order}
+                    </SheetDescription>
+                  </div>
+                </div>
+              </SheetHeader>
+
+              {/* Status Badge */}
+              <div className="mb-4">
+                <Badge className={cn(
+                  "gap-1.5",
+                  selectedChapter.isCompleted ? "bg-emerald-100 text-emerald-700 border-emerald-200" :
+                  selectedChapter.isCurrent ? "bg-primary/10 text-primary border-primary/20" :
+                  "bg-muted text-muted-foreground"
+                )}>
+                  {selectedChapter.isCompleted ? (
+                    <><CheckCircle className="w-3.5 h-3.5" /> Completed</>
+                  ) : selectedChapter.isCurrent ? (
+                    <><Target className="w-3.5 h-3.5" /> In Progress</>
+                  ) : (
+                    <><Clock className="w-3.5 h-3.5" /> Upcoming</>
+                  )}
+                </Badge>
+              </div>
+
+              {/* Quick Stats */}
+              <div className="grid grid-cols-3 gap-3 mb-6">
+                <div className="p-3 rounded-lg bg-muted/30 border text-center">
+                  <Timer className="w-4 h-4 mx-auto mb-1 text-muted-foreground" />
+                  <p className="text-lg font-bold">{selectedChapter.chapter.plannedHours}h</p>
+                  <p className="text-xs text-muted-foreground">Planned</p>
+                </div>
+                <div className="p-3 rounded-lg bg-muted/30 border text-center">
+                  <Calendar className="w-4 h-4 mx-auto mb-1 text-muted-foreground" />
+                  <p className="text-lg font-bold">{selectedChapter.chapter.weeksNeeded}</p>
+                  <p className="text-xs text-muted-foreground">Week{selectedChapter.chapter.weeksNeeded > 1 ? 's' : ''}</p>
+                </div>
+                <div className="p-3 rounded-lg bg-muted/30 border text-center">
+                  <GraduationCap className="w-4 h-4 mx-auto mb-1 text-muted-foreground" />
+                  <p className="text-lg font-bold">
+                    {getTopicsForChapter(selectedChapter.chapter.chapterId, selectedChapter.chapter.chapterName).length}
+                  </p>
+                  <p className="text-xs text-muted-foreground">Topics</p>
+                </div>
+              </div>
+
+              {/* Topic Breakdown */}
+              <div className="space-y-3">
+                <h4 className="font-semibold flex items-center gap-2 text-sm">
+                  <BookOpen className="w-4 h-4" />
+                  Topic Breakdown
+                </h4>
+                
+                <div className="space-y-2">
+                  {getTopicsForChapter(selectedChapter.chapter.chapterId, selectedChapter.chapter.chapterName).map((topic, idx) => (
+                    <div 
+                      key={topic.id}
+                      className={cn(
+                        "p-3 rounded-lg border flex items-center gap-3",
+                        topic.status === "completed" && "border-emerald-200 bg-emerald-50/30",
+                        topic.status === "in_progress" && "border-primary/30 bg-primary/5",
+                        topic.status === "pending" && "border-muted"
+                      )}
+                    >
+                      <div className={cn(
+                        "w-7 h-7 rounded-full flex items-center justify-center shrink-0 text-xs font-medium",
+                        topic.status === "completed" ? "bg-emerald-100 text-emerald-700" :
+                        topic.status === "in_progress" ? "bg-primary/10 text-primary" : 
+                        "bg-muted text-muted-foreground"
+                      )}>
+                        {topic.status === "completed" ? (
+                          <Check className="w-4 h-4" />
+                        ) : (
+                          idx + 1
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className={cn(
+                          "font-medium text-sm",
+                          topic.status === "completed" && "text-muted-foreground"
+                        )}>
+                          {topic.name}
+                        </p>
+                        <p className="text-xs text-muted-foreground">{topic.duration} estimated</p>
+                      </div>
+                      <Badge variant="outline" className={cn(
+                        "text-xs shrink-0",
+                        topic.status === "completed" && "text-emerald-600 border-emerald-300",
+                        topic.status === "in_progress" && "text-primary border-primary/30",
+                        topic.status === "pending" && "text-muted-foreground"
+                      )}>
+                        {topic.status === "completed" ? "Done" :
+                         topic.status === "in_progress" ? "Current" : "Pending"}
+                      </Badge>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Progress Summary */}
+              <div className="mt-6 p-4 rounded-lg bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium">Topic Progress</span>
+                  <span className="text-sm text-muted-foreground">
+                    {getTopicsForChapter(selectedChapter.chapter.chapterId, selectedChapter.chapter.chapterName)
+                      .filter(t => t.status === "completed").length} / {getTopicsForChapter(selectedChapter.chapter.chapterId, selectedChapter.chapter.chapterName).length}
+                  </span>
+                </div>
+                <Progress 
+                  value={
+                    (getTopicsForChapter(selectedChapter.chapter.chapterId, selectedChapter.chapter.chapterName)
+                      .filter(t => t.status === "completed").length / 
+                    getTopicsForChapter(selectedChapter.chapter.chapterId, selectedChapter.chapter.chapterName).length) * 100
+                  } 
+                  className="h-2"
+                />
+              </div>
+            </>
+          )}
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }
