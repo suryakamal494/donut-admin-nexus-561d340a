@@ -66,11 +66,19 @@ export function LessonWorkspaceDialog({
     onOpenChange(isOpen);
   };
 
+  // Haptic feedback helper (10ms vibration)
+  const triggerHaptic = () => {
+    if (navigator.vibrate) {
+      navigator.vibrate(10);
+    }
+  };
+
   const handleDragEnd = (_: any, info: PanInfo) => {
     if (!enableSwipeToClose) return;
     
     // Close if swiped down more than 100px or with high velocity
     if (info.offset.y > 100 || info.velocity.y > 500) {
+      triggerHaptic();
       controls.start({ y: "100%" }).then(() => {
         handleOpenChange(false);
       });
