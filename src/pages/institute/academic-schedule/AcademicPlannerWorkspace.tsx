@@ -23,6 +23,7 @@ import {
   Lock,
   FileEdit,
   History,
+  Undo2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -30,9 +31,10 @@ import { toast } from "sonner";
 // Components
 import { MonthNavigator } from "@/components/academic-schedule/MonthNavigator";
 import { MonthPlanGrid } from "@/components/academic-schedule/MonthPlanGrid";
+import { PlanHistorySheet } from "@/components/academic-schedule/PlanHistorySheet";
 
 // Hooks & Data
-import { useAcademicPlanGenerator } from "@/hooks/useAcademicPlanGenerator";
+import { useAcademicPlanGenerator, PlanHistoryEntry } from "@/hooks/useAcademicPlanGenerator";
 import { academicWeeks, currentWeekIndex, academicScheduleSetups } from "@/data/academicScheduleData";
 import { getWeeksForMonth, getPendingChaptersForSubject } from "@/lib/academicPlannerUtils";
 import { loadPlanForBatch } from "@/data/academicPlannerData";
@@ -71,12 +73,16 @@ export default function AcademicPlannerWorkspace() {
     validation,
     publishedMonths,
     hasExistingPlan,
+    history,
     generatePlan,
     clearPlan,
     applyAdjustment,
     publishMonth,
     reorderChapters,
     addChapterManually,
+    undoToEntry,
+    clearHistory,
+    resetSubjectToOriginal,
     batch,
     hasValidSetup,
     canEditWeek,
@@ -178,6 +184,22 @@ export default function AcademicPlannerWorkspace() {
         
         {/* Quick Links */}
         <div className="flex items-center gap-2">
+          {/* History Button */}
+          {plan && history.length > 0 && (
+            <PlanHistorySheet
+              history={history}
+              onUndo={undoToEntry}
+              onClearHistory={clearHistory}
+            >
+              <Button variant="outline" size="sm" className="gap-1.5 h-8">
+                <History className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">History</span>
+                <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-[10px]">
+                  {history.length}
+                </Badge>
+              </Button>
+            </PlanHistorySheet>
+          )}
           <Link to="/institute/academic-schedule/setup">
             <Button variant="ghost" size="sm" className="gap-1.5 h-8 text-muted-foreground">
               <Settings className="w-3.5 h-3.5" />
