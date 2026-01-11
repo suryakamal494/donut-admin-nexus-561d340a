@@ -144,10 +144,30 @@ export default function ConsolidatedBatchView() {
   const currentMonth = months[selectedMonthIndex];
 
   // Get subject setup for year view
+  // Map class name to classId used in academicScheduleSetups
+  // "Class 6" -> "1", "Class 7" -> "2", etc. OR JEE batches use course-based matching
   const getSubjectSetup = (subjectId: string) => {
+    // For JEE batches, match by courseId and subjectId
+    if (batch.batchId.startsWith('jee-')) {
+      return academicScheduleSetups.find(s => 
+        s.subjectId === subjectId && s.courseId === 'jee-mains'
+      );
+    }
+    
+    // Extract class number from batch name (e.g., "Class 10" -> 10)
+    const classNumber = parseInt(batch.className.replace(/\D/g, '')) || 0;
+    
+    // Map class numbers to classId in academicScheduleSetups
+    // Class 6 = "1", Class 7 = "2", Class 8 = "3", Class 9 = "4", Class 10 = "5", Class 11 = "6", Class 12 = "7"
+    const classIdMap: Record<number, string> = {
+      6: "1", 7: "2", 8: "3", 9: "4", 10: "5", 11: "6", 12: "7"
+    };
+    const classId = classIdMap[classNumber];
+    
+    if (!classId) return undefined;
+    
     return academicScheduleSetups.find(s => 
-      s.subjectId === subjectId && 
-      s.classId?.includes(batch.className.toLowerCase().replace(/\s+/g, '-').replace('class-', ''))
+      s.subjectId === subjectId && s.classId === classId
     );
   };
 
@@ -189,27 +209,38 @@ export default function ConsolidatedBatchView() {
       </div>
 
       {/* Subject Selection Pills */}
-      <div className="flex items-center gap-2 flex-wrap">
-        {batch.subjects.map((subject) => {
-          const colors = SUBJECT_COLORS[subject.subjectId] || { bg: "bg-gray-100", text: "text-gray-700", border: "border-gray-200" };
-          const isSelected = selectedSubject === subject.subjectId;
-          return (
-            <button
-              key={subject.subjectId}
-              onClick={() => setSelectedSubject(subject.subjectId)}
-              className={cn(
-                "px-4 py-2 rounded-xl text-sm font-medium transition-all border-2",
-                isSelected
-                  ? `${colors.bg} ${colors.text} ${colors.border} shadow-sm`
-                  : "bg-muted/50 text-muted-foreground border-transparent hover:bg-muted"
-              )}
-            >
-              {subject.subjectName}
-              <span className="ml-2 text-xs opacity-70">{subject.percentComplete}%</span>
-            </button>
-          );
-        })}
-      </div>
+      {batch.subjects.length > 0 ? (
+        <div className="flex items-center gap-2 flex-wrap">
+          {batch.subjects.map((subject) => {
+            const colors = SUBJECT_COLORS[subject.subjectId] || { bg: "bg-gray-100", text: "text-gray-700", border: "border-gray-200" };
+            const isSelected = selectedSubject === subject.subjectId;
+            return (
+              <button
+                key={subject.subjectId}
+                onClick={() => setSelectedSubject(subject.subjectId)}
+                className={cn(
+                  "px-4 py-2 rounded-xl text-sm font-medium transition-all border-2",
+                  isSelected
+                    ? `${colors.bg} ${colors.text} ${colors.border} shadow-sm`
+                    : "bg-muted/50 text-muted-foreground border-transparent hover:bg-muted"
+                )}
+              >
+                {subject.subjectName}
+                <span className="ml-2 text-xs opacity-70">{subject.percentComplete}%</span>
+              </button>
+            );
+          })}
+        </div>
+      ) : (
+        <Card className="border-amber-200 bg-amber-50/30">
+          <CardContent className="p-4">
+            <p className="text-sm text-amber-700 flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4" />
+              No subjects configured for this batch. Please configure subjects in Setup.
+            </p>
+          </CardContent>
+        </Card>
+      )}
 
       {currentSubject && (
         <>
@@ -494,15 +525,50 @@ export default function ConsolidatedBatchView() {
         </Card>
       )}
 
-      {batchPendingConfirmations.length === 0 && (
-        <Card className="border-emerald-200 bg-emerald-50/30">
-          <CardContent className="p-6 text-center">
-            <CheckCircle className="w-12 h-12 mx-auto mb-3 text-emerald-500" />
-            <p className="font-medium text-emerald-700">All caught up!</p>
-            <p className="text-sm text-muted-foreground mt-1">No pending confirmations for this batch</p>
-          </CardContent>
-        </Card>
-      )}
+      {/* Pending Status Summary */}
+      <Card className={cn(
+        "border",
+        batchPendingConfirmations.length === 0 ? "border-emerald-200 bg-emerald-50/30" : "border-muted"
+      )}>
+        <CardContent className="p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              {batchPendingConfirmations.length === 0 ? (
+                <>
+                  <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center">
+                    <CheckCircle className="w-5 h-5 text-emerald-600" />
+                  </div>
+                  <div>
+                    <p className="font-medium text-emerald-700">Confirmations Complete</p>
+                    <p className="text-xs text-muted-foreground">All teaching sessions are confirmed</p>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center">
+                    <Clock className="w-5 h-5 text-amber-600" />
+                  </div>
+                  <div>
+                    <p className="font-medium text-amber-700">{batchPendingConfirmations.length} Pending Confirmation{batchPendingConfirmations.length > 1 ? 's' : ''}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {pendingGrouped.critical.length > 0 && `${pendingGrouped.critical.length} critical • `}
+                      Review and confirm teaching sessions
+                    </p>
+                  </div>
+                </>
+              )}
+            </div>
+            {batch.subjects.length > 0 && (
+              <div className="text-right">
+                <p className="text-xs text-muted-foreground">Total Lost Days</p>
+                <p className="text-lg font-semibold">
+                  {batch.subjects.reduce((sum, s) => sum + s.lostDays, 0)}
+                </p>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
