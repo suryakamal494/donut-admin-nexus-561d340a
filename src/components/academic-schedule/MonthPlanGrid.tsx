@@ -2,7 +2,7 @@
 // Main grid visualization for the Academic Planner workspace
 // Now with drag-and-drop chapter reordering using @dnd-kit
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useEffect, useCallback } from "react";
 import {
   DndContext,
   closestCenter,
@@ -533,6 +533,7 @@ function ChapterCellWithDrag({
           modificationTypes={modificationTypes}
           colors={colors}
           onClick={onClick}
+          onLongPress={() => !isPublished && setIsPopoverOpen(true)}
         />
       </div>
     </ChapterAdjustmentPopover>
@@ -575,6 +576,67 @@ function ChapterCellWithPopover({
 }: ChapterCellWithPopoverProps) {
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
   const isEmpty = cellType === 'empty';
+  
+  // Long press state for mobile
+  const longPressTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const [isLongPressing, setIsLongPressing] = useState(false);
+  const touchStartPosRef = useRef<{ x: number; y: number } | null>(null);
+
+  // Trigger haptic feedback if available
+  const triggerHaptic = (duration: number = 10) => {
+    if ('vibrate' in navigator) {
+      navigator.vibrate(duration);
+    }
+  };
+
+  // Handle touch start for long press
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (isPublished || isEmpty) return;
+    
+    const touch = e.touches[0];
+    touchStartPosRef.current = { x: touch.clientX, y: touch.clientY };
+    
+    longPressTimerRef.current = setTimeout(() => {
+      setIsLongPressing(true);
+      triggerHaptic(15);
+      setIsPopoverOpen(true);
+    }, 500);
+  };
+
+  // Handle touch move - cancel long press if moved too much
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!touchStartPosRef.current || !longPressTimerRef.current) return;
+    
+    const touch = e.touches[0];
+    const dx = Math.abs(touch.clientX - touchStartPosRef.current.x);
+    const dy = Math.abs(touch.clientY - touchStartPosRef.current.y);
+    
+    if (dx > 10 || dy > 10) {
+      if (longPressTimerRef.current) {
+        clearTimeout(longPressTimerRef.current);
+        longPressTimerRef.current = null;
+      }
+    }
+  };
+
+  // Handle touch end
+  const handleTouchEnd = () => {
+    if (longPressTimerRef.current) {
+      clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
+    touchStartPosRef.current = null;
+    setIsLongPressing(false);
+  };
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (longPressTimerRef.current) {
+        clearTimeout(longPressTimerRef.current);
+      }
+    };
+  }, []);
   
   // Determine visual style based on cell type
   const getCellStyle = () => {
@@ -630,24 +692,32 @@ function ChapterCellWithPopover({
   const cellContent = (
     <button
       onClick={() => {
-        if (!isEmpty && !isPublished) {
+        if (!isEmpty && !isPublished && !isLongPressing) {
+          triggerHaptic(5);
           setIsPopoverOpen(true);
         } else {
           onClick?.();
         }
       }}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+      onTouchCancel={handleTouchEnd}
       disabled={isPublished}
       className={cn(
-        "relative h-16 w-full flex flex-col items-center justify-center border text-xs transition-all",
+        // Increased height for mobile touch (min 48px)
+        "relative min-h-[48px] md:h-16 w-full flex flex-col items-center justify-center border text-xs transition-all touch-manipulation",
         isEmpty 
           ? "bg-muted/20 border-dashed border-muted-foreground/20 hover:bg-muted/40" 
           : cn(colors.bg, colors.border, getOpacity(), getCellStyle()),
         isCurrent && "ring-2 ring-primary ring-offset-1",
-        !isPublished && !isEmpty && "hover:shadow-md cursor-pointer",
+        !isPublished && !isEmpty && "hover:shadow-md cursor-pointer active:scale-[0.98]",
         isPublished && "cursor-default opacity-80",
         isLocked && "ring-1 ring-amber-400",
         // Modified indicator - left accent border
-        isModified && !isEmpty && "border-l-4 border-l-orange-400"
+        isModified && !isEmpty && "border-l-4 border-l-orange-400",
+        // Long press visual feedback
+        isLongPressing && "scale-[0.96] ring-2 ring-primary/50"
       )}
     >
       {/* Modified Badge */}
@@ -660,7 +730,7 @@ function ChapterCellWithPopover({
       {!isEmpty && (
         <>
           <div 
-            className={cn("font-medium truncate max-w-full px-1", colors.text)}
+            className={cn("font-medium truncate max-w-full px-1 text-[11px] md:text-xs", colors.text)}
             title={chapterName || undefined}
           >
             {chapterName}
@@ -674,6 +744,13 @@ function ChapterCellWithPopover({
       )}
       {isEmpty && (
         <span className="text-muted-foreground/50">—</span>
+      )}
+
+      {/* Long press hint for mobile */}
+      {!isEmpty && !isPublished && (
+        <div className="absolute bottom-0.5 right-0.5 md:hidden">
+          <span className="text-[8px] text-muted-foreground/50">hold</span>
+        </div>
       )}
     </button>
   );
