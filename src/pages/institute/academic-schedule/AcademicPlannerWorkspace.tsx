@@ -74,6 +74,7 @@ export default function AcademicPlannerWorkspace() {
     clearPlan,
     applyAdjustment,
     publishMonth,
+    reorderChapters,
     batch,
     hasValidSetup,
     canEditWeek,
@@ -354,6 +355,7 @@ export default function AcademicPlannerWorkspace() {
               publishedMonths={publishedMonths}
               onAdjust={applyAdjustment}
               onCellClick={handleCellClick}
+              onReorderChapters={reorderChapters}
             />
           </CardContent>
         </Card>
