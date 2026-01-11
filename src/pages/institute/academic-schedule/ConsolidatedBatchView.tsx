@@ -176,31 +176,35 @@ export default function ConsolidatedBatchView() {
 
   const batch = batchProgressSummaries.find(b => b.batchId === batchId);
   
-  if (!batch) {
-    return (
-      <div className="space-y-6">
-        <PageHeader title="Batch Not Found" description="The requested batch could not be found" />
-        <Button variant="outline" onClick={() => navigate(-1)}>
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Go Back
-        </Button>
-      </div>
+  // Get classId for drift calculation - computed before hooks to ensure consistent hook ordering
+  const classId = useMemo(() => {
+    if (!batch) return undefined;
+    const classNumber = parseInt(batch.className.replace(/\D/g, '')) || 0;
+    const classIdMap: Record<number, string> = {
+      6: "1", 7: "2", 8: "3", 9: "4", 10: "5", 11: "6", 12: "7"
+    };
+    return classIdMap[classNumber];
+  }, [batch]);
+
+  // Calculate drift for current subject - hook must be called unconditionally
+  const driftData = useChapterDrift(
+    batchId || "",
+    selectedSubject || "",
+    classId
+  );
+
+  // Get subject-specific adjustments
+  const subjectAdjustments = useMemo(() => {
+    return scheduleAdjustments.filter(
+      a => a.batchId === batchId && a.subjectId === selectedSubject
     );
-  }
-
-  // Set default selected subject
-  if (!selectedSubject && batch.subjects.length > 0) {
-    setSelectedSubject(batch.subjects[0].subjectId);
-  }
-
-  const currentSubject = batch.subjects.find(s => s.subjectId === selectedSubject);
-  const statusConfig = getStatusConfig(batch.status);
-  const StatusIcon = statusConfig.icon;
-
-  // Get pending confirmations for this batch
-  const batchPendingConfirmations = pendingConfirmations.filter(p => p.batchId === batchId);
+  }, [batchId, selectedSubject]);
 
   // Group pending by urgency
+  const batchPendingConfirmations = useMemo(() => {
+    return pendingConfirmations.filter(p => p.batchId === batchId);
+  }, [batchId]);
+
   const pendingGrouped = useMemo(() => {
     const critical = batchPendingConfirmations.filter(p => p.daysOverdue >= 3);
     const overdue = batchPendingConfirmations.filter(p => p.daysOverdue > 0 && p.daysOverdue < 3);
@@ -223,6 +227,28 @@ export default function ConsolidatedBatchView() {
     return Array.from(monthMap.values());
   }, []);
 
+  // Early return AFTER all hooks are called
+  if (!batch) {
+    return (
+      <div className="space-y-6">
+        <PageHeader title="Batch Not Found" description="The requested batch could not be found" />
+        <Button variant="outline" onClick={() => navigate(-1)}>
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          Go Back
+        </Button>
+      </div>
+    );
+  }
+
+  // Set default selected subject
+  if (!selectedSubject && batch.subjects.length > 0) {
+    setSelectedSubject(batch.subjects[0].subjectId);
+  }
+
+  const currentSubject = batch.subjects.find(s => s.subjectId === selectedSubject);
+  const statusConfig = getStatusConfig(batch.status);
+  const StatusIcon = statusConfig.icon;
+
   const currentMonth = months[selectedMonthIndex];
 
   // Get subject setup for year view
@@ -236,45 +262,12 @@ export default function ConsolidatedBatchView() {
       );
     }
     
-    // Extract class number from batch name (e.g., "Class 10" -> 10)
-    const classNumber = parseInt(batch.className.replace(/\D/g, '')) || 0;
-    
-    // Map class numbers to classId in academicScheduleSetups
-    // Class 6 = "1", Class 7 = "2", Class 8 = "3", Class 9 = "4", Class 10 = "5", Class 11 = "6", Class 12 = "7"
-    const classIdMap: Record<number, string> = {
-      6: "1", 7: "2", 8: "3", 9: "4", 10: "5", 11: "6", 12: "7"
-    };
-    const classId = classIdMap[classNumber];
-    
     if (!classId) return undefined;
     
     return academicScheduleSetups.find(s => 
       s.subjectId === subjectId && s.classId === classId
     );
   };
-
-  // Get classId for drift calculation
-  const getClassId = () => {
-    const classNumber = parseInt(batch.className.replace(/\D/g, '')) || 0;
-    const classIdMap: Record<number, string> = {
-      6: "1", 7: "2", 8: "3", 9: "4", 10: "5", 11: "6", 12: "7"
-    };
-    return classIdMap[classNumber];
-  };
-
-  // Calculate drift for current subject
-  const driftData = useChapterDrift(
-    batchId || "",
-    selectedSubject || "",
-    getClassId()
-  );
-
-  // Get subject-specific adjustments
-  const subjectAdjustments = useMemo(() => {
-    return scheduleAdjustments.filter(
-      a => a.batchId === batchId && a.subjectId === selectedSubject
-    );
-  }, [batchId, selectedSubject]);
 
   // Handler for opening adjustment dialog
   const handleOpenAdjustmentDialog = (chapterDrift?: ChapterDriftStatus) => {
@@ -459,6 +452,12 @@ export default function ConsolidatedBatchView() {
                           const isCompleted = chapterIdx < currentSubject.chaptersCompleted;
                           const isCurrentChapter = chapter.chapterId === currentSubject.currentChapter;
                           
+                          // Get drift info for this chapter
+                          const chapterDrift = driftData.chaptersWithDrift.find(
+                            d => d.chapterId === chapter.chapterId
+                          );
+                          const hasDrift = chapterDrift && chapterDrift.driftHours !== 0 && !chapterDrift.isResolved;
+                          
                           // Get the global week index for this month's first week
                           const monthFirstWeekIndex = academicWeeks.findIndex(w => 
                             w.startDate === currentMonth.weeks[0]?.startDate
@@ -494,9 +493,36 @@ export default function ConsolidatedBatchView() {
                                       <p className="text-xs text-muted-foreground">
                                         {chapter.plannedHours}h planned • Spans {chapter.weeksNeeded} week{chapter.weeksNeeded > 1 ? 's' : ''}
                                       </p>
+                                      {chapterDrift && (
+                                        <p className={cn(
+                                          "text-xs font-medium",
+                                          chapterDrift.driftHours > 0 ? "text-amber-600" : "text-emerald-600"
+                                        )}>
+                                          {chapterDrift.driftHours > 0 ? "+" : ""}{chapterDrift.driftHours}h vs plan
+                                          ({chapterDrift.actualHours}h actual / {chapterDrift.plannedHours}h planned)
+                                        </p>
+                                      )}
                                     </div>
                                   </TooltipContent>
                                 </Tooltip>
+                                
+                                {/* Drift Indicator Badge */}
+                                {hasDrift && (
+                                  <Badge 
+                                    variant="outline" 
+                                    className={cn(
+                                      "text-[10px] px-1.5 py-0 h-4 shrink-0 cursor-pointer font-semibold",
+                                      chapterDrift.severity === "critical" 
+                                        ? "bg-red-50 text-red-700 border-red-300 hover:bg-red-100" 
+                                        : chapterDrift.severity === "significant"
+                                        ? "bg-amber-50 text-amber-700 border-amber-300 hover:bg-amber-100"
+                                        : "bg-muted text-muted-foreground border-muted-foreground/30 hover:bg-muted/80"
+                                    )}
+                                    onClick={() => handleOpenAdjustmentDialog(chapterDrift)}
+                                  >
+                                    {chapterDrift.driftHours > 0 ? "+" : ""}{chapterDrift.driftHours}h
+                                  </Badge>
+                                )}
                               </div>
                               
                               {currentMonth.weeks.map((week, weekIdx) => {
