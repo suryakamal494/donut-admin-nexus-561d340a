@@ -10,7 +10,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
-export type ContentCardMode = "superadmin" | "institute";
+export type ContentCardMode = "superadmin" | "institute" | "teacher";
 
 export interface ContentItem {
   id: string;
@@ -37,13 +37,15 @@ export interface ContentItem {
   createdBy: string;
   viewCount: number;
   downloadCount: number;
-  source?: "global" | "institute";
+  source?: "global" | "institute" | "teacher";
   instituteId?: string;
+  createdByTeacherId?: string;
 }
 
 interface ContentCardProps {
   content: ContentItem;
   mode?: ContentCardMode;
+  currentTeacherId?: string; // For teacher mode - to check if content belongs to current teacher
   onPreview: (content: ContentItem) => void;
   onEdit?: (content: ContentItem) => void;
   onDelete?: (content: ContentItem) => void;
@@ -53,6 +55,7 @@ interface ContentCardProps {
 export const ContentCard = memo(function ContentCard({ 
   content, 
   mode = "superadmin",
+  currentTeacherId,
   onPreview, 
   onEdit, 
   onDelete, 
@@ -62,11 +65,28 @@ export const ContentCard = memo(function ContentCard({
     ? `${content.duration} min` 
     : content.size || getContentTypeLabel(content.type);
 
-  // Institute mode specific
+  // Mode-specific logic
   const isInstituteMode = mode === "institute";
-  const isGlobal = isInstituteMode && content.source === "global";
-  const canEdit = isInstituteMode ? !isGlobal && onEdit : !!onEdit;
-  const canDelete = isInstituteMode ? !isGlobal && onDelete : !!onDelete;
+  const isTeacherMode = mode === "teacher";
+  
+  // For teacher mode: only allow edit/delete for content created by current teacher
+  const isTeacherOwned = isTeacherMode && content.source === "teacher" && content.createdByTeacherId === currentTeacherId;
+  
+  // For institute mode: only allow edit/delete for institute content (not global)
+  const isGlobal = (isInstituteMode || isTeacherMode) && content.source === "global";
+  const isInstitute = content.source === "institute";
+  
+  // Determine if edit/delete are allowed
+  const canEdit = isTeacherMode 
+    ? isTeacherOwned && onEdit 
+    : isInstituteMode 
+      ? !isGlobal && onEdit 
+      : !!onEdit;
+  const canDelete = isTeacherMode 
+    ? isTeacherOwned && onDelete 
+    : isInstituteMode 
+      ? !isGlobal && onDelete 
+      : !!onDelete;
 
   return (
     <div className={cn(
@@ -81,8 +101,8 @@ export const ContentCard = memo(function ContentCard({
           title={content.title}
         />
         
-        {/* Source Badge - Only in Institute Mode */}
-        {isInstituteMode && (
+        {/* Source Badge - Institute Mode or Teacher Mode */}
+        {(isInstituteMode || isTeacherMode) && (
           <div className="absolute top-2 right-2">
             <Badge 
               variant="outline" 
@@ -90,17 +110,19 @@ export const ContentCard = memo(function ContentCard({
                 "gap-1 text-xs font-medium backdrop-blur-sm",
                 isGlobal 
                   ? "bg-blue-500/90 text-white border-blue-400" 
-                  : "bg-amber-500/90 text-white border-amber-400"
+                  : content.source === "teacher"
+                    ? "bg-teal-500/90 text-white border-teal-400"
+                    : "bg-amber-500/90 text-white border-amber-400"
               )}
             >
               {isGlobal ? <Lock className="h-3 w-3" /> : <Building2 className="h-3 w-3" />}
-              {isGlobal ? "Global" : "Ours"}
+              {isGlobal ? "Global" : content.source === "teacher" ? "My Content" : "Institute"}
             </Badge>
           </div>
         )}
         
-        {/* Lock overlay for global content on hover - Institute Mode */}
-        {isInstituteMode && isGlobal && (
+        {/* Lock overlay for global content on hover - Institute/Teacher Mode */}
+        {(isInstituteMode || isTeacherMode) && isGlobal && (
           <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
             <Tooltip>
               <TooltipTrigger asChild>
