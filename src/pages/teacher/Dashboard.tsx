@@ -23,7 +23,7 @@ import { cn } from "@/lib/utils";
 import { CurrentClassWidget } from "@/components/teacher/CurrentClassWidget";
 import { TeachingConfirmationDialog } from "@/components/teacher/TeachingConfirmationDialog";
 import { ClassCard } from "@/components/teacher/ClassCard";
-import { TeacherNotificationCard, PushNotificationBanner } from "@/components/teacher/notifications";
+import { TeacherNotificationCard, PushNotificationBanner, ConfirmationReminderSettings } from "@/components/teacher/notifications";
 import { useTeacherNotifications } from "@/hooks/useTeacherNotifications";
 import { 
   currentTeacher, 
@@ -435,6 +435,12 @@ const TeacherDashboard = () => {
               </div>
             </CardContent>
           </Card>
+
+          {/* Confirmation Reminder Settings */}
+          <ConfirmationReminderSettings 
+            pendingCount={totalPendingConfirmations}
+            onNavigateToConfirm={() => navigate("/teacher/academic-progress")}
+          />
         </div>
       </div>
 
