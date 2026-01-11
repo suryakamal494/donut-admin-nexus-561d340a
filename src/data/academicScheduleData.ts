@@ -1090,11 +1090,82 @@ export const teachingConfirmations: TeachingConfirmation[] = [
   { id: "conf-6a-sci-3", batchId: "batch-6a", batchName: "Class 6 - Section A", subjectId: "sci", subjectName: "Science", date: "2025-01-10", teacherId: "teacher-sci-6", teacherName: "Mr. Patel", didTeach: true, chapterId: "sci-6-1", chapterName: "Food: Where Does It Come From?", periodsCount: 2, confirmedAt: "2025-01-10", confirmedBy: "teacher" },
 
   // ========================
-  // Original batch-9a and batch-10a confirmations
+  // Batch 7a - Hindi (creates SIGNIFICANT drift +3h - Dadi Maa chapter)
   // ========================
-  { id: "conf-w1-1", batchId: "batch-9a", batchName: "Class 9 - Section A", subjectId: "phy", subjectName: "Physics", date: "2025-01-06", teacherId: "teacher-1", teacherName: "Dr. Sharma", didTeach: true, chapterId: "phy-9-1", chapterName: "Motion", periodsCount: 2, confirmedAt: "2025-01-06", confirmedBy: "teacher" },
+  // Chapter 2: Dadi Maa - Planned 5h, Actual 8h = +3h significant drift (UNRESOLVED)
+  { id: "conf-7a-hin-1", batchId: "batch-7a", batchName: "Class 7 - Section A", subjectId: "hin", subjectName: "Hindi", date: "2025-01-06", teacherId: "teacher-7", teacherName: "Mrs. Sunita Devi", didTeach: true, chapterId: "hin-7-2", chapterName: "दादी माँ (Dadi Maa)", periodsCount: 2, confirmedAt: "2025-01-06", confirmedBy: "teacher" },
+  { id: "conf-7a-hin-2", batchId: "batch-7a", batchName: "Class 7 - Section A", subjectId: "hin", subjectName: "Hindi", date: "2025-01-08", teacherId: "teacher-7", teacherName: "Mrs. Sunita Devi", didTeach: true, chapterId: "hin-7-2", chapterName: "दादी माँ (Dadi Maa)", periodsCount: 2, confirmedAt: "2025-01-08", confirmedBy: "teacher" },
+  { id: "conf-7a-hin-3", batchId: "batch-7a", batchName: "Class 7 - Section A", subjectId: "hin", subjectName: "Hindi", date: "2025-01-10", teacherId: "teacher-7", teacherName: "Mrs. Sunita Devi", didTeach: true, chapterId: "hin-7-2", chapterName: "दादी माँ (Dadi Maa)", periodsCount: 2, confirmedAt: "2025-01-10", confirmedBy: "teacher" },
+  { id: "conf-7a-hin-4", batchId: "batch-7a", batchName: "Class 7 - Section A", subjectId: "hin", subjectName: "Hindi", date: "2025-01-13", teacherId: "teacher-7", teacherName: "Mrs. Sunita Devi", didTeach: true, chapterId: "hin-7-2", chapterName: "दादी माँ (Dadi Maa)", periodsCount: 2, confirmedAt: "2025-01-13", confirmedBy: "teacher" },
+
+  // ========================
+  // Batch 8a - Science (creates SIGNIFICANT drift +3h - Microorganisms)
+  // ========================
+  // Chapter 2: Microorganisms - Planned 6h, Actual 9h = +3h significant drift (UNRESOLVED)
+  { id: "conf-8a-sci-1", batchId: "batch-8a", batchName: "Class 8 - Section A", subjectId: "sci", subjectName: "Science", date: "2025-01-06", teacherId: "teacher-sci-8", teacherName: "Mr. Sharma", didTeach: true, chapterId: "sci-8-2", chapterName: "Microorganisms: Friend and Foe", periodsCount: 2, confirmedAt: "2025-01-06", confirmedBy: "teacher" },
+  { id: "conf-8a-sci-2", batchId: "batch-8a", batchName: "Class 8 - Section A", subjectId: "sci", subjectName: "Science", date: "2025-01-08", teacherId: "teacher-sci-8", teacherName: "Mr. Sharma", didTeach: true, chapterId: "sci-8-2", chapterName: "Microorganisms: Friend and Foe", periodsCount: 2, confirmedAt: "2025-01-08", confirmedBy: "teacher" },
+  { id: "conf-8a-sci-3", batchId: "batch-8a", batchName: "Class 8 - Section A", subjectId: "sci", subjectName: "Science", date: "2025-01-10", teacherId: "teacher-sci-8", teacherName: "Mr. Sharma", didTeach: true, chapterId: "sci-8-2", chapterName: "Microorganisms: Friend and Foe", periodsCount: 2, confirmedAt: "2025-01-10", confirmedBy: "teacher" },
+  { id: "conf-8a-sci-4", batchId: "batch-8a", batchName: "Class 8 - Section A", subjectId: "sci", subjectName: "Science", date: "2025-01-13", teacherId: "teacher-sci-8", teacherName: "Mr. Sharma", didTeach: true, chapterId: "sci-8-2", chapterName: "Microorganisms: Friend and Foe", periodsCount: 2, confirmedAt: "2025-01-13", confirmedBy: "teacher" },
+  { id: "conf-8a-sci-5", batchId: "batch-8a", batchName: "Class 8 - Section A", subjectId: "sci", subjectName: "Science", date: "2025-01-15", teacherId: "teacher-sci-8", teacherName: "Mr. Sharma", didTeach: true, chapterId: "sci-8-2", chapterName: "Microorganisms: Friend and Foe", periodsCount: 1, confirmedAt: "2025-01-15", confirmedBy: "teacher" },
+
+  // ========================
+  // Batch 8a - Math (creates BEHIND drift -2h - Linear Equations)
+  // ========================
+  // Chapter 2: Linear Equations - Planned 7h, Actual 5h = -2h behind drift (UNRESOLVED)
+  { id: "conf-8a-mat-1", batchId: "batch-8a", batchName: "Class 8 - Section A", subjectId: "mat", subjectName: "Mathematics", date: "2025-01-07", teacherId: "teacher-mat-8", teacherName: "Prof. Kumar", didTeach: true, chapterId: "mat-8-2", chapterName: "Linear Equations in One Variable", periodsCount: 2, confirmedAt: "2025-01-07", confirmedBy: "teacher" },
+  { id: "conf-8a-mat-2", batchId: "batch-8a", batchName: "Class 8 - Section A", subjectId: "mat", subjectName: "Mathematics", date: "2025-01-09", teacherId: "teacher-mat-8", teacherName: "Prof. Kumar", didTeach: false, noTeachReason: "teacher_absent", noTeachNote: "Teacher medical leave", periodsCount: 2, confirmedAt: "2025-01-09", confirmedBy: "academic_incharge" },
+  { id: "conf-8a-mat-3", batchId: "batch-8a", batchName: "Class 8 - Section A", subjectId: "mat", subjectName: "Mathematics", date: "2025-01-10", teacherId: "teacher-mat-8", teacherName: "Prof. Kumar", didTeach: false, noTeachReason: "teacher_absent", noTeachNote: "Teacher medical leave", periodsCount: 2, confirmedAt: "2025-01-10", confirmedBy: "academic_incharge" },
+  { id: "conf-8a-mat-4", batchId: "batch-8a", batchName: "Class 8 - Section A", subjectId: "mat", subjectName: "Mathematics", date: "2025-01-14", teacherId: "teacher-mat-8", teacherName: "Prof. Kumar", didTeach: true, chapterId: "mat-8-2", chapterName: "Linear Equations in One Variable", periodsCount: 2, confirmedAt: "2025-01-14", confirmedBy: "teacher" },
+  { id: "conf-8a-mat-5", batchId: "batch-8a", batchName: "Class 8 - Section A", subjectId: "mat", subjectName: "Mathematics", date: "2025-01-16", teacherId: "teacher-mat-8", teacherName: "Prof. Kumar", didTeach: true, chapterId: "mat-8-2", chapterName: "Linear Equations in One Variable", periodsCount: 1, confirmedAt: "2025-01-16", confirmedBy: "teacher" },
+
+  // ========================
+  // Batch 10a - Physics (creates CRITICAL drift +5h - Light chapter)
+  // ========================
+  // Chapter 1: Light - Planned 9h, Actual 14h = +5h critical drift (RESOLVED via adjustment already exists)
+  { id: "conf-10a-phy-1", batchId: "batch-10a", batchName: "Class 10 - Section A", subjectId: "phy", subjectName: "Physics", date: "2025-01-06", teacherId: "teacher-1", teacherName: "Dr. Rajesh Kumar", didTeach: true, chapterId: "phy-10-1", chapterName: "Light - Reflection and Refraction", periodsCount: 2, confirmedAt: "2025-01-06", confirmedBy: "teacher" },
+  { id: "conf-10a-phy-2", batchId: "batch-10a", batchName: "Class 10 - Section A", subjectId: "phy", subjectName: "Physics", date: "2025-01-07", teacherId: "teacher-1", teacherName: "Dr. Rajesh Kumar", didTeach: true, chapterId: "phy-10-1", chapterName: "Light - Reflection and Refraction", periodsCount: 2, confirmedAt: "2025-01-07", confirmedBy: "teacher" },
+  { id: "conf-10a-phy-3", batchId: "batch-10a", batchName: "Class 10 - Section A", subjectId: "phy", subjectName: "Physics", date: "2025-01-08", teacherId: "teacher-1", teacherName: "Dr. Rajesh Kumar", didTeach: true, chapterId: "phy-10-1", chapterName: "Light - Reflection and Refraction", periodsCount: 2, confirmedAt: "2025-01-08", confirmedBy: "teacher" },
+  { id: "conf-10a-phy-4", batchId: "batch-10a", batchName: "Class 10 - Section A", subjectId: "phy", subjectName: "Physics", date: "2025-01-09", teacherId: "teacher-1", teacherName: "Dr. Rajesh Kumar", didTeach: true, chapterId: "phy-10-1", chapterName: "Light - Reflection and Refraction", periodsCount: 2, confirmedAt: "2025-01-09", confirmedBy: "teacher" },
+  { id: "conf-10a-phy-5", batchId: "batch-10a", batchName: "Class 10 - Section A", subjectId: "phy", subjectName: "Physics", date: "2025-01-13", teacherId: "teacher-1", teacherName: "Dr. Rajesh Kumar", didTeach: true, chapterId: "phy-10-1", chapterName: "Light - Reflection and Refraction", periodsCount: 2, confirmedAt: "2025-01-13", confirmedBy: "teacher" },
+  { id: "conf-10a-phy-6", batchId: "batch-10a", batchName: "Class 10 - Section A", subjectId: "phy", subjectName: "Physics", date: "2025-01-14", teacherId: "teacher-1", teacherName: "Dr. Rajesh Kumar", didTeach: true, chapterId: "phy-10-1", chapterName: "Light - Reflection and Refraction", periodsCount: 2, confirmedAt: "2025-01-14", confirmedBy: "teacher" },
+  { id: "conf-10a-phy-7", batchId: "batch-10a", batchName: "Class 10 - Section A", subjectId: "phy", subjectName: "Physics", date: "2025-01-15", teacherId: "teacher-1", teacherName: "Dr. Rajesh Kumar", didTeach: true, chapterId: "phy-10-1", chapterName: "Light - Reflection and Refraction", periodsCount: 2, confirmedAt: "2025-01-15", confirmedBy: "teacher" },
+
+  // ========================
+  // Batch 10a - Chemistry (creates CRITICAL drift +5h - Chemical Reactions - UNRESOLVED)
+  // ========================
+  // Chapter 1: Chemical Reactions - Planned 7h, Actual 12h = +5h critical drift (UNRESOLVED)
+  { id: "conf-10a-che-1", batchId: "batch-10a", batchName: "Class 10 - Section A", subjectId: "che", subjectName: "Chemistry", date: "2025-01-06", teacherId: "teacher-3", teacherName: "Dr. Meena Gupta", didTeach: true, chapterId: "che-10-1", chapterName: "Chemical Reactions and Equations", periodsCount: 2, confirmedAt: "2025-01-06", confirmedBy: "teacher" },
+  { id: "conf-10a-che-2", batchId: "batch-10a", batchName: "Class 10 - Section A", subjectId: "che", subjectName: "Chemistry", date: "2025-01-08", teacherId: "teacher-3", teacherName: "Dr. Meena Gupta", didTeach: true, chapterId: "che-10-1", chapterName: "Chemical Reactions and Equations", periodsCount: 2, confirmedAt: "2025-01-08", confirmedBy: "teacher" },
+  { id: "conf-10a-che-3", batchId: "batch-10a", batchName: "Class 10 - Section A", subjectId: "che", subjectName: "Chemistry", date: "2025-01-10", teacherId: "teacher-3", teacherName: "Dr. Meena Gupta", didTeach: true, chapterId: "che-10-1", chapterName: "Chemical Reactions and Equations", periodsCount: 2, confirmedAt: "2025-01-10", confirmedBy: "teacher" },
+  { id: "conf-10a-che-4", batchId: "batch-10a", batchName: "Class 10 - Section A", subjectId: "che", subjectName: "Chemistry", date: "2025-01-13", teacherId: "teacher-3", teacherName: "Dr. Meena Gupta", didTeach: true, chapterId: "che-10-1", chapterName: "Chemical Reactions and Equations", periodsCount: 2, confirmedAt: "2025-01-13", confirmedBy: "teacher" },
+  { id: "conf-10a-che-5", batchId: "batch-10a", batchName: "Class 10 - Section A", subjectId: "che", subjectName: "Chemistry", date: "2025-01-15", teacherId: "teacher-3", teacherName: "Dr. Meena Gupta", didTeach: true, chapterId: "che-10-1", chapterName: "Chemical Reactions and Equations", periodsCount: 2, confirmedAt: "2025-01-15", confirmedBy: "teacher" },
+  { id: "conf-10a-che-6", batchId: "batch-10a", batchName: "Class 10 - Section A", subjectId: "che", subjectName: "Chemistry", date: "2025-01-17", teacherId: "teacher-3", teacherName: "Dr. Meena Gupta", didTeach: true, chapterId: "che-10-1", chapterName: "Chemical Reactions and Equations", periodsCount: 2, confirmedAt: "2025-01-17", confirmedBy: "teacher" },
+
+  // ========================
+  // Batch 9a - Chemistry (creates +4h SIGNIFICANT drift - Atoms chapter - RESOLVED via existing adjustment)
+  // ========================
+  // Chapter 3: Atoms and Molecules - Planned 8h, Actual 12h = +4h drift (RESOLVED via adjustment)
+  { id: "conf-9a-che-1", batchId: "batch-9a", batchName: "Class 9 - Section A", subjectId: "che", subjectName: "Chemistry", date: "2025-01-06", teacherId: "teacher-3", teacherName: "Dr. Meena Gupta", didTeach: true, chapterId: "che-9-2", chapterName: "Is Matter Around Us Pure?", periodsCount: 2, confirmedAt: "2025-01-06", confirmedBy: "teacher" },
+  { id: "conf-9a-che-2", batchId: "batch-9a", batchName: "Class 9 - Section A", subjectId: "che", subjectName: "Chemistry", date: "2025-01-08", teacherId: "teacher-3", teacherName: "Dr. Meena Gupta", didTeach: true, chapterId: "che-9-2", chapterName: "Is Matter Around Us Pure?", periodsCount: 2, confirmedAt: "2025-01-08", confirmedBy: "teacher" },
+  { id: "conf-9a-che-3", batchId: "batch-9a", batchName: "Class 9 - Section A", subjectId: "che", subjectName: "Chemistry", date: "2025-01-10", teacherId: "teacher-3", teacherName: "Dr. Meena Gupta", didTeach: true, chapterId: "che-9-2", chapterName: "Is Matter Around Us Pure?", periodsCount: 2, confirmedAt: "2025-01-10", confirmedBy: "teacher" },
+  { id: "conf-9a-che-4", batchId: "batch-9a", batchName: "Class 9 - Section A", subjectId: "che", subjectName: "Chemistry", date: "2025-01-13", teacherId: "teacher-3", teacherName: "Dr. Meena Gupta", didTeach: true, chapterId: "che-9-2", chapterName: "Is Matter Around Us Pure?", periodsCount: 2, confirmedAt: "2025-01-13", confirmedBy: "teacher" },
+  { id: "conf-9a-che-5", batchId: "batch-9a", batchName: "Class 9 - Section A", subjectId: "che", subjectName: "Chemistry", date: "2025-01-15", teacherId: "teacher-3", teacherName: "Dr. Meena Gupta", didTeach: true, chapterId: "che-9-2", chapterName: "Is Matter Around Us Pure?", periodsCount: 2, confirmedAt: "2025-01-15", confirmedBy: "teacher" },
+  { id: "conf-9a-che-6", batchId: "batch-9a", batchName: "Class 9 - Section A", subjectId: "che", subjectName: "Chemistry", date: "2025-01-17", teacherId: "teacher-3", teacherName: "Dr. Meena Gupta", didTeach: true, chapterId: "che-9-2", chapterName: "Is Matter Around Us Pure?", periodsCount: 1, confirmedAt: "2025-01-17", confirmedBy: "teacher" },
+
+  // ========================
+  // Batch 9a - Physics (creates +2h MINOR drift - Motion chapter - UNRESOLVED)
+  // ========================
+  // Chapter 1: Motion - Planned 8h, Actual 10h = +2h minor drift (UNRESOLVED)
+  { id: "conf-9a-phy-1", batchId: "batch-9a", batchName: "Class 9 - Section A", subjectId: "phy", subjectName: "Physics", date: "2025-01-06", teacherId: "teacher-1", teacherName: "Dr. Sharma", didTeach: true, chapterId: "phy-9-1", chapterName: "Motion", periodsCount: 2, confirmedAt: "2025-01-06", confirmedBy: "teacher" },
+  { id: "conf-9a-phy-2", batchId: "batch-9a", batchName: "Class 9 - Section A", subjectId: "phy", subjectName: "Physics", date: "2025-01-07", teacherId: "teacher-1", teacherName: "Dr. Sharma", didTeach: true, chapterId: "phy-9-1", chapterName: "Motion", periodsCount: 2, confirmedAt: "2025-01-07", confirmedBy: "teacher" },
+  { id: "conf-9a-phy-3", batchId: "batch-9a", batchName: "Class 9 - Section A", subjectId: "phy", subjectName: "Physics", date: "2025-01-08", teacherId: "teacher-1", teacherName: "Dr. Sharma", didTeach: true, chapterId: "phy-9-1", chapterName: "Motion", periodsCount: 2, confirmedAt: "2025-01-08", confirmedBy: "teacher" },
+  { id: "conf-9a-phy-4", batchId: "batch-9a", batchName: "Class 9 - Section A", subjectId: "phy", subjectName: "Physics", date: "2025-01-09", teacherId: "teacher-1", teacherName: "Dr. Sharma", didTeach: true, chapterId: "phy-9-1", chapterName: "Motion", periodsCount: 2, confirmedAt: "2025-01-09", confirmedBy: "teacher" },
+  { id: "conf-9a-phy-5", batchId: "batch-9a", batchName: "Class 9 - Section A", subjectId: "phy", subjectName: "Physics", date: "2025-01-10", teacherId: "teacher-1", teacherName: "Dr. Sharma", didTeach: true, chapterId: "phy-9-1", chapterName: "Motion", periodsCount: 2, confirmedAt: "2025-01-10", confirmedBy: "teacher" },
+
+  // ========================
+  // Original batch-9a and batch-10a confirmations (kept for compatibility)
+  // ========================
   { id: "conf-w1-2", batchId: "batch-9a", batchName: "Class 9 - Section A", subjectId: "mat", subjectName: "Mathematics", date: "2025-01-07", teacherId: "teacher-2", teacherName: "Prof. Verma", didTeach: true, chapterId: "mat-9-1", chapterName: "Number Systems", periodsCount: 2, confirmedAt: "2025-01-07", confirmedBy: "teacher" },
-  { id: "conf-w1-3", batchId: "batch-10a", batchName: "Class 10 - Section A", subjectId: "phy", subjectName: "Physics", date: "2025-01-08", teacherId: "teacher-1", teacherName: "Dr. Sharma", didTeach: true, chapterId: "phy-10-1", chapterName: "Light - Reflection and Refraction", periodsCount: 2, confirmedAt: "2025-01-08", confirmedBy: "teacher" },
 ];
 
 // ============================================

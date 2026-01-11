@@ -37,3 +37,4 @@ export { ProgressBatchCard } from "./ProgressBatchCard";
 export { DriftAlertBanner } from "./DriftAlertBanner";
 export { ScheduleAdjustmentDialog } from "./ScheduleAdjustmentDialog";
 export { AdjustmentHistoryPanel } from "./AdjustmentHistoryPanel";
+export { DriftSummarySheet } from "./DriftSummarySheet";
