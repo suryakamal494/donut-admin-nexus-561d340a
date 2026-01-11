@@ -47,10 +47,21 @@ import {
   pendingConfirmations,
   academicWeeks,
   currentWeekIndex,
+  scheduleAdjustments,
 } from "@/data/academicScheduleData";
 import { cn } from "@/lib/utils";
-import { NO_TEACH_REASON_LABELS, ChapterHourAllocation } from "@/types/academicSchedule";
+import { 
+  NO_TEACH_REASON_LABELS, 
+  ChapterHourAllocation,
+  ChapterDriftStatus,
+  AdjustmentAction,
+} from "@/types/academicSchedule";
 import { MonthNavigator, getCompactWeekLabel } from "@/components/academic-schedule/MonthNavigator";
+import { DriftAlertBanner } from "@/components/academic-schedule/DriftAlertBanner";
+import { ScheduleAdjustmentDialog } from "@/components/academic-schedule/ScheduleAdjustmentDialog";
+import { AdjustmentHistoryPanel } from "@/components/academic-schedule/AdjustmentHistoryPanel";
+import { useChapterDrift } from "@/hooks/useChapterDrift";
+import { toast } from "sonner";
 
 // Mock topic data for chapters (in real app, this would come from masterData)
 const MOCK_TOPICS: Record<string, { id: string; name: string; duration: string; status: "completed" | "in_progress" | "pending" }[]> = {
@@ -157,6 +168,11 @@ export default function ConsolidatedBatchView() {
     }
     return 0;
   });
+  
+  // Drift Management State
+  const [driftAlertDismissed, setDriftAlertDismissed] = useState(false);
+  const [adjustmentDialogOpen, setAdjustmentDialogOpen] = useState(false);
+  const [selectedDriftChapter, setSelectedDriftChapter] = useState<ChapterDriftStatus | null>(null);
 
   const batch = batchProgressSummaries.find(b => b.batchId === batchId);
   
@@ -235,6 +251,54 @@ export default function ConsolidatedBatchView() {
     return academicScheduleSetups.find(s => 
       s.subjectId === subjectId && s.classId === classId
     );
+  };
+
+  // Get classId for drift calculation
+  const getClassId = () => {
+    const classNumber = parseInt(batch.className.replace(/\D/g, '')) || 0;
+    const classIdMap: Record<number, string> = {
+      6: "1", 7: "2", 8: "3", 9: "4", 10: "5", 11: "6", 12: "7"
+    };
+    return classIdMap[classNumber];
+  };
+
+  // Calculate drift for current subject
+  const driftData = useChapterDrift(
+    batchId || "",
+    selectedSubject || "",
+    getClassId()
+  );
+
+  // Get subject-specific adjustments
+  const subjectAdjustments = useMemo(() => {
+    return scheduleAdjustments.filter(
+      a => a.batchId === batchId && a.subjectId === selectedSubject
+    );
+  }, [batchId, selectedSubject]);
+
+  // Handler for opening adjustment dialog
+  const handleOpenAdjustmentDialog = (chapterDrift?: ChapterDriftStatus) => {
+    if (chapterDrift) {
+      setSelectedDriftChapter(chapterDrift);
+    } else if (driftData.chaptersWithDrift.length > 0) {
+      // Select the first unresolved drift
+      const unresolvedDrift = driftData.chaptersWithDrift.find(d => !d.isResolved);
+      if (unresolvedDrift) {
+        setSelectedDriftChapter(unresolvedDrift);
+      }
+    }
+    setAdjustmentDialogOpen(true);
+  };
+
+  // Handler for adjustment submission
+  const handleAdjustmentSubmit = (action: AdjustmentAction, notes: string) => {
+    // In real app, this would save to database
+    toast.success("Adjustment recorded", {
+      description: `${selectedDriftChapter?.chapterName} drift has been addressed.`,
+    });
+    setAdjustmentDialogOpen(false);
+    setSelectedDriftChapter(null);
+    setDriftAlertDismissed(true);
   };
 
   return (
@@ -540,6 +604,20 @@ export default function ConsolidatedBatchView() {
               )}
             </CardContent>
           </Card>
+
+          {/* ============================================ */}
+          {/* DRIFT ALERT BANNER */}
+          {/* ============================================ */}
+          {!driftAlertDismissed && driftData.totalDriftHours >= 3 && (
+            <DriftAlertBanner
+              totalDriftHours={driftData.totalDriftHours}
+              affectedChapters={driftData.affectedChapters}
+              subjectName={currentSubject.subjectName}
+              severity={driftData.maxSeverity}
+              onResolveClick={() => handleOpenAdjustmentDialog()}
+              onDismiss={() => setDriftAlertDismissed(true)}
+            />
+          )}
 
           {/* ============================================ */}
           {/* SECTION 2: SUBJECT PROGRESS */}
@@ -896,6 +974,22 @@ export default function ConsolidatedBatchView() {
           )}
         </SheetContent>
       </Sheet>
+
+      {/* Adjustment History Panel */}
+      {subjectAdjustments.length > 0 && (
+        <AdjustmentHistoryPanel adjustments={subjectAdjustments} />
+      )}
+
+      {/* Schedule Adjustment Dialog */}
+      {selectedDriftChapter && currentSubject && (
+        <ScheduleAdjustmentDialog
+          open={adjustmentDialogOpen}
+          onOpenChange={setAdjustmentDialogOpen}
+          chapterDrift={selectedDriftChapter}
+          subjectName={currentSubject.subjectName}
+          onSubmit={handleAdjustmentSubmit}
+        />
+      )}
     </div>
   );
 }
