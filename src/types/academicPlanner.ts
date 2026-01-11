@@ -18,7 +18,7 @@ export interface ChapterWeekAssignment {
   isPartialStart: boolean; // Continues from previous week
   isPartialEnd: boolean; // Continues to next week
   isModified?: boolean; // Track if manually adjusted
-  modificationTypes?: ('reorder' | 'extend' | 'compress' | 'swap')[]; // Types of modifications applied
+  modificationTypes?: ('reorder' | 'extend' | 'compress' | 'swap' | 'addHours' | 'removeHours' | 'manualAdd' | 'removeFromWeek')[]; // Types of modifications applied
 }
 
 export interface SubjectPlanData {
@@ -49,7 +49,16 @@ export interface BatchAcademicPlan {
 // Adjustment Types
 // ============================================
 
-export type AdjustmentType = 'extend' | 'compress' | 'swap' | 'lock' | 'unlock';
+export type AdjustmentType = 
+  | 'extend' 
+  | 'compress' 
+  | 'swap' 
+  | 'lock' 
+  | 'unlock' 
+  | 'addHours' 
+  | 'removeHours' 
+  | 'setHours'
+  | 'removeFromWeek';
 
 export interface ChapterAdjustment {
   type: AdjustmentType;
@@ -57,7 +66,19 @@ export interface ChapterAdjustment {
   chapterId: string;
   weekIndex: number;
   newValue?: number | string;
+  hours?: number; // For hour-based adjustments
   timestamp: string;
+}
+
+// ============================================
+// Pending Chapter (for manual addition)
+// ============================================
+
+export interface PendingChapter {
+  chapterId: string;
+  chapterName: string;
+  plannedHours: number;
+  order: number;
 }
 
 // ============================================

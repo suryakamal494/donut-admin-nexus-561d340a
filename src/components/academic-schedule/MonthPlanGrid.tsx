@@ -24,7 +24,7 @@ import { restrictToHorizontalAxis, restrictToParentElement } from "@dnd-kit/modi
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
-import { Lock, ChevronRight, GripHorizontal, Pencil } from "lucide-react";
+import { Lock, ChevronRight, GripVertical, Pencil, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { AcademicWeek } from "@/types/academicSchedule";
 import {
@@ -32,6 +32,7 @@ import {
   SubjectPlanData,
   ChapterCellType,
   ChapterAdjustment,
+  PendingChapter,
   SUBJECT_COLORS,
   SUBJECT_ICONS,
   ChapterWeekAssignment,
@@ -43,6 +44,10 @@ import {
 } from "@/lib/academicPlannerUtils";
 import { ChapterAdjustmentPopover } from "./ChapterAdjustmentPopover";
 import { SortableChapterCell, ChapterCellDragOverlay } from "./SortableChapterCell";
+import { AddChapterPopover } from "./AddChapterPopover";
+
+// Modification types union
+type ModificationType = 'reorder' | 'extend' | 'compress' | 'swap' | 'addHours' | 'removeHours' | 'manualAdd' | 'removeFromWeek';
 
 interface MonthPlanGridProps {
   plan: BatchAcademicPlan;
@@ -50,9 +55,11 @@ interface MonthPlanGridProps {
   monthWeeks: { startWeekIndex: number; endWeekIndex: number; weeksInMonth: AcademicWeek[] };
   currentWeekIndex: number;
   publishedMonths: Set<number>;
+  pendingChaptersBySubject?: Record<string, PendingChapter[]>;
   onAdjust?: (adjustment: ChapterAdjustment) => void;
   onCellClick?: (subjectId: string, chapterId: string | null, weekIndex: number) => void;
   onReorderChapters?: (subjectId: string, oldIndex: number, newIndex: number) => void;
+  onAddChapter?: (subjectId: string, chapterId: string, weekIndex: number, hours: number) => void;
 }
 
 export function MonthPlanGrid({
@@ -61,9 +68,11 @@ export function MonthPlanGrid({
   monthWeeks,
   currentWeekIndex,
   publishedMonths,
+  pendingChaptersBySubject = {},
   onAdjust,
   onCellClick,
   onReorderChapters,
+  onAddChapter,
 }: MonthPlanGridProps) {
   // Get month name
   const monthName = useMemo(() => {
@@ -93,7 +102,7 @@ export function MonthPlanGrid({
         )}
         {!isMonthPublished && onReorderChapters && (
           <Badge variant="outline" className="text-xs gap-1">
-            <GripHorizontal className="w-3 h-3" />
+            <GripVertical className="w-3 h-3" />
             Drag to reorder
           </Badge>
         )}
@@ -145,9 +154,11 @@ export function MonthPlanGrid({
               monthWeeks={monthWeeks}
               currentWeekIndex={currentWeekIndex}
               isPublished={isMonthPublished}
+              pendingChapters={pendingChaptersBySubject[subject.subjectId] || []}
               onAdjust={onAdjust}
               onCellClick={onCellClick}
               onReorderChapters={onReorderChapters}
+              onAddChapter={onAddChapter}
             />
           ))}
         </div>
@@ -176,14 +187,16 @@ export function MonthPlanGrid({
           <span>Locked</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <GripHorizontal className="w-3 h-3" />
+          <GripVertical className="w-3 h-3" />
           <span>Draggable</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <div className="flex items-center gap-0.5 bg-orange-500 text-white text-[8px] px-1 py-0.5 rounded-sm">
-            <Pencil className="w-2 h-2" />
-          </div>
+          <div className="w-1 h-3 bg-orange-400 rounded" />
           <span>Modified</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <Plus className="w-3 h-3 text-primary" />
+          <span>Add chapter</span>
         </div>
       </div>
     </div>
@@ -197,9 +210,11 @@ interface SubjectRowProps {
   monthWeeks: { startWeekIndex: number; endWeekIndex: number; weeksInMonth: AcademicWeek[] };
   currentWeekIndex: number;
   isPublished: boolean;
+  pendingChapters: PendingChapter[];
   onAdjust?: (adjustment: ChapterAdjustment) => void;
   onCellClick?: (subjectId: string, chapterId: string | null, weekIndex: number) => void;
   onReorderChapters?: (subjectId: string, oldIndex: number, newIndex: number) => void;
+  onAddChapter?: (subjectId: string, chapterId: string, weekIndex: number, hours: number) => void;
 }
 
 interface DraggedChapterInfo {
@@ -215,9 +230,11 @@ function SubjectRow({
   monthWeeks,
   currentWeekIndex,
   isPublished,
+  pendingChapters,
   onAdjust,
   onCellClick,
   onReorderChapters,
+  onAddChapter,
 }: SubjectRowProps) {
   const colors = SUBJECT_COLORS[subject.subjectId] || SUBJECT_COLORS.mat;
   const icon = SUBJECT_ICONS[subject.subjectId] || '📚';
@@ -364,8 +381,25 @@ function SubjectRow({
             const isDraggable = !isEmpty && !isPublished && !item.isLocked && 
               (item.cellType === 'start' || item.cellType === 'single' || item.cellType === 'full');
 
+            // For empty cells, show add chapter button
+            if (isEmpty) {
+              return (
+                <AddChapterPopover
+                  key={item.id}
+                  subjectId={subject.subjectId}
+                  subjectName={subject.subjectName}
+                  weekIndex={item.weekIndex}
+                  weeklyHours={subject.weeklyHours}
+                  pendingChapters={pendingChapters}
+                  onAddChapter={(chapterId, hours) => {
+                    onAddChapter?.(subject.subjectId, chapterId, item.weekIndex, hours);
+                  }}
+                />
+              );
+            }
+
             // For non-draggable cells (middle, end, locked, published), use regular cell with popover
-            if (isEmpty || item.cellType === 'middle' || item.cellType === 'end' || isPublished) {
+            if (item.cellType === 'middle' || item.cellType === 'end' || isPublished) {
               return (
                 <ChapterCellWithPopover
                   key={item.id}
@@ -441,7 +475,7 @@ interface ChapterCellWithDragProps {
   isPublished: boolean;
   isDraggable: boolean;
   isModified: boolean;
-  modificationTypes: ('reorder' | 'extend' | 'compress' | 'swap')[];
+  modificationTypes: ModificationType[];
   colors: { bg: string; text: string; border: string };
   onAdjust?: (adjustment: ChapterAdjustment) => void;
   onClick?: () => void;
@@ -517,7 +551,7 @@ interface ChapterCellWithPopoverProps {
   isLocked: boolean;
   isPublished: boolean;
   isModified: boolean;
-  modificationTypes: ('reorder' | 'extend' | 'compress' | 'swap')[];
+  modificationTypes: ModificationType[];
   colors: { bg: string; text: string; border: string };
   onAdjust?: (adjustment: ChapterAdjustment) => void;
   onClick?: () => void;
@@ -584,6 +618,10 @@ function ChapterCellWithPopover({
     if (modificationTypes.includes('extend')) labels.push('Extended');
     if (modificationTypes.includes('compress')) labels.push('Compressed');
     if (modificationTypes.includes('swap')) labels.push('Swapped');
+    if (modificationTypes.includes('addHours')) labels.push('Hours Added');
+    if (modificationTypes.includes('removeHours')) labels.push('Hours Removed');
+    if (modificationTypes.includes('manualAdd')) labels.push('Manually Added');
+    if (modificationTypes.includes('removeFromWeek')) labels.push('Removed');
     return labels.join(', ');
   };
 
@@ -608,23 +646,24 @@ function ChapterCellWithPopover({
         !isPublished && !isEmpty && "hover:shadow-md cursor-pointer",
         isPublished && "cursor-default opacity-80",
         isLocked && "ring-1 ring-amber-400",
-        // Modified indicator - dashed border top
-        isModified && !isEmpty && "border-t-2 border-t-orange-400 border-dashed"
+        // Modified indicator - left accent border
+        isModified && !isEmpty && "border-l-4 border-l-orange-400"
       )}
     >
       {/* Modified Badge */}
       {isModified && !isEmpty && (cellType === 'start' || cellType === 'single' || cellType === 'full') && (
-        <div className="absolute -top-1.5 left-1 bg-orange-500 text-white text-[8px] px-1 py-0.5 rounded-sm font-medium flex items-center gap-0.5 shadow-sm">
+        <div className="absolute -top-1.5 right-1 bg-orange-500 text-white text-[8px] px-1 py-0.5 rounded-sm font-medium flex items-center gap-0.5 shadow-sm">
           <Pencil className="w-2 h-2" />
-          <span className="hidden sm:inline">Edited</span>
         </div>
       )}
       
       {!isEmpty && (
         <>
-          <div className={cn("font-medium truncate max-w-full px-1", colors.text)}>
-            {chapterName?.split(' ').slice(0, 2).join(' ')}
-            {(cellType === 'middle' || cellType === 'end') && '...'}
+          <div 
+            className={cn("font-medium truncate max-w-full px-1", colors.text)}
+            title={chapterName || undefined}
+          >
+            {chapterName}
           </div>
           <div className="text-[10px] text-muted-foreground flex items-center gap-1">
             {hours}h

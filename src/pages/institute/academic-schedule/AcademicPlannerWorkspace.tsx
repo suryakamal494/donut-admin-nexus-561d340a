@@ -33,9 +33,10 @@ import { MonthPlanGrid } from "@/components/academic-schedule/MonthPlanGrid";
 
 // Hooks & Data
 import { useAcademicPlanGenerator } from "@/hooks/useAcademicPlanGenerator";
-import { academicWeeks, currentWeekIndex } from "@/data/academicScheduleData";
-import { getWeeksForMonth } from "@/lib/academicPlannerUtils";
+import { academicWeeks, currentWeekIndex, academicScheduleSetups } from "@/data/academicScheduleData";
+import { getWeeksForMonth, getPendingChaptersForSubject } from "@/lib/academicPlannerUtils";
 import { loadPlanForBatch } from "@/data/academicPlannerData";
+import { PendingChapter } from "@/types/academicPlanner";
 
 export default function AcademicPlannerWorkspace() {
   const { batchId } = useParams<{ batchId: string }>();
@@ -75,6 +76,7 @@ export default function AcademicPlannerWorkspace() {
     applyAdjustment,
     publishMonth,
     reorderChapters,
+    addChapterManually,
     batch,
     hasValidSetup,
     canEditWeek,
@@ -106,6 +108,20 @@ export default function AcademicPlannerWorkspace() {
     const date = new Date(monthWeeks.weeksInMonth[0].startDate);
     return date.getMonth();
   }, [monthWeeks]);
+
+  // Get pending chapters for each subject
+  const pendingChaptersBySubject = useMemo(() => {
+    if (!plan) return {};
+    const result: Record<string, PendingChapter[]> = {};
+    plan.subjects.forEach(subject => {
+      result[subject.subjectId] = getPendingChaptersForSubject(
+        subject.subjectId,
+        plan,
+        academicScheduleSetups
+      );
+    });
+    return result;
+  }, [plan]);
 
   // Handle cell click
   const handleCellClick = useCallback((subjectId: string, chapterId: string | null, weekIndex: number) => {
@@ -353,9 +369,11 @@ export default function AcademicPlannerWorkspace() {
               monthWeeks={monthWeeks}
               currentWeekIndex={currentWeekIndex}
               publishedMonths={publishedMonths}
+              pendingChaptersBySubject={pendingChaptersBySubject}
               onAdjust={applyAdjustment}
               onCellClick={handleCellClick}
               onReorderChapters={reorderChapters}
+              onAddChapter={addChapterManually}
             />
           </CardContent>
         </Card>
