@@ -580,8 +580,12 @@ export default function ConsolidatedBatchView() {
                                               // Rounded corners for first/last week
                                               isFirstWeek && "rounded-l-md ml-1",
                                               isLastWeek && "rounded-r-md mr-1",
-                                              !isFirstWeek && !isLastWeek && "mx-0.5"
-                                            )} 
+                                              !isFirstWeek && !isLastWeek && "mx-0.5",
+                                              // Drift severity borders
+                                              hasDrift && chapterDrift?.severity === "critical" && "ring-2 ring-red-500 ring-offset-1",
+                                              hasDrift && chapterDrift?.severity === "significant" && "ring-2 ring-amber-500 ring-offset-1",
+                                              hasDrift && chapterDrift?.severity === "minor" && "ring-1 ring-amber-400"
+                                            )}
                                             style={{ width: barWidth }}
                                           />
                                         </TooltipTrigger>
@@ -612,7 +616,7 @@ export default function ConsolidatedBatchView() {
                   </ScrollArea>
                   
                   {/* Color-Coded Legend */}
-                  <div className="flex items-center justify-center gap-6 pt-4 border-t mt-4">
+                  <div className="flex flex-wrap items-center justify-center gap-4 md:gap-6 pt-4 border-t mt-4">
                     <div className="flex items-center gap-2">
                       <div className="w-6 h-3 rounded bg-emerald-300" />
                       <span className="text-xs text-muted-foreground">Completed</span>
@@ -624,6 +628,14 @@ export default function ConsolidatedBatchView() {
                     <div className="flex items-center gap-2">
                       <div className="w-6 h-3 rounded bg-sky-200" />
                       <span className="text-xs text-muted-foreground">Upcoming</span>
+                    </div>
+                    <div className="flex items-center gap-1.5 border-l pl-4">
+                      <div className="w-5 h-3 rounded bg-muted ring-2 ring-red-500 ring-offset-1" />
+                      <span className="text-xs text-muted-foreground">Critical Drift</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <div className="w-5 h-3 rounded bg-muted ring-2 ring-amber-500 ring-offset-1" />
+                      <span className="text-xs text-muted-foreground">Significant Drift</span>
                     </div>
                   </div>
                 </div>
