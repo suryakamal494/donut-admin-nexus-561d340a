@@ -274,10 +274,20 @@ export default function AcademicPlannerWorkspace() {
                   variant="outline"
                   size="sm"
                   className="gap-1.5 h-7 text-xs"
-                  onClick={clearPlan}
+                  onClick={generatePlan}
+                  disabled={isGenerating}
                 >
-                  <RefreshCw className="w-3 h-3" />
-                  <span className="hidden sm:inline">Regenerate</span>
+                  {isGenerating ? (
+                    <>
+                      <Loader2 className="w-3 h-3 animate-spin" />
+                      <span className="hidden sm:inline">Generating...</span>
+                    </>
+                  ) : (
+                    <>
+                      <RefreshCw className="w-3 h-3" />
+                      <span className="hidden sm:inline">Generate</span>
+                    </>
+                  )}
                 </Button>
               )}
             </div>
