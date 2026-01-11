@@ -13,6 +13,13 @@ import {
   X,
   AlertCircle,
   Trash2,
+  Phone,
+  MapPin,
+  GraduationCap,
+  Heart,
+  Lock,
+  UserCircle,
+  Users2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -36,8 +43,15 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import { Switch } from "@/components/ui/switch";
 import { PageHeader } from "@/components/ui/page-header";
-import { batches, students } from "@/data/instituteData";
+import { batches, students, Student } from "@/data/instituteData";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
@@ -45,9 +59,98 @@ interface ParsedStudent {
   name: string;
   rollNumber: string;
   username: string;
+  fatherName?: string;
+  fatherMobile?: string;
   isValid: boolean;
   errors: string[];
 }
+
+interface StudentFormData {
+  // Personal
+  name: string;
+  dateOfBirth: string;
+  gender: string;
+  bloodGroup: string;
+  aadharNumber: string;
+  
+  // Contact
+  studentMobile: string;
+  studentEmail: string;
+  whatsappNumber: string;
+  
+  // Parent/Guardian
+  fatherName: string;
+  fatherMobile: string;
+  fatherOccupation: string;
+  motherName: string;
+  motherMobile: string;
+  guardianName: string;
+  guardianMobile: string;
+  guardianRelation: string;
+  
+  // Address
+  addressLine1: string;
+  addressLine2: string;
+  city: string;
+  state: string;
+  pincode: string;
+  country: string;
+  
+  // Academic
+  previousSchool: string;
+  admissionDate: string;
+  admissionNumber: string;
+  transportRequired: boolean;
+  
+  // Emergency & Medical
+  emergencyContactName: string;
+  emergencyContactNumber: string;
+  emergencyContactRelation: string;
+  medicalConditions: string;
+  allergies: string;
+  
+  // Login
+  rollNumber: string;
+  username: string;
+  password: string;
+}
+
+const initialFormData: StudentFormData = {
+  name: "",
+  dateOfBirth: "",
+  gender: "",
+  bloodGroup: "",
+  aadharNumber: "",
+  studentMobile: "",
+  studentEmail: "",
+  whatsappNumber: "",
+  fatherName: "",
+  fatherMobile: "",
+  fatherOccupation: "",
+  motherName: "",
+  motherMobile: "",
+  guardianName: "",
+  guardianMobile: "",
+  guardianRelation: "",
+  addressLine1: "",
+  addressLine2: "",
+  city: "",
+  state: "",
+  pincode: "",
+  country: "India",
+  previousSchool: "",
+  admissionDate: "",
+  admissionNumber: "",
+  transportRequired: false,
+  emergencyContactName: "",
+  emergencyContactNumber: "",
+  emergencyContactRelation: "",
+  medicalConditions: "",
+  allergies: "",
+  rollNumber: "",
+  username: "",
+  password: "",
+};
 
 const generatePassword = () => {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789";
@@ -62,6 +165,17 @@ const generateUsername = (name: string) => {
   return name.toLowerCase().replace(/[^a-z0-9]/g, ".").replace(/\.+/g, ".");
 };
 
+const INDIAN_STATES = [
+  "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh",
+  "Goa", "Gujarat", "Haryana", "Himachal Pradesh", "Jharkhand", "Karnataka",
+  "Kerala", "Madhya Pradesh", "Maharashtra", "Manipur", "Meghalaya", "Mizoram",
+  "Nagaland", "Odisha", "Punjab", "Rajasthan", "Sikkim", "Tamil Nadu",
+  "Telangana", "Tripura", "Uttar Pradesh", "Uttarakhand", "West Bengal",
+  "Delhi", "Jammu and Kashmir", "Ladakh", "Puducherry", "Chandigarh"
+];
+
+const BLOOD_GROUPS = ["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"];
+
 const AddStudent = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -73,13 +187,12 @@ const AddStudent = () => {
 
   const [activeTab, setActiveTab] = useState("manual");
   const [selectedBatchId, setSelectedBatchId] = useState(preselectedBatchId || "");
-
-  // Manual form state
-  const [name, setName] = useState("");
-  const [rollNumber, setRollNumber] = useState("");
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState(generatePassword());
+  const [formData, setFormData] = useState<StudentFormData>({
+    ...initialFormData,
+    password: generatePassword(),
+  });
   const [showPassword, setShowPassword] = useState(false);
+  const [expandedSections, setExpandedSections] = useState<string[]>(["personal", "parent", "login"]);
 
   // Bulk upload state
   const [pasteData, setPasteData] = useState("");
@@ -91,19 +204,60 @@ const AddStudent = () => {
   // Pre-populate form in edit mode
   useEffect(() => {
     if (existingStudent) {
-      setName(existingStudent.name);
-      setRollNumber(existingStudent.rollNumber);
-      setUsername(existingStudent.username);
+      setFormData({
+        ...initialFormData,
+        name: existingStudent.name,
+        rollNumber: existingStudent.rollNumber,
+        username: existingStudent.username,
+        dateOfBirth: existingStudent.dateOfBirth || "",
+        gender: existingStudent.gender || "",
+        bloodGroup: existingStudent.bloodGroup || "",
+        aadharNumber: existingStudent.aadharNumber || "",
+        studentMobile: existingStudent.studentMobile || "",
+        studentEmail: existingStudent.studentEmail || "",
+        whatsappNumber: existingStudent.whatsappNumber || "",
+        fatherName: existingStudent.fatherName || "",
+        fatherMobile: existingStudent.fatherMobile || "",
+        fatherOccupation: existingStudent.fatherOccupation || "",
+        motherName: existingStudent.motherName || "",
+        motherMobile: existingStudent.motherMobile || "",
+        guardianName: existingStudent.guardianName || "",
+        guardianMobile: existingStudent.guardianMobile || "",
+        guardianRelation: existingStudent.guardianRelation || "",
+        addressLine1: existingStudent.addressLine1 || "",
+        addressLine2: existingStudent.addressLine2 || "",
+        city: existingStudent.city || "",
+        state: existingStudent.state || "",
+        pincode: existingStudent.pincode || "",
+        country: existingStudent.country || "India",
+        previousSchool: existingStudent.previousSchool || "",
+        admissionDate: existingStudent.admissionDate || "",
+        admissionNumber: existingStudent.admissionNumber || "",
+        transportRequired: existingStudent.transportRequired || false,
+        emergencyContactName: existingStudent.emergencyContactName || "",
+        emergencyContactNumber: existingStudent.emergencyContactNumber || "",
+        emergencyContactRelation: existingStudent.emergencyContactRelation || "",
+        medicalConditions: existingStudent.medicalConditions || "",
+        allergies: existingStudent.allergies || "",
+        password: "",
+      });
       setSelectedBatchId(existingStudent.batchId);
-      setPassword(""); // Keep empty for edit mode
     }
   }, [existingStudent]);
 
-  const handleNameChange = (value: string) => {
-    setName(value);
-    if (!isEditMode && (!username || username === generateUsername(name))) {
-      setUsername(generateUsername(value));
-    }
+  const updateFormData = (field: keyof StudentFormData, value: string | boolean) => {
+    setFormData(prev => {
+      const updated = { ...prev, [field]: value };
+      
+      // Auto-generate username from name
+      if (field === "name" && typeof value === "string") {
+        if (!prev.username || prev.username === generateUsername(prev.name)) {
+          updated.username = generateUsername(value);
+        }
+      }
+      
+      return updated;
+    });
   };
 
   const handleSubmit = () => {
@@ -111,15 +265,15 @@ const AddStudent = () => {
       toast.error("Please select a batch");
       return;
     }
-    if (!name.trim()) {
+    if (!formData.name.trim()) {
       toast.error("Please enter student name");
       return;
     }
 
     if (isEditMode) {
-      toast.success(`${name} updated successfully`);
+      toast.success(`${formData.name} updated successfully`);
     } else {
-      toast.success(`${name} added to ${selectedBatch?.className} - ${selectedBatch?.name}`);
+      toast.success(`${formData.name} added to ${selectedBatch?.className} - ${selectedBatch?.name}`);
     }
     navigate("/institute/students");
   };
@@ -134,14 +288,16 @@ const AddStudent = () => {
         : line.split(",").map((p) => p.trim());
 
       const errors: string[] = [];
-      const [name = "", rollNumber = "", username = ""] = parts;
+      const [name = "", rollNumber = "", fatherName = "", fatherMobile = ""] = parts;
 
       if (!name) errors.push("Name is required");
 
       parsed.push({
         name,
         rollNumber: rollNumber || String(parsed.length + 1).padStart(3, "0"),
-        username: username || generateUsername(name),
+        username: generateUsername(name),
+        fatherName: fatherName || undefined,
+        fatherMobile: fatherMobile || undefined,
         isValid: errors.length === 0,
         errors,
       });
@@ -188,6 +344,621 @@ const AddStudent = () => {
   const validCount = parsedStudents.filter((s) => s.isValid).length;
   const invalidCount = parsedStudents.filter((s) => !s.isValid).length;
 
+  // Form field component for consistent styling
+  const FormField = ({ 
+    label, 
+    id, 
+    required, 
+    children,
+    className 
+  }: { 
+    label: string; 
+    id: string; 
+    required?: boolean;
+    children: React.ReactNode;
+    className?: string;
+  }) => (
+    <div className={cn("space-y-1.5", className)}>
+      <Label htmlFor={id} className="text-sm">
+        {label} {required && <span className="text-destructive">*</span>}
+      </Label>
+      {children}
+    </div>
+  );
+
+  // Section header badge for completion status
+  const SectionBadge = ({ filled, total }: { filled: number; total: number }) => (
+    <Badge 
+      variant="outline" 
+      className={cn(
+        "ml-2 text-xs",
+        filled === total ? "bg-emerald-100 text-emerald-700 border-emerald-200" : 
+        filled > 0 ? "bg-amber-100 text-amber-700 border-amber-200" : ""
+      )}
+    >
+      {filled}/{total}
+    </Badge>
+  );
+
+  const renderManualForm = () => (
+    <Card>
+      <CardHeader className="pb-4">
+        <CardTitle className="text-lg">Student Registration Form</CardTitle>
+        <CardDescription>
+          Fill in the student's details. Fields marked with * are required.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="p-0">
+        <Accordion 
+          type="multiple" 
+          value={expandedSections}
+          onValueChange={setExpandedSections}
+          className="w-full"
+        >
+          {/* Personal Information */}
+          <AccordionItem value="personal" className="border-b">
+            <AccordionTrigger className="px-4 sm:px-6 hover:no-underline hover:bg-muted/50">
+              <div className="flex items-center gap-2">
+                <UserCircle className="h-4 w-4 text-primary" />
+                <span className="font-medium">Personal Information</span>
+                <SectionBadge 
+                  filled={[formData.name, formData.dateOfBirth, formData.gender].filter(Boolean).length}
+                  total={3}
+                />
+              </div>
+            </AccordionTrigger>
+            <AccordionContent className="px-4 sm:px-6 pb-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <FormField label="Full Name" id="name" required>
+                  <Input
+                    id="name"
+                    placeholder="e.g., Aarav Patel"
+                    value={formData.name}
+                    onChange={(e) => updateFormData("name", e.target.value)}
+                  />
+                </FormField>
+                
+                <FormField label="Date of Birth" id="dateOfBirth">
+                  <Input
+                    id="dateOfBirth"
+                    type="date"
+                    value={formData.dateOfBirth}
+                    onChange={(e) => updateFormData("dateOfBirth", e.target.value)}
+                  />
+                </FormField>
+
+                <FormField label="Gender" id="gender">
+                  <Select 
+                    value={formData.gender} 
+                    onValueChange={(value) => updateFormData("gender", value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select gender" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="male">Male</SelectItem>
+                      <SelectItem value="female">Female</SelectItem>
+                      <SelectItem value="other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </FormField>
+
+                <FormField label="Blood Group" id="bloodGroup">
+                  <Select 
+                    value={formData.bloodGroup} 
+                    onValueChange={(value) => updateFormData("bloodGroup", value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select blood group" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {BLOOD_GROUPS.map(bg => (
+                        <SelectItem key={bg} value={bg}>{bg}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </FormField>
+
+                <FormField label="Aadhar Number" id="aadharNumber" className="sm:col-span-2">
+                  <Input
+                    id="aadharNumber"
+                    placeholder="12-digit Aadhar number"
+                    value={formData.aadharNumber}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/\D/g, "").slice(0, 12);
+                      updateFormData("aadharNumber", value);
+                    }}
+                    maxLength={12}
+                  />
+                </FormField>
+              </div>
+            </AccordionContent>
+          </AccordionItem>
+
+          {/* Contact Details */}
+          <AccordionItem value="contact" className="border-b">
+            <AccordionTrigger className="px-4 sm:px-6 hover:no-underline hover:bg-muted/50">
+              <div className="flex items-center gap-2">
+                <Phone className="h-4 w-4 text-blue-500" />
+                <span className="font-medium">Contact Details</span>
+                <SectionBadge 
+                  filled={[formData.studentMobile, formData.studentEmail].filter(Boolean).length}
+                  total={2}
+                />
+              </div>
+            </AccordionTrigger>
+            <AccordionContent className="px-4 sm:px-6 pb-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <FormField label="Student Mobile" id="studentMobile">
+                  <Input
+                    id="studentMobile"
+                    type="tel"
+                    placeholder="10-digit mobile number"
+                    value={formData.studentMobile}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/\D/g, "").slice(0, 10);
+                      updateFormData("studentMobile", value);
+                    }}
+                    maxLength={10}
+                  />
+                </FormField>
+
+                <FormField label="Student Email" id="studentEmail">
+                  <Input
+                    id="studentEmail"
+                    type="email"
+                    placeholder="student@example.com"
+                    value={formData.studentEmail}
+                    onChange={(e) => updateFormData("studentEmail", e.target.value)}
+                  />
+                </FormField>
+
+                <FormField label="WhatsApp Number" id="whatsappNumber" className="sm:col-span-2">
+                  <Input
+                    id="whatsappNumber"
+                    type="tel"
+                    placeholder="WhatsApp number (if different from mobile)"
+                    value={formData.whatsappNumber}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/\D/g, "").slice(0, 10);
+                      updateFormData("whatsappNumber", value);
+                    }}
+                    maxLength={10}
+                  />
+                </FormField>
+              </div>
+            </AccordionContent>
+          </AccordionItem>
+
+          {/* Parent/Guardian Information */}
+          <AccordionItem value="parent" className="border-b">
+            <AccordionTrigger className="px-4 sm:px-6 hover:no-underline hover:bg-muted/50">
+              <div className="flex items-center gap-2">
+                <Users2 className="h-4 w-4 text-violet-500" />
+                <span className="font-medium">Parent/Guardian Information</span>
+                <SectionBadge 
+                  filled={[formData.fatherName, formData.fatherMobile, formData.motherName].filter(Boolean).length}
+                  total={3}
+                />
+              </div>
+            </AccordionTrigger>
+            <AccordionContent className="px-4 sm:px-6 pb-6">
+              <div className="space-y-6">
+                {/* Father's Details */}
+                <div>
+                  <h4 className="text-sm font-medium text-muted-foreground mb-3">Father's Details</h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <FormField label="Father's Name" id="fatherName">
+                      <Input
+                        id="fatherName"
+                        placeholder="Father's full name"
+                        value={formData.fatherName}
+                        onChange={(e) => updateFormData("fatherName", e.target.value)}
+                      />
+                    </FormField>
+
+                    <FormField label="Father's Mobile" id="fatherMobile">
+                      <Input
+                        id="fatherMobile"
+                        type="tel"
+                        placeholder="10-digit mobile"
+                        value={formData.fatherMobile}
+                        onChange={(e) => {
+                          const value = e.target.value.replace(/\D/g, "").slice(0, 10);
+                          updateFormData("fatherMobile", value);
+                        }}
+                        maxLength={10}
+                      />
+                    </FormField>
+
+                    <FormField label="Father's Occupation" id="fatherOccupation">
+                      <Input
+                        id="fatherOccupation"
+                        placeholder="e.g., Engineer, Teacher"
+                        value={formData.fatherOccupation}
+                        onChange={(e) => updateFormData("fatherOccupation", e.target.value)}
+                      />
+                    </FormField>
+                  </div>
+                </div>
+
+                {/* Mother's Details */}
+                <div>
+                  <h4 className="text-sm font-medium text-muted-foreground mb-3">Mother's Details</h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <FormField label="Mother's Name" id="motherName">
+                      <Input
+                        id="motherName"
+                        placeholder="Mother's full name"
+                        value={formData.motherName}
+                        onChange={(e) => updateFormData("motherName", e.target.value)}
+                      />
+                    </FormField>
+
+                    <FormField label="Mother's Mobile" id="motherMobile">
+                      <Input
+                        id="motherMobile"
+                        type="tel"
+                        placeholder="10-digit mobile"
+                        value={formData.motherMobile}
+                        onChange={(e) => {
+                          const value = e.target.value.replace(/\D/g, "").slice(0, 10);
+                          updateFormData("motherMobile", value);
+                        }}
+                        maxLength={10}
+                      />
+                    </FormField>
+                  </div>
+                </div>
+
+                {/* Guardian Details */}
+                <div>
+                  <h4 className="text-sm font-medium text-muted-foreground mb-3">Guardian Details (if applicable)</h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <FormField label="Guardian's Name" id="guardianName">
+                      <Input
+                        id="guardianName"
+                        placeholder="Guardian's name"
+                        value={formData.guardianName}
+                        onChange={(e) => updateFormData("guardianName", e.target.value)}
+                      />
+                    </FormField>
+
+                    <FormField label="Guardian's Mobile" id="guardianMobile">
+                      <Input
+                        id="guardianMobile"
+                        type="tel"
+                        placeholder="10-digit mobile"
+                        value={formData.guardianMobile}
+                        onChange={(e) => {
+                          const value = e.target.value.replace(/\D/g, "").slice(0, 10);
+                          updateFormData("guardianMobile", value);
+                        }}
+                        maxLength={10}
+                      />
+                    </FormField>
+
+                    <FormField label="Relation" id="guardianRelation">
+                      <Input
+                        id="guardianRelation"
+                        placeholder="e.g., Uncle, Aunt"
+                        value={formData.guardianRelation}
+                        onChange={(e) => updateFormData("guardianRelation", e.target.value)}
+                      />
+                    </FormField>
+                  </div>
+                </div>
+              </div>
+            </AccordionContent>
+          </AccordionItem>
+
+          {/* Address */}
+          <AccordionItem value="address" className="border-b">
+            <AccordionTrigger className="px-4 sm:px-6 hover:no-underline hover:bg-muted/50">
+              <div className="flex items-center gap-2">
+                <MapPin className="h-4 w-4 text-orange-500" />
+                <span className="font-medium">Address</span>
+                <SectionBadge 
+                  filled={[formData.addressLine1, formData.city, formData.state, formData.pincode].filter(Boolean).length}
+                  total={4}
+                />
+              </div>
+            </AccordionTrigger>
+            <AccordionContent className="px-4 sm:px-6 pb-6">
+              <div className="grid grid-cols-1 gap-4">
+                <FormField label="Address Line 1" id="addressLine1">
+                  <Input
+                    id="addressLine1"
+                    placeholder="House/Flat No., Street"
+                    value={formData.addressLine1}
+                    onChange={(e) => updateFormData("addressLine1", e.target.value)}
+                  />
+                </FormField>
+
+                <FormField label="Address Line 2" id="addressLine2">
+                  <Input
+                    id="addressLine2"
+                    placeholder="Area, Landmark"
+                    value={formData.addressLine2}
+                    onChange={(e) => updateFormData("addressLine2", e.target.value)}
+                  />
+                </FormField>
+
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                  <FormField label="City" id="city">
+                    <Input
+                      id="city"
+                      placeholder="City"
+                      value={formData.city}
+                      onChange={(e) => updateFormData("city", e.target.value)}
+                    />
+                  </FormField>
+
+                  <FormField label="State" id="state">
+                    <Select 
+                      value={formData.state} 
+                      onValueChange={(value) => updateFormData("state", value)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {INDIAN_STATES.map(state => (
+                          <SelectItem key={state} value={state}>{state}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </FormField>
+
+                  <FormField label="Pincode" id="pincode">
+                    <Input
+                      id="pincode"
+                      placeholder="6-digit"
+                      value={formData.pincode}
+                      onChange={(e) => {
+                        const value = e.target.value.replace(/\D/g, "").slice(0, 6);
+                        updateFormData("pincode", value);
+                      }}
+                      maxLength={6}
+                    />
+                  </FormField>
+
+                  <FormField label="Country" id="country">
+                    <Input
+                      id="country"
+                      value={formData.country}
+                      onChange={(e) => updateFormData("country", e.target.value)}
+                    />
+                  </FormField>
+                </div>
+              </div>
+            </AccordionContent>
+          </AccordionItem>
+
+          {/* Academic Details */}
+          <AccordionItem value="academic" className="border-b">
+            <AccordionTrigger className="px-4 sm:px-6 hover:no-underline hover:bg-muted/50">
+              <div className="flex items-center gap-2">
+                <GraduationCap className="h-4 w-4 text-emerald-500" />
+                <span className="font-medium">Academic Details</span>
+                <SectionBadge 
+                  filled={[formData.previousSchool, formData.admissionDate].filter(Boolean).length}
+                  total={2}
+                />
+              </div>
+            </AccordionTrigger>
+            <AccordionContent className="px-4 sm:px-6 pb-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <FormField label="Previous School" id="previousSchool" className="sm:col-span-2">
+                  <Input
+                    id="previousSchool"
+                    placeholder="Name of previous school"
+                    value={formData.previousSchool}
+                    onChange={(e) => updateFormData("previousSchool", e.target.value)}
+                  />
+                </FormField>
+
+                <FormField label="Admission Date" id="admissionDate">
+                  <Input
+                    id="admissionDate"
+                    type="date"
+                    value={formData.admissionDate}
+                    onChange={(e) => updateFormData("admissionDate", e.target.value)}
+                  />
+                </FormField>
+
+                <FormField label="Admission Number" id="admissionNumber">
+                  <Input
+                    id="admissionNumber"
+                    placeholder="School admission no."
+                    value={formData.admissionNumber}
+                    onChange={(e) => updateFormData("admissionNumber", e.target.value)}
+                  />
+                </FormField>
+
+                <div className="sm:col-span-2 flex items-center justify-between p-4 rounded-lg bg-muted/50">
+                  <div className="space-y-0.5">
+                    <Label htmlFor="transportRequired" className="text-sm font-medium">
+                      Transport Required
+                    </Label>
+                    <p className="text-xs text-muted-foreground">
+                      Does the student need school transport?
+                    </p>
+                  </div>
+                  <Switch
+                    id="transportRequired"
+                    checked={formData.transportRequired}
+                    onCheckedChange={(checked) => updateFormData("transportRequired", checked)}
+                  />
+                </div>
+              </div>
+            </AccordionContent>
+          </AccordionItem>
+
+          {/* Emergency & Medical */}
+          <AccordionItem value="emergency" className="border-b">
+            <AccordionTrigger className="px-4 sm:px-6 hover:no-underline hover:bg-muted/50">
+              <div className="flex items-center gap-2">
+                <Heart className="h-4 w-4 text-rose-500" />
+                <span className="font-medium">Emergency & Medical</span>
+                <SectionBadge 
+                  filled={[formData.emergencyContactName, formData.emergencyContactNumber].filter(Boolean).length}
+                  total={2}
+                />
+              </div>
+            </AccordionTrigger>
+            <AccordionContent className="px-4 sm:px-6 pb-6">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <FormField label="Emergency Contact Name" id="emergencyContactName">
+                  <Input
+                    id="emergencyContactName"
+                    placeholder="Contact person name"
+                    value={formData.emergencyContactName}
+                    onChange={(e) => updateFormData("emergencyContactName", e.target.value)}
+                  />
+                </FormField>
+
+                <FormField label="Emergency Contact Number" id="emergencyContactNumber">
+                  <Input
+                    id="emergencyContactNumber"
+                    type="tel"
+                    placeholder="10-digit mobile"
+                    value={formData.emergencyContactNumber}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/\D/g, "").slice(0, 10);
+                      updateFormData("emergencyContactNumber", value);
+                    }}
+                    maxLength={10}
+                  />
+                </FormField>
+
+                <FormField label="Relation" id="emergencyContactRelation">
+                  <Input
+                    id="emergencyContactRelation"
+                    placeholder="e.g., Uncle, Neighbor"
+                    value={formData.emergencyContactRelation}
+                    onChange={(e) => updateFormData("emergencyContactRelation", e.target.value)}
+                  />
+                </FormField>
+
+                <FormField label="Medical Conditions" id="medicalConditions" className="sm:col-span-2">
+                  <Textarea
+                    id="medicalConditions"
+                    placeholder="Any known medical conditions..."
+                    value={formData.medicalConditions}
+                    onChange={(e) => updateFormData("medicalConditions", e.target.value)}
+                    rows={2}
+                  />
+                </FormField>
+
+                <FormField label="Allergies" id="allergies">
+                  <Input
+                    id="allergies"
+                    placeholder="Any allergies"
+                    value={formData.allergies}
+                    onChange={(e) => updateFormData("allergies", e.target.value)}
+                  />
+                </FormField>
+              </div>
+            </AccordionContent>
+          </AccordionItem>
+
+          {/* Login Credentials */}
+          <AccordionItem value="login" className="border-b-0">
+            <AccordionTrigger className="px-4 sm:px-6 hover:no-underline hover:bg-muted/50">
+              <div className="flex items-center gap-2">
+                <Lock className="h-4 w-4 text-slate-500" />
+                <span className="font-medium">Login Credentials</span>
+              </div>
+            </AccordionTrigger>
+            <AccordionContent className="px-4 sm:px-6 pb-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <FormField label="Roll Number" id="rollNumber">
+                  <Input
+                    id="rollNumber"
+                    placeholder="e.g., 001"
+                    value={formData.rollNumber}
+                    onChange={(e) => updateFormData("rollNumber", e.target.value)}
+                  />
+                </FormField>
+
+                <FormField label="Username" id="username">
+                  <Input
+                    id="username"
+                    placeholder="Auto-generated from name"
+                    value={formData.username}
+                    onChange={(e) => updateFormData("username", e.target.value)}
+                  />
+                </FormField>
+
+                <FormField label={isEditMode ? "New Password (leave blank to keep current)" : "Password"} id="password" className="sm:col-span-2">
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <div className="relative flex-1">
+                      <Input
+                        id="password"
+                        type={showPassword ? "text" : "password"}
+                        value={formData.password}
+                        onChange={(e) => updateFormData("password", e.target.value)}
+                        placeholder={isEditMode ? "Leave blank to keep current" : ""}
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="absolute right-0 top-0 h-full"
+                        onClick={() => setShowPassword(!showPassword)}
+                      >
+                        {showPassword ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
+                      </Button>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      onClick={() => updateFormData("password", generatePassword())}
+                      className="shrink-0"
+                    >
+                      <RefreshCw className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </FormField>
+              </div>
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
+
+        {/* Submit Button */}
+        <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 p-4 sm:p-6 border-t bg-muted/30">
+          <Button
+            variant="outline"
+            onClick={() => navigate("/institute/students")}
+            className="w-full sm:w-auto"
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleSubmit}
+            disabled={!selectedBatchId || !formData.name.trim()}
+            className="w-full sm:w-auto bg-gradient-to-r from-primary to-primary/80"
+          >
+            {isEditMode ? (
+              "Save Changes"
+            ) : (
+              <>
+                <Plus className="h-4 w-4 mr-2" />
+                Add Student
+              </>
+            )}
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+
   return (
     <div className="space-y-6 md:space-y-8">
       <PageHeader
@@ -230,104 +1001,8 @@ const AddStudent = () => {
       </Card>
 
       {isEditMode ? (
-        // Edit Mode - Only show manual form
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Student Details</CardTitle>
-            <CardDescription>
-              Update the student's information below.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="name">Full Name *</Label>
-                <Input
-                  id="name"
-                  placeholder="e.g., Aarav Patel"
-                  value={name}
-                  onChange={(e) => handleNameChange(e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="rollNumber">Roll Number</Label>
-                <Input
-                  id="rollNumber"
-                  placeholder="e.g., 001"
-                  value={rollNumber}
-                  onChange={(e) => setRollNumber(e.target.value)}
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="username">Username</Label>
-                <Input
-                  id="username"
-                  placeholder="Auto-generated from name"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="password">New Password (leave blank to keep current)</Label>
-                <div className="flex flex-col sm:flex-row gap-2">
-                  <div className="relative flex-1">
-                    <Input
-                      id="password"
-                      type={showPassword ? "text" : "password"}
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      placeholder="Leave blank to keep current"
-                    />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="absolute right-0 top-0 h-full"
-                      onClick={() => setShowPassword(!showPassword)}
-                    >
-                      {showPassword ? (
-                        <EyeOff className="h-4 w-4" />
-                      ) : (
-                        <Eye className="h-4 w-4" />
-                      )}
-                    </Button>
-                  </div>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="icon"
-                    onClick={() => setPassword(generatePassword())}
-                    className="shrink-0"
-                  >
-                    <RefreshCw className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 pt-4">
-              <Button
-                variant="outline"
-                onClick={() => navigate("/institute/students")}
-                className="w-full sm:w-auto"
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={handleSubmit}
-                disabled={!selectedBatchId || !name.trim()}
-                className="w-full sm:w-auto bg-gradient-to-r from-primary to-primary/80"
-              >
-                Save Changes
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+        renderManualForm()
       ) : (
-        // Add Mode - Show tabs
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="grid w-full max-w-md grid-cols-2">
             <TabsTrigger value="manual" className="gap-2">
@@ -344,94 +1019,7 @@ const AddStudent = () => {
 
           {/* Manual Add */}
           <TabsContent value="manual" className="mt-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Student Details</CardTitle>
-                <CardDescription>
-                  Enter the student's information. Username and password are auto-generated.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="name">Full Name *</Label>
-                    <Input
-                      id="name"
-                      placeholder="e.g., Aarav Patel"
-                      value={name}
-                      onChange={(e) => handleNameChange(e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="rollNumber">Roll Number</Label>
-                    <Input
-                      id="rollNumber"
-                      placeholder="e.g., 001"
-                      value={rollNumber}
-                      onChange={(e) => setRollNumber(e.target.value)}
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="username">Username</Label>
-                    <Input
-                      id="username"
-                      placeholder="Auto-generated from name"
-                      value={username}
-                      onChange={(e) => setUsername(e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="password">Password</Label>
-                    <div className="flex flex-col sm:flex-row gap-2">
-                      <div className="relative flex-1">
-                        <Input
-                          id="password"
-                          type={showPassword ? "text" : "password"}
-                          value={password}
-                          onChange={(e) => setPassword(e.target.value)}
-                        />
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          className="absolute right-0 top-0 h-full"
-                          onClick={() => setShowPassword(!showPassword)}
-                        >
-                          {showPassword ? (
-                            <EyeOff className="h-4 w-4" />
-                          ) : (
-                            <Eye className="h-4 w-4" />
-                          )}
-                        </Button>
-                      </div>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="icon"
-                        onClick={() => setPassword(generatePassword())}
-                        className="shrink-0"
-                      >
-                        <RefreshCw className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex justify-end pt-4">
-                  <Button
-                    onClick={handleSubmit}
-                    disabled={!selectedBatchId || !name.trim()}
-                    className="w-full sm:w-auto bg-gradient-to-r from-primary to-primary/80"
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Student
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+            {renderManualForm()}
           </TabsContent>
 
           {/* Bulk Add */}
@@ -440,20 +1028,20 @@ const AddStudent = () => {
               <CardHeader>
                 <CardTitle className="text-lg">Paste Student Data</CardTitle>
                 <CardDescription>
-                  Copy rows from Excel, Google Sheets, or any table. Each row: Name, Roll Number (optional), Username (optional)
+                  Copy rows from Excel, Google Sheets, or any table. Each row: Name, Roll Number, Father Name, Father Mobile (optional)
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="p-4 bg-muted/50 rounded-lg">
                   <p className="text-sm font-medium mb-2">Expected Format:</p>
                   <pre className="text-xs text-muted-foreground whitespace-pre-wrap bg-background p-3 rounded border overflow-x-auto">
-{`Name    Roll Number    Username
-Aarav Patel    001    aarav.patel
-Diya Sharma    002    
+{`Name    Roll Number    Father Name    Father Mobile
+Aarav Patel    001    Rajesh Patel    9876543210
+Diya Sharma    002    Vikram Sharma
 Arjun Singh`}
                   </pre>
                   <p className="text-xs text-muted-foreground mt-2">
-                    💡 Roll number and username are optional - they'll be auto-generated if empty
+                    💡 Roll number, father name and mobile are optional - roll numbers will be auto-generated if empty
                   </p>
                 </div>
 
@@ -461,8 +1049,8 @@ Arjun Singh`}
                   placeholder="Paste your data here...
 
 Example:
-Aarav Patel	001
-Diya Sharma	002
+Aarav Patel	001	Rajesh Patel	9876543210
+Diya Sharma	002	Vikram Sharma
 Arjun Singh	003"
                   value={pasteData}
                   onChange={(e) => setPasteData(e.target.value)}
@@ -513,13 +1101,14 @@ Arjun Singh	003"
                 </CardHeader>
                 <CardContent>
                   <div className="overflow-x-auto -mx-4 sm:mx-0">
-                    <Table className="min-w-[450px]">
+                    <Table className="min-w-[550px]">
                       <TableHeader>
                         <TableRow>
                           <TableHead className="w-[30px]">Status</TableHead>
                           <TableHead>Name</TableHead>
                           <TableHead>Roll No.</TableHead>
-                          <TableHead className="hidden sm:table-cell">Username</TableHead>
+                          <TableHead className="hidden sm:table-cell">Father Name</TableHead>
+                          <TableHead className="hidden md:table-cell">Father Mobile</TableHead>
                           <TableHead className="w-[50px]"></TableHead>
                         </TableRow>
                       </TableHeader>
@@ -539,12 +1128,15 @@ Arjun Singh	003"
                             <TableCell className="font-medium">
                               {student.name || "-"}
                               <span className="text-xs text-muted-foreground sm:hidden block">
-                                @{student.username}
+                                {student.fatherName && `Father: ${student.fatherName}`}
                               </span>
                             </TableCell>
                             <TableCell>{student.rollNumber}</TableCell>
                             <TableCell className="text-muted-foreground hidden sm:table-cell">
-                              @{student.username}
+                              {student.fatherName || "-"}
+                            </TableCell>
+                            <TableCell className="text-muted-foreground hidden md:table-cell">
+                              {student.fatherMobile || "-"}
                             </TableCell>
                             <TableCell>
                               <Button
