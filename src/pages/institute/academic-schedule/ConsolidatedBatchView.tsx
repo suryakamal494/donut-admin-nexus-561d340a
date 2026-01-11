@@ -304,9 +304,40 @@ export default function ConsolidatedBatchView() {
                         const setup = getSubjectSetup(currentSubject.subjectId);
                         if (!setup) return <p className="text-sm text-muted-foreground p-4">No chapter data available</p>;
                         
-                        return setup.chapters.slice(0, 6).map((chapter, chapterIdx) => {
+                        // Calculate dynamic week spans based on planned hours
+                        // Assume ~4-6 hours per subject per week (use 5 as average)
+                        const HOURS_PER_WEEK = 5;
+                        
+                        // Calculate cumulative hours to determine start/end weeks for each chapter
+                        const chaptersWithWeeks = setup.chapters.slice(0, 8).map((chapter, idx) => {
+                          // Calculate cumulative hours up to this chapter
+                          const cumulativeHoursBefore = setup.chapters
+                            .slice(0, idx)
+                            .reduce((sum, ch) => sum + ch.plannedHours, 0);
+                          
+                          // Calculate which week this chapter starts (0-indexed)
+                          const startWeek = Math.floor(cumulativeHoursBefore / HOURS_PER_WEEK);
+                          
+                          // Calculate how many weeks this chapter spans
+                          const weeksNeeded = Math.max(1, Math.ceil(chapter.plannedHours / HOURS_PER_WEEK));
+                          const endWeek = startWeek + weeksNeeded - 1;
+                          
+                          return {
+                            ...chapter,
+                            startWeek,
+                            endWeek,
+                            weeksNeeded,
+                          };
+                        });
+                        
+                        return chaptersWithWeeks.map((chapter, chapterIdx) => {
                           const isCompleted = chapterIdx < currentSubject.chaptersCompleted;
-                          const isCurrent = chapter.chapterId === currentSubject.currentChapter;
+                          const isCurrentChapter = chapter.chapterId === currentSubject.currentChapter;
+                          
+                          // Get the global week index for this month's first week
+                          const monthFirstWeekIndex = academicWeeks.findIndex(w => 
+                            w.startDate === currentMonth.weeks[0]?.startDate
+                          );
                           
                           return (
                             <div 
@@ -317,31 +348,46 @@ export default function ConsolidatedBatchView() {
                               <div className="flex items-center gap-2 px-2">
                                 {isCompleted ? (
                                   <Check className="w-4 h-4 text-emerald-500 shrink-0" />
-                                ) : isCurrent ? (
+                                ) : isCurrentChapter ? (
                                   <div className="w-4 h-4 rounded-full border-2 border-primary shrink-0" />
                                 ) : (
                                   <div className="w-4 h-4 rounded-full border-2 border-muted shrink-0" />
                                 )}
-                                <span className={cn(
-                                  "text-sm truncate",
-                                  isCompleted && "text-muted-foreground line-through",
-                                  isCurrent && "font-medium text-primary"
-                                )}>
-                                  {chapter.chapterName}
-                                </span>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <span className={cn(
+                                      "text-sm truncate cursor-help",
+                                      isCompleted && "text-muted-foreground line-through",
+                                      isCurrentChapter && "font-medium text-primary"
+                                    )}>
+                                      {chapter.chapterName}
+                                    </span>
+                                  </TooltipTrigger>
+                                  <TooltipContent side="right" className="max-w-xs">
+                                    <div className="space-y-1">
+                                      <p className="font-semibold">{chapter.chapterName}</p>
+                                      <p className="text-xs text-muted-foreground">
+                                        {chapter.plannedHours}h planned • Spans {chapter.weeksNeeded} week{chapter.weeksNeeded > 1 ? 's' : ''}
+                                      </p>
+                                    </div>
+                                  </TooltipContent>
+                                </Tooltip>
                               </div>
                               
                               {currentMonth.weeks.map((week, weekIdx) => {
-                                // Simplified: show planning bars based on chapter order
-                                const showBar = chapterIdx <= weekIdx && weekIdx < chapterIdx + 2;
-                                const weekIndex = academicWeeks.findIndex(w => w.startDate === week.startDate);
-                                const isPast = weekIndex < currentWeekIndex;
-                                const isCurrent = weekIndex === currentWeekIndex;
+                                // Calculate if this week falls within this chapter's span
+                                const absoluteWeekIdx = monthFirstWeekIndex + weekIdx;
+                                const showBar = absoluteWeekIdx >= chapter.startWeek && absoluteWeekIdx <= chapter.endWeek;
                                 
-                                // Calculate estimated hours for this bar segment
-                                const hoursPerWeek = Math.ceil(chapter.plannedHours / 2);
-                                const isFirstBar = weekIdx === chapterIdx;
-                                const isLastBar = weekIdx === chapterIdx + 1;
+                                const weekIndex = academicWeeks.findIndex(w => w.startDate === week.startDate);
+                                const isPastWeek = weekIndex < currentWeekIndex;
+                                const isCurrentWeek = weekIndex === currentWeekIndex;
+                                
+                                // Calculate hours for this specific week segment
+                                const isFirstWeek = absoluteWeekIdx === chapter.startWeek;
+                                const isLastWeek = absoluteWeekIdx === chapter.endWeek;
+                                const remainingHours = chapter.plannedHours % HOURS_PER_WEEK;
+                                const hoursThisWeek = isLastWeek && remainingHours > 0 ? remainingHours : HOURS_PER_WEEK;
                                 
                                 // Format dates for tooltip
                                 const startDate = new Date(week.startDate);
@@ -350,28 +396,44 @@ export default function ConsolidatedBatchView() {
                                 
                                 // Determine status text
                                 const statusText = isCompleted ? "✓ Completed" : 
-                                  isCurrent && isPast ? "In Progress" : 
-                                  isPast ? "Planned" : "Upcoming";
+                                  isCurrentChapter && isCurrentWeek ? "📍 Current" :
+                                  isCurrentChapter ? "In Progress" : 
+                                  isPastWeek ? "Planned" : "Upcoming";
+                                
+                                // Determine bar intensity based on hours (narrower bars for partial weeks)
+                                const barWidth = isLastWeek && remainingHours > 0 && remainingHours < HOURS_PER_WEEK 
+                                  ? `${Math.max(40, (remainingHours / HOURS_PER_WEEK) * 100)}%` 
+                                  : '100%';
                                 
                                 return (
                                   <div key={week.startDate} className="h-6 flex items-center justify-center">
                                     {showBar && (
                                       <Tooltip>
                                         <TooltipTrigger asChild>
-                                          <div className={cn(
-                                            "h-4 w-full rounded mx-1 cursor-pointer transition-all hover:scale-y-125 hover:shadow-sm",
-                                            isCompleted ? "bg-emerald-200 hover:bg-emerald-300" :
-                                            isCurrent ? "bg-primary/30 hover:bg-primary/40" :
-                                            isPast ? "bg-muted hover:bg-muted/80" : "bg-muted/50 hover:bg-muted/70"
-                                          )} />
+                                          <div 
+                                            className={cn(
+                                              "h-4 rounded cursor-pointer transition-all hover:scale-y-125 hover:shadow-sm",
+                                              isCompleted ? "bg-emerald-200 hover:bg-emerald-300" :
+                                              isCurrentChapter && isCurrentWeek ? "bg-primary/50 hover:bg-primary/60" :
+                                              isCurrentChapter ? "bg-primary/30 hover:bg-primary/40" :
+                                              isPastWeek ? "bg-muted hover:bg-muted/80" : "bg-muted/50 hover:bg-muted/70",
+                                              // Rounded corners for first/last week
+                                              isFirstWeek && "rounded-l-md ml-1",
+                                              isLastWeek && "rounded-r-md mr-1",
+                                              !isFirstWeek && !isLastWeek && "mx-0.5"
+                                            )} 
+                                            style={{ width: barWidth }}
+                                          />
                                         </TooltipTrigger>
                                         <TooltipContent side="top" className="max-w-xs">
                                           <div className="space-y-1">
                                             <p className="font-semibold text-sm">{chapter.chapterName}</p>
                                             <div className="text-xs text-muted-foreground space-y-0.5">
                                               <p>📅 {formatDate(startDate)} - {formatDate(endDate)}</p>
-                                              <p>⏱️ {hoursPerWeek}h {isFirstBar ? "(start)" : isLastBar ? "(end)" : ""}</p>
-                                              <p>📊 {statusText}</p>
+                                              <p>⏱️ {hoursThisWeek}h / {chapter.plannedHours}h total</p>
+                                              <p>{statusText}</p>
+                                              {isFirstWeek && chapter.weeksNeeded > 1 && <p>🚀 Week 1 of {chapter.weeksNeeded}</p>}
+                                              {isLastWeek && chapter.weeksNeeded > 1 && <p>🏁 Week {chapter.weeksNeeded} of {chapter.weeksNeeded}</p>}
                                             </div>
                                           </div>
                                         </TooltipContent>
