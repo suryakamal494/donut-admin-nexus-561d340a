@@ -107,6 +107,8 @@ export interface TeacherExam {
   updatedAt: string;
 }
 
+export type HomeworkType = 'practice' | 'test' | 'project';
+
 export interface TeacherHomework {
   id: string;
   title: string;
@@ -120,6 +122,9 @@ export interface TeacherHomework {
   submissionCount: number;
   totalStudents: number;
   linkedLessonPlanId?: string;
+  homeworkType?: HomeworkType;
+  instructions?: string;
+  attachments?: string[];
 }
 
 export interface PendingAction {
