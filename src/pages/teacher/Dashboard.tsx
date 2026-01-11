@@ -13,7 +13,8 @@ import {
   Sparkles,
   TrendingUp,
   Bell,
-  AlertTriangle
+  AlertTriangle,
+  ListChecks
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -26,12 +27,13 @@ import { TeacherNotificationCard, PushNotificationBanner } from "@/components/te
 import { useTeacherNotifications } from "@/hooks/useTeacherNotifications";
 import { 
   currentTeacher, 
-  teacherTodayTimetable, 
   teacherPendingActions,
   teacherWeeklyStats,
   type TeacherTimetableSlot,
   type PendingAction
 } from "@/data/teacherData";
+import { teacherDemoTodayTimetable } from "@/data/teacher/schedule";
+import { pendingConfirmations } from "@/data/academicScheduleData";
 import { toast } from "sonner";
 
 const TeacherDashboard = () => {
@@ -55,37 +57,43 @@ const TeacherDashboard = () => {
   const today = new Date();
   const todayStr = today.toISOString().split('T')[0];
 
+  // Use demo timetable for consistent display
+  const todayTimetable = teacherDemoTodayTimetable;
+
   // Get current/next class with more context
   const classInfo = useMemo(() => {
     const now = new Date();
     const currentTime = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
     
     // First check for current class
-    for (const slot of teacherTodayTimetable) {
+    for (const slot of todayTimetable) {
       if (currentTime >= slot.startTime && currentTime < slot.endTime) {
         return { slot, status: 'current' as const };
       }
     }
     
     // Then find the next upcoming class
-    for (const slot of teacherTodayTimetable) {
+    for (const slot of todayTimetable) {
       if (currentTime < slot.startTime) {
         return { slot, status: 'next' as const };
       }
     }
     
     return null;
-  }, []);
+  }, [todayTimetable]);
 
   // Find past classes that need confirmation (classes that ended but not confirmed)
   const pastUnconfirmedSlots = useMemo(() => {
     const now = new Date();
     const currentTime = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
     
-    return teacherTodayTimetable.filter(slot => 
+    return todayTimetable.filter(slot => 
       currentTime >= slot.endTime
-    ).slice(-2); // Show last 2 past classes max
-  }, []);
+    ).slice(-3); // Show last 3 past classes max
+  }, [todayTimetable]);
+
+  // Total pending confirmations count (including from previous days)
+  const totalPendingConfirmations = pendingConfirmations.length + pastUnconfirmedSlots.length;
 
   const getPriorityColor = (priority: PendingAction['priority']) => {
     switch (priority) {
@@ -121,33 +129,68 @@ const TeacherDashboard = () => {
 
   return (
     <div className="space-y-5 sm:space-y-6 max-w-7xl mx-auto pb-20 md:pb-6">
-      {/* Greeting Section - Mobile optimized */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
-        <div>
-          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-foreground">
-            {getGreeting()}, {currentTeacher.name.split(' ')[0]}!
-          </h1>
-          <p className="text-sm sm:text-base text-muted-foreground mt-0.5">
-            {new Date().toLocaleDateString('en-US', { 
-              weekday: 'long', 
-              month: 'long', 
-              day: 'numeric' 
-            })}
-          </p>
-        </div>
+      {/* Greeting Section - Premium gradient background */}
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-teal-500/10 via-cyan-500/5 to-transparent p-4 sm:p-6">
+        <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-teal-400/20 to-cyan-400/10 rounded-full blur-2xl -mr-10 -mt-10" />
         
-        {/* Quick Action FAB - Desktop */}
-        <Button 
-          className="hidden sm:flex gradient-button h-11"
-          onClick={() => navigate("/teacher/lesson-plans/new")}
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          Create Lesson Plan
-        </Button>
+        <div className="relative flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+          <div>
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold bg-gradient-to-r from-teal-600 to-cyan-600 bg-clip-text text-transparent">
+              {getGreeting()}, {currentTeacher.name.split(' ')[0]}!
+            </h1>
+            <p className="text-sm sm:text-base text-muted-foreground mt-0.5">
+              {new Date().toLocaleDateString('en-US', { 
+                weekday: 'long', 
+                month: 'long', 
+                day: 'numeric' 
+              })}
+            </p>
+          </div>
+          
+          {/* Quick Action FAB - Desktop with premium gradient */}
+          <Button 
+            className="hidden sm:flex bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 text-white shadow-lg shadow-teal-500/25 h-11 border-0"
+            onClick={() => navigate("/teacher/lesson-plans/new")}
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Create Lesson Plan
+          </Button>
+        </div>
       </div>
 
       {/* Push Notification Banner */}
       <PushNotificationBanner />
+
+      {/* Pending Confirmations Alert Banner - Premium amber gradient */}
+      {totalPendingConfirmations > 0 && (
+        <Card className="border-amber-200/50 bg-gradient-to-r from-amber-50 via-orange-50/50 to-amber-50 overflow-hidden">
+          <CardContent className="p-4 sm:p-5">
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center flex-shrink-0 shadow-lg shadow-amber-500/25">
+                  <ListChecks className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-amber-900 text-base sm:text-lg">
+                    {totalPendingConfirmations} Classes Need Confirmation
+                  </h3>
+                  <p className="text-sm text-amber-700/80">
+                    Confirm teaching sessions to track syllabus progress
+                  </p>
+                </div>
+              </div>
+              <Button 
+                className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white shadow-lg shadow-amber-500/25 h-10 sm:h-11 px-4 sm:px-5 border-0 flex-shrink-0"
+                onClick={() => navigate("/teacher/academic-progress")}
+              >
+                <span className="hidden sm:inline">Bulk Confirm</span>
+                <span className="sm:hidden">Confirm</span>
+                <ChevronRight className="w-4 h-4 ml-1" />
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Current/Next Class - Enhanced Widget with Lesson Plan Preview */}
       {classInfo && (
@@ -160,33 +203,37 @@ const TeacherDashboard = () => {
         />
       )}
 
-      {/* Past Classes Needing Confirmation - Mobile-friendly cards */}
+      {/* Past Classes Needing Confirmation - Premium styling */}
       {pastUnconfirmedSlots.length > 0 && (
-        <Card className="border-amber-200 bg-amber-50/50">
+        <Card className="border-amber-200/50 bg-gradient-to-br from-amber-50/80 to-orange-50/50 overflow-hidden">
           <CardContent className="p-3 sm:p-4">
             <div className="flex items-center gap-2 mb-3">
-              <Bell className="w-4 h-4 text-amber-600" />
-              <h3 className="font-semibold text-sm text-amber-800">Confirm Past Classes</h3>
+              <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center">
+                <Bell className="w-3.5 h-3.5 text-white" />
+              </div>
+              <h3 className="font-semibold text-sm text-amber-800">Today's Classes to Confirm</h3>
+              <Badge variant="secondary" className="ml-auto bg-amber-100 text-amber-700 border-0">
+                {pastUnconfirmedSlots.length}
+              </Badge>
             </div>
             <div className="space-y-2">
               {pastUnconfirmedSlots.map((slot) => (
                 <div 
                   key={slot.id}
-                  className="flex items-center justify-between p-3 rounded-xl bg-background border"
+                  className="flex items-center justify-between p-3 rounded-xl bg-white/80 border border-amber-100 shadow-sm"
                 >
                   <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
-                      <Clock className="w-5 h-5 text-muted-foreground" />
+                    <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-amber-100 to-orange-100 flex items-center justify-center flex-shrink-0">
+                      <Clock className="w-5 h-5 text-amber-600" />
                     </div>
                     <div className="min-w-0">
-                      <p className="font-medium text-sm truncate">{slot.subject} • {slot.batchName}</p>
-                      <p className="text-xs text-muted-foreground">{slot.startTime} - {slot.endTime}</p>
+                      <p className="font-medium text-sm text-foreground truncate">{slot.subject} • {slot.batchName}</p>
+                      <p className="text-xs text-muted-foreground">{slot.startTime} - {slot.endTime} • {slot.room}</p>
                     </div>
                   </div>
                   <Button 
                     size="sm" 
-                    variant="outline"
-                    className="flex-shrink-0 h-9 px-3 text-xs font-medium border-amber-300 text-amber-700 hover:bg-amber-100"
+                    className="flex-shrink-0 h-9 px-4 text-xs font-semibold bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white shadow-md shadow-amber-500/20 border-0"
                     onClick={() => handleConfirmTeaching(slot)}
                   >
                     Confirm
@@ -204,13 +251,15 @@ const TeacherDashboard = () => {
         <div className="lg:col-span-2 space-y-3 sm:space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-base sm:text-lg font-semibold flex items-center gap-2">
-              <Calendar className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-teal-500 to-cyan-500 flex items-center justify-center">
+                <Calendar className="w-4 h-4 text-white" />
+              </div>
               Today's Classes
             </h2>
             <Button 
               variant="ghost" 
               size="sm" 
-              className="text-primary h-9 px-3"
+              className="text-teal-600 hover:text-teal-700 hover:bg-teal-50 h-9 px-3"
               onClick={() => navigate("/teacher/schedule")}
             >
               Full Schedule
@@ -219,8 +268,8 @@ const TeacherDashboard = () => {
           </div>
           
           <div className="grid gap-2 sm:gap-3">
-            {teacherTodayTimetable.length > 0 ? (
-              teacherTodayTimetable.map((slot, index) => (
+            {todayTimetable.length > 0 ? (
+              todayTimetable.map((slot, index) => (
                 <ClassCard 
                   key={slot.id} 
                   slot={slot} 
@@ -231,7 +280,7 @@ const TeacherDashboard = () => {
                 />
               ))
             ) : (
-              <Card className="border-dashed">
+              <Card className="border-dashed border-2">
                 <CardContent className="p-6 text-center">
                   <Clock className="w-10 h-10 mx-auto text-muted-foreground/50 mb-3" />
                   <p className="text-sm text-muted-foreground">No classes scheduled for today</p>
@@ -243,41 +292,45 @@ const TeacherDashboard = () => {
 
         {/* Sidebar - Mobile: Horizontal scroll cards, Desktop: Vertical stack */}
         <div className="space-y-4 sm:space-y-5">
-          {/* Quick Stats - 2x2 grid optimized for mobile */}
-          <Card className="overflow-hidden card-premium">
+          {/* Quick Stats - Premium gradient card */}
+          <Card className="overflow-hidden bg-gradient-to-br from-white to-teal-50/30 border-teal-100/50 shadow-lg shadow-teal-500/5">
             <CardHeader className="pb-2 sm:pb-3 px-3 sm:px-6 pt-3 sm:pt-6">
               <CardTitle className="text-sm sm:text-base flex items-center gap-2">
-                <TrendingUp className="w-4 h-4 text-primary" />
+                <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-teal-500 to-cyan-500 flex items-center justify-center">
+                  <TrendingUp className="w-3.5 h-3.5 text-white" />
+                </div>
                 This Week
               </CardTitle>
             </CardHeader>
             <CardContent className="grid grid-cols-2 gap-2 sm:gap-4 px-3 sm:px-6 pb-3 sm:pb-6">
-              <div className="text-center p-2.5 sm:p-3 rounded-xl bg-muted/50">
-                <p className="text-xl sm:text-2xl font-bold text-foreground">{teacherWeeklyStats.totalClasses}</p>
-                <p className="text-[10px] sm:text-xs text-muted-foreground">Classes</p>
+              <div className="text-center p-2.5 sm:p-3 rounded-xl bg-gradient-to-br from-teal-50 to-cyan-50 border border-teal-100/50">
+                <p className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-teal-600 to-cyan-600 bg-clip-text text-transparent">{teacherWeeklyStats.totalClasses}</p>
+                <p className="text-[10px] sm:text-xs text-muted-foreground font-medium">Classes</p>
               </div>
-              <div className="text-center p-2.5 sm:p-3 rounded-xl bg-muted/50">
-                <p className="text-xl sm:text-2xl font-bold text-foreground">{teacherWeeklyStats.scheduledTests}</p>
-                <p className="text-[10px] sm:text-xs text-muted-foreground">Tests</p>
+              <div className="text-center p-2.5 sm:p-3 rounded-xl bg-gradient-to-br from-teal-50 to-cyan-50 border border-teal-100/50">
+                <p className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-teal-600 to-cyan-600 bg-clip-text text-transparent">{teacherWeeklyStats.scheduledTests}</p>
+                <p className="text-[10px] sm:text-xs text-muted-foreground font-medium">Tests</p>
               </div>
-              <div className="text-center p-2.5 sm:p-3 rounded-xl bg-muted/50">
-                <p className="text-xl sm:text-2xl font-bold text-foreground">{teacherWeeklyStats.lessonPlansCreated}</p>
-                <p className="text-[10px] sm:text-xs text-muted-foreground">Plans</p>
+              <div className="text-center p-2.5 sm:p-3 rounded-xl bg-gradient-to-br from-teal-50 to-cyan-50 border border-teal-100/50">
+                <p className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-teal-600 to-cyan-600 bg-clip-text text-transparent">{teacherWeeklyStats.lessonPlansCreated}</p>
+                <p className="text-[10px] sm:text-xs text-muted-foreground font-medium">Plans</p>
               </div>
-              <div className="text-center p-2.5 sm:p-3 rounded-xl bg-muted/50">
-                <p className="text-xl sm:text-2xl font-bold text-foreground">{teacherWeeklyStats.pendingHomework}</p>
-                <p className="text-[10px] sm:text-xs text-muted-foreground">Pending</p>
+              <div className="text-center p-2.5 sm:p-3 rounded-xl bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-100/50">
+                <p className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-amber-600 to-orange-600 bg-clip-text text-transparent">{totalPendingConfirmations}</p>
+                <p className="text-[10px] sm:text-xs text-muted-foreground font-medium">Pending</p>
               </div>
             </CardContent>
           </Card>
 
           {/* Alerts & Pending Actions */}
-          <Card className="card-premium">
+          <Card className="bg-gradient-to-br from-white to-slate-50/50 border-slate-100/50 shadow-lg shadow-slate-500/5">
             <CardHeader className="pb-2 sm:pb-3 px-3 sm:px-6 pt-3 sm:pt-6">
               <CardTitle className="text-sm sm:text-base flex items-center gap-2">
-                <AlertTriangle className="w-4 h-4 text-amber-500" />
+                <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center">
+                  <AlertTriangle className="w-3.5 h-3.5 text-white" />
+                </div>
                 Alerts & Tasks
-                <Badge variant="secondary" className="ml-auto text-[10px]">
+                <Badge variant="secondary" className="ml-auto text-[10px] bg-slate-100">
                   {urgentAlerts.length + teacherPendingActions.length}
                 </Badge>
               </CardTitle>
@@ -293,7 +346,7 @@ const TeacherDashboard = () => {
                     <Button 
                       variant="ghost" 
                       size="sm" 
-                      className="h-6 text-xs text-primary px-2"
+                      className="h-6 text-xs text-teal-600 px-2"
                       onClick={() => navigate("/teacher/notifications")}
                     >
                       View All
@@ -360,11 +413,11 @@ const TeacherDashboard = () => {
             </CardContent>
           </Card>
 
-          {/* AI Assist Card */}
-          <Card className="bg-gradient-to-br from-primary/10 to-accent/10 border-primary/20 card-premium">
+          {/* AI Assist Card - Premium gradient */}
+          <Card className="bg-gradient-to-br from-teal-500/10 via-cyan-500/5 to-teal-500/10 border-teal-200/50 overflow-hidden shadow-lg shadow-teal-500/5">
             <CardContent className="p-3 sm:p-4">
               <div className="flex items-start gap-3">
-                <div className="w-10 h-10 rounded-xl gradient-button flex items-center justify-center flex-shrink-0">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-teal-500 to-cyan-500 flex items-center justify-center flex-shrink-0 shadow-lg shadow-teal-500/25">
                   <Sparkles className="w-5 h-5 text-white" />
                 </div>
                 <div className="flex-1 min-w-0">
@@ -374,8 +427,7 @@ const TeacherDashboard = () => {
                   </p>
                   <Button 
                     size="sm" 
-                    variant="outline"
-                    className="mt-2.5 sm:mt-3 h-9 border-primary/30 text-primary hover:bg-primary/5"
+                    className="mt-2.5 sm:mt-3 h-9 bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 text-white border-0 shadow-md shadow-teal-500/20"
                   >
                     Try AI Assist
                   </Button>
@@ -386,14 +438,14 @@ const TeacherDashboard = () => {
         </div>
       </div>
 
-      {/* Mobile FAB - Context aware */}
+      {/* Mobile FAB - Premium gradient */}
       <div className="fixed bottom-20 right-4 md:hidden z-10">
         <Button 
           size="lg"
-          className="w-14 h-14 rounded-full gradient-button shadow-lg shadow-primary/30"
+          className="w-14 h-14 rounded-full bg-gradient-to-br from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 shadow-xl shadow-teal-500/30 border-0"
           onClick={() => navigate("/teacher/lesson-plans/new")}
         >
-          <Plus className="w-6 h-6" />
+          <Plus className="w-6 h-6 text-white" />
         </Button>
       </div>
 

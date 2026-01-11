@@ -1083,7 +1083,12 @@ export const batchProgressSummaries: BatchProgressSummary[] = [
 // ============================================
 
 export const pendingConfirmations: PendingConfirmation[] = [
-  { id: "pending-1", batchId: "batch-9a", batchName: "Class 9 - Section A", subjectId: "phy", subjectName: "Physics", teacherId: "teacher-1", teacherName: "Dr. Sharma", date: "2025-01-27", expectedPeriods: 2, daysOverdue: 1 },
-  { id: "pending-2", batchId: "batch-10a", batchName: "Class 10 - Section A", subjectId: "mat", subjectName: "Mathematics", teacherId: "teacher-2", teacherName: "Prof. Verma", date: "2025-01-27", expectedPeriods: 2, daysOverdue: 1 },
-  { id: "pending-3", batchId: "batch-11a", batchName: "Class 11 - Section A", subjectId: "phy", subjectName: "Physics", teacherId: "teacher-1", teacherName: "Dr. Sharma", date: "2025-01-28", expectedPeriods: 2, daysOverdue: 0 },
+  // Yesterday's unconfirmed classes
+  { id: "pending-1", batchId: "batch-10a", batchName: "Class 10 • Section A", subjectId: "phy", subjectName: "Physics", teacherId: "teacher-1", teacherName: "Dr. Rajesh Kumar", date: "2026-01-10", expectedPeriods: 2, daysOverdue: 1 },
+  { id: "pending-2", batchId: "batch-10b", batchName: "Class 10 • Section B", subjectId: "phy", subjectName: "Physics", teacherId: "teacher-1", teacherName: "Dr. Rajesh Kumar", date: "2026-01-10", expectedPeriods: 1, daysOverdue: 1 },
+  // 2 days ago
+  { id: "pending-3", batchId: "batch-11a", batchName: "Class 11 • Section A", subjectId: "phy", subjectName: "Physics", teacherId: "teacher-1", teacherName: "Dr. Rajesh Kumar", date: "2026-01-09", expectedPeriods: 2, daysOverdue: 2 },
+  // 3 days ago
+  { id: "pending-4", batchId: "batch-10a", batchName: "Class 10 • Section A", subjectId: "phy", subjectName: "Physics", teacherId: "teacher-1", teacherName: "Dr. Rajesh Kumar", date: "2026-01-08", expectedPeriods: 1, daysOverdue: 3 },
+  { id: "pending-5", batchId: "batch-10b", batchName: "Class 10 • Section B", subjectId: "phy", subjectName: "Physics", teacherId: "teacher-1", teacherName: "Dr. Rajesh Kumar", date: "2026-01-08", expectedPeriods: 2, daysOverdue: 3 },
 ];
