@@ -3,9 +3,10 @@
 
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { Lock, ChevronRight, GripHorizontal } from "lucide-react";
+import { Lock, ChevronRight, GripHorizontal, Pencil } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ChapterCellType } from "@/types/academicPlanner";
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
 
 interface SortableChapterCellProps {
   id: string;
@@ -17,6 +18,8 @@ interface SortableChapterCellProps {
   isLocked: boolean;
   isPublished: boolean;
   isDraggable: boolean;
+  isModified?: boolean;
+  modificationTypes?: ('reorder' | 'extend' | 'compress' | 'swap')[];
   colors: { bg: string; text: string; border: string };
   onClick?: () => void;
 }
@@ -31,6 +34,8 @@ export function SortableChapterCell({
   isLocked,
   isPublished,
   isDraggable,
+  isModified = false,
+  modificationTypes = [],
   colors,
   onClick,
 }: SortableChapterCellProps) {
@@ -91,7 +96,20 @@ export function SortableChapterCell({
   const showDragHandle = isDraggable && !isPublished && !isLocked && 
     (cellType === 'start' || cellType === 'single' || cellType === 'full');
 
-  return (
+  // Get modification label for tooltip
+  const getModificationLabel = () => {
+    if (!isModified || modificationTypes.length === 0) return null;
+    const labels: string[] = [];
+    if (modificationTypes.includes('reorder')) labels.push('Reordered');
+    if (modificationTypes.includes('extend')) labels.push('Extended');
+    if (modificationTypes.includes('compress')) labels.push('Compressed');
+    if (modificationTypes.includes('swap')) labels.push('Swapped');
+    return labels.join(', ');
+  };
+
+  const modificationLabel = getModificationLabel();
+
+  const cellElement = (
     <div
       ref={setNodeRef}
       style={style}
@@ -104,10 +122,20 @@ export function SortableChapterCell({
         isDragging && "opacity-50 ring-2 ring-primary z-50 shadow-lg",
         !isPublished && !isEmpty && !isLocked && "cursor-grab active:cursor-grabbing",
         isPublished && "cursor-default opacity-80",
-        isLocked && "ring-1 ring-amber-400 cursor-not-allowed"
+        isLocked && "ring-1 ring-amber-400 cursor-not-allowed",
+        // Modified indicator - dashed border top
+        isModified && !isEmpty && "border-t-2 border-t-orange-400 border-dashed"
       )}
       onClick={onClick}
     >
+      {/* Modified Badge */}
+      {isModified && !isEmpty && (cellType === 'start' || cellType === 'single' || cellType === 'full') && (
+        <div className="absolute -top-1.5 left-1 bg-orange-500 text-white text-[8px] px-1 py-0.5 rounded-sm font-medium flex items-center gap-0.5 shadow-sm">
+          <Pencil className="w-2 h-2" />
+          <span className="hidden sm:inline">Edited</span>
+        </div>
+      )}
+
       {/* Drag Handle Overlay */}
       {showDragHandle && (
         <div
@@ -138,6 +166,25 @@ export function SortableChapterCell({
       )}
     </div>
   );
+
+  // Wrap with tooltip if modified
+  if (isModified && modificationLabel) {
+    return (
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            {cellElement}
+          </TooltipTrigger>
+          <TooltipContent side="top" className="text-xs">
+            <p className="font-medium text-orange-600">{modificationLabel}</p>
+            <p className="text-muted-foreground">Manually adjusted from auto-generated plan</p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    );
+  }
+
+  return cellElement;
 }
 
 // Drag overlay component for floating preview

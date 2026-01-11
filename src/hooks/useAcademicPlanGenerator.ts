@@ -341,6 +341,10 @@ export function useAcademicPlanGenerator({
         chapter.plannedHours += subject.weeklyHours;
         chapter.isPartialEnd = false;
         
+        // Mark as modified
+        chapter.isModified = true;
+        chapter.modificationTypes = [...(chapter.modificationTypes || []), 'extend'];
+        
         // Push all subsequent chapters by 1 week
         for (let i = chapterIndex + 1; i < subject.chapterAssignments.length; i++) {
           const nextChapter = subject.chapterAssignments[i];
@@ -363,6 +367,10 @@ export function useAcademicPlanGenerator({
           chapter.hoursPerWeek = chapter.hoursPerWeek.filter(h => h.weekIndex !== chapter.endWeekIndex);
           chapter.endWeekIndex -= 1;
           chapter.plannedHours -= removedHours;
+          
+          // Mark as modified
+          chapter.isModified = true;
+          chapter.modificationTypes = [...(chapter.modificationTypes || []), 'compress'];
           
           // Pull all subsequent chapters by 1 week
           for (let i = chapterIndex + 1; i < subject.chapterAssignments.length; i++) {
@@ -426,6 +434,12 @@ export function useAcademicPlanGenerator({
           for (let w = nextChapter.startWeekIndex; w <= nextChapter.endWeekIndex; w++) {
             nextChapter.hoursPerWeek.push({ weekIndex: w, hours: subject.weeklyHours });
           }
+          
+          // Mark both as modified
+          chapter.isModified = true;
+          chapter.modificationTypes = [...(chapter.modificationTypes || []), 'swap'];
+          nextChapter.isModified = true;
+          nextChapter.modificationTypes = [...(nextChapter.modificationTypes || []), 'swap'];
           
           // Swap array positions
           subject.chapterAssignments[chapterIndex] = nextChapter;
@@ -523,10 +537,22 @@ export function useAcademicPlanGenerator({
     if (fromIndex < 0 || fromIndex >= subject.chapterAssignments.length) return;
     if (toIndex < 0 || toIndex >= subject.chapterAssignments.length) return;
     
-    // Swap the two chapters
+    // Swap the two chapters and mark them as modified
     const temp = subject.chapterAssignments[fromIndex];
     subject.chapterAssignments[fromIndex] = subject.chapterAssignments[toIndex];
     subject.chapterAssignments[toIndex] = temp;
+    
+    // Mark both swapped chapters as modified
+    subject.chapterAssignments[fromIndex].isModified = true;
+    subject.chapterAssignments[fromIndex].modificationTypes = [
+      ...(subject.chapterAssignments[fromIndex].modificationTypes || []),
+      'reorder'
+    ];
+    subject.chapterAssignments[toIndex].isModified = true;
+    subject.chapterAssignments[toIndex].modificationTypes = [
+      ...(subject.chapterAssignments[toIndex].modificationTypes || []),
+      'reorder'
+    ];
     
     // Recalculate all week positions for the subject
     let currentWeekStart = 0;

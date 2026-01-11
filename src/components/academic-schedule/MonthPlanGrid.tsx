@@ -24,7 +24,7 @@ import { restrictToHorizontalAxis, restrictToParentElement } from "@dnd-kit/modi
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
-import { Lock, ChevronRight, GripHorizontal } from "lucide-react";
+import { Lock, ChevronRight, GripHorizontal, Pencil } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { AcademicWeek } from "@/types/academicSchedule";
 import {
@@ -178,6 +178,12 @@ export function MonthPlanGrid({
         <div className="flex items-center gap-1.5">
           <GripHorizontal className="w-3 h-3" />
           <span>Draggable</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-0.5 bg-orange-500 text-white text-[8px] px-1 py-0.5 rounded-sm">
+            <Pencil className="w-2 h-2" />
+          </div>
+          <span>Modified</span>
         </div>
       </div>
     </div>
@@ -372,6 +378,8 @@ function SubjectRow({
                   isCurrent={isCurrent}
                   isLocked={item.isLocked}
                   isPublished={isPublished}
+                  isModified={item.assignment?.isModified || false}
+                  modificationTypes={item.assignment?.modificationTypes || []}
                   colors={colors}
                   onAdjust={onAdjust}
                   onClick={() => onCellClick?.(subject.subjectId, item.chapterId || null, item.weekIndex)}
@@ -394,6 +402,8 @@ function SubjectRow({
                 isLocked={item.isLocked}
                 isPublished={isPublished}
                 isDraggable={isDraggable}
+                isModified={item.assignment?.isModified || false}
+                modificationTypes={item.assignment?.modificationTypes || []}
                 colors={colors}
                 onAdjust={onAdjust}
                 onClick={() => onCellClick?.(subject.subjectId, item.chapterId || null, item.weekIndex)}
@@ -430,6 +440,8 @@ interface ChapterCellWithDragProps {
   isLocked: boolean;
   isPublished: boolean;
   isDraggable: boolean;
+  isModified: boolean;
+  modificationTypes: ('reorder' | 'extend' | 'compress' | 'swap')[];
   colors: { bg: string; text: string; border: string };
   onAdjust?: (adjustment: ChapterAdjustment) => void;
   onClick?: () => void;
@@ -447,6 +459,8 @@ function ChapterCellWithDrag({
   isLocked,
   isPublished,
   isDraggable,
+  isModified,
+  modificationTypes,
   colors,
   onAdjust,
   onClick,
@@ -481,6 +495,8 @@ function ChapterCellWithDrag({
           isLocked={isLocked}
           isPublished={isPublished}
           isDraggable={isDraggable}
+          isModified={isModified}
+          modificationTypes={modificationTypes}
           colors={colors}
           onClick={onClick}
         />
@@ -500,6 +516,8 @@ interface ChapterCellWithPopoverProps {
   isCurrent: boolean;
   isLocked: boolean;
   isPublished: boolean;
+  isModified: boolean;
+  modificationTypes: ('reorder' | 'extend' | 'compress' | 'swap')[];
   colors: { bg: string; text: string; border: string };
   onAdjust?: (adjustment: ChapterAdjustment) => void;
   onClick?: () => void;
@@ -515,6 +533,8 @@ function ChapterCellWithPopover({
   isCurrent,
   isLocked,
   isPublished,
+  isModified,
+  modificationTypes,
   colors,
   onAdjust,
   onClick,
@@ -556,6 +576,19 @@ function ChapterCellWithPopover({
     }
   };
 
+  // Get modification label for tooltip
+  const getModificationLabel = () => {
+    if (!isModified || modificationTypes.length === 0) return null;
+    const labels: string[] = [];
+    if (modificationTypes.includes('reorder')) labels.push('Reordered');
+    if (modificationTypes.includes('extend')) labels.push('Extended');
+    if (modificationTypes.includes('compress')) labels.push('Compressed');
+    if (modificationTypes.includes('swap')) labels.push('Swapped');
+    return labels.join(', ');
+  };
+
+  const modificationLabel = getModificationLabel();
+
   const cellContent = (
     <button
       onClick={() => {
@@ -567,16 +600,26 @@ function ChapterCellWithPopover({
       }}
       disabled={isPublished}
       className={cn(
-        "h-16 w-full flex flex-col items-center justify-center border text-xs transition-all",
+        "relative h-16 w-full flex flex-col items-center justify-center border text-xs transition-all",
         isEmpty 
           ? "bg-muted/20 border-dashed border-muted-foreground/20 hover:bg-muted/40" 
           : cn(colors.bg, colors.border, getOpacity(), getCellStyle()),
         isCurrent && "ring-2 ring-primary ring-offset-1",
         !isPublished && !isEmpty && "hover:shadow-md cursor-pointer",
         isPublished && "cursor-default opacity-80",
-        isLocked && "ring-1 ring-amber-400"
+        isLocked && "ring-1 ring-amber-400",
+        // Modified indicator - dashed border top
+        isModified && !isEmpty && "border-t-2 border-t-orange-400 border-dashed"
       )}
     >
+      {/* Modified Badge */}
+      {isModified && !isEmpty && (cellType === 'start' || cellType === 'single' || cellType === 'full') && (
+        <div className="absolute -top-1.5 left-1 bg-orange-500 text-white text-[8px] px-1 py-0.5 rounded-sm font-medium flex items-center gap-0.5 shadow-sm">
+          <Pencil className="w-2 h-2" />
+          <span className="hidden sm:inline">Edited</span>
+        </div>
+      )}
+      
       {!isEmpty && (
         <>
           <div className={cn("font-medium truncate max-w-full px-1", colors.text)}>
@@ -611,6 +654,9 @@ function ChapterCellWithPopover({
               <div className="text-xs">
                 <p className="font-medium">{chapterName}</p>
                 <p className="text-muted-foreground">{hours} hours this week</p>
+                {isModified && modificationLabel && (
+                  <p className="text-orange-600">✎ {modificationLabel}</p>
+                )}
                 {isPublished && <p className="text-green-600">✓ Published (read-only)</p>}
               </div>
             )}
