@@ -38,3 +38,6 @@ export { DriftAlertBanner } from "./DriftAlertBanner";
 export { ScheduleAdjustmentDialog } from "./ScheduleAdjustmentDialog";
 export { AdjustmentHistoryPanel } from "./AdjustmentHistoryPanel";
 export { DriftSummarySheet } from "./DriftSummarySheet";
+export { BatchPlanSelector } from "./BatchPlanSelector";
+export { MonthPlanGrid } from "./MonthPlanGrid";
+export { ChapterAdjustmentPopover } from "./ChapterAdjustmentPopover";
