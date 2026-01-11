@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Search, ChevronDown, ChevronRight, BookOpen, Lock, Maximize2, Minimize2 } from "lucide-react";
+import { Search, ChevronDown, ChevronRight, BookOpen, Lock, Maximize2, Minimize2, Clock } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -76,11 +76,15 @@ const Reference = () => {
     });
   }, [chaptersByClass, selectedClass, searchQuery]);
 
-  // Count total topics for stats
-  const totalTopics = useMemo(() => {
-    return filteredChapters.reduce((acc, ch) => {
-      return acc + getTopicsForChapter(ch.id).length;
-    }, 0);
+  // Count total topics and hours for stats
+  const { totalTopics, totalHours } = useMemo(() => {
+    let topics = 0;
+    let hours = 0;
+    filteredChapters.forEach(ch => {
+      topics += getTopicsForChapter(ch.id).length;
+      hours += ch.allocatedHours || 0;
+    });
+    return { totalTopics: topics, totalHours: hours };
   }, [filteredChapters]);
 
   const toggleChapter = (chapterId: string) => {
@@ -126,7 +130,7 @@ const Reference = () => {
           Read-Only
         </Badge>
         <span className="text-sm text-muted-foreground">
-          {filteredChapters.length} chapters • {totalTopics} topics
+          {filteredChapters.length} chapters • {totalTopics} topics • {totalHours} hrs
         </span>
       </div>
 
@@ -202,9 +206,17 @@ const Reference = () => {
                             <p className="font-semibold text-sm text-foreground line-clamp-2">
                               {chapter.name}
                             </p>
-                            <p className="text-xs text-muted-foreground mt-0.5">
-                              {topics.length} topics
-                            </p>
+                            <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                              <span className="text-xs text-muted-foreground">
+                                {topics.length} topics
+                              </span>
+                              {chapter.allocatedHours && (
+                                <Badge variant="outline" className="text-xs gap-1 bg-amber-50 text-amber-700 border-amber-200 px-1.5 py-0">
+                                  <Clock className="w-3 h-3" />
+                                  {chapter.allocatedHours} hrs
+                                </Badge>
+                              )}
+                            </div>
                           </div>
                           <div className={cn(
                             "flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center transition-colors",
