@@ -59,7 +59,7 @@ export const WorkspaceToolbar = ({
           "gap-1.5 sm:gap-2 shrink-0 h-10 sm:h-11 px-3 sm:px-4 transition-all",
           isActive 
             ? "bg-primary text-primary-foreground shadow-md" 
-            : "hover:bg-primary/5 hover:border-primary/30"
+            : "hover:bg-primary/10 hover:border-primary/50 hover:shadow-sm"
         )}
         onClick={() => onBlockClick(type)}
       >

@@ -319,28 +319,26 @@ export const QuizDialog = ({
               </div>
               
               {/* Question List - with proper scroll container */}
-              <div className="flex-1 min-h-0 overflow-hidden">
-                <ScrollArea className="h-full">
-                  <div className="p-3 space-y-2">
-                    {filteredQuestions.length > 0 ? (
-                      filteredQuestions.map((question) => (
-                        <QuestionItem
-                          key={question.id}
-                          question={question}
-                          isSelected={selectedQuestions.has(question.id)}
-                          onToggle={() => toggleQuestion(question.id)}
-                        />
-                      ))
-                    ) : (
-                      <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
-                        <Search className="w-10 h-10 mb-3 opacity-50" />
-                        <p className="text-sm font-medium">No questions found</p>
-                        <p className="text-xs">Try adjusting your filters</p>
-                      </div>
-                    )}
-                  </div>
-                </ScrollArea>
-              </div>
+              <ScrollArea className="flex-1 min-h-0 h-[280px]">
+                <div className="p-3 space-y-2">
+                  {filteredQuestions.length > 0 ? (
+                    filteredQuestions.map((question) => (
+                      <QuestionItem
+                        key={question.id}
+                        question={question}
+                        isSelected={selectedQuestions.has(question.id)}
+                        onToggle={() => toggleQuestion(question.id)}
+                      />
+                    ))
+                  ) : (
+                    <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+                      <Search className="w-10 h-10 mb-3 opacity-50" />
+                      <p className="text-sm font-medium">No questions found</p>
+                      <p className="text-xs">Try adjusting your filters</p>
+                    </div>
+                  )}
+                </div>
+              </ScrollArea>
               
               {/* Footer with Add button */}
               <div className="p-4 border-t shrink-0">
