@@ -1,9 +1,8 @@
 import { useState } from "react";
 import { PageHeader } from "@/components/ui/page-header";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
 import {
   Select,
   SelectContent,
@@ -13,286 +12,165 @@ import {
 } from "@/components/ui/select";
 import {
   TrendingUp,
-  TrendingDown,
   AlertTriangle,
   CheckCircle,
-  Clock,
   BookOpen,
   Calendar,
-  User,
+  Filter,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { subjectProgressData, pendingConfirmations, teachingConfirmations } from "@/data/academicScheduleData";
-
-// Mock teacher data
-const teacherProfile = { id: "teacher-1", name: "Dr. Rajesh Kumar" };
-const teacherBatches = [
-  { id: "batch-1", name: "Section A", className: "Class 10" },
-  { id: "batch-3", name: "Section A", className: "Class 9" },
-];
-
-const getStatusColor = (status: string) => {
-  switch (status) {
-    case "ahead":
-    case "completed":
-      return "text-emerald-600 bg-emerald-50 border-emerald-200";
-    case "on_track":
-    case "in_progress":
-      return "text-blue-600 bg-blue-50 border-blue-200";
-    case "lagging":
-      return "text-amber-600 bg-amber-50 border-amber-200";
-    case "critical":
-    case "not_started":
-      return "text-red-600 bg-red-50 border-red-200";
-    default:
-      return "text-muted-foreground bg-muted";
-  }
-};
-
-const getStatusIcon = (status: string) => {
-  switch (status) {
-    case "ahead":
-    case "completed":
-      return <TrendingUp className="w-4 h-4" />;
-    case "on_track":
-    case "in_progress":
-      return <CheckCircle className="w-4 h-4" />;
-    case "lagging":
-      return <TrendingDown className="w-4 h-4" />;
-    default:
-      return <Clock className="w-4 h-4" />;
-  }
-};
-
-const getStatusLabel = (status: string) => {
-  switch (status) {
-    case "ahead": return "Ahead";
-    case "on_track": return "On Track";
-    case "in_progress": return "In Progress";
-    case "lagging": return "Lagging";
-    case "critical": return "Critical";
-    case "completed": return "Completed";
-    default: return status;
-  }
-};
+import { useTeacherSyllabusProgress, type SectionProgress } from "@/hooks/useTeacherSyllabusProgress";
+import {
+  WeekContextBanner,
+  SubjectProgressCard,
+  ChapterDetailSheet,
+} from "@/components/teacher/syllabus-progress";
 
 export default function TeacherAcademicProgress() {
-  const [selectedBatch, setSelectedBatch] = useState<string>("all");
+  const [selectedSubject, setSelectedSubject] = useState<string>("all");
+  const [selectedSection, setSelectedSection] = useState<SectionProgress | null>(null);
+  const [sheetOpen, setSheetOpen] = useState(false);
 
-  // Filter progress by teacher's assigned batches
-  const teacherBatchIds = teacherBatches.map(b => b.id);
-  const filteredProgress = subjectProgressData.filter(p => 
-    teacherBatchIds.includes(p.batchId) &&
-    (selectedBatch === "all" || p.batchId === selectedBatch)
-  );
+  const progressData = useTeacherSyllabusProgress();
 
-  // Teacher's pending confirmations
-  const myPendingConfirmations = pendingConfirmations.filter(
-    p => p.teacherId === teacherProfile.id
-  );
+  // Filter subjects
+  const filteredSubjects = selectedSubject === "all"
+    ? progressData.subjects
+    : progressData.subjects.filter(s => s.subjectId === selectedSubject);
 
-  // Teacher's teaching hours this week
-  const thisWeekConfirmations = teachingConfirmations.filter(
-    c => c.teacherId === teacherProfile.id && c.didTeach
-  );
-  const totalHoursThisWeek = thisWeekConfirmations.reduce(
-    (sum, c) => sum + c.periodsCount, 0
-  );
-
-  // Summary stats
-  const totalSubjects = filteredProgress.length;
-  const onTrackCount = filteredProgress.filter(
-    p => p.overallStatus === "ahead" || p.overallStatus === "in_progress"
-  ).length;
-  const laggingCount = filteredProgress.filter(
-    p => p.overallStatus === "lagging"
-  ).length;
+  const handleSectionTap = (section: SectionProgress) => {
+    setSelectedSection(section);
+    setSheetOpen(true);
+  };
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto">
+    <div className="space-y-4 sm:space-y-6 max-w-4xl mx-auto pb-20">
+      {/* Compact Header */}
       <PageHeader
-        title="Syllabus Progress"
-        description="Track your teaching progress across batches"
+        title="My Teaching Progress"
+        description="Track syllabus completion across your batches"
         breadcrumbs={[
           { label: "Teacher", href: "/teacher" },
-          { label: "Syllabus Progress" },
+          { label: "Progress" },
         ]}
       />
 
-      {/* Summary Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="pt-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-                <BookOpen className="w-5 h-5 text-primary" />
+      {/* Week Context Banner */}
+      <WeekContextBanner weekContext={progressData.weekContext} />
+
+      {/* Quick Stats - Compact Inline */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <Card className="bg-gradient-to-br from-teal-50 to-cyan-50 border-teal-200/50">
+          <CardContent className="p-3">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-lg bg-teal-100 flex items-center justify-center">
+                <BookOpen className="w-4 h-4 text-teal-600" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">My Batches</p>
-                <p className="text-xl font-bold">{teacherBatches.length}</p>
+                <p className="text-lg font-bold text-foreground">{progressData.totalBatches}</p>
+                <p className="text-xs text-muted-foreground">Sections</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardContent className="pt-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center">
-                <CheckCircle className="w-5 h-5 text-emerald-600" />
+        <Card className="bg-gradient-to-br from-emerald-50 to-green-50 border-emerald-200/50">
+          <CardContent className="p-3">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center">
+                <CheckCircle className="w-4 h-4 text-emerald-600" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">On Track</p>
-                <p className="text-xl font-bold">{onTrackCount}</p>
+                <p className="text-lg font-bold text-foreground">{progressData.onTrackCount}</p>
+                <p className="text-xs text-muted-foreground">On Track</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardContent className="pt-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center">
-                <AlertTriangle className="w-5 h-5 text-amber-600" />
+        <Card className="bg-gradient-to-br from-amber-50 to-orange-50 border-amber-200/50">
+          <CardContent className="p-3">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center">
+                <AlertTriangle className="w-4 h-4 text-amber-600" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Need Attention</p>
-                <p className="text-xl font-bold">{laggingCount}</p>
+                <p className="text-lg font-bold text-foreground">{progressData.laggingCount}</p>
+                <p className="text-xs text-muted-foreground">Attention</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardContent className="pt-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center">
-                <Clock className="w-5 h-5 text-blue-600" />
+        <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200/50">
+          <CardContent className="p-3">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center">
+                <TrendingUp className="w-4 h-4 text-blue-600" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Hours This Week</p>
-                <p className="text-xl font-bold">{totalHoursThisWeek}</p>
+                <p className="text-lg font-bold text-foreground">{progressData.overallProgress}%</p>
+                <p className="text-xs text-muted-foreground">Progress</p>
               </div>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Pending Confirmations Alert */}
-      {myPendingConfirmations.length > 0 && (
-        <Card className="border-amber-200 bg-amber-50/30">
-          <CardContent className="py-4">
-            <div className="flex items-center justify-between gap-4 flex-wrap">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center">
-                  <AlertTriangle className="w-5 h-5 text-amber-600" />
-                </div>
-                <div>
-                  <p className="font-medium">Pending Confirmations</p>
-                  <p className="text-sm text-muted-foreground">
-                    {myPendingConfirmations.length} class{myPendingConfirmations.length !== 1 ? 'es' : ''} awaiting confirmation
-                  </p>
-                </div>
-              </div>
-              <Button variant="outline" className="border-amber-300 text-amber-700 hover:bg-amber-100">
-                Confirm Now
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+      {/* Subject Filter - Optional */}
+      {progressData.subjects.length > 1 && (
+        <div className="flex items-center gap-2">
+          <Filter className="w-4 h-4 text-muted-foreground" />
+          <Select value={selectedSubject} onValueChange={setSelectedSubject}>
+            <SelectTrigger className="w-[180px] h-9">
+              <SelectValue placeholder="All Subjects" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Subjects</SelectItem>
+              {progressData.subjects.map((subject) => (
+                <SelectItem key={subject.subjectId} value={subject.subjectId}>
+                  {subject.subjectName}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       )}
 
-      {/* Filters */}
-      <div className="flex items-center gap-4">
-        <Select value={selectedBatch} onValueChange={setSelectedBatch}>
-          <SelectTrigger className="w-[200px]">
-            <SelectValue placeholder="All Batches" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Batches</SelectItem>
-            {teacherBatches.map((batch) => (
-              <SelectItem key={batch.id} value={batch.id}>
-                {batch.className} - {batch.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-
-      {/* Progress Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {filteredProgress.map((progress) => (
-          <Card key={`${progress.batchId}-${progress.subjectId}`} className="hover:shadow-md transition-shadow">
-            <CardHeader className="pb-3">
-              <div className="flex items-start justify-between">
-                <div>
-                  <CardTitle className="text-lg">{progress.batchName}</CardTitle>
-                  <div className="flex items-center gap-2 mt-1">
-                    <Badge variant="secondary">{progress.subjectName}</Badge>
-                    {progress.currentChapterName && (
-                      <span className="text-sm text-muted-foreground">
-                        Current: {progress.currentChapterName}
-                      </span>
-                    )}
-                  </div>
-                </div>
-                <Badge className={cn("gap-1.5", getStatusColor(progress.overallStatus))}>
-                  {getStatusIcon(progress.overallStatus)}
-                  {getStatusLabel(progress.overallStatus)}
-                </Badge>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {/* Progress Bar */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">Progress</span>
-                  <span className="font-semibold">{progress.percentComplete}%</span>
-                </div>
-                <Progress value={progress.percentComplete} className="h-2" />
-              </div>
-
-              {/* Stats */}
-              <div className="grid grid-cols-3 gap-3 text-center">
-                <div className="p-2 rounded-lg bg-muted/30">
-                  <p className="text-lg font-semibold">{progress.chaptersCompleted}/{progress.totalChapters}</p>
-                  <p className="text-xs text-muted-foreground">Chapters</p>
-                </div>
-                <div className="p-2 rounded-lg bg-muted/30">
-                  <p className="text-lg font-semibold">{progress.totalActualHours}h</p>
-                  <p className="text-xs text-muted-foreground">Taught</p>
-                </div>
-                <div className="p-2 rounded-lg bg-muted/30">
-                  <p className={cn(
-                    "text-lg font-semibold",
-                    progress.lostDays > 2 && "text-amber-600"
-                  )}>
-                    {progress.lostDays}
-                  </p>
-                  <p className="text-xs text-muted-foreground">Lost Days</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+      {/* Subject Progress Cards */}
+      <div className="space-y-4">
+        {filteredSubjects.map((subject) => (
+          <SubjectProgressCard
+            key={subject.subjectId}
+            subject={subject}
+            onSectionTap={handleSectionTap}
+          />
         ))}
       </div>
 
       {/* Empty State */}
-      {filteredProgress.length === 0 && (
+      {filteredSubjects.length === 0 && (
         <Card>
-          <CardContent className="py-16">
+          <CardContent className="py-12">
             <div className="text-center">
               <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center mx-auto mb-4">
                 <Calendar className="w-8 h-8 text-muted-foreground" />
               </div>
               <h3 className="text-lg font-semibold mb-2">No Progress Data</h3>
-              <p className="text-muted-foreground max-w-md mx-auto">
+              <p className="text-muted-foreground max-w-md mx-auto text-sm">
                 Progress tracking will appear here once you start teaching and confirming classes.
               </p>
             </div>
           </CardContent>
         </Card>
       )}
+
+      {/* Chapter Detail Sheet */}
+      <ChapterDetailSheet
+        section={selectedSection}
+        open={sheetOpen}
+        onClose={() => setSheetOpen(false)}
+      />
     </div>
   );
 }
