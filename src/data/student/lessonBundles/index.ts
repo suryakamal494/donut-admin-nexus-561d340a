@@ -4,6 +4,8 @@
 // Types
 export type {
   ContentType,
+  HomeworkType,
+  SubmissionStatus,
   LessonBundle,
   BundleContentItem,
   TeacherScreenshot,

@@ -42,6 +42,9 @@ export interface TeacherScreenshot {
   annotations?: string[];
 }
 
+export type HomeworkType = 'practice' | 'test' | 'project';
+export type SubmissionStatus = 'pending' | 'submitted' | 'graded' | 'late';
+
 export interface HomeworkItem {
   id: string;
   chapterId: string;
@@ -53,6 +56,22 @@ export interface HomeworkItem {
   isStarted: boolean;
   linkedSessionId?: string;
   linkedSessionTitle?: string;
+  // Homework type determines submission UI
+  homeworkType: HomeworkType;
+  instructions?: string;
+  attachments?: { name: string; url: string }[]; // Teacher-provided files
+  // Submission tracking
+  submissionStatus?: SubmissionStatus;
+  submittedAt?: string;
+  submissionFiles?: { name: string; url: string; type: string }[];
+  submissionText?: string;
+  submissionLink?: string;
+  grade?: number;
+  maxGrade?: number;
+  feedback?: string;
+  // For test type
+  testId?: string;
+  testDuration?: string;
 }
 
 export interface AIPathItem {
