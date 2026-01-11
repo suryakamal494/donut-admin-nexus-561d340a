@@ -67,9 +67,7 @@ const navItems: NavItem[] = [
     subItems: [
       { title: "Setup", icon: Settings, href: "/institute/academic-schedule/setup" },
       { title: "Weekly Plans", icon: Calendar, href: "/institute/academic-schedule/plans" },
-      { title: "Academic Views", icon: TrendingUp, href: "/institute/academic-schedule/views" },
-      { title: "Progress", icon: TrendingUp, href: "/institute/academic-schedule/progress" },
-      { title: "Pending", icon: Clock, href: "/institute/academic-schedule/pending" },
+      { title: "Batch Progress", icon: TrendingUp, href: "/institute/academic-schedule/batches" },
     ]
   },
   { title: "Question Bank", icon: FileQuestion, href: "/institute/questions" },

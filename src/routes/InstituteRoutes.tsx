@@ -64,17 +64,14 @@ const InstitutePYPView = lazy(() => import("@/pages/institute/exams/PYPView"));
 const InstituteMasterData = lazy(() => import("@/pages/institute/masterdata/MasterData"));
 const InstituteRoles = lazy(() => import("@/pages/institute/roles/Roles"));
 
-// Academic Schedule
+// Academic Schedule - Consolidated
 const AcademicScheduleSetup = lazy(() => import("@/pages/institute/academic-schedule/Setup"));
 const AcademicScheduleWeeklyPlans = lazy(() => import("@/pages/institute/academic-schedule/WeeklyPlans"));
-const AcademicScheduleProgress = lazy(() => import("@/pages/institute/academic-schedule/Progress"));
-const AcademicScheduleBatchProgress = lazy(() => import("@/pages/institute/academic-schedule/BatchProgress"));
-const AcademicSchedulePending = lazy(() => import("@/pages/institute/academic-schedule/PendingConfirmations"));
+const BatchHub = lazy(() => import("@/pages/institute/academic-schedule/BatchHub"));
+const ConsolidatedBatchView = lazy(() => import("@/pages/institute/academic-schedule/ConsolidatedBatchView"));
 const AcademicScheduleTeachingView = lazy(() => import("@/pages/institute/academic-schedule/TeachingView"));
 const AcademicScheduleYearOverview = lazy(() => import("@/pages/institute/academic-schedule/YearOverview"));
-const AcademicScheduleSectionAlignment = lazy(() => import("@/pages/institute/academic-schedule/SectionAlignment"));
 const AcademicScheduleChapterDetail = lazy(() => import("@/pages/institute/academic-schedule/ChapterDetail"));
-const AcademicViews = lazy(() => import("@/pages/institute/academic-schedule/AcademicViews"));
 
 // Suspense wrapper for lazy-loaded pages
 function LazyPage({ children }: { children: React.ReactNode }) {
@@ -146,17 +143,23 @@ export default function InstituteRoutes() {
         <Route path="master-data" element={<LazyPage><InstituteMasterData /></LazyPage>} />
         <Route path="roles" element={<LazyPage><InstituteRoles /></LazyPage>} />
         
-        {/* Academic Schedule */}
+        {/* Academic Schedule - Consolidated */}
         <Route path="academic-schedule/setup" element={<LazyPage><AcademicScheduleSetup /></LazyPage>} />
         <Route path="academic-schedule/plans" element={<LazyPage><AcademicScheduleWeeklyPlans /></LazyPage>} />
-        <Route path="academic-schedule/views" element={<LazyPage><AcademicViews /></LazyPage>} />
+        <Route path="academic-schedule/batches" element={<LazyPage><BatchHub /></LazyPage>} />
+        <Route path="academic-schedule/batches/:batchId" element={<LazyPage><ConsolidatedBatchView /></LazyPage>} />
+        
+        {/* Legacy routes - redirect to new consolidated view */}
+        <Route path="academic-schedule/progress" element={<Navigate to="/institute/academic-schedule/batches" replace />} />
+        <Route path="academic-schedule/progress/:batchId" element={<Navigate to="/institute/academic-schedule/batches" replace />} />
+        <Route path="academic-schedule/pending" element={<Navigate to="/institute/academic-schedule/batches" replace />} />
+        <Route path="academic-schedule/views" element={<Navigate to="/institute/academic-schedule/batches" replace />} />
+        <Route path="academic-schedule/alignment" element={<Navigate to="/institute/academic-schedule/batches" replace />} />
+        
+        {/* Keep direct access to specific views (optional) */}
         <Route path="academic-schedule/year-view" element={<LazyPage><AcademicScheduleYearOverview /></LazyPage>} />
         <Route path="academic-schedule/teaching-view" element={<LazyPage><AcademicScheduleTeachingView /></LazyPage>} />
-        <Route path="academic-schedule/alignment" element={<LazyPage><AcademicScheduleSectionAlignment /></LazyPage>} />
         <Route path="academic-schedule/chapter-detail" element={<LazyPage><AcademicScheduleChapterDetail /></LazyPage>} />
-        <Route path="academic-schedule/progress" element={<LazyPage><AcademicScheduleProgress /></LazyPage>} />
-        <Route path="academic-schedule/progress/:batchId" element={<LazyPage><AcademicScheduleBatchProgress /></LazyPage>} />
-        <Route path="academic-schedule/pending" element={<LazyPage><AcademicSchedulePending /></LazyPage>} />
       </Route>
     </Routes>
   );
