@@ -22,7 +22,7 @@ import { cn } from "@/lib/utils";
 import { CurrentClassWidget } from "@/components/teacher/CurrentClassWidget";
 import { TeachingConfirmationDialog } from "@/components/teacher/TeachingConfirmationDialog";
 import { ClassCard } from "@/components/teacher/ClassCard";
-import { TeacherNotificationCard } from "@/components/teacher/notifications";
+import { TeacherNotificationCard, PushNotificationBanner } from "@/components/teacher/notifications";
 import { useTeacherNotifications } from "@/hooks/useTeacherNotifications";
 import { 
   currentTeacher, 
@@ -145,6 +145,9 @@ const TeacherDashboard = () => {
           Create Lesson Plan
         </Button>
       </div>
+
+      {/* Push Notification Banner */}
+      <PushNotificationBanner />
 
       {/* Current/Next Class - Enhanced Widget with Lesson Plan Preview */}
       {classInfo && (

@@ -1,10 +1,11 @@
-import { Bell, Check, ArrowLeft } from "lucide-react";
+import { Bell, Check, ArrowLeft, Settings } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { 
   TeacherNotificationFilters, 
-  TeacherNotificationList 
+  TeacherNotificationList,
+  PushNotificationSettings 
 } from "@/components/teacher/notifications";
 import { useTeacherNotifications } from "@/hooks/useTeacherNotifications";
 
@@ -79,6 +80,11 @@ const TeacherNotifications = () => {
             activeFilter={activeFilter}
             onFilterChange={setActiveFilter}
           />
+        </div>
+        
+        {/* Push Notification Settings */}
+        <div className="mb-6">
+          <PushNotificationSettings />
         </div>
         
         {/* Notification List */}
