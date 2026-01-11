@@ -345,27 +345,25 @@ export const BlockDialog = ({
               </div>
               
               {/* Content List - with proper scroll container */}
-              <div className="flex-1 min-h-0 overflow-hidden">
-                <ScrollArea className="h-full">
-                  <div className="p-2 space-y-1">
-                    {filteredContent.length > 0 ? (
-                      filteredContent.map((item) => (
-                        <ContentItem
-                          key={item.id}
-                          item={item}
-                          onSelect={() => handleLibrarySelect(item)}
-                        />
-                      ))
-                    ) : (
-                      <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
-                        <Search className="w-10 h-10 mb-3 opacity-50" />
-                        <p className="text-sm font-medium">No content found</p>
-                        <p className="text-xs">Try adjusting your filters</p>
-                      </div>
-                    )}
-                  </div>
-                </ScrollArea>
-              </div>
+              <ScrollArea className="flex-1 min-h-0 h-[280px]">
+                <div className="p-2 space-y-1">
+                  {filteredContent.length > 0 ? (
+                    filteredContent.map((item) => (
+                      <ContentItem
+                        key={item.id}
+                        item={item}
+                        onSelect={() => handleLibrarySelect(item)}
+                      />
+                    ))
+                  ) : (
+                    <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+                      <Search className="w-10 h-10 mb-3 opacity-50" />
+                      <p className="text-sm font-medium">No content found</p>
+                      <p className="text-xs">Try adjusting your filters</p>
+                    </div>
+                  )}
+                </div>
+              </ScrollArea>
             </TabsContent>
             
             {/* AI Tab */}
