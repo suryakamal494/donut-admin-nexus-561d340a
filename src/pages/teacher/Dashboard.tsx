@@ -23,7 +23,7 @@ import { cn } from "@/lib/utils";
 import { CurrentClassWidget } from "@/components/teacher/CurrentClassWidget";
 import { TeachingConfirmationDialog } from "@/components/teacher/TeachingConfirmationDialog";
 import { ClassCard } from "@/components/teacher/ClassCard";
-import { TeacherNotificationCard, PushNotificationBanner, ConfirmationReminderSettings } from "@/components/teacher/notifications";
+import { TeacherNotificationCard, PushNotificationBanner } from "@/components/teacher/notifications";
 import { useTeacherNotifications } from "@/hooks/useTeacherNotifications";
 import { 
   currentTeacher, 
@@ -292,36 +292,6 @@ const TeacherDashboard = () => {
 
         {/* Sidebar - Mobile: Horizontal scroll cards, Desktop: Vertical stack */}
         <div className="space-y-4 sm:space-y-5">
-          {/* Quick Stats - Premium gradient card */}
-          <Card className="overflow-hidden bg-gradient-to-br from-white to-teal-50/30 border-teal-100/50 shadow-lg shadow-teal-500/5">
-            <CardHeader className="pb-2 sm:pb-3 px-3 sm:px-6 pt-3 sm:pt-6">
-              <CardTitle className="text-sm sm:text-base flex items-center gap-2">
-                <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-teal-500 to-cyan-500 flex items-center justify-center">
-                  <TrendingUp className="w-3.5 h-3.5 text-white" />
-                </div>
-                This Week
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="grid grid-cols-2 gap-2 sm:gap-4 px-3 sm:px-6 pb-3 sm:pb-6">
-              <div className="text-center p-2.5 sm:p-3 rounded-xl bg-gradient-to-br from-teal-50 to-cyan-50 border border-teal-100/50">
-                <p className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-teal-600 to-cyan-600 bg-clip-text text-transparent">{teacherWeeklyStats.totalClasses}</p>
-                <p className="text-[10px] sm:text-xs text-muted-foreground font-medium">Classes</p>
-              </div>
-              <div className="text-center p-2.5 sm:p-3 rounded-xl bg-gradient-to-br from-teal-50 to-cyan-50 border border-teal-100/50">
-                <p className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-teal-600 to-cyan-600 bg-clip-text text-transparent">{teacherWeeklyStats.scheduledTests}</p>
-                <p className="text-[10px] sm:text-xs text-muted-foreground font-medium">Tests</p>
-              </div>
-              <div className="text-center p-2.5 sm:p-3 rounded-xl bg-gradient-to-br from-teal-50 to-cyan-50 border border-teal-100/50">
-                <p className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-teal-600 to-cyan-600 bg-clip-text text-transparent">{teacherWeeklyStats.lessonPlansCreated}</p>
-                <p className="text-[10px] sm:text-xs text-muted-foreground font-medium">Plans</p>
-              </div>
-              <div className="text-center p-2.5 sm:p-3 rounded-xl bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-100/50">
-                <p className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-amber-600 to-orange-600 bg-clip-text text-transparent">{totalPendingConfirmations}</p>
-                <p className="text-[10px] sm:text-xs text-muted-foreground font-medium">Pending</p>
-              </div>
-            </CardContent>
-          </Card>
-
           {/* Alerts & Pending Actions */}
           <Card className="bg-gradient-to-br from-white to-slate-50/50 border-slate-100/50 shadow-lg shadow-slate-500/5">
             <CardHeader className="pb-2 sm:pb-3 px-3 sm:px-6 pt-3 sm:pt-6">
@@ -436,11 +406,6 @@ const TeacherDashboard = () => {
             </CardContent>
           </Card>
 
-          {/* Confirmation Reminder Settings */}
-          <ConfirmationReminderSettings 
-            pendingCount={totalPendingConfirmations}
-            onNavigateToConfirm={() => navigate("/teacher/academic-progress")}
-          />
         </div>
       </div>
 

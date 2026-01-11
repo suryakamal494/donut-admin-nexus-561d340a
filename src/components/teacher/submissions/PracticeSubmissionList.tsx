@@ -5,15 +5,14 @@ import {
   Link as LinkIcon,
   Type,
   Eye,
-  Download,
   CheckCircle2,
   Clock,
   AlertCircle,
-  ExternalLink,
 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import type { PracticeSubmission, SubmissionStatus } from "@/data/teacher/submissions";
@@ -63,36 +62,23 @@ export function PracticeSubmissionList({ submissions, filter }: PracticeSubmissi
 
   return (
     <>
-      <ScrollArea className="w-full">
-        <div className="min-w-[600px]">
-          {/* Header */}
-          <div className="grid grid-cols-12 gap-2 px-3 py-2 bg-muted/50 rounded-lg text-xs font-medium text-muted-foreground mb-2">
-            <div className="col-span-4">Student</div>
-            <div className="col-span-3">Submission</div>
-            <div className="col-span-2">Status</div>
-            <div className="col-span-2">Submitted</div>
-            <div className="col-span-1 text-right">Action</div>
-          </div>
+      {/* Mobile Card View */}
+      <div className="md:hidden space-y-3">
+        {filteredSubmissions.map((submission) => {
+          const status = statusConfig[submission.status];
+          const StatusIcon = status.icon;
+          const TypeIcon = submissionTypeIcons[submission.submissionType];
 
-          {/* Rows */}
-          <div className="space-y-1">
-            {filteredSubmissions.map((submission) => {
-              const status = statusConfig[submission.status];
-              const StatusIcon = status.icon;
-              const TypeIcon = submissionTypeIcons[submission.submissionType];
-
-              return (
-                <div
-                  key={submission.id}
-                  className={cn(
-                    "grid grid-cols-12 gap-2 px-3 py-3 rounded-lg items-center",
-                    "hover:bg-muted/30 transition-colors",
-                    submission.status === "pending" && "opacity-60"
-                  )}
-                >
-                  {/* Student */}
-                  <div className="col-span-4 flex items-center gap-2 min-w-0">
-                    <Avatar className="h-8 w-8 shrink-0">
+          return (
+            <Card key={submission.id} className={cn(
+              "overflow-hidden",
+              submission.status === "pending" && "opacity-60"
+            )}>
+              <CardContent className="p-3">
+                {/* Header: Student + Status */}
+                <div className="flex items-start justify-between gap-2 mb-3">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <Avatar className="h-9 w-9 shrink-0">
                       <AvatarFallback className="text-xs bg-primary/10 text-primary">
                         {submission.studentName.split(' ').map(n => n[0]).join('')}
                       </AvatarFallback>
@@ -102,81 +88,189 @@ export function PracticeSubmissionList({ submissions, filter }: PracticeSubmissi
                       <p className="text-xs text-muted-foreground">{submission.rollNumber}</p>
                     </div>
                   </div>
+                  <Badge className={cn("text-xs gap-1 shrink-0", status.className)}>
+                    <StatusIcon className="w-3 h-3" />
+                    {status.label}
+                  </Badge>
+                </div>
 
-                  {/* Submission Type & File */}
-                  <div className="col-span-3 flex items-center gap-2 min-w-0">
-                    {submission.status !== "pending" ? (
-                      <>
-                        <div className={cn(
-                          "p-1.5 rounded shrink-0",
-                          submission.submissionType === "file" && "bg-blue-50 text-blue-600",
-                          submission.submissionType === "image" && "bg-purple-50 text-purple-600",
-                          submission.submissionType === "link" && "bg-green-50 text-green-600",
-                          submission.submissionType === "text" && "bg-amber-50 text-amber-600",
-                        )}>
-                          <TypeIcon className="w-3.5 h-3.5" />
-                        </div>
-                        <div className="min-w-0">
-                          <p className="text-sm truncate">
-                            {submission.fileName || submission.submissionType}
-                          </p>
-                          {submission.fileSize && (
-                            <p className="text-xs text-muted-foreground">{submission.fileSize}</p>
-                          )}
-                        </div>
-                      </>
-                    ) : (
-                      <span className="text-sm text-muted-foreground">Not submitted</span>
-                    )}
-                  </div>
-
-                  {/* Status */}
-                  <div className="col-span-2">
-                    <Badge className={cn("text-xs gap-1", status.className)}>
-                      <StatusIcon className="w-3 h-3" />
-                      {status.label}
-                    </Badge>
-                    {submission.grade !== undefined && (
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {submission.grade}/{submission.maxGrade}
+                {/* Submission Details */}
+                {submission.status !== "pending" && (
+                  <div className="flex items-center gap-2 p-2 rounded-lg bg-muted/30 mb-3">
+                    <div className={cn(
+                      "p-1.5 rounded shrink-0",
+                      submission.submissionType === "file" && "bg-blue-50 text-blue-600",
+                      submission.submissionType === "image" && "bg-purple-50 text-purple-600",
+                      submission.submissionType === "link" && "bg-green-50 text-green-600",
+                      submission.submissionType === "text" && "bg-amber-50 text-amber-600",
+                    )}>
+                      <TypeIcon className="w-4 h-4" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm truncate">
+                        {submission.fileName || submission.submissionType}
                       </p>
-                    )}
+                      {submission.fileSize && (
+                        <p className="text-xs text-muted-foreground">{submission.fileSize}</p>
+                      )}
+                    </div>
                   </div>
+                )}
 
-                  {/* Submitted Date */}
-                  <div className="col-span-2 text-sm text-muted-foreground">
+                {/* Footer: Date + Action */}
+                <div className="flex items-center justify-between">
+                  <div className="text-xs text-muted-foreground">
                     {submission.submittedAt ? (
-                      <span>{new Date(submission.submittedAt).toLocaleDateString('en-US', {
+                      <>Submitted: {new Date(submission.submittedAt).toLocaleDateString('en-US', {
                         month: 'short',
                         day: 'numeric',
                         hour: '2-digit',
                         minute: '2-digit',
-                      })}</span>
+                      })}</>
                     ) : (
-                      <span>-</span>
+                      "Not submitted"
+                    )}
+                    {submission.grade !== undefined && (
+                      <span className="ml-2 font-medium text-foreground">
+                        Grade: {submission.grade}/{submission.maxGrade}
+                      </span>
                     )}
                   </div>
-
-                  {/* Action */}
-                  <div className="col-span-1 text-right">
-                    {submission.status !== "pending" && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-8 w-8 p-0"
-                        onClick={() => handleView(submission)}
-                      >
-                        <Eye className="w-4 h-4" />
-                      </Button>
-                    )}
-                  </div>
+                  {submission.status !== "pending" && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-8 px-3"
+                      onClick={() => handleView(submission)}
+                    >
+                      <Eye className="w-3.5 h-3.5 mr-1" />
+                      View
+                    </Button>
+                  )}
                 </div>
-              );
-            })}
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
+
+      {/* Desktop Table View */}
+      <div className="hidden md:block">
+        <ScrollArea className="w-full">
+          <div className="min-w-[600px]">
+            {/* Header */}
+            <div className="grid grid-cols-12 gap-2 px-3 py-2 bg-muted/50 rounded-lg text-xs font-medium text-muted-foreground mb-2">
+              <div className="col-span-4">Student</div>
+              <div className="col-span-3">Submission</div>
+              <div className="col-span-2">Status</div>
+              <div className="col-span-2">Submitted</div>
+              <div className="col-span-1 text-right">Action</div>
+            </div>
+
+            {/* Rows */}
+            <div className="space-y-1">
+              {filteredSubmissions.map((submission) => {
+                const status = statusConfig[submission.status];
+                const StatusIcon = status.icon;
+                const TypeIcon = submissionTypeIcons[submission.submissionType];
+
+                return (
+                  <div
+                    key={submission.id}
+                    className={cn(
+                      "grid grid-cols-12 gap-2 px-3 py-3 rounded-lg items-center",
+                      "hover:bg-muted/30 transition-colors",
+                      submission.status === "pending" && "opacity-60"
+                    )}
+                  >
+                    {/* Student */}
+                    <div className="col-span-4 flex items-center gap-2 min-w-0">
+                      <Avatar className="h-8 w-8 shrink-0">
+                        <AvatarFallback className="text-xs bg-primary/10 text-primary">
+                          {submission.studentName.split(' ').map(n => n[0]).join('')}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium truncate">{submission.studentName}</p>
+                        <p className="text-xs text-muted-foreground">{submission.rollNumber}</p>
+                      </div>
+                    </div>
+
+                    {/* Submission Type & File */}
+                    <div className="col-span-3 flex items-center gap-2 min-w-0">
+                      {submission.status !== "pending" ? (
+                        <>
+                          <div className={cn(
+                            "p-1.5 rounded shrink-0",
+                            submission.submissionType === "file" && "bg-blue-50 text-blue-600",
+                            submission.submissionType === "image" && "bg-purple-50 text-purple-600",
+                            submission.submissionType === "link" && "bg-green-50 text-green-600",
+                            submission.submissionType === "text" && "bg-amber-50 text-amber-600",
+                          )}>
+                            <TypeIcon className="w-3.5 h-3.5" />
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-sm truncate">
+                              {submission.fileName || submission.submissionType}
+                            </p>
+                            {submission.fileSize && (
+                              <p className="text-xs text-muted-foreground">{submission.fileSize}</p>
+                            )}
+                          </div>
+                        </>
+                      ) : (
+                        <span className="text-sm text-muted-foreground">Not submitted</span>
+                      )}
+                    </div>
+
+                    {/* Status */}
+                    <div className="col-span-2">
+                      <Badge className={cn("text-xs gap-1", status.className)}>
+                        <StatusIcon className="w-3 h-3" />
+                        {status.label}
+                      </Badge>
+                      {submission.grade !== undefined && (
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {submission.grade}/{submission.maxGrade}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Submitted Date */}
+                    <div className="col-span-2 text-sm text-muted-foreground">
+                      {submission.submittedAt ? (
+                        <span>{new Date(submission.submittedAt).toLocaleDateString('en-US', {
+                          month: 'short',
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}</span>
+                      ) : (
+                        <span>-</span>
+                      )}
+                    </div>
+
+                    {/* Action */}
+                    <div className="col-span-1 text-right">
+                      {submission.status !== "pending" && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 w-8 p-0"
+                          onClick={() => handleView(submission)}
+                        >
+                          <Eye className="w-4 h-4" />
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
-        </div>
-        <ScrollBar orientation="horizontal" />
-      </ScrollArea>
+          <ScrollBar orientation="horizontal" />
+        </ScrollArea>
+      </div>
 
       {/* Submission Viewer Dialog */}
       <SubmissionViewerDialog
