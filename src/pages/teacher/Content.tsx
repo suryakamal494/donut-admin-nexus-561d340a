@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
-import { Search, Grid3X3, List, BookOpen, Filter, ChevronDown, ChevronUp, Plus, Upload, Sparkles } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { Search, Grid3X3, List, BookOpen, Filter, ChevronDown, ChevronUp, Plus, Upload, Sparkles, AlertTriangle } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -10,6 +11,17 @@ import { ContentCard, ContentItem } from "@/components/content/ContentCard";
 import { ContentPagination } from "@/components/content/ContentPagination";
 import { ContentPreviewDialog } from "@/components/content/ContentPreviewDialog";
 import { ContentCreationSheet, ContentCreationOnboardingTour, useContentCreationTour } from "@/components/teacher/content";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { useToast } from "@/hooks/use-toast";
 import { instituteContent, InstituteContentItem } from "@/data/instituteData";
 import { currentTeacher } from "@/data/teacherData";
 import { physicsChapters, cbseTopics } from "@/data/cbseMasterData";
@@ -21,7 +33,88 @@ const getTeacherChapters = () => {
   );
 };
 
+// Mock teacher-created content
+const teacherCreatedContent: ContentItem[] = [
+  {
+    id: "teacher-content-1",
+    title: "Newton's Laws Interactive Demo",
+    type: "video",
+    subject: "Physics",
+    subjectId: "phy",
+    chapter: "Laws of Motion",
+    chapterId: "ch-laws-motion",
+    topic: "Newton's First Law",
+    topicId: "topic-1",
+    classId: "11",
+    className: "Class 11",
+    description: "My interactive demonstration video explaining Newton's First Law with real-world examples.",
+    duration: 15,
+    url: "https://example.com/video1.mp4",
+    visibility: "private",
+    status: "published",
+    createdAt: "2024-01-15",
+    updatedAt: "2024-01-15",
+    createdBy: currentTeacher.id,
+    viewCount: 45,
+    downloadCount: 12,
+    source: "teacher",
+    createdByTeacherId: currentTeacher.id,
+  },
+  {
+    id: "teacher-content-2",
+    title: "Thermodynamics Quick Notes",
+    type: "pdf",
+    subject: "Physics",
+    subjectId: "phy",
+    chapter: "Thermodynamics",
+    chapterId: "ch-thermo",
+    topic: "Laws of Thermodynamics",
+    topicId: "topic-2",
+    classId: "11",
+    className: "Class 11",
+    description: "Concise notes on all laws of thermodynamics with solved examples.",
+    size: "2.3 MB",
+    url: "https://example.com/notes.pdf",
+    visibility: "private",
+    status: "published",
+    createdAt: "2024-01-20",
+    updatedAt: "2024-01-20",
+    createdBy: currentTeacher.id,
+    viewCount: 78,
+    downloadCount: 34,
+    source: "teacher",
+    createdByTeacherId: currentTeacher.id,
+  },
+  {
+    id: "teacher-content-3",
+    title: "Wave Motion Animation",
+    type: "animation",
+    subject: "Physics",
+    subjectId: "phy",
+    chapter: "Waves",
+    chapterId: "ch-waves",
+    topic: "Types of Waves",
+    topicId: "topic-3",
+    classId: "11",
+    className: "Class 11",
+    description: "AI-generated presentation on wave motion and types of waves.",
+    duration: 8,
+    url: "https://example.com/animation.html",
+    visibility: "private",
+    status: "published",
+    createdAt: "2024-01-25",
+    updatedAt: "2024-01-25",
+    createdBy: currentTeacher.id,
+    viewCount: 23,
+    downloadCount: 5,
+    source: "teacher",
+    createdByTeacherId: currentTeacher.id,
+  },
+];
+
 const Content = () => {
+  const navigate = useNavigate();
+  const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedClass, setSelectedClass] = useState<string>("all");
   const [selectedChapter, setSelectedChapter] = useState<string>("all");
@@ -33,43 +126,48 @@ const Content = () => {
   const [previewOpen, setPreviewOpen] = useState(false);
   const [showMobileFilters, setShowMobileFilters] = useState(false);
   const [showCreateSheet, setShowCreateSheet] = useState(false);
+  const [deleteContent, setDeleteContent] = useState<ContentItem | null>(null);
+  const [localTeacherContent, setLocalTeacherContent] = useState<ContentItem[]>(teacherCreatedContent);
   
   // Onboarding tour
   const { showTour, completeTour, skipTour } = useContentCreationTour();
 
   const ITEMS_PER_PAGE = 15;
 
-  // Filter content for teacher's subjects (Physics)
-  const teacherContent = useMemo(() => {
-    return instituteContent.filter(item => 
+  // Combine institute content with teacher-created content for teacher's subjects (Physics)
+  const allContent = useMemo(() => {
+    const institutePhysicsContent = instituteContent.filter(item => 
       item.subjectId === "phy"
     ) as ContentItem[];
-  }, []);
+    
+    // Combine global/institute content with teacher's own content
+    return [...institutePhysicsContent, ...localTeacherContent];
+  }, [localTeacherContent]);
 
   // Get available classes from content
   const availableClasses = useMemo(() => {
-    const classes = [...new Set(teacherContent.map(c => c.className))];
+    const classes = [...new Set(allContent.map(c => c.className))];
     return classes.sort();
-  }, [teacherContent]);
+  }, [allContent]);
 
   // Get available chapters based on selected class
   const availableChapters = useMemo(() => {
-    let content = teacherContent;
+    let content = allContent;
     if (selectedClass !== "all") {
       content = content.filter(c => c.className === selectedClass);
     }
     const chapters = [...new Set(content.map(c => c.chapter))];
     return chapters.sort();
-  }, [teacherContent, selectedClass]);
+  }, [allContent, selectedClass]);
 
   // Get available content types
   const availableTypes = useMemo(() => {
-    return [...new Set(teacherContent.map(c => c.type))];
-  }, [teacherContent]);
+    return [...new Set(allContent.map(c => c.type))];
+  }, [allContent]);
 
   // Filter content
   const filteredContent = useMemo(() => {
-    let filtered = teacherContent;
+    let filtered = allContent;
 
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
@@ -97,7 +195,7 @@ const Content = () => {
     }
 
     return filtered;
-  }, [teacherContent, searchQuery, selectedClass, selectedChapter, selectedType, selectedSource]);
+  }, [allContent, searchQuery, selectedClass, selectedChapter, selectedType, selectedSource]);
 
   // Paginate
   const totalPages = Math.ceil(filteredContent.length / ITEMS_PER_PAGE);
@@ -117,9 +215,33 @@ const Content = () => {
     setPreviewOpen(true);
   };
 
-  const handleUseInLesson = (content: ContentItem) => {
-    // TODO: Implement add to lesson plan
-    console.log("Add to lesson plan:", content);
+  const handleEdit = (content: ContentItem) => {
+    // Only allow editing teacher-created content
+    if (content.source === "teacher" && content.createdByTeacherId === currentTeacher.id) {
+      navigate(`/teacher/content/edit/${content.id}`);
+      toast({
+        title: "Edit Mode",
+        description: `Editing "${content.title}"`,
+      });
+    }
+  };
+
+  const handleDeleteClick = (content: ContentItem) => {
+    // Only allow deleting teacher-created content
+    if (content.source === "teacher" && content.createdByTeacherId === currentTeacher.id) {
+      setDeleteContent(content);
+    }
+  };
+
+  const handleConfirmDelete = () => {
+    if (deleteContent) {
+      setLocalTeacherContent(prev => prev.filter(c => c.id !== deleteContent.id));
+      toast({
+        title: "Content Deleted",
+        description: `"${deleteContent.title}" has been removed from your library.`,
+      });
+      setDeleteContent(null);
+    }
   };
 
   const clearFilters = () => {
@@ -275,7 +397,8 @@ const Content = () => {
                 <SelectContent>
                   <SelectItem value="all">All Sources</SelectItem>
                   <SelectItem value="global">Global</SelectItem>
-                  <SelectItem value="institute">Our Content</SelectItem>
+                  <SelectItem value="institute">Institute</SelectItem>
+                  <SelectItem value="teacher">My Content</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -327,7 +450,8 @@ const Content = () => {
                     <SelectContent>
                       <SelectItem value="all">All Sources</SelectItem>
                       <SelectItem value="global">Global</SelectItem>
-                      <SelectItem value="institute">Our Content</SelectItem>
+                      <SelectItem value="institute">Institute</SelectItem>
+                      <SelectItem value="teacher">My Content</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -354,7 +478,9 @@ const Content = () => {
                 <Badge variant="outline">{selectedType.toUpperCase()}</Badge>
               )}
               {selectedSource !== "all" && (
-                <Badge variant="outline">{selectedSource === "global" ? "Global" : "Our Content"}</Badge>
+                <Badge variant="outline">
+                  {selectedSource === "global" ? "Global" : selectedSource === "teacher" ? "My Content" : "Institute"}
+                </Badge>
               )}
               <Button
                 variant="ghost"
@@ -381,8 +507,11 @@ const Content = () => {
               <ContentCard
                 key={content.id}
                 content={content}
-                mode="institute"
+                mode="teacher"
+                currentTeacherId={currentTeacher.id}
                 onPreview={handlePreview}
+                onEdit={handleEdit}
+                onDelete={handleDeleteClick}
               />
             ))}
           </div>
@@ -428,6 +557,31 @@ const Content = () => {
         open={showCreateSheet} 
         onOpenChange={setShowCreateSheet} 
       />
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!deleteContent} onOpenChange={(open) => !open && setDeleteContent(null)}>
+        <AlertDialogContent className="max-w-[95vw] sm:max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-destructive" />
+              Delete Content?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete <strong>"{deleteContent?.title}"</strong>? 
+              This action cannot be undone and the content will be permanently removed from your library.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+            <AlertDialogCancel className="w-full sm:w-auto">Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleConfirmDelete}
+              className="w-full sm:w-auto bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
