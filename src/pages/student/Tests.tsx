@@ -1,15 +1,16 @@
 // Student Tests Page
-// Test listing with clear segmentation: My Tests (teacher) vs Grand Tests/PYPs
-// Mobile-first responsive design
+// Redesigned with card-based layout matching SubjectCard aesthetic
+// Scalable with virtualized lists for 30+ tests per subject
 
-import { useState, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useMemo, useCallback } from "react";
 import { Trophy, ClipboardList, GraduationCap } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-  SubjectTestGroup,
+  SubjectTestCard,
+  SubjectTestsSheet,
   GrandTestCard,
   ExamPatternFilter,
+  LiveTestsSection,
 } from "@/components/student/tests";
 import {
   teacherTests,
@@ -19,21 +20,26 @@ import {
   getLiveTestsCount,
 } from "@/data/student/tests";
 import type { ExamPattern } from "@/data/student/tests";
+import { useNavigate } from "react-router-dom";
 
 const StudentTests = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("my-tests");
   const [selectedPattern, setSelectedPattern] = useState<ExamPattern | "all">("all");
+  const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
 
   // Group teacher tests by subject
   const testsBySubject = useMemo(() => getTestsBySubject(teacherTests), []);
-  const subjectOrder = Object.keys(testsBySubject).sort((a, b) => {
-    // Sort by live tests first, then alphabetically
-    const aLive = getLiveTestsCount(testsBySubject[a]);
-    const bLive = getLiveTestsCount(testsBySubject[b]);
-    if (aLive !== bLive) return bLive - aLive;
-    return a.localeCompare(b);
-  });
+  
+  // Sort subjects: live tests first, then by count
+  const subjectOrder = useMemo(() => {
+    return Object.keys(testsBySubject).sort((a, b) => {
+      const aLive = getLiveTestsCount(testsBySubject[a]);
+      const bLive = getLiveTestsCount(testsBySubject[b]);
+      if (aLive !== bLive) return bLive - aLive;
+      return testsBySubject[b].length - testsBySubject[a].length;
+    });
+  }, [testsBySubject]);
 
   // Combine and filter grand tests + PYPs
   const allGrandTests = useMemo(() => [...grandTests, ...previousYearPapers], []);
@@ -43,22 +49,30 @@ const StudentTests = () => {
   }, [allGrandTests, selectedPattern]);
 
   // Counts
-  const totalTeacherTests = teacherTests.length;
   const liveTeacherTests = getLiveTestsCount(teacherTests);
   const liveGrandTests = getLiveTestsCount(allGrandTests);
 
-  const handleStartTest = (testId: string) => {
-    navigate(`/student/tests/${testId}`);
-  };
+  // Sheet handlers
+  const handleOpenSheet = useCallback((subject: string) => {
+    setSelectedSubject(subject);
+  }, []);
 
-  const handleViewTest = (testId: string) => {
-    // Navigate to test player for viewing (test will show details/instructions)
-    navigate(`/student/tests/${testId}`);
-  };
+  const handleCloseSheet = useCallback(() => {
+    setSelectedSubject(null);
+  }, []);
 
-  const handleViewResults = (testId: string) => {
+  // Grand test handlers
+  const handleStartTest = useCallback((testId: string) => {
+    navigate(`/student/tests/${testId}`);
+  }, [navigate]);
+
+  const handleViewTest = useCallback((testId: string) => {
+    navigate(`/student/tests/${testId}`);
+  }, [navigate]);
+
+  const handleViewResults = useCallback((testId: string) => {
     navigate(`/student/tests/${testId}/results`);
-  };
+  }, [navigate]);
 
   return (
     <div className="w-full pb-20">
@@ -108,17 +122,18 @@ const StudentTests = () => {
 
         {/* My Tests Tab */}
         <TabsContent value="my-tests" className="mt-0">
+          {/* Live Tests Highlight */}
+          <LiveTestsSection tests={teacherTests} />
+
+          {/* Subject Cards Grid */}
           {subjectOrder.length > 0 ? (
-            <div className="space-y-1">
-              {subjectOrder.map((subject, index) => (
-                <SubjectTestGroup
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {subjectOrder.map((subject) => (
+                <SubjectTestCard
                   key={subject}
                   subject={subject}
                   tests={testsBySubject[subject]}
-                  defaultExpanded={index === 0}
-                  onStartTest={handleStartTest}
-                  onViewTest={handleViewTest}
-                  onViewResults={handleViewResults}
+                  onOpenSheet={handleOpenSheet}
                 />
               ))}
             </div>
@@ -134,6 +149,9 @@ const StudentTests = () => {
 
         {/* Grand Tests Tab */}
         <TabsContent value="grand-tests" className="mt-0">
+          {/* Live Tests Highlight */}
+          <LiveTestsSection tests={allGrandTests} />
+
           {/* Pattern Filter */}
           <ExamPatternFilter
             selectedPattern={selectedPattern}
@@ -164,6 +182,14 @@ const StudentTests = () => {
           )}
         </TabsContent>
       </Tabs>
+
+      {/* Subject Tests Sheet */}
+      <SubjectTestsSheet
+        isOpen={selectedSubject !== null}
+        onClose={handleCloseSheet}
+        subject={selectedSubject || ""}
+        tests={selectedSubject ? testsBySubject[selectedSubject] || [] : []}
+      />
     </div>
   );
 };
