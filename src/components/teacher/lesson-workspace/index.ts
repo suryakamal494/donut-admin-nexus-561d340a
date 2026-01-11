@@ -7,6 +7,7 @@ export { WorkspaceBlock } from "./WorkspaceBlock";
 export { WorkspaceFooter } from "./WorkspaceFooter";
 export { BlockDialog } from "./BlockDialog";
 export { QuizDialog } from "./QuizDialog";
+export { HomeworkBlockDialog } from "./HomeworkBlockDialog";
 export { AIAssistDialog } from "./AIAssistDialog";
 export { ContentPreviewDialog } from "./ContentPreviewDialog";
 export { QuestionBankSheet } from "./QuestionBankSheet";

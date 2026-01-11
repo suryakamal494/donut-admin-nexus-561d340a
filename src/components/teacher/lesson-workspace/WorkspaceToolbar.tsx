@@ -10,6 +10,7 @@ import { blockTypeConfig, type BlockType, type LessonPlanBlock } from "./types";
 import { cn } from "@/lib/utils";
 import { BlockDialog } from "./BlockDialog";
 import { QuizDialog } from "./QuizDialog";
+import { HomeworkBlockDialog } from "./HomeworkBlockDialog";
 
 interface WorkspaceToolbarProps {
   onBlockClick: (type: BlockType) => void;
@@ -19,6 +20,8 @@ interface WorkspaceToolbarProps {
   activeBlock?: BlockType | null;
   chapter?: string;
   subject?: string;
+  batchId?: string;
+  batchName?: string;
 }
 
 export const WorkspaceToolbar = ({ 
@@ -29,6 +32,8 @@ export const WorkspaceToolbar = ({
   activeBlock,
   chapter,
   subject,
+  batchId,
+  batchName,
 }: WorkspaceToolbarProps) => {
   const blockTypes: BlockType[] = ['explain', 'demonstrate', 'quiz', 'homework'];
 
@@ -65,7 +70,7 @@ export const WorkspaceToolbar = ({
       </Button>
     );
 
-    // Render Dialog when active
+    // Render Quiz Dialog
     if (type === 'quiz') {
       return (
         <div key={type}>
@@ -94,7 +99,42 @@ export const WorkspaceToolbar = ({
         </div>
       );
     }
+
+    // Render Homework Dialog with simplified 3-mode selector
+    if (type === 'homework') {
+      return (
+        <div key={type}>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              {buttonContent}
+            </TooltipTrigger>
+            <TooltipContent 
+              side="bottom" 
+              sideOffset={8}
+              className="z-[200] max-w-[240px] text-center p-3 bg-popover border shadow-lg"
+            >
+              <p className="font-medium mb-1">{config.label}</p>
+              <p className="text-xs text-muted-foreground">
+                {config.tooltip}
+              </p>
+            </TooltipContent>
+          </Tooltip>
+          <HomeworkBlockDialog
+            open={isActive}
+            onOpenChange={(open) => !open && onBlockClick(type)}
+            onAddBlock={onAddBlock}
+            context={{
+              subject,
+              chapter,
+              batchId,
+              batchName,
+            }}
+          />
+        </div>
+      );
+    }
     
+    // Default: Explain/Demonstrate dialogs
     return (
       <div key={type}>
         <Tooltip>
