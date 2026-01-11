@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { PageHeader } from "@/components/ui/page-header";
 import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import {
   Select,
   SelectContent,
@@ -15,6 +16,7 @@ import {
   BookOpen,
   Calendar,
   Filter,
+  ListChecks,
 } from "lucide-react";
 import { useTeacherSyllabusProgress, type SectionProgress } from "@/hooks/useTeacherSyllabusProgress";
 import {
@@ -23,6 +25,7 @@ import {
   ChapterDetailSheet,
 } from "@/components/teacher/syllabus-progress";
 import { TeachingConfirmationDialog } from "@/components/teacher/TeachingConfirmationDialog";
+import { BulkConfirmationDialog, type PendingClass, type BulkConfirmationResult } from "@/components/teacher/BulkConfirmationDialog";
 import { toast } from "sonner";
 
 export default function TeacherAcademicProgress() {
@@ -33,6 +36,9 @@ export default function TeacherAcademicProgress() {
   // Teaching confirmation dialog state
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
   const [confirmingSection, setConfirmingSection] = useState<SectionProgress | null>(null);
+  
+  // Bulk confirmation dialog state
+  const [bulkDialogOpen, setBulkDialogOpen] = useState(false);
 
   const progressData = useTeacherSyllabusProgress();
 
@@ -40,6 +46,42 @@ export default function TeacherAcademicProgress() {
   const filteredSubjects = selectedSubject === "all"
     ? progressData.subjects
     : progressData.subjects.filter(s => s.subjectId === selectedSubject);
+
+  // Calculate total pending confirmations
+  const totalPending = useMemo(() => {
+    return progressData.subjects.reduce((sum, s) => sum + s.totalPending, 0);
+  }, [progressData.subjects]);
+
+  // Generate pending classes for bulk confirmation
+  const pendingClasses: PendingClass[] = useMemo(() => {
+    const classes: PendingClass[] = [];
+    
+    progressData.subjects.forEach((subject) => {
+      subject.sections.forEach((section) => {
+        if (section.pendingConfirmations > 0) {
+          // Create a pending class entry for each pending confirmation
+          for (let i = 0; i < section.pendingConfirmations; i++) {
+            const today = new Date();
+            today.setDate(today.getDate() - i); // Simulate different dates
+            
+            classes.push({
+              id: `${section.batchId}-${subject.subjectId}-${i}`,
+              batchId: section.batchId,
+              batchName: section.batchName,
+              subjectId: subject.subjectId,
+              subjectName: subject.subjectName,
+              date: today.toISOString(),
+              periodsCount: 1,
+              chapters: section.chapters,
+              suggestedChapterId: section.chapters.find(ch => ch.status === "in_progress")?.chapterId,
+            });
+          }
+        }
+      });
+    });
+    
+    return classes;
+  }, [progressData.subjects]);
 
   const handleSectionTap = (section: SectionProgress) => {
     setSelectedSection(section);
@@ -74,6 +116,22 @@ export default function TeacherAcademicProgress() {
     
     setConfirmDialogOpen(false);
     setConfirmingSection(null);
+  };
+
+  const handleBulkConfirm = (results: BulkConfirmationResult[]) => {
+    // TODO: Integrate with backend to save all confirmations
+    console.log("Bulk confirmations:", results);
+    
+    const taughtCount = results.filter(r => r.didTeach).length;
+    const notTaughtCount = results.length - taughtCount;
+    
+    if (taughtCount > 0 && notTaughtCount > 0) {
+      toast.success(`Confirmed ${taughtCount} classes taught, ${notTaughtCount} not taught`);
+    } else if (taughtCount > 0) {
+      toast.success(`Confirmed ${taughtCount} classes taught`);
+    } else {
+      toast.info(`Marked ${notTaughtCount} classes as not taught`);
+    }
   };
 
   // Get chapters for the confirming section (mock data for now)
@@ -111,6 +169,37 @@ export default function TeacherAcademicProgress() {
 
       {/* Week Context Banner */}
       <WeekContextBanner weekContext={progressData.weekContext} />
+
+      {/* Bulk Confirm Action - Show when there are pending confirmations */}
+      {totalPending > 1 && (
+        <Card className="bg-gradient-to-r from-amber-50 via-orange-50 to-amber-50 border-amber-200/50">
+          <CardContent className="p-3 sm:p-4">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center shrink-0">
+                  <AlertTriangle className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <p className="font-semibold text-foreground">
+                    {totalPending} Pending Confirmations
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    Confirm multiple classes at once
+                  </p>
+                </div>
+              </div>
+              <Button
+                onClick={() => setBulkDialogOpen(true)}
+                className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 gap-1.5 shrink-0"
+              >
+                <ListChecks className="w-4 h-4" />
+                <span className="hidden sm:inline">Bulk Confirm</span>
+                <span className="sm:hidden">Confirm</span>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Quick Stats - Compact Inline */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -238,6 +327,14 @@ export default function TeacherAcademicProgress() {
         chapters={getChaptersForSection(confirmingSection)}
         suggestedChapter={confirmingSection?.chapters.find(ch => ch.status === "in_progress")?.chapterId}
         onConfirm={handleConfirmSubmit}
+      />
+
+      {/* Bulk Confirmation Dialog */}
+      <BulkConfirmationDialog
+        open={bulkDialogOpen}
+        onOpenChange={setBulkDialogOpen}
+        pendingClasses={pendingClasses}
+        onConfirmAll={handleBulkConfirm}
       />
     </div>
   );
