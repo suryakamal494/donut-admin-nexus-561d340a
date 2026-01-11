@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Search, Grid3X3, List, BookOpen, Filter, ChevronDown, ChevronUp } from "lucide-react";
+import { Search, Grid3X3, List, BookOpen, Filter, ChevronDown, ChevronUp, Plus, Upload, Sparkles } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -9,6 +9,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { ContentCard, ContentItem } from "@/components/content/ContentCard";
 import { ContentPagination } from "@/components/content/ContentPagination";
 import { ContentPreviewDialog } from "@/components/content/ContentPreviewDialog";
+import { ContentCreationSheet, ContentCreationOnboardingTour, useContentCreationTour } from "@/components/teacher/content";
 import { instituteContent, InstituteContentItem } from "@/data/instituteData";
 import { currentTeacher } from "@/data/teacherData";
 import { physicsChapters, cbseTopics } from "@/data/cbseMasterData";
@@ -31,6 +32,10 @@ const Content = () => {
   const [previewContent, setPreviewContent] = useState<ContentItem | null>(null);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [showMobileFilters, setShowMobileFilters] = useState(false);
+  const [showCreateSheet, setShowCreateSheet] = useState(false);
+  
+  // Onboarding tour
+  const { showTour, completeTour, skipTour } = useContentCreationTour();
 
   const ITEMS_PER_PAGE = 15;
 
@@ -131,13 +136,29 @@ const Content = () => {
 
   return (
     <div className="space-y-4 sm:space-y-6 pb-20 md:pb-6">
+      {/* Onboarding Tour */}
+      {showTour && showCreateSheet && (
+        <ContentCreationOnboardingTour onComplete={completeTour} onSkip={skipTour} />
+      )}
+
       {/* Header */}
       <div className="flex flex-col gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Content Library</h1>
-          <p className="text-muted-foreground mt-1">
-            Browse and use teaching materials for your classes
-          </p>
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+          <div>
+            <h1 className="text-2xl font-bold text-foreground">Content Library</h1>
+            <p className="text-muted-foreground mt-1">
+              Browse and use teaching materials for your classes
+            </p>
+          </div>
+          
+          {/* Create Content Button */}
+          <Button 
+            onClick={() => setShowCreateSheet(true)}
+            className="gap-2 shrink-0"
+          >
+            <Plus className="w-4 h-4" />
+            Create Content
+          </Button>
         </div>
 
         {/* Subject context badge */}
@@ -400,6 +421,12 @@ const Content = () => {
         open={previewOpen}
         onOpenChange={setPreviewOpen}
         onEdit={() => {}}
+      />
+
+      {/* Create Content Sheet */}
+      <ContentCreationSheet 
+        open={showCreateSheet} 
+        onOpenChange={setShowCreateSheet} 
       />
     </div>
   );
