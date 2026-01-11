@@ -10,3 +10,5 @@ export { default as SubjectTestsSheet } from "./SubjectTestsSheet";
 export { default as CompactTestRow } from "./CompactTestRow";
 export { default as TestStatusFilter } from "./TestStatusFilter";
 export { default as LiveTestsSection } from "./LiveTestsSection";
+export { default as TestSearchBar } from "./TestSearchBar";
+export { default as TestSearchResults } from "./TestSearchResults";
