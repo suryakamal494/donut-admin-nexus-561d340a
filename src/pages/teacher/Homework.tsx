@@ -171,6 +171,7 @@ const Homework = () => {
             homework={filteredHomework} 
             navigate={navigate}
             onDelete={(id) => setHomeworkList(prev => prev.filter(h => h.id !== id))}
+            onViewSubmissions={handleViewSubmissions}
           />
         </TabsContent>
         <TabsContent value="active" className="mt-4">
@@ -178,6 +179,7 @@ const Homework = () => {
             homework={filteredHomework.filter(h => h.status === "assigned")} 
             navigate={navigate}
             onDelete={(id) => setHomeworkList(prev => prev.filter(h => h.id !== id))}
+            onViewSubmissions={handleViewSubmissions}
           />
         </TabsContent>
         <TabsContent value="overdue" className="mt-4">
@@ -185,6 +187,7 @@ const Homework = () => {
             homework={filteredHomework.filter(h => h.status === "overdue")} 
             navigate={navigate}
             onDelete={(id) => setHomeworkList(prev => prev.filter(h => h.id !== id))}
+            onViewSubmissions={handleViewSubmissions}
           />
         </TabsContent>
         <TabsContent value="completed" className="mt-4">
@@ -192,6 +195,7 @@ const Homework = () => {
             homework={filteredHomework.filter(h => h.status === "completed")} 
             navigate={navigate}
             onDelete={(id) => setHomeworkList(prev => prev.filter(h => h.id !== id))}
+            onViewSubmissions={handleViewSubmissions}
           />
         </TabsContent>
       </Tabs>
@@ -258,7 +262,7 @@ const HomeworkGrid = ({
           homework={hw}
           onEdit={() => {}}
           onDelete={() => onDelete(hw.id)}
-          onViewSubmissions={() => {}}
+          onViewSubmissions={() => onViewSubmissions(hw)}
           onViewLessonPlan={() => {
             if (hw.linkedLessonPlanId) {
               navigate(`/teacher/lesson-plans/${hw.linkedLessonPlanId}`);
