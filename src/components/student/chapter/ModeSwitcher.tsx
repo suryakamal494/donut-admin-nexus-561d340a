@@ -1,20 +1,22 @@
 // Mode Switcher - Creative mode navigation component
-// Mobile: Tappable badge that opens a bottom sheet
+// Mobile: Horizontal scrollable pills (always visible)
 // Desktop: Traditional horizontal tabs
 
-import { useState } from "react";
-import { School, Target, Trophy, ChevronDown } from "lucide-react";
+import { School, Target, Trophy } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { ModeSelectionSheet, type LearningMode } from "./ModeSelectionSheet";
+import type { LearningMode } from "./ModeSelectionSheet";
 
 interface ModeConfig {
   id: LearningMode;
   icon: typeof School;
   label: string;
+  mobileLabel: string;
   color: string;
   activeGradient: string;
   activeBorder: string;
+  activeBg: string;
+  activeText: string;
 }
 
 const modes: ModeConfig[] = [
@@ -22,25 +24,34 @@ const modes: ModeConfig[] = [
     id: "classroom",
     icon: School,
     label: "CLASSROOM",
+    mobileLabel: "Class",
     color: "text-cyan-600",
     activeGradient: "from-cyan-500/20 to-cyan-400/10",
     activeBorder: "border-cyan-500",
+    activeBg: "bg-cyan-500",
+    activeText: "text-white",
   },
   {
     id: "mypath",
     icon: Target,
     label: "MY PATH",
+    mobileLabel: "AI Path",
     color: "text-donut-coral",
     activeGradient: "from-donut-coral/20 to-donut-orange/10",
     activeBorder: "border-donut-coral",
+    activeBg: "bg-donut-coral",
+    activeText: "text-white",
   },
   {
     id: "compete",
     icon: Trophy,
     label: "COMPETE",
+    mobileLabel: "Compete",
     color: "text-amber-600",
     activeGradient: "from-amber-500/20 to-amber-400/10",
     activeBorder: "border-amber-500",
+    activeBg: "bg-amber-500",
+    activeText: "text-white",
   },
 ];
 
@@ -56,45 +67,57 @@ export function ModeSwitcher({
   modeCounts = { classroom: 0, mypath: 0, compete: 0 },
 }: ModeSwitcherProps) {
   const isMobile = useIsMobile();
-  const [sheetOpen, setSheetOpen] = useState(false);
 
-  const activeMode = modes.find((m) => m.id === currentMode) || modes[0];
-  const ActiveIcon = activeMode.icon;
+  const handleModeChange = (mode: LearningMode) => {
+    // Haptic feedback on mobile
+    if (navigator.vibrate) {
+      navigator.vibrate(10);
+    }
+    onModeChange(mode);
+  };
 
-  // Mobile: Tappable badge
+  // Mobile: Horizontal scrollable pills - always visible
   if (isMobile) {
     return (
-      <>
-        <button
-          onClick={() => setSheetOpen(true)}
-          className={cn(
-            "flex items-center gap-2.5 px-4 py-3",
-            "bg-white/80 backdrop-blur-xl",
-            "border border-white/50 rounded-2xl",
-            "shadow-sm active:scale-[0.98] transition-all duration-200"
-          )}
-        >
-          <div className={cn(
-            "w-8 h-8 rounded-xl flex items-center justify-center",
-            "bg-gradient-to-br",
-            activeMode.activeGradient
-          )}>
-            <ActiveIcon className={cn("w-4 h-4", activeMode.color)} />
-          </div>
-          <span className={cn("font-semibold text-sm", activeMode.color)}>
-            {activeMode.label}
-          </span>
-          <ChevronDown className="w-4 h-4 text-muted-foreground" />
-        </button>
+      <div 
+        className="flex gap-2 overflow-x-auto -mx-1 px-1 pb-1 scrollbar-hide"
+        style={{ WebkitOverflowScrolling: 'touch' }}
+      >
+        {modes.map((mode) => {
+          const Icon = mode.icon;
+          const isActive = currentMode === mode.id;
+          const count = modeCounts[mode.id];
 
-        <ModeSelectionSheet
-          open={sheetOpen}
-          onOpenChange={setSheetOpen}
-          currentMode={currentMode}
-          onModeSelect={onModeChange}
-          modeCounts={modeCounts}
-        />
-      </>
+          return (
+            <button
+              key={mode.id}
+              onClick={() => handleModeChange(mode.id)}
+              className={cn(
+                "flex items-center gap-1.5 px-3 py-2 rounded-full shrink-0",
+                "min-h-[44px] transition-all duration-200 active:scale-[0.97]",
+                isActive
+                  ? cn(mode.activeBg, mode.activeText, "shadow-sm")
+                  : "bg-white/60 text-muted-foreground border border-white/50 backdrop-blur-sm"
+              )}
+            >
+              <Icon className={cn("w-4 h-4", isActive ? "text-white" : mode.color)} />
+              <span className={cn("font-semibold text-sm whitespace-nowrap", isActive && "text-white")}>
+                {mode.mobileLabel}
+              </span>
+              {count > 0 && (
+                <span className={cn(
+                  "text-xs px-1.5 py-0.5 rounded-full min-w-[20px] text-center",
+                  isActive 
+                    ? "bg-white/25 text-white"
+                    : "bg-muted/50 text-muted-foreground"
+                )}>
+                  {count}
+                </span>
+              )}
+            </button>
+          );
+        })}
+      </div>
     );
   }
 
