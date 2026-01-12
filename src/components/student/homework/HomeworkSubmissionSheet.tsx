@@ -43,18 +43,14 @@ export const HomeworkSubmissionSheet = memo(function HomeworkSubmissionSheet({
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  if (!homework) return null;
-
-  const isOverdue = isPast(parseISO(homework.dueDate));
-  const isAlreadySubmitted = homework.submissionStatus && homework.submissionStatus !== 'pending';
-  const formattedDueDate = format(parseISO(homework.dueDate), "EEEE, MMM d 'at' h:mm a");
-
+  // All hooks must be called before any early returns
   const handlePracticeSubmit = useCallback(async (data: {
     mode: 'file' | 'text' | 'link';
     files?: File[];
     text?: string;
     link?: string;
   }) => {
+    if (!homework) return;
     triggerHaptic();
     setIsSubmitting(true);
     
@@ -68,13 +64,14 @@ export const HomeworkSubmissionSheet = memo(function HomeworkSubmissionSheet({
     
     setIsSubmitting(false);
     onOpenChange(false);
-  }, [toast, onOpenChange]);
+  }, [homework, toast, onOpenChange]);
 
   const handleProjectSubmit = useCallback(async (data: {
     title: string;
     description: string;
     files: File[];
   }) => {
+    if (!homework) return;
     triggerHaptic();
     setIsSubmitting(true);
     
@@ -88,9 +85,10 @@ export const HomeworkSubmissionSheet = memo(function HomeworkSubmissionSheet({
     
     setIsSubmitting(false);
     onOpenChange(false);
-  }, [toast, onOpenChange]);
+  }, [homework, toast, onOpenChange]);
 
   const handleStartTest = useCallback(() => {
+    if (!homework) return;
     triggerHaptic();
     onOpenChange(false);
     // Navigate to test player
@@ -100,6 +98,13 @@ export const HomeworkSubmissionSheet = memo(function HomeworkSubmissionSheet({
       navigate(`/student/tests/${homework.id}`);
     }
   }, [homework, navigate, onOpenChange]);
+
+  // Early return AFTER all hooks are declared
+  if (!homework) return null;
+
+  const isOverdue = isPast(parseISO(homework.dueDate));
+  const isAlreadySubmitted = homework.submissionStatus && homework.submissionStatus !== 'pending';
+  const formattedDueDate = format(parseISO(homework.dueDate), "EEEE, MMM d 'at' h:mm a");
 
   // Footer for test type
   const testFooter = homework.homeworkType === 'test' && !isAlreadySubmitted ? (
