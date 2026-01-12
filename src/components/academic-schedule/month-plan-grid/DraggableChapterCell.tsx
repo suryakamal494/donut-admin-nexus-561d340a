@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, memo, useCallback } from "react";
 import { ChapterCellType, ChapterAdjustment } from "@/types/academicPlanner";
 import { ChapterAdjustmentPopover } from "../ChapterAdjustmentPopover";
 import { SortableChapterCell } from "../SortableChapterCell";
@@ -23,7 +23,7 @@ interface DraggableChapterCellProps {
   onClick?: () => void;
 }
 
-export function DraggableChapterCell({
+export const DraggableChapterCell = memo(function DraggableChapterCell({
   id,
   subjectId,
   chapterId,
@@ -43,6 +43,19 @@ export function DraggableChapterCell({
 }: DraggableChapterCellProps) {
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
 
+  const handleAdjust = useCallback((adjustment: ChapterAdjustment) => {
+    onAdjust?.(adjustment);
+    setIsPopoverOpen(false);
+  }, [onAdjust]);
+
+  const handleClick = useCallback(() => {
+    if (!isPublished) setIsPopoverOpen(true);
+  }, [isPublished]);
+
+  const handleLongPress = useCallback(() => {
+    if (!isPublished) setIsPopoverOpen(true);
+  }, [isPublished]);
+
   return (
     <ChapterAdjustmentPopover
       isOpen={isPopoverOpen}
@@ -54,12 +67,9 @@ export function DraggableChapterCell({
       hours={hours}
       isLocked={isLocked}
       isPublished={isPublished}
-      onAdjust={(adjustment) => {
-        onAdjust?.(adjustment);
-        setIsPopoverOpen(false);
-      }}
+      onAdjust={handleAdjust}
     >
-      <div onClick={() => !isPublished && setIsPopoverOpen(true)}>
+      <div onClick={handleClick}>
         <SortableChapterCell
           id={id}
           chapterId={chapterId}
@@ -74,9 +84,11 @@ export function DraggableChapterCell({
           modificationTypes={modificationTypes}
           colors={colors}
           onClick={onClick}
-          onLongPress={() => !isPublished && setIsPopoverOpen(true)}
+          onLongPress={handleLongPress}
         />
       </div>
     </ChapterAdjustmentPopover>
   );
-}
+});
+
+DraggableChapterCell.displayName = "DraggableChapterCell";

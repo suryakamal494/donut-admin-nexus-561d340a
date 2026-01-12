@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { cn } from "@/lib/utils";
 import { AcademicWeek } from "@/types/academicSchedule";
 import { getWeekNumberInMonth } from "@/lib/academicPlannerUtils";
@@ -11,7 +12,7 @@ interface WeekHeaderRowProps {
   currentWeekIndex: number;
 }
 
-export function WeekHeaderRow({
+export const WeekHeaderRow = memo(function WeekHeaderRow({
   weeks,
   monthWeeks,
   currentWeekIndex,
@@ -53,4 +54,6 @@ export function WeekHeaderRow({
       })}
     </div>
   );
-}
+});
+
+WeekHeaderRow.displayName = "WeekHeaderRow";
