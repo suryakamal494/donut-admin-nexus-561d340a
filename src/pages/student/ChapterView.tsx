@@ -19,6 +19,7 @@ import {
   CompeteMode,
   type LearningMode,
 } from "@/components/student/chapter";
+import { ModeOnboardingTooltip } from "@/components/student/chapter/ModeOnboardingTooltip";
 
 const StudentChapterView = () => {
   const { subjectId, chapterId } = useParams<{ subjectId: string; chapterId: string }>();
@@ -55,6 +56,9 @@ const StudentChapterView = () => {
       <div className="max-w-3xl mx-auto px-3 md:px-4 py-3 md:py-6 space-y-3 md:space-y-4">
         {/* Chapter Header */}
         <ChapterHeader chapter={chapter} subject={subject} />
+
+        {/* First-time onboarding tooltip */}
+        <ModeOnboardingTooltip />
 
         {/* Mode Switcher */}
         <div className="flex justify-center lg:justify-start">
