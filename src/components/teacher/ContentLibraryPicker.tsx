@@ -1,12 +1,9 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { 
   Search, 
-  Video, 
-  FileText, 
-  Presentation, 
-  Play,
-  Image as ImageIcon,
-  Check
+  Check,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import {
   Dialog,
@@ -26,96 +23,15 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { 
+  mockContentLibrary, 
+  contentTypeConfig, 
+  ITEMS_PER_PAGE,
+  type ContentItem 
+} from "@/data/contentLibraryData";
 
-export interface ContentItem {
-  id: string;
-  title: string;
-  type: 'video' | 'pdf' | 'ppt' | 'animation' | 'image';
-  subject: string;
-  chapter?: string;
-  description?: string;
-  duration?: string;
-  thumbnail?: string;
-}
-
-// Mock content library data
-const mockContentLibrary: ContentItem[] = [
-  {
-    id: "content-1",
-    title: "Newton's Laws of Motion - Video Lecture",
-    type: "video",
-    subject: "Physics",
-    chapter: "Laws of Motion",
-    description: "Comprehensive video explaining all three laws with animations",
-    duration: "12 mins",
-  },
-  {
-    id: "content-2",
-    title: "NCERT Physics - Laws of Motion Chapter",
-    type: "pdf",
-    subject: "Physics",
-    chapter: "Laws of Motion",
-    description: "Complete chapter PDF from NCERT Class 11 Physics",
-  },
-  {
-    id: "content-3",
-    title: "Forces & Motion - PhET Simulation",
-    type: "animation",
-    subject: "Physics",
-    chapter: "Laws of Motion",
-    description: "Interactive simulation for exploring forces and motion",
-  },
-  {
-    id: "content-4",
-    title: "Electromagnetic Induction - Slides",
-    type: "ppt",
-    subject: "Physics",
-    chapter: "Electromagnetic Induction",
-    description: "Complete presentation on EM Induction",
-  },
-  {
-    id: "content-5",
-    title: "Periodic Table - Interactive Chart",
-    type: "image",
-    subject: "Chemistry",
-    chapter: "Periodic Classification",
-    description: "High-resolution periodic table with electron configurations",
-  },
-  {
-    id: "content-6",
-    title: "Chemical Bonding - Video Lecture",
-    type: "video",
-    subject: "Chemistry",
-    chapter: "Chemical Bonding",
-    description: "Explains ionic, covalent, and metallic bonding",
-    duration: "18 mins",
-  },
-  {
-    id: "content-7",
-    title: "Quadratic Equations - Practice Set",
-    type: "pdf",
-    subject: "Mathematics",
-    chapter: "Quadratic Equations",
-    description: "50 practice problems with solutions",
-  },
-  {
-    id: "content-8",
-    title: "Trigonometry - Concept Video",
-    type: "video",
-    subject: "Mathematics",
-    chapter: "Trigonometry",
-    description: "Introduction to trigonometric ratios and identities",
-    duration: "15 mins",
-  },
-];
-
-const contentTypeConfig: Record<ContentItem['type'], { icon: typeof Video; color: string; bgColor: string }> = {
-  video: { icon: Video, color: "text-red-600", bgColor: "bg-red-50" },
-  pdf: { icon: FileText, color: "text-blue-600", bgColor: "bg-blue-50" },
-  ppt: { icon: Presentation, color: "text-orange-600", bgColor: "bg-orange-50" },
-  animation: { icon: Play, color: "text-green-600", bgColor: "bg-green-50" },
-  image: { icon: ImageIcon, color: "text-purple-600", bgColor: "bg-purple-50" },
-};
+// Re-export ContentItem for external usage
+export type { ContentItem };
 
 interface ContentLibraryPickerProps {
   open: boolean;
@@ -134,7 +50,9 @@ export const ContentLibraryPicker = ({
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedType, setSelectedType] = useState<ContentItem['type'] | 'all'>('all');
   const [selectedItem, setSelectedItem] = useState<ContentItem | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
 
+  // Filter content
   const filteredContent = useMemo(() => {
     return mockContentLibrary.filter((item) => {
       const matchesSearch = item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -145,13 +63,36 @@ export const ContentLibraryPicker = ({
     });
   }, [searchQuery, selectedType, subject]);
 
-  const handleSelect = () => {
+  // Pagination
+  const totalPages = Math.ceil(filteredContent.length / ITEMS_PER_PAGE);
+  const paginatedContent = useMemo(() => {
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    return filteredContent.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  }, [filteredContent, currentPage]);
+
+  // Reset page when filters change
+  const handleSearchChange = useCallback((value: string) => {
+    setSearchQuery(value);
+    setCurrentPage(1);
+  }, []);
+
+  const handleTypeChange = useCallback((type: ContentItem['type'] | 'all') => {
+    setSelectedType(type);
+    setCurrentPage(1);
+  }, []);
+
+  const handleSelect = useCallback(() => {
     if (selectedItem) {
       onSelect(selectedItem);
       setSelectedItem(null);
       setSearchQuery("");
+      setCurrentPage(1);
     }
-  };
+  }, [selectedItem, onSelect]);
+
+  const handlePageChange = useCallback((page: number) => {
+    setCurrentPage(page);
+  }, []);
 
   const PickerContent = () => (
     <div className="space-y-4">
@@ -160,7 +101,7 @@ export const ContentLibraryPicker = ({
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
         <Input
           value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
+          onChange={(e) => handleSearchChange(e.target.value)}
           placeholder="Search content..."
           className="pl-10 h-10"
         />
@@ -169,7 +110,7 @@ export const ContentLibraryPicker = ({
       {/* Type Filter Pills */}
       <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-hide">
         <button
-          onClick={() => setSelectedType('all')}
+          onClick={() => handleTypeChange('all')}
           className={cn(
             "px-3 py-1.5 rounded-full text-xs font-medium shrink-0 transition-colors",
             selectedType === 'all'
@@ -184,7 +125,7 @@ export const ContentLibraryPicker = ({
           return (
             <button
               key={type}
-              onClick={() => setSelectedType(type as ContentItem['type'])}
+              onClick={() => handleTypeChange(type as ContentItem['type'])}
               className={cn(
                 "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium shrink-0 transition-colors",
                 selectedType === type
@@ -200,14 +141,14 @@ export const ContentLibraryPicker = ({
       </div>
 
       {/* Content List */}
-      <ScrollArea className={cn(isMobile ? "h-[45vh]" : "h-[40vh]")}>
+      <ScrollArea className={cn(isMobile ? "h-[40vh]" : "h-[35vh]")}>
         <div className="space-y-2 pr-2">
-          {filteredContent.length === 0 ? (
+          {paginatedContent.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground text-sm">
               No content found
             </div>
           ) : (
-            filteredContent.map((item) => {
+            paginatedContent.map((item) => {
               const typeConfig = contentTypeConfig[item.type];
               const Icon = typeConfig.icon;
               const isSelected = selectedItem?.id === item.id;
@@ -260,6 +201,35 @@ export const ContentLibraryPicker = ({
           )}
         </div>
       </ScrollArea>
+
+      {/* Pagination Controls */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between px-1">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handlePageChange(currentPage - 1)}
+            disabled={currentPage === 1}
+            className="h-8 px-2"
+          >
+            <ChevronLeft className="w-4 h-4" />
+            <span className="sr-only">Previous</span>
+          </Button>
+          <span className="text-xs text-muted-foreground">
+            Page {currentPage} of {totalPages} ({filteredContent.length} items)
+          </span>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handlePageChange(currentPage + 1)}
+            disabled={currentPage === totalPages}
+            className="h-8 px-2"
+          >
+            <ChevronRight className="w-4 h-4" />
+            <span className="sr-only">Next</span>
+          </Button>
+        </div>
+      )}
 
       {/* Action Buttons */}
       <div className="flex gap-2 pt-2 border-t">
