@@ -22,7 +22,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
 import type { TeacherExam } from "@/data/teacher/types";
@@ -299,59 +298,56 @@ export const TeacherExamCard = ({
               </div>
             )}
             
-            {/* Action Buttons - Scrollable on mobile to prevent overflow */}
-            <ScrollArea className="w-full">
-              <div className="flex items-center gap-1.5 pt-1 pb-1">
+            {/* Action Buttons - Flex wrap for responsiveness */}
+            <div className="flex items-center gap-1.5 pt-1 pb-1 flex-wrap min-w-0 max-w-full">
+              <Button 
+                size="sm" 
+                variant="outline" 
+                className="h-7 text-xs px-2 whitespace-nowrap" 
+                onClick={onView}
+              >
+                <Eye className="w-3 h-3 sm:mr-1" />
+                <span className="hidden sm:inline">View</span>
+              </Button>
+              <Button 
+                size="sm" 
+                variant="outline" 
+                className="h-7 text-xs px-2 whitespace-nowrap" 
+                onClick={onAssign}
+              >
+                <Users className="w-3 h-3 sm:mr-1" />
+                <span className="hidden sm:inline">Assign</span>
+              </Button>
+              {exam.status === "draft" ? (
+                <Button 
+                  size="sm" 
+                  className="h-7 text-xs px-2 whitespace-nowrap gradient-button" 
+                  onClick={onSchedule}
+                >
+                  <CalendarClock className="w-3 h-3 sm:mr-1" />
+                  <span className="hidden sm:inline">Schedule</span>
+                </Button>
+              ) : exam.status === "completed" ? (
+                <Button 
+                  size="sm" 
+                  className="h-7 text-xs px-2 whitespace-nowrap gradient-button" 
+                  onClick={onViewResults}
+                >
+                  <BarChart3 className="w-3 h-3 sm:mr-1" />
+                  <span className="hidden sm:inline">Results</span>
+                </Button>
+              ) : (
                 <Button 
                   size="sm" 
                   variant="outline" 
-                  className="h-8 text-xs px-2.5 whitespace-nowrap shrink-0" 
-                  onClick={onView}
+                  className="h-7 text-xs px-2 whitespace-nowrap" 
+                  onClick={onEdit}
                 >
-                  <Eye className="w-3 h-3 mr-1" />
-                  View
+                  <Edit className="w-3 h-3 sm:mr-1" />
+                  <span className="hidden sm:inline">Edit</span>
                 </Button>
-                <Button 
-                  size="sm" 
-                  variant="outline" 
-                  className="h-8 text-xs px-2.5 whitespace-nowrap shrink-0" 
-                  onClick={onAssign}
-                >
-                  <Users className="w-3 h-3 mr-1" />
-                  Assign
-                </Button>
-                {exam.status === "draft" ? (
-                  <Button 
-                    size="sm" 
-                    className="h-8 text-xs px-2.5 whitespace-nowrap shrink-0 gradient-button" 
-                    onClick={onSchedule}
-                  >
-                    <CalendarClock className="w-3 h-3 mr-1" />
-                    Schedule
-                  </Button>
-                ) : exam.status === "completed" ? (
-                  <Button 
-                    size="sm" 
-                    className="h-8 text-xs px-2.5 whitespace-nowrap shrink-0 gradient-button" 
-                    onClick={onViewResults}
-                  >
-                    <BarChart3 className="w-3 h-3 mr-1" />
-                    Results
-                  </Button>
-                ) : (
-                  <Button 
-                    size="sm" 
-                    variant="outline" 
-                    className="h-8 text-xs px-2.5 whitespace-nowrap shrink-0" 
-                    onClick={onEdit}
-                  >
-                    <Edit className="w-3 h-3 mr-1" />
-                    Edit
-                  </Button>
-                )}
-              </div>
-              <ScrollBar orientation="horizontal" />
-            </ScrollArea>
+              )}
+            </div>
           </div>
         </CardContent>
       </Card>
