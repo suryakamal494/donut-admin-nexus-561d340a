@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, memo, useCallback } from "react";
 import { Lock, ChevronRight, Pencil } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
@@ -30,7 +30,7 @@ interface ChapterCellProps {
   onClick?: () => void;
 }
 
-export function ChapterCell({
+export const ChapterCell = memo(function ChapterCell({
   subjectId,
   chapterId,
   chapterName,
@@ -55,7 +55,7 @@ export function ChapterCell({
   const touchStartPosRef = useRef<{ x: number; y: number } | null>(null);
 
   // Handle touch start for long press
-  const handleTouchStart = (e: React.TouchEvent) => {
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
     if (isPublished || isEmpty) return;
     
     const touch = e.touches[0];
@@ -66,10 +66,10 @@ export function ChapterCell({
       triggerHaptic(15);
       setIsPopoverOpen(true);
     }, 500);
-  };
+  }, [isPublished, isEmpty]);
 
   // Handle touch move - cancel long press if moved too much
-  const handleTouchMove = (e: React.TouchEvent) => {
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
     if (!touchStartPosRef.current || !longPressTimerRef.current) return;
     
     const touch = e.touches[0];
@@ -82,17 +82,17 @@ export function ChapterCell({
         longPressTimerRef.current = null;
       }
     }
-  };
+  }, []);
 
   // Handle touch end
-  const handleTouchEnd = () => {
+  const handleTouchEnd = useCallback(() => {
     if (longPressTimerRef.current) {
       clearTimeout(longPressTimerRef.current);
       longPressTimerRef.current = null;
     }
     touchStartPosRef.current = null;
     setIsLongPressing(false);
-  };
+  }, []);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -215,4 +215,6 @@ export function ChapterCell({
       {cellContent}
     </ChapterAdjustmentPopover>
   );
-}
+});
+
+ChapterCell.displayName = "ChapterCell";

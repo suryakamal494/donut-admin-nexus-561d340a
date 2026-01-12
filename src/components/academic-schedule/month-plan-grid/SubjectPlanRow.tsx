@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, memo } from "react";
 import {
   DndContext,
   closestCenter,
@@ -49,7 +49,7 @@ interface SubjectPlanRowProps {
   onAddChapter?: (subjectId: string, chapterId: string, weekIndex: number, hours: number) => void;
 }
 
-export function SubjectPlanRow({
+export const SubjectPlanRow = memo(function SubjectPlanRow({
   subject,
   weeks,
   monthWeeks,
@@ -268,4 +268,6 @@ export function SubjectPlanRow({
       </DragOverlay>
     </DndContext>
   );
-}
+});
+
+SubjectPlanRow.displayName = "SubjectPlanRow";
