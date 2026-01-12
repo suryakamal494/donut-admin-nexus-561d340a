@@ -40,15 +40,13 @@ import {
   GraduationCap,
   Timer,
 } from "lucide-react";
-import { 
-  batchProgressSummaries, 
-  academicScheduleSetups, 
-  teachingConfirmations,
-  pendingConfirmations,
-  academicWeeks,
-  currentWeekIndex,
-  scheduleAdjustments,
-} from "@/data/academicScheduleData";
+// Modular imports for better tree-shaking
+import { academicWeeks, currentWeekIndex } from "@/data/academic-schedule/weeks";
+import { academicScheduleSetups } from "@/data/academic-schedule/setups";
+import { teachingConfirmations } from "@/data/academic-schedule/confirmations";
+import { pendingConfirmations } from "@/data/academic-schedule/pendingConfirmations";
+import { scheduleAdjustments } from "@/data/academic-schedule/adjustments";
+import { batchProgressSummaries } from "@/data/academicScheduleData";
 import { cn } from "@/lib/utils";
 import { 
   NO_TEACH_REASON_LABELS, 
