@@ -1,4 +1,5 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useRef } from "react";
+import { useVirtualizer } from "@tanstack/react-virtual";
 import { 
   Search, 
   Sparkles, 
@@ -33,7 +34,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { blockTypeConfig, detectLinkType, type BlockType, type LessonPlanBlock, type LinkType } from "./types";
@@ -53,8 +53,10 @@ interface BlockDialogProps {
   subject?: string;
 }
 
-// Content item component
-const ContentItem = ({ 
+// Content item component - memoized for performance
+import React from "react";
+
+const ContentItem = React.memo(({ 
   item, 
   onSelect 
 }: { 
@@ -98,7 +100,9 @@ const ContentItem = ({
       </div>
     </button>
   );
-};
+});
+
+ContentItem.displayName = 'ContentItem';
 
 export const BlockDialog = ({ 
   type, 
@@ -109,6 +113,7 @@ export const BlockDialog = ({
   subject,
 }: BlockDialogProps) => {
   const isMobile = useIsMobile();
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [activeTab, setActiveTab] = useState<'library' | 'ai' | 'custom'>('library');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedContentType, setSelectedContentType] = useState<string>('all');
@@ -139,6 +144,14 @@ export const BlockDialog = ({
       return matchesSearch && matchesType && matchesSubject;
     });
   }, [searchQuery, selectedContentType, subject]);
+
+  // Virtualization for 60fps scrolling on mobile
+  const virtualizer = useVirtualizer({
+    count: filteredContent.length,
+    getScrollElement: () => scrollContainerRef.current,
+    estimateSize: useCallback(() => 68, []), // ~68px per content item
+    overscan: 5,
+  });
 
   // Detect link type when URL changes
   const handleLinkChange = useCallback((url: string) => {
@@ -273,26 +286,51 @@ export const BlockDialog = ({
             )}
           </div>
           
-          {/* Content List - with proper scroll container */}
-          <ScrollArea className={cn("flex-1 min-h-0", isMobile ? "h-[50vh]" : "h-[280px]")}>
-            <div className="p-2 space-y-1">
-              {filteredContent.length > 0 ? (
-                filteredContent.map((item) => (
-                  <ContentItem
-                    key={item.id}
-                    item={item}
-                    onSelect={() => handleLibrarySelect(item)}
-                  />
-                ))
-              ) : (
-                <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
-                  <Search className="w-10 h-10 mb-3 opacity-50" />
-                  <p className="text-sm font-medium">No content found</p>
-                  <p className="text-xs">Try adjusting your filters</p>
-                </div>
-              )}
+          {/* Content List - Virtualized for 60fps mobile scrolling */}
+          {filteredContent.length > 0 ? (
+            <div 
+              ref={scrollContainerRef}
+              className={cn("flex-1 min-h-0 overflow-auto", isMobile ? "h-[50vh]" : "h-[280px]")}
+              style={{ contain: 'strict' }}
+            >
+              <div
+                style={{
+                  height: `${virtualizer.getTotalSize()}px`,
+                  width: '100%',
+                  position: 'relative',
+                }}
+              >
+                {virtualizer.getVirtualItems().map((virtualItem) => {
+                  const item = filteredContent[virtualItem.index];
+                  return (
+                    <div
+                      key={virtualItem.key}
+                      style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        width: '100%',
+                        height: `${virtualItem.size}px`,
+                        transform: `translateY(${virtualItem.start}px)`,
+                        padding: '0 8px',
+                      }}
+                    >
+                      <ContentItem
+                        item={item}
+                        onSelect={() => handleLibrarySelect(item)}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
             </div>
-          </ScrollArea>
+          ) : (
+            <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+              <Search className="w-10 h-10 mb-3 opacity-50" />
+              <p className="text-sm font-medium">No content found</p>
+              <p className="text-xs">Try adjusting your filters</p>
+            </div>
+          )}
         </TabsContent>
         
         {/* AI Tab */}
