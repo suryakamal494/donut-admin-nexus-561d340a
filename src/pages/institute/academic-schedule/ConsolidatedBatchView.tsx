@@ -142,6 +142,48 @@ interface ChapterDetail {
   subjectName: string;
 }
 
+// Teacher info for a chapter
+interface ChapterTeacherInfo {
+  teacherId: string;
+  teacherName: string;
+  hours: number;
+}
+
+/**
+ * Get the primary teacher for a chapter based on teaching confirmations
+ */
+function getChapterTeacher(
+  batchId: string, 
+  subjectId: string, 
+  chapterId: string
+): ChapterTeacherInfo | null {
+  const chapterConfs = teachingConfirmations.filter(
+    c => c.batchId === batchId && 
+         c.subjectId === subjectId && 
+         c.chapterId === chapterId && 
+         c.didTeach
+  );
+  
+  if (chapterConfs.length === 0) return null;
+  
+  // Aggregate by teacher
+  const teacherMap = new Map<string, { name: string; hours: number }>();
+  chapterConfs.forEach(c => {
+    const existing = teacherMap.get(c.teacherId);
+    if (existing) {
+      existing.hours += c.periodsCount;
+    } else {
+      teacherMap.set(c.teacherId, { name: c.teacherName, hours: c.periodsCount });
+    }
+  });
+  
+  // Return primary teacher (most hours)
+  const sorted = Array.from(teacherMap.entries()).sort((a, b) => b[1].hours - a[1].hours);
+  return sorted[0] 
+    ? { teacherId: sorted[0][0], teacherName: sorted[0][1].name, hours: sorted[0][1].hours } 
+    : null;
+}
+
 export default function ConsolidatedBatchView() {
   const { batchId } = useParams();
   const navigate = useNavigate();
@@ -458,6 +500,13 @@ export default function ConsolidatedBatchView() {
                           );
                           const hasDrift = chapterDrift && chapterDrift.driftHours !== 0 && !chapterDrift.isResolved;
                           
+                          // Get teacher info for this chapter
+                          const chapterTeacher = getChapterTeacher(
+                            batch.batchId,
+                            currentSubject.subjectId,
+                            chapter.chapterId
+                          );
+                          
                           // Get the global week index for this month's first week
                           const monthFirstWeekIndex = academicWeeks.findIndex(w => 
                             w.startDate === currentMonth.weeks[0]?.startDate
@@ -493,6 +542,14 @@ export default function ConsolidatedBatchView() {
                                       <p className="text-xs text-muted-foreground">
                                         {chapter.plannedHours}h planned • Spans {chapter.weeksNeeded} week{chapter.weeksNeeded > 1 ? 's' : ''}
                                       </p>
+                                      {/* Teacher Info in Tooltip */}
+                                      {chapterTeacher && (
+                                        <div className="flex items-center gap-1.5 text-xs border-t pt-1 mt-1">
+                                          <User className="w-3 h-3 text-primary" />
+                                          <span className="font-medium">{chapterTeacher.teacherName}</span>
+                                          <span className="text-muted-foreground">({chapterTeacher.hours}h taught)</span>
+                                        </div>
+                                      )}
                                       {chapterDrift && (
                                         <p className={cn(
                                           "text-xs font-medium",
@@ -505,6 +562,21 @@ export default function ConsolidatedBatchView() {
                                     </div>
                                   </TooltipContent>
                                 </Tooltip>
+                                
+                                {/* Teacher Badge (compact) - only show on larger screens */}
+                                {chapterTeacher && (
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <div className="hidden sm:flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 text-[10px] shrink-0 cursor-help">
+                                        <User className="w-2.5 h-2.5" />
+                                        <span className="max-w-[60px] truncate">{chapterTeacher.teacherName.split(' ')[0]}</span>
+                                      </div>
+                                    </TooltipTrigger>
+                                    <TooltipContent side="top">
+                                      <p className="text-xs">{chapterTeacher.teacherName} - {chapterTeacher.hours}h taught</p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                )}
                                 
                                 {/* Drift Indicator Badge */}
                                 {hasDrift && (
