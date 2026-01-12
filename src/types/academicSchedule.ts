@@ -185,6 +185,28 @@ export type AdjustmentAction =
   | "add_compensatory"    // Extra class
   | "accept_variance";    // Acknowledge, no action
 
+// Drift cause analysis
+export type DriftCause = 
+  | "extended_teaching"   // Teacher took more time than planned
+  | "teacher_absence"     // Lost days due to teacher absence
+  | "other_absence"       // Holiday, exam, event
+  | "behind_schedule"     // Not enough teaching happened
+  | "unknown";
+
+export interface TeacherHoursBreakdown {
+  teacherId: string;
+  teacherName: string;
+  hours: number;
+  absences?: number;
+}
+
+export interface DriftAnalysis {
+  cause: DriftCause;
+  description: string;
+  teacherResponsible?: string;
+  daysLost?: number;
+}
+
 export interface ChapterDriftStatus {
   batchId: string;
   subjectId: string;
@@ -197,6 +219,11 @@ export interface ChapterDriftStatus {
   severity: DriftSeverity;
   isResolved: boolean;
   lastAdjustmentId?: string;
+  // New: Teacher attribution
+  teacherId?: string;
+  teacherName?: string;
+  teacherHoursBreakdown?: TeacherHoursBreakdown[];
+  driftAnalysis?: DriftAnalysis;
 }
 
 export interface ScheduleAdjustment {
@@ -219,6 +246,14 @@ export const ADJUSTMENT_ACTION_LABELS: Record<AdjustmentAction, string> = {
   compress_future: "Compress Future Teaching",
   add_compensatory: "Add Compensatory Class",
   accept_variance: "Accept Current Variance",
+};
+
+export const DRIFT_CAUSE_LABELS: Record<DriftCause, string> = {
+  extended_teaching: "Extended Teaching",
+  teacher_absence: "Teacher Absence",
+  other_absence: "Holiday/Exam/Event",
+  behind_schedule: "Behind Schedule",
+  unknown: "Unknown",
 };
 
 export const DRIFT_THRESHOLDS = {

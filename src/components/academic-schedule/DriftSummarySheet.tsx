@@ -1,14 +1,19 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { AlertTriangle, TrendingDown, TrendingUp, Clock, ChevronRight, CheckCircle2 } from "lucide-react";
+import { AlertTriangle, TrendingDown, TrendingUp, Clock, ChevronRight, CheckCircle2, User, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ResponsiveDialog } from "@/components/ui/responsive-dialog";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { useInstituteDriftSummary, DriftItem } from "@/hooks/useInstituteDriftSummary";
 import { ScheduleAdjustmentDialog } from "./ScheduleAdjustmentDialog";
-import { ChapterDriftStatus, DriftSeverity, AdjustmentAction } from "@/types/academicSchedule";
+import { ChapterDriftStatus, DriftSeverity, AdjustmentAction, DRIFT_CAUSE_LABELS } from "@/types/academicSchedule";
 
 interface DriftSummarySheetProps {
   open: boolean;
@@ -82,6 +87,10 @@ export function DriftSummarySheet({ open, onOpenChange }: DriftSummarySheetProps
     driftPercentage: Math.round((selectedItem.driftHours / selectedItem.plannedHours) * 100),
     severity: selectedItem.severity,
     isResolved: false,
+    teacherId: selectedItem.teacherId,
+    teacherName: selectedItem.teacherName,
+    teacherHoursBreakdown: selectedItem.teacherHoursBreakdown,
+    driftAnalysis: selectedItem.driftAnalysis,
   } : null;
 
   return (
@@ -189,6 +198,50 @@ export function DriftSummarySheet({ open, onOpenChange }: DriftSummarySheetProps
                         <p className="text-sm text-muted-foreground truncate">
                           {item.chapterName}
                         </p>
+                        
+                        {/* Teacher Attribution - NEW */}
+                        {item.teacherName && (
+                          <div className="flex items-center gap-1.5 mt-1.5">
+                            <User className="w-3 h-3 text-muted-foreground" />
+                            <span className="text-xs text-muted-foreground">
+                              {item.teacherName}
+                              {item.teacherHoursBreakdown && item.teacherHoursBreakdown.length > 1 && (
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <span className="text-[10px] ml-1 text-primary cursor-help">
+                                      +{item.teacherHoursBreakdown.length - 1} more
+                                    </span>
+                                  </TooltipTrigger>
+                                  <TooltipContent side="top" className="max-w-xs">
+                                    <div className="space-y-1">
+                                      <p className="text-xs font-medium mb-1">All Teachers:</p>
+                                      {item.teacherHoursBreakdown.map(t => (
+                                        <p key={t.teacherId} className="text-xs">
+                                          {t.teacherName}: {t.hours}h
+                                        </p>
+                                      ))}
+                                    </div>
+                                  </TooltipContent>
+                                </Tooltip>
+                              )}
+                            </span>
+                          </div>
+                        )}
+                        
+                        {/* Drift Cause Analysis - NEW */}
+                        {item.driftAnalysis && (
+                          <div className="flex items-center gap-1.5 mt-1 text-xs">
+                            <AlertCircle className="w-3 h-3 text-muted-foreground shrink-0" />
+                            <span className={cn(
+                              "text-xs",
+                              item.driftAnalysis.cause === "teacher_absence" ? "text-red-600" :
+                              item.driftAnalysis.cause === "extended_teaching" ? "text-amber-600" :
+                              "text-muted-foreground"
+                            )}>
+                              {item.driftAnalysis.description}
+                            </span>
+                          </div>
+                        )}
                         
                         <div className="flex items-center gap-2 mt-1.5">
                           <Badge 
