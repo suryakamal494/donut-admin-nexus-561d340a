@@ -282,7 +282,7 @@ export const BlockDialog = ({
 
   // Shared dialog content
   const dialogContent = (
-    <div className="flex-1 overflow-hidden flex flex-col">
+    <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="flex flex-col flex-1">
         <div className="px-4">
           <TabsList className="w-full grid grid-cols-3">
@@ -302,7 +302,7 @@ export const BlockDialog = ({
         </div>
         
         {/* Library Tab */}
-        <TabsContent value="library" className="mt-0 flex-1 flex flex-col min-h-0">
+        <TabsContent value="library" className="mt-0 flex-1 flex flex-col min-h-0 overflow-hidden">
           {/* Filters */}
           <div className="px-4 py-3 space-y-2 border-b shrink-0">
             {/* Search */}
@@ -524,7 +524,7 @@ export const BlockDialog = ({
     return (
       <Drawer open={open} onOpenChange={onOpenChange}>
         <DrawerContent className="max-h-[90vh] flex flex-col">
-          <DrawerHeader className="pb-2">
+          <DrawerHeader className="pb-2 shrink-0">
             <DrawerTitle>Add {config.label} Block</DrawerTitle>
             <p className="text-sm text-muted-foreground">
               {activeTab === 'library' 
@@ -532,7 +532,9 @@ export const BlockDialog = ({
                 : 'Choose a content source'}
             </p>
           </DrawerHeader>
-          {dialogContent}
+          <div className="flex-1 min-h-0 overflow-hidden">
+            {dialogContent}
+          </div>
         </DrawerContent>
       </Drawer>
     );
