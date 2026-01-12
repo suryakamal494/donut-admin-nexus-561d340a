@@ -8,7 +8,8 @@ import {
   Users,
   AlertCircle,
   CheckCircle2,
-  Calendar
+  Calendar,
+  Sparkles
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
@@ -27,6 +28,7 @@ import { PageHeader } from "@/components/ui/page-header";
 import { HomeworkCard } from "@/components/teacher/HomeworkCard";
 import { CreateHomeworkDialog } from "@/components/teacher/CreateHomeworkDialog";
 import { ReviewSubmissionsDialog } from "@/components/teacher/ReviewSubmissionsDialog";
+import { AIHomeworkGeneratorDialog } from "@/components/teacher/AIHomeworkGeneratorDialog";
 import { teacherHomework, type TeacherHomework } from "@/data/teacherData";
 
 const Homework = () => {
@@ -35,6 +37,7 @@ const Homework = () => {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [batchFilter, setBatchFilter] = useState<string>("all");
   const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [showAIGenerator, setShowAIGenerator] = useState(false);
   const [homeworkList, setHomeworkList] = useState<TeacherHomework[]>(teacherHomework);
   const [selectedHomework, setSelectedHomework] = useState<TeacherHomework | null>(null);
   const [showReviewDialog, setShowReviewDialog] = useState(false);
@@ -137,6 +140,15 @@ const Homework = () => {
           </Select>
           
           <Button 
+            variant="outline"
+            className="gap-2 shrink-0 h-10 min-w-[44px] border-primary/30 hover:bg-primary/5"
+            onClick={() => setShowAIGenerator(true)}
+          >
+            <Sparkles className="w-4 h-4 text-primary" />
+            <span className="hidden sm:inline">AI Generate</span>
+          </Button>
+          
+          <Button 
             className="gradient-button gap-2 shrink-0 h-10 min-w-[44px]"
             onClick={() => setShowCreateDialog(true)}
           >
@@ -212,6 +224,13 @@ const Homework = () => {
         open={showReviewDialog}
         onOpenChange={setShowReviewDialog}
         homework={selectedHomework}
+      />
+
+      {/* AI Homework Generator Dialog */}
+      <AIHomeworkGeneratorDialog
+        open={showAIGenerator}
+        onOpenChange={setShowAIGenerator}
+        onCreated={handleHomeworkCreated}
       />
 
       {/* Mobile FAB */}

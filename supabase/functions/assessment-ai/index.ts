@@ -14,6 +14,10 @@ interface RequestBody {
   difficulty?: string;
   questionTypes?: string[];
   homeworkType?: string;
+  // NEW: Context support for AI homework generation
+  contextType?: "document" | "content" | "lesson_plan";
+  contextContent?: string;
+  customInstructions?: string;
 }
 
 serve(async (req) => {
@@ -22,7 +26,19 @@ serve(async (req) => {
   }
 
   try {
-    const { action, topic, subject, chapter, questionCount, difficulty, questionTypes, homeworkType } = await req.json() as RequestBody;
+    const { 
+      action, 
+      topic, 
+      subject, 
+      chapter, 
+      questionCount, 
+      difficulty, 
+      questionTypes, 
+      homeworkType,
+      contextType,
+      contextContent,
+      customInstructions
+    } = await req.json() as RequestBody;
     
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
@@ -60,31 +76,73 @@ Return a JSON object with:
         break;
 
       case "generate_homework":
-        systemPrompt = `You are an expert education content creator. Generate meaningful homework assignments that reinforce classroom learning and encourage independent thinking.`;
+        systemPrompt = `You are an expert education content creator. Generate meaningful homework assignments that reinforce classroom learning and encourage independent thinking. Create age-appropriate, engaging tasks that help students practice and apply concepts.`;
+        
+        // Build context section if provided
+        let contextSection = "";
+        if (contextType && contextContent) {
+          contextSection = `\n\nCONTEXT PROVIDED:
+Type: ${contextType}
+Details: ${contextContent}
+
+Use this context to make the homework more relevant and aligned with the teaching materials.`;
+        }
+
+        // Build custom instructions section
+        let instructionsSection = "";
+        if (customInstructions) {
+          instructionsSection = `\n\nTEACHER'S SPECIFIC INSTRUCTIONS:
+${customInstructions}
+
+Follow these instructions carefully when generating the homework.`;
+        }
+
+        const hwTypeDescription = {
+          practice: "Practice homework - students solve problems, write answers, or complete exercises. Include numerical problems, short answer questions, and application-based tasks.",
+          test: "Test/Quiz homework - auto-graded MCQ questions with clear options. Include a mix of easy, medium, and hard questions.",
+          project: "Project homework - creative work like reports, presentations, research, or experiments. Give clear guidelines and rubric points."
+        }[homeworkType || "practice"];
+
         userPrompt = `Create a ${homeworkType || "practice"} homework assignment about "${topic}" in ${subject}${chapter ? `, chapter: ${chapter}` : ""}.
+
+HOMEWORK TYPE: ${hwTypeDescription}${contextSection}${instructionsSection}
 
 Return a JSON object with:
 {
-  "title": "Assignment title",
-  "description": "Brief description of the assignment",
-  "instructions": ["Step 1", "Step 2", ...],
+  "title": "Clear, descriptive title for the homework",
+  "description": "Brief 1-2 sentence description of what students will learn/practice",
+  "instructions": ["Step 1: ...", "Step 2: ...", ...],
   "tasks": [
     {
       "id": "t1",
-      "type": "problem|question|activity|reading",
-      "content": "Task description",
-      "marks": number (optional)
+      "type": "problem|question|activity|reading|mcq",
+      "content": "Detailed task description or question",
+      "marks": number (optional, for graded tasks)
     }
   ],
-  "totalMarks": number (optional),
+  "totalMarks": number (optional, sum of all task marks),
   "estimatedTime": number (in minutes),
-  "resources": ["Optional resource links or references"]
-}`;
+  "resources": ["Optional helpful resource or reference"]
+}
+
+${homeworkType === 'test' ? `For test type, include MCQ tasks with this format:
+{
+  "id": "t1",
+  "type": "mcq",
+  "content": "Question text",
+  "options": ["A", "B", "C", "D"],
+  "correctIndex": 0,
+  "marks": 1
+}` : ''}
+
+Generate 4-6 meaningful tasks that progressively build understanding.`;
         break;
 
       default:
         throw new Error(`Unknown action: ${action}`);
     }
+
+    console.log("Generating homework with context:", { contextType, hasCustomInstructions: !!customInstructions });
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -133,6 +191,8 @@ Return a JSON object with:
     } catch {
       parsedContent = { raw: content };
     }
+
+    console.log("Successfully generated homework:", { title: parsedContent.title });
 
     return new Response(
       JSON.stringify({ success: true, data: parsedContent }),
