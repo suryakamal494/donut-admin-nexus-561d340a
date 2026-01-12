@@ -335,6 +335,30 @@ export function useAcademicPlanGenerator({
     toast.info("Plan cleared");
   }, []);
   
+  // Static descriptions for history entries (memoized outside callback)
+  const adjustmentDescriptions = useMemo(() => ({
+    extend: 'Extended by 1 week',
+    compress: 'Compressed by 1 week',
+    lock: 'Locked chapter',
+    unlock: 'Unlocked chapter',
+    swap: 'Swapped with next chapter',
+    removeFromWeek: 'Removed from week',
+  }), []);
+
+  // Helper to get dynamic description
+  const getAdjustmentDescription = useCallback((adjustment: ChapterAdjustment): string => {
+    switch (adjustment.type) {
+      case 'addHours':
+        return `Added ${adjustment.hours || 1}h`;
+      case 'removeHours':
+        return `Removed ${adjustment.hours || 1}h`;
+      case 'setHours':
+        return `Set to ${adjustment.hours}h`;
+      default:
+        return adjustmentDescriptions[adjustment.type as keyof typeof adjustmentDescriptions] || adjustment.type;
+    }
+  }, [adjustmentDescriptions]);
+
   // Helper to add history entry
   const addHistoryEntry = useCallback((
     adjustment: ChapterAdjustment,
@@ -342,18 +366,6 @@ export function useAcademicPlanGenerator({
     subjectName: string,
     planSnapshot: BatchAcademicPlan
   ) => {
-    const descriptions: Record<ChapterAdjustment['type'], string> = {
-      extend: 'Extended by 1 week',
-      compress: 'Compressed by 1 week',
-      lock: 'Locked chapter',
-      unlock: 'Unlocked chapter',
-      swap: 'Swapped with next chapter',
-      addHours: `Added ${adjustment.hours || 1}h`,
-      removeHours: `Removed ${adjustment.hours || 1}h`,
-      setHours: `Set to ${adjustment.hours}h`,
-      removeFromWeek: 'Removed from week',
-    };
-
     const entry: PlanHistoryEntry = {
       id: `history-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
       type: adjustment.type,
@@ -362,255 +374,250 @@ export function useAcademicPlanGenerator({
       chapterName,
       subjectName,
       timestamp: new Date(),
-      description: descriptions[adjustment.type] || adjustment.type,
+      description: getAdjustmentDescription(adjustment),
       previousPlanSnapshot: JSON.stringify(planSnapshot),
     };
 
     setHistory(prev => [entry, ...prev].slice(0, 50)); // Keep last 50
-  }, []);
+  }, [getAdjustmentDescription]);
 
   // Apply adjustment - modifies the plan in place
   const applyAdjustment = useCallback((adjustment: ChapterAdjustment) => {
-    if (!plan) return;
-    
-    // Find chapter and subject names for history
-    const subject = plan.subjects.find(s => s.subjectId === adjustment.subjectId);
-    const chapter = subject?.chapterAssignments.find(c => c.chapterId === adjustment.chapterId);
-    
-    // Add to history BEFORE applying (store current state)
-    if (chapter && subject) {
-      addHistoryEntry(adjustment, chapter.chapterName, subject.subjectName, plan);
-    }
-    
-    setAdjustments(prev => [...prev, adjustment]);
-    
-    // Create a deep copy of the plan to modify
-    const updatedPlan = JSON.parse(JSON.stringify(plan)) as BatchAcademicPlan;
-    
-    // Find the subject
-    const subjectIndex = updatedPlan.subjects.findIndex(s => s.subjectId === adjustment.subjectId);
-    if (subjectIndex === -1) return;
-    
-    const targetSubject = updatedPlan.subjects[subjectIndex];
-    
-    // Find the chapter
-    const chapterIndex = targetSubject.chapterAssignments.findIndex(c => c.chapterId === adjustment.chapterId);
-    if (chapterIndex === -1) return;
-    
-    const targetChapter = targetSubject.chapterAssignments[chapterIndex];
-    
-    switch (adjustment.type) {
-      case 'addHours': {
-        const hoursToAdd = adjustment.hours || 1;
-        const weekHourEntry = targetChapter.hoursPerWeek.find(h => h.weekIndex === adjustment.weekIndex);
-        if (weekHourEntry) {
-          weekHourEntry.hours += hoursToAdd;
-        } else {
-          targetChapter.hoursPerWeek.push({ weekIndex: adjustment.weekIndex, hours: hoursToAdd });
-        }
-        targetChapter.plannedHours += hoursToAdd;
-        targetChapter.isModified = true;
-        targetChapter.modificationTypes = [...(targetChapter.modificationTypes || []), 'addHours'];
-        toast.success(`Added ${hoursToAdd}h to "${targetChapter.chapterName}"`);
-        break;
+    setPlan(currentPlan => {
+      if (!currentPlan) return null;
+      
+      // Find chapter and subject names for history
+      const subject = currentPlan.subjects.find(s => s.subjectId === adjustment.subjectId);
+      const chapter = subject?.chapterAssignments.find(c => c.chapterId === adjustment.chapterId);
+      
+      // Add to history BEFORE applying (store current state)
+      if (chapter && subject) {
+        addHistoryEntry(adjustment, chapter.chapterName, subject.subjectName, currentPlan);
       }
       
-      case 'removeHours': {
-        const hoursToRemove = adjustment.hours || 1;
-        const weekHourEntry = targetChapter.hoursPerWeek.find(h => h.weekIndex === adjustment.weekIndex);
-        if (weekHourEntry && weekHourEntry.hours > hoursToRemove) {
-          weekHourEntry.hours -= hoursToRemove;
-          targetChapter.plannedHours -= hoursToRemove;
-          targetChapter.isModified = true;
-          targetChapter.modificationTypes = [...(targetChapter.modificationTypes || []), 'removeHours'];
-          toast.success(`Removed ${hoursToRemove}h from "${targetChapter.chapterName}"`);
-        } else {
-          toast.error("Cannot remove more hours than assigned");
-          return;
-        }
-        break;
-      }
+      setAdjustments(prev => [...prev, adjustment]);
       
-      case 'setHours': {
-        const newHours = adjustment.hours || 1;
-        const weekHourEntry = targetChapter.hoursPerWeek.find(h => h.weekIndex === adjustment.weekIndex);
-        const oldHours = weekHourEntry?.hours || 0;
-        if (weekHourEntry) {
-          weekHourEntry.hours = newHours;
-        } else {
-          targetChapter.hoursPerWeek.push({ weekIndex: adjustment.weekIndex, hours: newHours });
-        }
-        targetChapter.plannedHours += (newHours - oldHours);
-        targetChapter.isModified = true;
-        targetChapter.modificationTypes = [...(targetChapter.modificationTypes || []), 'addHours'];
-        toast.success(`Set "${targetChapter.chapterName}" to ${newHours}h this week`);
-        break;
-      }
-      
-      case 'removeFromWeek': {
-        // Remove hours from this specific week
-        const hourEntry = targetChapter.hoursPerWeek.find(h => h.weekIndex === adjustment.weekIndex);
-        if (hourEntry) {
-          targetChapter.plannedHours -= hourEntry.hours;
-          targetChapter.hoursPerWeek = targetChapter.hoursPerWeek.filter(h => h.weekIndex !== adjustment.weekIndex);
-          
-          // Recalculate start/end
-          if (targetChapter.hoursPerWeek.length > 0) {
-            targetChapter.startWeekIndex = Math.min(...targetChapter.hoursPerWeek.map(h => h.weekIndex));
-            targetChapter.endWeekIndex = Math.max(...targetChapter.hoursPerWeek.map(h => h.weekIndex));
+      // Create a deep copy of the plan to modify
+      const updatedPlan = JSON.parse(JSON.stringify(currentPlan)) as BatchAcademicPlan;
+    
+      // Find the subject
+      const subjectIndex = updatedPlan.subjects.findIndex(s => s.subjectId === adjustment.subjectId);
+      if (subjectIndex === -1) return currentPlan;
+    
+      const targetSubject = updatedPlan.subjects[subjectIndex];
+    
+      // Find the chapter
+      const chapterIndex = targetSubject.chapterAssignments.findIndex(c => c.chapterId === adjustment.chapterId);
+      if (chapterIndex === -1) return currentPlan;
+    
+      const targetChapter = targetSubject.chapterAssignments[chapterIndex];
+    
+      switch (adjustment.type) {
+        case 'addHours': {
+          const hoursToAdd = adjustment.hours || 1;
+          const weekHourEntry = targetChapter.hoursPerWeek.find(h => h.weekIndex === adjustment.weekIndex);
+          if (weekHourEntry) {
+            weekHourEntry.hours += hoursToAdd;
+          } else {
+            targetChapter.hoursPerWeek.push({ weekIndex: adjustment.weekIndex, hours: hoursToAdd });
           }
-          
+          targetChapter.plannedHours += hoursToAdd;
           targetChapter.isModified = true;
-          targetChapter.modificationTypes = [...(targetChapter.modificationTypes || []), 'removeFromWeek'];
-          toast.success(`Removed "${targetChapter.chapterName}" from this week`);
-        }
-        break;
-      }
-      
-      case 'extend': {
-        // Extend chapter by 1 week - push subsequent chapters
-        targetChapter.endWeekIndex += 1;
-        targetChapter.hoursPerWeek.push({
-          weekIndex: targetChapter.endWeekIndex,
-          hours: targetSubject.weeklyHours,
-        });
-        targetChapter.plannedHours += targetSubject.weeklyHours;
-        targetChapter.isPartialEnd = false;
-        
-        // Mark as modified
-        targetChapter.isModified = true;
-        targetChapter.modificationTypes = [...(targetChapter.modificationTypes || []), 'extend'];
-        
-        // Push all subsequent chapters by 1 week
-        for (let i = chapterIndex + 1; i < targetSubject.chapterAssignments.length; i++) {
-          const nextChapter = targetSubject.chapterAssignments[i];
-          nextChapter.startWeekIndex += 1;
-          nextChapter.endWeekIndex += 1;
-          nextChapter.hoursPerWeek = nextChapter.hoursPerWeek.map(h => ({
-            ...h,
-            weekIndex: h.weekIndex + 1,
-          }));
+          targetChapter.modificationTypes = [...(targetChapter.modificationTypes || []), 'addHours'];
+          toast.success(`Added ${hoursToAdd}h to "${targetChapter.chapterName}"`);
+          break;
         }
         
-        toast.success(`Extended "${targetChapter.chapterName}" by 1 week`);
-        break;
-      }
-      
-      case 'compress': {
-        // Compress chapter by 1 week if possible
-        if (targetChapter.endWeekIndex > targetChapter.startWeekIndex) {
-          const removedHours = targetChapter.hoursPerWeek.find(h => h.weekIndex === targetChapter.endWeekIndex)?.hours || 0;
-          targetChapter.hoursPerWeek = targetChapter.hoursPerWeek.filter(h => h.weekIndex !== targetChapter.endWeekIndex);
-          targetChapter.endWeekIndex -= 1;
-          targetChapter.plannedHours -= removedHours;
+        case 'removeHours': {
+          const hoursToRemove = adjustment.hours || 1;
+          const weekHourEntry = targetChapter.hoursPerWeek.find(h => h.weekIndex === adjustment.weekIndex);
+          if (weekHourEntry && weekHourEntry.hours > hoursToRemove) {
+            weekHourEntry.hours -= hoursToRemove;
+            targetChapter.plannedHours -= hoursToRemove;
+            targetChapter.isModified = true;
+            targetChapter.modificationTypes = [...(targetChapter.modificationTypes || []), 'removeHours'];
+            toast.success(`Removed ${hoursToRemove}h from "${targetChapter.chapterName}"`);
+          } else {
+            toast.error("Cannot remove more hours than assigned");
+            return currentPlan;
+          }
+          break;
+        }
+        
+        case 'setHours': {
+          const newHours = adjustment.hours || 1;
+          const weekHourEntry = targetChapter.hoursPerWeek.find(h => h.weekIndex === adjustment.weekIndex);
+          const oldHours = weekHourEntry?.hours || 0;
+          if (weekHourEntry) {
+            weekHourEntry.hours = newHours;
+          } else {
+            targetChapter.hoursPerWeek.push({ weekIndex: adjustment.weekIndex, hours: newHours });
+          }
+          targetChapter.plannedHours += (newHours - oldHours);
+          targetChapter.isModified = true;
+          targetChapter.modificationTypes = [...(targetChapter.modificationTypes || []), 'addHours'];
+          toast.success(`Set "${targetChapter.chapterName}" to ${newHours}h this week`);
+          break;
+        }
+        
+        case 'removeFromWeek': {
+          // Remove hours from this specific week
+          const hourEntry = targetChapter.hoursPerWeek.find(h => h.weekIndex === adjustment.weekIndex);
+          if (hourEntry) {
+            targetChapter.plannedHours -= hourEntry.hours;
+            targetChapter.hoursPerWeek = targetChapter.hoursPerWeek.filter(h => h.weekIndex !== adjustment.weekIndex);
+            
+            // Recalculate start/end
+            if (targetChapter.hoursPerWeek.length > 0) {
+              targetChapter.startWeekIndex = Math.min(...targetChapter.hoursPerWeek.map(h => h.weekIndex));
+              targetChapter.endWeekIndex = Math.max(...targetChapter.hoursPerWeek.map(h => h.weekIndex));
+            }
+            
+            targetChapter.isModified = true;
+            targetChapter.modificationTypes = [...(targetChapter.modificationTypes || []), 'removeFromWeek'];
+            toast.success(`Removed "${targetChapter.chapterName}" from this week`);
+          }
+          break;
+        }
+        
+        case 'extend': {
+          // Extend chapter by 1 week - push subsequent chapters
+          targetChapter.endWeekIndex += 1;
+          targetChapter.hoursPerWeek.push({
+            weekIndex: targetChapter.endWeekIndex,
+            hours: targetSubject.weeklyHours,
+          });
+          targetChapter.plannedHours += targetSubject.weeklyHours;
+          targetChapter.isPartialEnd = false;
           
           // Mark as modified
           targetChapter.isModified = true;
-          targetChapter.modificationTypes = [...(targetChapter.modificationTypes || []), 'compress'];
+          targetChapter.modificationTypes = [...(targetChapter.modificationTypes || []), 'extend'];
           
-          // Pull all subsequent chapters by 1 week
+          // Push all subsequent chapters by 1 week
           for (let i = chapterIndex + 1; i < targetSubject.chapterAssignments.length; i++) {
             const nextChapter = targetSubject.chapterAssignments[i];
-            nextChapter.startWeekIndex -= 1;
-            nextChapter.endWeekIndex -= 1;
+            nextChapter.startWeekIndex += 1;
+            nextChapter.endWeekIndex += 1;
             nextChapter.hoursPerWeek = nextChapter.hoursPerWeek.map(h => ({
               ...h,
-              weekIndex: h.weekIndex - 1,
+              weekIndex: h.weekIndex + 1,
             }));
           }
           
-          toast.success(`Compressed "${targetChapter.chapterName}" by 1 week`);
-        } else {
-          toast.error("Cannot compress further - chapter spans only 1 week");
-          return;
+          toast.success(`Extended "${targetChapter.chapterName}" by 1 week`);
+          break;
         }
-        break;
-      }
-      
-      case 'lock': {
-        targetChapter.isLocked = true;
-        toast.success(`Locked "${targetChapter.chapterName}"`);
-        break;
-      }
-      
-      case 'unlock': {
-        targetChapter.isLocked = false;
-        toast.success(`Unlocked "${targetChapter.chapterName}"`);
-        break;
-      }
-      
-      case 'swap': {
-        // Swap with next chapter if exists
-        if (chapterIndex < targetSubject.chapterAssignments.length - 1) {
-          const nextChapter = targetSubject.chapterAssignments[chapterIndex + 1];
-          
-          // Store original positions
-          const origStart = targetChapter.startWeekIndex;
-          const origEnd = targetChapter.endWeekIndex;
-          const nextStart = nextChapter.startWeekIndex;
-          const nextEnd = nextChapter.endWeekIndex;
-          
-          // Calculate durations
-          const chapterDuration = origEnd - origStart;
-          const nextDuration = nextEnd - nextStart;
-          
-          // Swap positions
-          targetChapter.startWeekIndex = origStart;
-          targetChapter.endWeekIndex = origStart + nextDuration;
-          nextChapter.startWeekIndex = targetChapter.endWeekIndex + 1;
-          nextChapter.endWeekIndex = nextChapter.startWeekIndex + chapterDuration;
-          
-          // Recalculate hours per week
-          targetChapter.hoursPerWeek = [];
-          for (let w = targetChapter.startWeekIndex; w <= targetChapter.endWeekIndex; w++) {
-            targetChapter.hoursPerWeek.push({ weekIndex: w, hours: targetSubject.weeklyHours });
+        
+        case 'compress': {
+          // Compress chapter by 1 week if possible
+          if (targetChapter.endWeekIndex > targetChapter.startWeekIndex) {
+            const removedHours = targetChapter.hoursPerWeek.find(h => h.weekIndex === targetChapter.endWeekIndex)?.hours || 0;
+            targetChapter.hoursPerWeek = targetChapter.hoursPerWeek.filter(h => h.weekIndex !== targetChapter.endWeekIndex);
+            targetChapter.endWeekIndex -= 1;
+            targetChapter.plannedHours -= removedHours;
+            
+            // Mark as modified
+            targetChapter.isModified = true;
+            targetChapter.modificationTypes = [...(targetChapter.modificationTypes || []), 'compress'];
+            
+            // Pull all subsequent chapters by 1 week
+            for (let i = chapterIndex + 1; i < targetSubject.chapterAssignments.length; i++) {
+              const nextChapter = targetSubject.chapterAssignments[i];
+              nextChapter.startWeekIndex -= 1;
+              nextChapter.endWeekIndex -= 1;
+              nextChapter.hoursPerWeek = nextChapter.hoursPerWeek.map(h => ({
+                ...h,
+                weekIndex: h.weekIndex - 1,
+              }));
+            }
+            
+            toast.success(`Compressed "${targetChapter.chapterName}" by 1 week`);
+          } else {
+            toast.error("Cannot compress further - chapter spans only 1 week");
+            return currentPlan;
           }
-          
-          nextChapter.hoursPerWeek = [];
-          for (let w = nextChapter.startWeekIndex; w <= nextChapter.endWeekIndex; w++) {
-            nextChapter.hoursPerWeek.push({ weekIndex: w, hours: targetSubject.weeklyHours });
-          }
-          
-          // Mark both as modified
-          targetChapter.isModified = true;
-          targetChapter.modificationTypes = [...(targetChapter.modificationTypes || []), 'swap'];
-          nextChapter.isModified = true;
-          nextChapter.modificationTypes = [...(nextChapter.modificationTypes || []), 'swap'];
-          
-          // Swap array positions
-          targetSubject.chapterAssignments[chapterIndex] = nextChapter;
-          targetSubject.chapterAssignments[chapterIndex + 1] = targetChapter;
-          
-          toast.success(`Swapped "${targetChapter.chapterName}" with "${nextChapter.chapterName}"`);
-        } else {
-          toast.error("No next chapter to swap with");
-          return;
+          break;
         }
-        break;
+        
+        case 'lock': {
+          targetChapter.isLocked = true;
+          toast.success(`Locked "${targetChapter.chapterName}"`);
+          break;
+        }
+        
+        case 'unlock': {
+          targetChapter.isLocked = false;
+          toast.success(`Unlocked "${targetChapter.chapterName}"`);
+          break;
+        }
+        
+        case 'swap': {
+          // Swap with next chapter if exists
+          if (chapterIndex < targetSubject.chapterAssignments.length - 1) {
+            const nextChapter = targetSubject.chapterAssignments[chapterIndex + 1];
+            
+            // Store original positions
+            const origStart = targetChapter.startWeekIndex;
+            const origEnd = targetChapter.endWeekIndex;
+            const nextStart = nextChapter.startWeekIndex;
+            const nextEnd = nextChapter.endWeekIndex;
+            
+            // Calculate durations
+            const chapterDuration = origEnd - origStart;
+            const nextDuration = nextEnd - nextStart;
+            
+            // Swap positions
+            targetChapter.startWeekIndex = origStart;
+            targetChapter.endWeekIndex = origStart + nextDuration;
+            nextChapter.startWeekIndex = targetChapter.endWeekIndex + 1;
+            nextChapter.endWeekIndex = nextChapter.startWeekIndex + chapterDuration;
+            
+            // Recalculate hours per week
+            targetChapter.hoursPerWeek = [];
+            for (let w = targetChapter.startWeekIndex; w <= targetChapter.endWeekIndex; w++) {
+              targetChapter.hoursPerWeek.push({ weekIndex: w, hours: targetSubject.weeklyHours });
+            }
+            
+            nextChapter.hoursPerWeek = [];
+            for (let w = nextChapter.startWeekIndex; w <= nextChapter.endWeekIndex; w++) {
+              nextChapter.hoursPerWeek.push({ weekIndex: w, hours: targetSubject.weeklyHours });
+            }
+            
+            // Mark both as modified
+            targetChapter.isModified = true;
+            targetChapter.modificationTypes = [...(targetChapter.modificationTypes || []), 'swap'];
+            nextChapter.isModified = true;
+            nextChapter.modificationTypes = [...(nextChapter.modificationTypes || []), 'swap'];
+            
+            // Swap array positions
+            targetSubject.chapterAssignments[chapterIndex] = nextChapter;
+            targetSubject.chapterAssignments[chapterIndex + 1] = targetChapter;
+            
+            toast.success(`Swapped "${targetChapter.chapterName}" with "${nextChapter.chapterName}"`);
+          } else {
+            toast.error("No next chapter to swap with");
+            return currentPlan;
+          }
+          break;
+        }
       }
-    }
     
-    // Update the end week index of the plan
-    const maxEndWeek = Math.max(
-      ...updatedPlan.subjects.flatMap(s => 
-        s.chapterAssignments.map(c => c.endWeekIndex)
-      )
-    );
-    updatedPlan.endWeekIndex = maxEndWeek;
+      // Update the end week index of the plan
+      const maxEndWeek = Math.max(
+        ...updatedPlan.subjects.flatMap(s => 
+          s.chapterAssignments.map(c => c.endWeekIndex)
+        )
+      );
+      updatedPlan.endWeekIndex = maxEndWeek;
     
-    setPlan(updatedPlan);
-  }, [plan]);
+      return updatedPlan;
+    });
+  }, [addHistoryEntry]);
   
   // Publish month
   const publishMonth = useCallback((monthIndex: number) => {
     if (!batchId) return;
-    
-    // Get the actual month number from the month index
-    const monthWeeks = academicWeeks.filter((week, idx) => {
-      const date = new Date(week.startDate);
-      // Group by month and check index
-      return true; // We need to map monthIndex to actual month
-    });
     
     // For now, use monthIndex directly as month number (0 = Jan, etc.)
     // In production, this should map to actual calendar months
@@ -619,16 +626,17 @@ export function useAcademicPlanGenerator({
     setPublishedMonths(prev => new Set([...prev, actualMonth]));
     publishMonthForPlan(batchId, actualMonth);
     
-    if (plan) {
-      setPlan({
-        ...plan,
+    setPlan(currentPlan => {
+      if (!currentPlan) return null;
+      return {
+        ...currentPlan,
         status: 'published',
         publishedAt: new Date().toISOString(),
-      });
-    }
+      };
+    });
     
     toast.success("Month published successfully");
-  }, [plan, batchId]);
+  }, [batchId]);
   
   // Check if a week can be edited
   const canEditWeek = useCallback((weekIndex: number, weekStartDate: Date): boolean => {
@@ -658,74 +666,74 @@ export function useAcademicPlanGenerator({
     fromIndex: number,
     toIndex: number
   ) => {
-    if (!plan) return;
     if (fromIndex === toIndex) return;
     
-    // Create a deep copy of the plan
-    const updatedPlan = JSON.parse(JSON.stringify(plan)) as BatchAcademicPlan;
-    
-    // Find the subject
-    const subjectIndex = updatedPlan.subjects.findIndex(s => s.subjectId === subjectId);
-    if (subjectIndex === -1) return;
-    
-    const subject = updatedPlan.subjects[subjectIndex];
-    
-    if (fromIndex < 0 || fromIndex >= subject.chapterAssignments.length) return;
-    if (toIndex < 0 || toIndex >= subject.chapterAssignments.length) return;
-    
-    // Swap the two chapters and mark them as modified
-    const temp = subject.chapterAssignments[fromIndex];
-    subject.chapterAssignments[fromIndex] = subject.chapterAssignments[toIndex];
-    subject.chapterAssignments[toIndex] = temp;
-    
-    // Mark both swapped chapters as modified
-    subject.chapterAssignments[fromIndex].isModified = true;
-    subject.chapterAssignments[fromIndex].modificationTypes = [
-      ...(subject.chapterAssignments[fromIndex].modificationTypes || []),
-      'reorder'
-    ];
-    subject.chapterAssignments[toIndex].isModified = true;
-    subject.chapterAssignments[toIndex].modificationTypes = [
-      ...(subject.chapterAssignments[toIndex].modificationTypes || []),
-      'reorder'
-    ];
-    
-    // Recalculate all week positions for the subject
-    let currentWeekStart = 0;
-    
-    // Find the minimum startWeekIndex from the original plan
-    const originalMinStart = Math.min(
-      ...plan.subjects[subjectIndex].chapterAssignments.map(c => c.startWeekIndex)
-    );
-    currentWeekStart = originalMinStart;
-    
-    subject.chapterAssignments.forEach((chapter) => {
-      const duration = chapter.endWeekIndex - chapter.startWeekIndex;
-      chapter.startWeekIndex = currentWeekStart;
-      chapter.endWeekIndex = currentWeekStart + duration;
+    setPlan(currentPlan => {
+      if (!currentPlan) return null;
       
-      // Recalculate hoursPerWeek
-      chapter.hoursPerWeek = [];
-      for (let w = chapter.startWeekIndex; w <= chapter.endWeekIndex; w++) {
-        chapter.hoursPerWeek.push({ weekIndex: w, hours: subject.weeklyHours });
-      }
+      // Create a deep copy of the plan
+      const updatedPlan = JSON.parse(JSON.stringify(currentPlan)) as BatchAcademicPlan;
       
-      currentWeekStart = chapter.endWeekIndex + 1;
+      // Find the subject
+      const subjectIndex = updatedPlan.subjects.findIndex(s => s.subjectId === subjectId);
+      if (subjectIndex === -1) return currentPlan;
+      
+      const subject = updatedPlan.subjects[subjectIndex];
+      
+      if (fromIndex < 0 || fromIndex >= subject.chapterAssignments.length) return currentPlan;
+      if (toIndex < 0 || toIndex >= subject.chapterAssignments.length) return currentPlan;
+      
+      // Swap the two chapters and mark them as modified
+      const temp = subject.chapterAssignments[fromIndex];
+      subject.chapterAssignments[fromIndex] = subject.chapterAssignments[toIndex];
+      subject.chapterAssignments[toIndex] = temp;
+      
+      // Mark both swapped chapters as modified
+      subject.chapterAssignments[fromIndex].isModified = true;
+      subject.chapterAssignments[fromIndex].modificationTypes = [
+        ...(subject.chapterAssignments[fromIndex].modificationTypes || []),
+        'reorder'
+      ];
+      subject.chapterAssignments[toIndex].isModified = true;
+      subject.chapterAssignments[toIndex].modificationTypes = [
+        ...(subject.chapterAssignments[toIndex].modificationTypes || []),
+        'reorder'
+      ];
+      
+      // Recalculate all week positions for the subject
+      const originalMinStart = Math.min(
+        ...currentPlan.subjects[subjectIndex].chapterAssignments.map(c => c.startWeekIndex)
+      );
+      let currentWeekStart = originalMinStart;
+      
+      subject.chapterAssignments.forEach((chapter) => {
+        const duration = chapter.endWeekIndex - chapter.startWeekIndex;
+        chapter.startWeekIndex = currentWeekStart;
+        chapter.endWeekIndex = currentWeekStart + duration;
+        
+        // Recalculate hoursPerWeek
+        chapter.hoursPerWeek = [];
+        for (let w = chapter.startWeekIndex; w <= chapter.endWeekIndex; w++) {
+          chapter.hoursPerWeek.push({ weekIndex: w, hours: subject.weeklyHours });
+        }
+        
+        currentWeekStart = chapter.endWeekIndex + 1;
+      });
+      
+      // Update the end week index of the plan
+      const maxEndWeek = Math.max(
+        ...updatedPlan.subjects.flatMap(s => 
+          s.chapterAssignments.map(c => c.endWeekIndex)
+        )
+      );
+      updatedPlan.endWeekIndex = maxEndWeek;
+      
+      const movedChapter = subject.chapterAssignments[toIndex];
+      toast.success(`Moved "${movedChapter.chapterName}" to position ${toIndex + 1}`);
+      
+      return updatedPlan;
     });
-    
-    // Update the end week index of the plan
-    const maxEndWeek = Math.max(
-      ...updatedPlan.subjects.flatMap(s => 
-        s.chapterAssignments.map(c => c.endWeekIndex)
-      )
-    );
-    updatedPlan.endWeekIndex = maxEndWeek;
-    
-    setPlan(updatedPlan);
-    
-    const movedChapter = subject.chapterAssignments[toIndex];
-    toast.success(`Moved "${movedChapter.chapterName}" to position ${toIndex + 1}`);
-  }, [plan]);
+  }, []);
   
   // Add chapter manually to a specific week
   const addChapterManually = useCallback((
@@ -734,22 +742,7 @@ export function useAcademicPlanGenerator({
     weekIndex: number,
     hours: number
   ) => {
-    if (!plan) return;
-    
-    const updatedPlan = JSON.parse(JSON.stringify(plan)) as BatchAcademicPlan;
-    const subjectIndex = updatedPlan.subjects.findIndex(s => s.subjectId === subjectId);
-    if (subjectIndex === -1) return;
-    
-    const subject = updatedPlan.subjects[subjectIndex];
-    
-    // Check if chapter already exists
-    const existingIndex = subject.chapterAssignments.findIndex(c => c.chapterId === chapterId);
-    if (existingIndex !== -1) {
-      toast.error("Chapter already assigned");
-      return;
-    }
-    
-    // Find chapter info from setups
+    // Find chapter info from setups (outside of setPlan to avoid stale closure)
     const setup = academicScheduleSetups.find(s => s.subjectId === subjectId);
     const chapterInfo = setup?.chapters.find(c => c.chapterId === chapterId);
     
@@ -758,41 +751,65 @@ export function useAcademicPlanGenerator({
       return;
     }
     
-    // Add new assignment
-    const newAssignment: import("@/types/academicPlanner").ChapterWeekAssignment = {
-      chapterId,
-      chapterName: chapterInfo.chapterName,
-      plannedHours: hours,
-      startWeekIndex: weekIndex,
-      endWeekIndex: weekIndex,
-      hoursPerWeek: [{ weekIndex, hours }],
-      isLocked: false,
-      isPartialStart: false,
-      isPartialEnd: hours < chapterInfo.plannedHours,
-      isModified: true,
-      modificationTypes: ['manualAdd'],
-    };
-    
-    subject.chapterAssignments.push(newAssignment);
-    subject.chapterAssignments.sort((a, b) => a.startWeekIndex - b.startWeekIndex);
-    
-    setPlan(updatedPlan);
-    toast.success(`Added "${chapterInfo.chapterName}" to week ${weekIndex + 1}`);
-  }, [plan]);
+    setPlan(currentPlan => {
+      if (!currentPlan) return null;
+      
+      const updatedPlan = JSON.parse(JSON.stringify(currentPlan)) as BatchAcademicPlan;
+      const subjectIndex = updatedPlan.subjects.findIndex(s => s.subjectId === subjectId);
+      if (subjectIndex === -1) return currentPlan;
+      
+      const subject = updatedPlan.subjects[subjectIndex];
+      
+      // Check if chapter already exists
+      const existingIndex = subject.chapterAssignments.findIndex(c => c.chapterId === chapterId);
+      if (existingIndex !== -1) {
+        toast.error("Chapter already assigned");
+        return currentPlan;
+      }
+      
+      // Add new assignment
+      const newAssignment: import("@/types/academicPlanner").ChapterWeekAssignment = {
+        chapterId,
+        chapterName: chapterInfo.chapterName,
+        plannedHours: hours,
+        startWeekIndex: weekIndex,
+        endWeekIndex: weekIndex,
+        hoursPerWeek: [{ weekIndex, hours }],
+        isLocked: false,
+        isPartialStart: false,
+        isPartialEnd: hours < chapterInfo.plannedHours,
+        isModified: true,
+        modificationTypes: ['manualAdd'],
+      };
+      
+      subject.chapterAssignments.push(newAssignment);
+      subject.chapterAssignments.sort((a, b) => a.startWeekIndex - b.startWeekIndex);
+      
+      toast.success(`Added "${chapterInfo.chapterName}" to week ${weekIndex + 1}`);
+      
+      return updatedPlan;
+    });
+  }, []);
   
   // Undo to a specific history entry
   const undoToEntry = useCallback((entryId: string) => {
-    const entryIndex = history.findIndex(h => h.id === entryId);
-    if (entryIndex === -1) return;
-    
-    const entry = history[entryIndex];
-    const restoredPlan = JSON.parse(entry.previousPlanSnapshot) as BatchAcademicPlan;
-    
-    setPlan(restoredPlan);
-    // Remove this entry and all entries after it (more recent)
-    setHistory(prev => prev.slice(entryIndex + 1));
-    toast.success(`Undone: ${entry.description}`);
-  }, [history]);
+    setHistory(prevHistory => {
+      const entryIndex = prevHistory.findIndex(h => h.id === entryId);
+      if (entryIndex === -1) return prevHistory;
+      
+      const entry = prevHistory[entryIndex];
+      const restoredPlan = JSON.parse(entry.previousPlanSnapshot) as BatchAcademicPlan;
+      
+      // Set plan outside of setHistory to avoid nested state updates
+      setTimeout(() => {
+        setPlan(restoredPlan);
+        toast.success(`Undone: ${entry.description}`);
+      }, 0);
+      
+      // Remove this entry and all entries before it (more recent ones are at start)
+      return prevHistory.slice(entryIndex + 1);
+    });
+  }, []);
   
   // Clear all history
   const clearHistory = useCallback(() => {
@@ -802,38 +819,41 @@ export function useAcademicPlanGenerator({
   
   // Reset a subject to its original auto-generated state
   const resetSubjectToOriginal = useCallback((subjectId: string) => {
-    if (!plan || !originalPlan) {
-      toast.error("No original plan to reset to");
-      return;
-    }
-    
-    const originalSubject = originalPlan.subjects.find(s => s.subjectId === subjectId);
-    if (!originalSubject) {
-      toast.error("Subject not found in original plan");
-      return;
-    }
-    
-    // Store current state in history
-    const currentSubject = plan.subjects.find(s => s.subjectId === subjectId);
-    if (currentSubject) {
-      addHistoryEntry(
-        { type: 'compress', subjectId, chapterId: '', weekIndex: 0, timestamp: new Date().toISOString() },
-        'All chapters',
-        currentSubject.subjectName,
-        plan
-      );
-    }
-    
-    // Create updated plan with reset subject
-    const updatedPlan = JSON.parse(JSON.stringify(plan)) as BatchAcademicPlan;
-    const subjectIndex = updatedPlan.subjects.findIndex(s => s.subjectId === subjectId);
-    if (subjectIndex !== -1) {
-      updatedPlan.subjects[subjectIndex] = JSON.parse(JSON.stringify(originalSubject));
-    }
-    
-    setPlan(updatedPlan);
-    toast.success(`Reset ${originalSubject.subjectName} to original plan`);
-  }, [plan, originalPlan, addHistoryEntry]);
+    setPlan(currentPlan => {
+      if (!currentPlan || !originalPlan) {
+        toast.error("No original plan to reset to");
+        return currentPlan;
+      }
+      
+      const originalSubject = originalPlan.subjects.find(s => s.subjectId === subjectId);
+      if (!originalSubject) {
+        toast.error("Subject not found in original plan");
+        return currentPlan;
+      }
+      
+      // Store current state in history
+      const currentSubject = currentPlan.subjects.find(s => s.subjectId === subjectId);
+      if (currentSubject) {
+        addHistoryEntry(
+          { type: 'compress', subjectId, chapterId: '', weekIndex: 0, timestamp: new Date().toISOString() },
+          'All chapters',
+          currentSubject.subjectName,
+          currentPlan
+        );
+      }
+      
+      // Create updated plan with reset subject
+      const updatedPlan = JSON.parse(JSON.stringify(currentPlan)) as BatchAcademicPlan;
+      const subjectIndex = updatedPlan.subjects.findIndex(s => s.subjectId === subjectId);
+      if (subjectIndex !== -1) {
+        updatedPlan.subjects[subjectIndex] = JSON.parse(JSON.stringify(originalSubject));
+      }
+      
+      toast.success(`Reset ${originalSubject.subjectName} to original plan`);
+      
+      return updatedPlan;
+    });
+  }, [originalPlan, addHistoryEntry]);
   
   return {
     plan,
