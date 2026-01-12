@@ -286,12 +286,20 @@ export const BlockDialog = ({
             )}
           </div>
           
-          {/* Content List - Virtualized for 60fps mobile scrolling */}
+          {/* Content List - Virtualized with touch-optimized smooth scroll momentum */}
           {filteredContent.length > 0 ? (
             <div 
               ref={scrollContainerRef}
-              className={cn("flex-1 min-h-0 overflow-auto", isMobile ? "h-[50vh]" : "h-[280px]")}
-              style={{ contain: 'strict' }}
+              className={cn(
+                "flex-1 min-h-0 overflow-auto overscroll-contain",
+                isMobile ? "h-[50vh]" : "h-[280px]"
+              )}
+              style={{ 
+                contain: 'strict',
+                WebkitOverflowScrolling: 'touch', // iOS momentum scrolling
+                scrollBehavior: 'smooth',
+                touchAction: 'pan-y', // Optimize for vertical scrolling
+              }}
             >
               <div
                 style={{
@@ -313,6 +321,7 @@ export const BlockDialog = ({
                         height: `${virtualItem.size}px`,
                         transform: `translateY(${virtualItem.start}px)`,
                         padding: '0 8px',
+                        willChange: 'transform', // GPU acceleration hint
                       }}
                     >
                       <ContentItem
