@@ -149,6 +149,52 @@ interface ChapterTeacherInfo {
   hours: number;
 }
 
+// Teacher lost days info
+interface TeacherLostDaysInfo {
+  teacherId: string;
+  teacherName: string;
+  reason: string;
+  count: number;
+}
+
+/**
+ * Get lost days breakdown by teacher for a specific batch and subject
+ */
+function getLostDaysByTeacher(
+  batchId: string,
+  subjectId: string
+): TeacherLostDaysInfo[] {
+  const absences = teachingConfirmations.filter(
+    c => c.batchId === batchId && 
+         c.subjectId === subjectId && 
+         !c.didTeach &&
+         c.noTeachReason
+  );
+  
+  if (absences.length === 0) return [];
+  
+  // Group by teacher and reason
+  const teacherReasonMap = new Map<string, TeacherLostDaysInfo>();
+  
+  absences.forEach(conf => {
+    const key = `${conf.teacherId}-${conf.noTeachReason}`;
+    if (teacherReasonMap.has(key)) {
+      teacherReasonMap.get(key)!.count += 1;
+    } else {
+      teacherReasonMap.set(key, {
+        teacherId: conf.teacherId,
+        teacherName: conf.teacherName,
+        reason: conf.noTeachReason || "other",
+        count: 1,
+      });
+    }
+  });
+  
+  // Sort by count (descending), then by teacher name
+  return Array.from(teacherReasonMap.values())
+    .sort((a, b) => b.count - a.count || a.teacherName.localeCompare(b.teacherName));
+}
+
 /**
  * Get the primary teacher for a chapter based on teaching confirmations
  */
@@ -158,7 +204,7 @@ function getChapterTeacher(
   chapterId: string
 ): ChapterTeacherInfo | null {
   const chapterConfs = teachingConfirmations.filter(
-    c => c.batchId === batchId && 
+    c => c.batchId === batchId &&
          c.subjectId === subjectId && 
          c.chapterId === chapterId && 
          c.didTeach
@@ -813,7 +859,7 @@ export default function ConsolidatedBatchView() {
                 })()}
               </div>
 
-              {/* Lost Days Breakdown */}
+              {/* Lost Days Breakdown - Enhanced with Teacher Attribution */}
               {currentSubject.lostDays > 0 && currentSubject.lostDaysReasons.length > 0 && (
                 <Collapsible 
                   open={lostDaysOpen[currentSubject.subjectId]} 
@@ -828,15 +874,91 @@ export default function ConsolidatedBatchView() {
                       <ChevronDown className={cn("w-4 h-4 transition-transform", lostDaysOpen[currentSubject.subjectId] && "rotate-180")} />
                     </Button>
                   </CollapsibleTrigger>
-                  <CollapsibleContent className="pt-2">
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                      {currentSubject.lostDaysReasons.map((item) => (
-                        <div key={item.reason} className="p-3 rounded-lg bg-muted/50 border text-center">
-                          <p className="text-2xl font-bold">{item.count}</p>
-                          <p className="text-xs text-muted-foreground">{NO_TEACH_REASON_LABELS[item.reason]}</p>
-                        </div>
-                      ))}
+                  <CollapsibleContent className="pt-2 space-y-4">
+                    {/* Summary by Reason */}
+                    <div>
+                      <h5 className="text-xs font-medium text-muted-foreground mb-2">By Reason</h5>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                        {currentSubject.lostDaysReasons.map((item) => (
+                          <div key={item.reason} className="p-3 rounded-lg bg-muted/50 border text-center">
+                            <p className="text-2xl font-bold">{item.count}</p>
+                            <p className="text-xs text-muted-foreground">{NO_TEACH_REASON_LABELS[item.reason]}</p>
+                          </div>
+                        ))}
+                      </div>
                     </div>
+                    
+                    {/* Teacher-Specific Breakdown */}
+                    {(() => {
+                      const teacherLostDays = getLostDaysByTeacher(batch.batchId, currentSubject.subjectId);
+                      const teacherAbsences = teacherLostDays.filter(t => t.reason === "teacher_absent");
+                      
+                      if (teacherAbsences.length === 0) return null;
+                      
+                      return (
+                        <div>
+                          <h5 className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-1.5">
+                            <User className="w-3 h-3" />
+                            Teacher Absences
+                          </h5>
+                          <div className="space-y-2">
+                            {teacherAbsences.map((item) => (
+                              <div 
+                                key={`${item.teacherId}-${item.reason}`}
+                                className="flex items-center justify-between p-3 rounded-lg bg-red-50/50 border border-red-100"
+                              >
+                                <div className="flex items-center gap-3 min-w-0">
+                                  <div className="w-9 h-9 rounded-full bg-red-100 flex items-center justify-center shrink-0">
+                                    <User className="w-4 h-4 text-red-600" />
+                                  </div>
+                                  <div className="min-w-0">
+                                    <p className="font-medium text-sm truncate">{item.teacherName}</p>
+                                    <p className="text-xs text-muted-foreground">Teacher Absent</p>
+                                  </div>
+                                </div>
+                                <div className="text-right shrink-0">
+                                  <p className="text-xl font-bold text-red-600">{item.count}</p>
+                                  <p className="text-[10px] text-muted-foreground">class{item.count > 1 ? 'es' : ''} missed</p>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })()}
+                    
+                    {/* Other Lost Days (non-teacher) */}
+                    {(() => {
+                      const teacherLostDays = getLostDaysByTeacher(batch.batchId, currentSubject.subjectId);
+                      const otherAbsences = teacherLostDays.filter(t => t.reason !== "teacher_absent");
+                      
+                      if (otherAbsences.length === 0) return null;
+                      
+                      return (
+                        <div>
+                          <h5 className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-1.5">
+                            <Calendar className="w-3 h-3" />
+                            Other Lost Classes
+                          </h5>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            {otherAbsences.map((item) => (
+                              <div 
+                                key={`${item.teacherId}-${item.reason}`}
+                                className="flex items-center justify-between p-2.5 rounded-lg bg-amber-50/50 border border-amber-100"
+                              >
+                                <div className="min-w-0">
+                                  <p className="font-medium text-sm truncate">{item.teacherName}</p>
+                                  <p className="text-xs text-muted-foreground">{NO_TEACH_REASON_LABELS[item.reason as keyof typeof NO_TEACH_REASON_LABELS] || item.reason}</p>
+                                </div>
+                                <div className="text-right shrink-0 ml-2">
+                                  <p className="text-lg font-bold text-amber-600">{item.count}</p>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })()}
                   </CollapsibleContent>
                 </Collapsible>
               )}
