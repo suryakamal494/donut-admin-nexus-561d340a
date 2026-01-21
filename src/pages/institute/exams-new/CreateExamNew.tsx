@@ -133,7 +133,7 @@ const CreateExamNew = () => {
   const isWideStep = exam.currentStepKey === "questions";
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-4 sm:space-y-6 animate-fade-in pb-20 sm:pb-6">
       <PageHeader
         title="Create Exam"
         description="Create a new exam for your students"
@@ -151,8 +151,8 @@ const CreateExamNew = () => {
 
       {/* Step Content */}
       <div className={cn(
-        "bg-card rounded-2xl p-4 sm:p-8 shadow-soft border border-border/50 mx-auto transition-all",
-        isWideStep ? "max-w-5xl" : "max-w-2xl"
+        "bg-card rounded-xl sm:rounded-2xl p-3 sm:p-6 lg:p-8 shadow-soft border border-border/50 mx-auto transition-all",
+        isWideStep ? "max-w-full lg:max-w-5xl" : "max-w-xl sm:max-w-2xl"
       )}>
         {getStepContent()}
       </div>
