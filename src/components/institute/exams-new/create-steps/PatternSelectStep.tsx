@@ -1,9 +1,8 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   ArrowLeft,
@@ -47,26 +46,43 @@ export function PatternSelectStep({
 }: PatternSelectStepProps) {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
-  const [activeTab, setActiveTab] = useState("standard");
+  const selectedPreviewRef = useRef<HTMLDivElement>(null);
 
-  const filteredStandardPatterns = useMemo(() => {
-    return systemPresetPatterns.filter((p) =>
+  // Combine all patterns - Standard first, then Custom
+  const allPatterns = useMemo(() => {
+    const standardPatterns = systemPresetPatterns.map(p => ({ ...p, patternType: "standard" as const }));
+    const customPatterns = institutePatterns.map(p => ({ ...p, patternType: "custom" as const }));
+    return [...standardPatterns, ...customPatterns];
+  }, []);
+
+  // Filter patterns based on search query
+  const filteredPatterns = useMemo(() => {
+    if (!searchQuery) return allPatterns;
+    
+    return allPatterns.filter((p) =>
       p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       p.tags.some((t) => t.toLowerCase().includes(searchQuery.toLowerCase()))
     );
-  }, [searchQuery]);
+  }, [searchQuery, allPatterns]);
 
-  const filteredInstitutePatterns = useMemo(() => {
-    return institutePatterns.filter((p) =>
-      p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      p.tags.some((t) => t.toLowerCase().includes(searchQuery.toLowerCase()))
-    );
-  }, [searchQuery]);
+  // Handle pattern selection with auto-scroll
+  const handleSelectPattern = useCallback((patternId: string) => {
+    onSelectPattern(patternId);
+    
+    // Auto-scroll to preview section after selection
+    setTimeout(() => {
+      selectedPreviewRef.current?.scrollIntoView({ 
+        behavior: 'smooth', 
+        block: 'nearest' 
+      });
+    }, 100);
+  }, [onSelectPattern]);
 
-  const renderPatternCard = (pattern: ExamPattern) => {
+  const renderPatternCard = (pattern: ExamPattern & { patternType: "standard" | "custom" }) => {
     const isSelected = selectedPatternId === pattern.id;
     const totalQuestions = getPatternTotalQuestions(pattern);
     const totalMarks = getPatternTotalMarks(pattern);
+    const isStandard = pattern.patternType === "standard";
 
     return (
       <Card
@@ -74,26 +90,35 @@ export function PatternSelectStep({
         className={cn(
           "cursor-pointer transition-all duration-200",
           isSelected
-            ? "border-primary bg-primary/5 shadow-md"
+            ? "border-primary bg-primary/5 shadow-md ring-1 ring-primary/20"
             : "hover:border-primary/50 hover:shadow-sm"
         )}
-        onClick={() => onSelectPattern(pattern.id)}
+        onClick={() => handleSelectPattern(pattern.id)}
       >
         <CardContent className="p-3 sm:p-4">
+          {/* Header with type badge */}
           <div className="flex items-start justify-between mb-2 sm:mb-3 gap-2">
-            <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
-              {pattern.isSystemPreset ? (
-                <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-500 shrink-0" />
+            <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-1">
+              {isStandard ? (
+                <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-primary shrink-0" />
               ) : (
                 <Building2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-muted-foreground shrink-0" />
               )}
               <h4 className="font-medium text-xs sm:text-sm truncate">{pattern.name}</h4>
             </div>
-            {isSelected && (
-              <div className="w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-primary flex items-center justify-center shrink-0">
-                <Check className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-primary-foreground" />
-              </div>
-            )}
+            <div className="flex items-center gap-1.5 shrink-0">
+              <Badge 
+                variant={isStandard ? "default" : "secondary"} 
+                className="text-[8px] sm:text-[9px] px-1.5 py-0"
+              >
+                {isStandard ? "Standard" : "Custom"}
+              </Badge>
+              {isSelected && (
+                <div className="w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-primary flex items-center justify-center">
+                  <Check className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-primary-foreground" />
+                </div>
+              )}
+            </div>
           </div>
 
           <p className="text-[10px] sm:text-xs text-muted-foreground line-clamp-2 mb-2 sm:mb-3">
@@ -104,7 +129,7 @@ export function PatternSelectStep({
           <div className="flex flex-wrap gap-1 mb-2 sm:mb-3">
             {pattern.hasFixedSubjects ? (
               pattern.subjects.slice(0, 2).map((s) => (
-                <Badge key={s} variant="secondary" className="text-[9px] sm:text-[10px] capitalize px-1.5">
+                <Badge key={s} variant="outline" className="text-[9px] sm:text-[10px] capitalize px-1.5 bg-muted/50">
                   {s}
                 </Badge>
               ))
@@ -114,7 +139,7 @@ export function PatternSelectStep({
               </Badge>
             )}
             {pattern.hasFixedSubjects && pattern.subjects.length > 2 && (
-              <Badge variant="secondary" className="text-[9px] sm:text-[10px] px-1.5">
+              <Badge variant="outline" className="text-[9px] sm:text-[10px] px-1.5 bg-muted/50">
                 +{pattern.subjects.length - 2}
               </Badge>
             )}
@@ -140,6 +165,8 @@ export function PatternSelectStep({
     );
   };
 
+  const hasCustomPatterns = institutePatterns.length > 0;
+
   return (
     <div className="space-y-4 sm:space-y-6">
       <div className="space-y-1">
@@ -156,82 +183,71 @@ export function PatternSelectStep({
           placeholder="Search patterns..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="pl-9 h-9 sm:h-10"
+          className="pl-9 h-10 sm:h-11"
         />
       </div>
 
-      {/* Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid grid-cols-2 w-full h-9 sm:h-10">
-          <TabsTrigger value="standard" className="gap-1 sm:gap-1.5 text-xs sm:text-sm">
-            <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-            Standard
-          </TabsTrigger>
-          <TabsTrigger value="my-patterns" className="gap-1 sm:gap-1.5 text-xs sm:text-sm">
-            <Building2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-            <span className="hidden xs:inline">My Patterns</span>
-            <span className="xs:hidden">Custom</span>
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="standard" className="mt-3 sm:mt-4">
-          <ScrollArea className="h-[250px] sm:h-[300px] pr-2">
-            <div className="grid gap-2 sm:gap-3 grid-cols-1 sm:grid-cols-2">
-              {filteredStandardPatterns.map(renderPatternCard)}
-            </div>
-            {filteredStandardPatterns.length === 0 && (
-              <p className="text-center text-muted-foreground py-6 sm:py-8 text-sm">
-                No patterns found
-              </p>
+      {/* Unified Pattern Grid */}
+      <ScrollArea className="h-[280px] sm:h-[320px] pr-2">
+        <div className="grid gap-2 sm:gap-3 grid-cols-1 sm:grid-cols-2">
+          {filteredPatterns.map(renderPatternCard)}
+        </div>
+        
+        {filteredPatterns.length === 0 && (
+          <div className="text-center py-8">
+            <p className="text-muted-foreground mb-4 text-sm">No patterns found</p>
+            {!hasCustomPatterns && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigate("/institute/exams-new/patterns/create")}
+                className="h-10 text-sm"
+              >
+                <Plus className="w-4 h-4 mr-1.5" />
+                Create Custom Pattern
+              </Button>
             )}
-          </ScrollArea>
-        </TabsContent>
+          </div>
+        )}
+      </ScrollArea>
 
-        <TabsContent value="my-patterns" className="mt-3 sm:mt-4">
-          <ScrollArea className="h-[250px] sm:h-[300px] pr-2">
-            <div className="grid gap-2 sm:gap-3 grid-cols-1 sm:grid-cols-2">
-              {filteredInstitutePatterns.map(renderPatternCard)}
-            </div>
-            {filteredInstitutePatterns.length === 0 && (
-              <div className="text-center py-6 sm:py-8">
-                <p className="text-muted-foreground mb-3 text-sm">No custom patterns yet</p>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => navigate("/institute/exams-new/patterns/create")}
-                  className="h-8 sm:h-9 text-xs sm:text-sm"
-                >
-                  <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1 sm:mr-1.5" />
-                  Create Pattern
-                </Button>
-              </div>
-            )}
-          </ScrollArea>
-        </TabsContent>
-      </Tabs>
+      {/* Create custom pattern link */}
+      <div className="flex justify-center">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => navigate("/institute/exams-new/patterns/create")}
+          className="text-xs text-muted-foreground hover:text-primary"
+        >
+          <Plus className="w-3.5 h-3.5 mr-1" />
+          Create Custom Pattern
+        </Button>
+      </div>
 
       {/* Selected Pattern Preview */}
-      {selectedPattern && (
-        <div className="p-3 sm:p-4 rounded-lg bg-primary/5 border border-primary/20">
-          <div className="flex items-center gap-2 mb-1 sm:mb-2">
-            <Check className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-primary" />
-            <span className="font-medium text-xs sm:text-sm">Selected: {selectedPattern.name}</span>
+      <div ref={selectedPreviewRef}>
+        {selectedPattern && (
+          <div className="p-3 sm:p-4 rounded-lg bg-primary/5 border border-primary/20 animate-in fade-in-50 slide-in-from-bottom-2 duration-200">
+            <div className="flex items-center gap-2 mb-1 sm:mb-2">
+              <Check className="w-4 h-4 text-primary" />
+              <span className="font-medium text-sm">Selected: {selectedPattern.name}</span>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {selectedPattern.sections.length} sections • {getPatternTotalQuestions(selectedPattern)} questions • {formatDuration(selectedPattern.totalDuration)}
+            </p>
           </div>
-          <p className="text-[10px] sm:text-xs text-muted-foreground">
-            {selectedPattern.sections.length} sections • {getPatternTotalQuestions(selectedPattern)} questions • {formatDuration(selectedPattern.totalDuration)}
-          </p>
-        </div>
-      )}
+        )}
+      </div>
 
       {/* Navigation */}
-      <div className="flex justify-between pt-3 sm:pt-4 border-t gap-2">
-        <Button variant="outline" onClick={onBack} className="h-9 sm:h-10 text-xs sm:text-sm">
-          <ArrowLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5 sm:mr-2" />
+      <div className="flex flex-col-reverse sm:flex-row justify-between pt-4 border-t gap-3 pb-20 sm:pb-0">
+        <Button variant="outline" onClick={onBack} className="h-11 sm:h-10 text-sm">
+          <ArrowLeft className="w-4 h-4 mr-2" />
           Back
         </Button>
-        <Button onClick={onNext} disabled={!canProceed} className="h-9 sm:h-10 text-xs sm:text-sm">
+        <Button onClick={onNext} disabled={!canProceed} className="h-11 sm:h-10 text-sm">
           Next
-          <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 ml-1.5 sm:ml-2" />
+          <ArrowRight className="w-4 h-4 ml-2" />
         </Button>
       </div>
     </div>

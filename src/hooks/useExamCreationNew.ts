@@ -170,25 +170,39 @@ export function useExamCreationNew() {
   // ============================================
   
   const steps = useMemo(() => {
+    // Import icons dynamically based on step keys
+    // The stepper component will use these keys to render appropriate icons
     if (state.intent === "pattern") {
       const needsSubjectSelection = state.selectedPattern && !state.selectedPattern.hasFixedSubjects;
+      const baseSteps = [
+        { number: 1, title: "Exam Type", key: "intent" },
+        { number: 2, title: "Pattern", key: "pattern" },
+      ];
+      
+      if (needsSubjectSelection) {
+        return [
+          ...baseSteps,
+          { number: 3, title: "Subjects", key: "subjects" },
+          { number: 4, title: "Questions", key: "questions" },
+          { number: 5, title: "Assign", key: "batch" },
+        ];
+      }
+      
       return [
-        { number: 1, title: "Choose Type", key: "intent" },
-        { number: 2, title: "Select Pattern", key: "pattern" },
-        ...(needsSubjectSelection ? [{ number: 3, title: "Subjects", key: "subjects" }] : []),
-        { number: needsSubjectSelection ? 4 : 3, title: "Add Questions", key: "questions" },
-        { number: needsSubjectSelection ? 5 : 4, title: "Assign", key: "batch" },
+        ...baseSteps,
+        { number: 3, title: "Questions", key: "questions" },
+        { number: 4, title: "Assign", key: "batch" },
       ];
     } else if (state.intent === "quick_test") {
       return [
-        { number: 1, title: "Choose Type", key: "intent" },
+        { number: 1, title: "Exam Type", key: "intent" },
         { number: 2, title: "Subjects", key: "subjects" },
         { number: 3, title: "Configure", key: "config" },
-        { number: 4, title: "Add Questions", key: "questions" },
+        { number: 4, title: "Questions", key: "questions" },
         { number: 5, title: "Assign", key: "batch" },
       ];
     }
-    return [{ number: 1, title: "Choose Type", key: "intent" }];
+    return [{ number: 1, title: "Exam Type", key: "intent" }];
   }, [state.intent, state.selectedPattern]);
 
   const totalSteps = steps.length;
