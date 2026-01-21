@@ -26,11 +26,15 @@ import {
   formatDuration,
 } from "@/data/examPatternsData";
 import { useNavigate } from "react-router-dom";
+import { UITypeSelector, type UIType } from "../UITypeSelector";
 
 interface PatternSelectStepProps {
   selectedPatternId: string | null;
   selectedPattern: ExamPattern | null;
   onSelectPattern: (patternId: string) => void;
+  selectedUIType: UIType;
+  onSelectUIType: (type: UIType) => void;
+  canSelectRealExamUI: boolean;
   canProceed: boolean;
   onNext: () => void;
   onBack: () => void;
@@ -40,6 +44,9 @@ export function PatternSelectStep({
   selectedPatternId,
   selectedPattern,
   onSelectPattern,
+  selectedUIType,
+  onSelectUIType,
+  canSelectRealExamUI,
   canProceed,
   onNext,
   onBack,
@@ -227,14 +234,24 @@ export function PatternSelectStep({
       {/* Selected Pattern Preview */}
       <div ref={selectedPreviewRef}>
         {selectedPattern && (
-          <div className="p-3 sm:p-4 rounded-lg bg-primary/5 border border-primary/20 animate-in fade-in-50 slide-in-from-bottom-2 duration-200">
-            <div className="flex items-center gap-2 mb-1 sm:mb-2">
-              <Check className="w-4 h-4 text-primary" />
-              <span className="font-medium text-sm">Selected: {selectedPattern.name}</span>
+          <div className="space-y-4 animate-in fade-in-50 slide-in-from-bottom-2 duration-200">
+            <div className="p-3 sm:p-4 rounded-lg bg-primary/5 border border-primary/20">
+              <div className="flex items-center gap-2 mb-1 sm:mb-2">
+                <Check className="w-4 h-4 text-primary" />
+                <span className="font-medium text-sm">Selected: {selectedPattern.name}</span>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {selectedPattern.sections.length} sections • {getPatternTotalQuestions(selectedPattern)} questions • {formatDuration(selectedPattern.totalDuration)}
+              </p>
             </div>
-            <p className="text-xs text-muted-foreground">
-              {selectedPattern.sections.length} sections • {getPatternTotalQuestions(selectedPattern)} questions • {formatDuration(selectedPattern.totalDuration)}
-            </p>
+            
+            {/* UI Type Selector */}
+            <UITypeSelector
+              selectedUIType={selectedUIType}
+              onSelectUIType={onSelectUIType}
+              realExamUIAvailable={canSelectRealExamUI}
+              realExamUILabel={selectedPattern.realExamUILabel}
+            />
           </div>
         )}
       </div>
