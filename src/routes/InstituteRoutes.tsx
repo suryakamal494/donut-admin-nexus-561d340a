@@ -63,6 +63,7 @@ const InstitutePreviousYearPapers = lazy(() => import("@/pages/institute/exams/P
 const ExamsNew = lazy(() => import("@/pages/institute/exams-new/ExamsNew"));
 const ExamsNewPatterns = lazy(() => import("@/pages/institute/exams-new/Patterns"));
 const PatternBuilder = lazy(() => import("@/pages/institute/exams-new/PatternBuilder"));
+const PatternView = lazy(() => import("@/pages/institute/exams-new/PatternView"));
 const CreateExamNew = lazy(() => import("@/pages/institute/exams-new/CreateExamNew"));
 const InstitutePYPView = lazy(() => import("@/pages/institute/exams/PYPView"));
 
@@ -151,6 +152,7 @@ export default function InstituteRoutes() {
         <Route path="exams-new/create" element={<LazyPage><CreateExamNew /></LazyPage>} />
         <Route path="exams-new/patterns" element={<LazyPage><ExamsNewPatterns /></LazyPage>} />
         <Route path="exams-new/patterns/create" element={<LazyPage><PatternBuilder /></LazyPage>} />
+        <Route path="exams-new/patterns/:patternId" element={<LazyPage><PatternView /></LazyPage>} />
         <Route path="exams-new/patterns/:patternId/edit" element={<LazyPage><PatternBuilder /></LazyPage>} />
         
         {/* Master Data & Roles */}
