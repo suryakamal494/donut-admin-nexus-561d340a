@@ -57,6 +57,7 @@ interface QuestionAdditionStepProps {
   addedQuestions: AddedQuestion[];
   selectedBankQuestionIds: string[];
   toggleBankQuestion: (questionId: string, question: AddedQuestion) => void;
+  removeQuestion: (questionId: string) => void;
   uploadedFiles: File[];
   handleFileUpload: (files: File[]) => void;
   removeFile: (fileName: string) => void;
@@ -81,6 +82,7 @@ export function QuestionAdditionStep({
   addedQuestions,
   selectedBankQuestionIds,
   toggleBankQuestion,
+  removeQuestion,
   uploadedFiles,
   handleFileUpload,
   removeFile,
@@ -524,6 +526,8 @@ export function QuestionAdditionStep({
             totalRequired={totalQuestionsRequired}
             totalAdded={totalQuestionsAdded}
             isQuickTest={isQuickTest}
+            addedQuestions={addedQuestions}
+            onRemoveQuestion={removeQuestion}
           />
         </div>
       </div>
@@ -554,6 +558,8 @@ export function QuestionAdditionStep({
               totalRequired={totalQuestionsRequired}
               totalAdded={totalQuestionsAdded}
               isQuickTest={isQuickTest}
+              addedQuestions={addedQuestions}
+              onRemoveQuestion={removeQuestion}
             />
           </div>
         )}
