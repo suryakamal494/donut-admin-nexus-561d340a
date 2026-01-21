@@ -448,6 +448,14 @@ export function useExamCreationNew() {
     }));
   }, []);
 
+  const clearAllFiles = useCallback(() => {
+    setState(prev => ({
+      ...prev,
+      uploadedFiles: [],
+      isLargeUpload: false,
+    }));
+  }, []);
+
   // ============================================
   // BATCH ACTIONS
   // ============================================
@@ -576,6 +584,7 @@ export function useExamCreationNew() {
     // PDF actions
     handleFileUpload,
     removeFile,
+    clearAllFiles,
     
     // Batch actions
     toggleBatch,

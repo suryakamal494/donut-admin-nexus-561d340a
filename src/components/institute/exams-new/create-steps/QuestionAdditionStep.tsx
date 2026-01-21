@@ -39,6 +39,7 @@ import {
 import { ExamPattern, QuestionType, questionTypeLabels } from "@/data/examPatternsData";
 import { ProgressTracker } from "../ProgressTracker";
 import { AIGenerationPreview } from "../AIGenerationPreview";
+import { PDFUploadPreview } from "../PDFUploadPreview";
 import { 
   mockBankQuestions, 
   BankQuestion, 
@@ -63,6 +64,7 @@ interface QuestionAdditionStepProps {
   uploadedFiles: File[];
   handleFileUpload: (files: File[]) => void;
   removeFile: (fileName: string) => void;
+  clearAllFiles: () => void;
   isLargeUpload: boolean;
   sectionProgress: SectionProgress[];
   totalQuestionsRequired: number;
@@ -89,6 +91,7 @@ export function QuestionAdditionStep({
   uploadedFiles,
   handleFileUpload,
   removeFile,
+  clearAllFiles,
   isLargeUpload,
   sectionProgress,
   totalQuestionsRequired,
@@ -104,6 +107,7 @@ export function QuestionAdditionStep({
   const [typeFilter, setTypeFilter] = useState<string | null>(null);
   const [showMobileProgress, setShowMobileProgress] = useState(false);
   const [showAIPreview, setShowAIPreview] = useState(false);
+  const [showPDFPreview, setShowPDFPreview] = useState(false);
 
   // Filter questions based on selected subjects and filters
   const filteredQuestions = useMemo(() => {
@@ -516,7 +520,10 @@ export function QuestionAdditionStep({
                     </div>
                   )}
 
-                  <Button className="w-full gap-2 h-9 sm:h-10 text-xs sm:text-sm">
+                  <Button 
+                    onClick={() => setShowPDFPreview(true)} 
+                    className="w-full gap-2 h-9 sm:h-10 text-xs sm:text-sm"
+                  >
                     <Upload className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                     Process PDFs
                   </Button>
@@ -601,6 +608,17 @@ export function QuestionAdditionStep({
         subjects={selectedSubjects}
         aiConfig={aiConfig}
         onAcceptQuestions={addQuestions}
+        sectionId={sectionProgress.length > 0 ? sectionProgress[0].sectionId : undefined}
+      />
+
+      {/* PDF Upload Preview */}
+      <PDFUploadPreview
+        open={showPDFPreview}
+        onOpenChange={setShowPDFPreview}
+        files={uploadedFiles}
+        subjects={selectedSubjects}
+        onAcceptQuestions={addQuestions}
+        onClearFiles={clearAllFiles}
         sectionId={sectionProgress.length > 0 ? sectionProgress[0].sectionId : undefined}
       />
     </div>
