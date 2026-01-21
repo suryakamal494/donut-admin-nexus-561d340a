@@ -110,6 +110,10 @@ const InstituteSidebar = ({ collapsed, onToggle, isMobile, onMobileClose }: Inst
     if (href === "/institute/timetable/view") {
       return currentPath === href;
     }
+    // Special handling for /institute/exams to not match /institute/exams-new
+    if (href === "/institute/exams") {
+      return currentPath === href || (currentPath.startsWith("/institute/exams/") && !currentPath.startsWith("/institute/exams-new"));
+    }
     return currentPath.startsWith(href);
   };
 
