@@ -1,13 +1,11 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Slider } from "@/components/ui/slider";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
   ArrowLeft,
   ArrowRight,
@@ -20,12 +18,6 @@ import {
   AlertCircle,
   ChevronDown,
   ChevronUp,
-  Image,
-  Calculator,
-  BookOpen,
-  Columns,
-  CheckCircle2,
-  HelpCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -36,17 +28,12 @@ import {
   availableSubjects,
   cognitiveTypes,
 } from "@/hooks/useExamCreationNew";
-import { ExamPattern, QuestionType, questionTypeLabels } from "@/data/examPatternsData";
+import { ExamPattern } from "@/data/examPatternsData";
 import { ProgressTracker } from "../ProgressTracker";
 import { AIGenerationPreview } from "../AIGenerationPreview";
 import { PDFUploadPreview } from "../PDFUploadPreview";
-import { 
-  mockBankQuestions, 
-  BankQuestion, 
-  passages, 
-  getPassageById,
-  groupQuestionsByPassage 
-} from "@/data/examQuestionBankData";
+import { VirtualizedQuestionList } from "../VirtualizedQuestionList";
+import { mockBankQuestions } from "@/data/examQuestionBankData";
 
 interface QuestionAdditionStepProps {
   selectedPattern: ExamPattern | null;
@@ -121,11 +108,6 @@ export function QuestionAdditionStep({
     });
   }, [selectedSubjects, searchQuery, difficultyFilter, subjectFilter, typeFilter]);
 
-  // Group questions by passage for display
-  const { standalone, passageGroups } = useMemo(() => {
-    return groupQuestionsByPassage(filteredQuestions);
-  }, [filteredQuestions]);
-
   const handleFileDrop = (e: React.DragEvent) => {
     e.preventDefault();
     const files = Array.from(e.dataTransfer.files).filter(f => f.type === "application/pdf");
@@ -135,120 +117,6 @@ export function QuestionAdditionStep({
   const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     if (files.length > 0) handleFileUpload(files);
-  };
-
-  const difficultyColors = {
-    easy: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
-    medium: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
-    hard: "bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400",
-  };
-
-  // Render a single question card
-  const renderQuestionCard = (question: BankQuestion) => {
-    const isSelected = selectedBankQuestionIds.includes(question.id);
-
-    return (
-      <Card
-        key={question.id}
-        className={cn(
-          "cursor-pointer transition-all",
-          isSelected ? "border-primary bg-primary/5 ring-1 ring-primary/20" : "hover:border-primary/50"
-        )}
-        onClick={() =>
-          toggleBankQuestion(question.id, {
-            id: question.id,
-            text: question.text,
-            type: question.type,
-            subject: question.subject,
-            difficulty: question.difficulty,
-            cognitiveType: question.cognitiveType,
-            marks: question.marks || 4,
-            source: "bank",
-          })
-        }
-      >
-        <CardContent className="p-2.5 sm:p-3">
-          <div className="flex items-start gap-2 sm:gap-3">
-            <Checkbox checked={isSelected} className="mt-0.5 shrink-0" />
-            <div className="flex-1 min-w-0">
-              {/* Question text - truncate LaTeX for display */}
-              <p className="text-xs sm:text-sm line-clamp-2">
-                {question.text.replace(/\$[^$]+\$/g, '[formula]').substring(0, 150)}
-                {question.text.length > 150 ? '...' : ''}
-              </p>
-              
-              {/* Content indicators */}
-              <div className="flex flex-wrap gap-1 sm:gap-1.5 mt-1.5 sm:mt-2">
-                {/* Subject */}
-                <Badge variant="outline" className="text-[9px] sm:text-[10px] capitalize px-1 sm:px-1.5">
-                  {question.subject}
-                </Badge>
-                
-                {/* Difficulty */}
-                <Badge className={cn("text-[9px] sm:text-[10px] px-1 sm:px-1.5", difficultyColors[question.difficulty])}>
-                  {question.difficulty}
-                </Badge>
-                
-                {/* Question Type */}
-                <Badge variant="secondary" className="text-[9px] sm:text-[10px] px-1 sm:px-1.5 hidden sm:inline-flex">
-                  {questionTypeLabels[question.type]}
-                </Badge>
-                
-                {/* Math indicator */}
-                {question.hasMath && (
-                  <Badge variant="outline" className="text-[9px] sm:text-[10px] px-1 sm:px-1.5 gap-0.5">
-                    <Calculator className="w-2.5 h-2.5" />
-                    <span className="hidden sm:inline">Math</span>
-                  </Badge>
-                )}
-                
-                {/* Image indicator */}
-                {question.hasImage && (
-                  <Badge variant="outline" className="text-[9px] sm:text-[10px] px-1 sm:px-1.5 gap-0.5">
-                    <Image className="w-2.5 h-2.5" />
-                    <span className="hidden sm:inline">Image</span>
-                  </Badge>
-                )}
-                
-                {/* Matrix match indicator */}
-                {question.type === "match_the_following" && (
-                  <Badge variant="outline" className="text-[9px] sm:text-[10px] px-1 sm:px-1.5 gap-0.5">
-                    <Columns className="w-2.5 h-2.5" />
-                    <span className="hidden sm:inline">Matrix</span>
-                  </Badge>
-                )}
-                
-                {/* Multiple correct indicator */}
-                {question.type === "multiple_correct" && (
-                  <Badge variant="outline" className="text-[9px] sm:text-[10px] px-1 sm:px-1.5 gap-0.5">
-                    <CheckCircle2 className="w-2.5 h-2.5" />
-                    <span className="hidden sm:inline">Multi</span>
-                  </Badge>
-                )}
-                
-                {/* Assertion-Reasoning indicator */}
-                {question.type === "assertion_reasoning" && (
-                  <Badge variant="outline" className="text-[9px] sm:text-[10px] px-1 sm:px-1.5 gap-0.5">
-                    <HelpCircle className="w-2.5 h-2.5" />
-                    <span className="hidden sm:inline">A&R</span>
-                  </Badge>
-                )}
-              </div>
-              
-              {/* Marks */}
-              <div className="flex items-center justify-between mt-1.5">
-                <span className="text-[10px] text-muted-foreground">
-                  {question.chapter}
-                </span>
-                <span className="text-[10px] font-medium text-muted-foreground">
-                  {question.marks} marks
-                </span>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    );
   };
 
   return (
@@ -397,58 +265,12 @@ export function QuestionAdditionStep({
                 </div>
               </div>
 
-              {/* Questions List with Passage Groups */}
-              <ScrollArea className="h-[320px] sm:h-[400px] pr-2">
-                <div className="space-y-3">
-                  {/* Passage-based Questions */}
-                  {passageGroups.map(({ passage, questions }) => (
-                    <div key={passage.id} className="border rounded-lg overflow-hidden">
-                      {/* Passage Header */}
-                      <div className="bg-muted/50 p-2.5 sm:p-3 border-b">
-                        <div className="flex items-center gap-2 mb-1.5">
-                          <BookOpen className="w-3.5 h-3.5 text-primary" />
-                          <span className="text-xs sm:text-sm font-medium">Passage-Based Questions</span>
-                          <Badge variant="secondary" className="text-[9px] capitalize ml-auto">
-                            {passage.subject}
-                          </Badge>
-                        </div>
-                        <p className="text-[10px] sm:text-xs text-muted-foreground line-clamp-3">
-                          {passage.text.replace(/\$[^$]+\$/g, '[formula]').replace(/\[Image:[^\]]+\]/g, '[diagram]').substring(0, 200)}...
-                        </p>
-                        <div className="flex gap-1 mt-1.5">
-                          {passage.hasMath && (
-                            <Badge variant="outline" className="text-[8px] px-1 gap-0.5">
-                              <Calculator className="w-2 h-2" />
-                              Math
-                            </Badge>
-                          )}
-                          {passage.hasImage && (
-                            <Badge variant="outline" className="text-[8px] px-1 gap-0.5">
-                              <Image className="w-2 h-2" />
-                              Diagram
-                            </Badge>
-                          )}
-                        </div>
-                      </div>
-                      {/* Passage Questions */}
-                      <div className="p-2 space-y-2">
-                        {questions.map(renderQuestionCard)}
-                      </div>
-                    </div>
-                  ))}
-
-                  {/* Standalone Questions */}
-                  {standalone.map(renderQuestionCard)}
-
-                  {filteredQuestions.length === 0 && (
-                    <div className="text-center py-6 sm:py-8 text-muted-foreground">
-                      <AlertCircle className="w-6 h-6 sm:w-8 sm:h-8 mx-auto mb-2 opacity-50" />
-                      <p className="text-xs sm:text-sm">No questions found</p>
-                      <p className="text-[10px] sm:text-xs mt-1">Try adjusting your filters</p>
-                    </div>
-                  )}
-                </div>
-              </ScrollArea>
+              {/* Virtualized Questions List */}
+              <VirtualizedQuestionList
+                questions={filteredQuestions}
+                selectedQuestionIds={selectedBankQuestionIds}
+                onToggleQuestion={toggleBankQuestion}
+              />
 
               {/* Selection Summary */}
               <div className="flex items-center justify-between p-2 sm:p-2.5 rounded-lg bg-muted/50">
