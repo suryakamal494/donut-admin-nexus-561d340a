@@ -1,8 +1,9 @@
-import { useRef, useMemo, useCallback } from "react";
+import { useRef, useMemo, useCallback, useState } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Button } from "@/components/ui/button";
 import {
   AlertCircle,
   Image,
@@ -11,6 +12,7 @@ import {
   Columns,
   CheckCircle2,
   HelpCircle,
+  Eye,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { AddedQuestion } from "@/hooks/useExamCreationNew";
@@ -20,6 +22,7 @@ import {
   Passage,
   groupQuestionsByPassage 
 } from "@/data/examQuestionBankData";
+import { QuestionPreviewModal } from "./QuestionPreviewModal";
 
 interface VirtualizedQuestionListProps {
   questions: BankQuestion[];
@@ -44,6 +47,8 @@ export function VirtualizedQuestionList({
   onToggleQuestion,
 }: VirtualizedQuestionListProps) {
   const parentRef = useRef<HTMLDivElement>(null);
+  const [previewQuestion, setPreviewQuestion] = useState<BankQuestion | null>(null);
+  const [showPreview, setShowPreview] = useState(false);
 
   // Transform questions into flat virtual items list
   const virtualItems = useMemo<VirtualItem[]>(() => {
@@ -149,6 +154,13 @@ export function VirtualizedQuestionList({
     </div>
   );
 
+  // Open preview
+  const handlePreview = useCallback((question: BankQuestion, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setPreviewQuestion(question);
+    setShowPreview(true);
+  }, []);
+
   // Render question card
   const renderQuestionCard = (question: BankQuestion, isPassageQuestion?: boolean) => {
     const isSelected = selectedQuestionIds.includes(question.id);
@@ -156,7 +168,7 @@ export function VirtualizedQuestionList({
     return (
       <Card
         className={cn(
-          "cursor-pointer transition-all",
+          "cursor-pointer transition-all group",
           isSelected ? "border-primary bg-primary/5 ring-1 ring-primary/20" : "hover:border-primary/50",
           isPassageQuestion && "ml-2 sm:ml-3 border-l-2 border-l-primary/30"
         )}
@@ -219,7 +231,7 @@ export function VirtualizedQuestionList({
               
               {/* Chapter & Marks */}
               <div className="flex items-center justify-between mt-1.5">
-                <span className="text-[10px] text-muted-foreground truncate max-w-[150px]">
+                <span className="text-[10px] text-muted-foreground truncate max-w-[120px]">
                   {question.chapter}
                 </span>
                 <span className="text-[10px] font-medium text-muted-foreground">
@@ -227,6 +239,16 @@ export function VirtualizedQuestionList({
                 </span>
               </div>
             </div>
+            
+            {/* Preview button */}
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+              onClick={(e) => handlePreview(question, e)}
+            >
+              <Eye className="w-4 h-4" />
+            </Button>
           </div>
         </CardContent>
       </Card>
@@ -242,41 +264,59 @@ export function VirtualizedQuestionList({
     </div>
   );
 
-  return (
-    <div
-      ref={parentRef}
-      className="h-[320px] sm:h-[400px] overflow-auto pr-2"
-      style={{ contain: "strict" }}
-    >
-      <div
-        style={{
-          height: `${virtualizer.getTotalSize()}px`,
-          width: "100%",
-          position: "relative",
-        }}
-      >
-        {virtualizer.getVirtualItems().map((virtualRow) => {
-          const item = virtualItems[virtualRow.index];
-          if (!item) return null;
+  // Handle toggle from preview modal
+  const handleToggleFromPreview = useCallback(() => {
+    if (previewQuestion) {
+      handleToggle(previewQuestion);
+    }
+  }, [previewQuestion, handleToggle]);
 
-          return (
-            <div
-              key={virtualRow.key}
-              style={{
-                position: "absolute",
-                top: 0,
-                left: 0,
-                width: "100%",
-                transform: `translateY(${virtualRow.start}px)`,
-              }}
-            >
-              {item.type === "passage-header" && renderPassageHeader(item.passage, item.questionCount)}
-              {item.type === "question" && renderQuestionCard(item.question, item.isPassageQuestion)}
-              {item.type === "empty" && renderEmpty()}
-            </div>
-          );
-        })}
+  return (
+    <>
+      <div
+        ref={parentRef}
+        className="h-[320px] sm:h-[400px] overflow-auto pr-2"
+        style={{ contain: "strict" }}
+      >
+        <div
+          style={{
+            height: `${virtualizer.getTotalSize()}px`,
+            width: "100%",
+            position: "relative",
+          }}
+        >
+          {virtualizer.getVirtualItems().map((virtualRow) => {
+            const item = virtualItems[virtualRow.index];
+            if (!item) return null;
+
+            return (
+              <div
+                key={virtualRow.key}
+                style={{
+                  position: "absolute",
+                  top: 0,
+                  left: 0,
+                  width: "100%",
+                  transform: `translateY(${virtualRow.start}px)`,
+                }}
+              >
+                {item.type === "passage-header" && renderPassageHeader(item.passage, item.questionCount)}
+                {item.type === "question" && renderQuestionCard(item.question, item.isPassageQuestion)}
+                {item.type === "empty" && renderEmpty()}
+              </div>
+            );
+          })}
+        </div>
       </div>
-    </div>
+
+      {/* Question Preview Modal */}
+      <QuestionPreviewModal
+        question={previewQuestion}
+        open={showPreview}
+        onOpenChange={setShowPreview}
+        isSelected={previewQuestion ? selectedQuestionIds.includes(previewQuestion.id) : false}
+        onToggleSelect={handleToggleFromPreview}
+      />
+    </>
   );
 }
