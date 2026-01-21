@@ -97,6 +97,7 @@ const CreateExamNew = () => {
           uploadedFiles={exam.uploadedFiles}
           handleFileUpload={exam.handleFileUpload}
           removeFile={exam.removeFile}
+          clearAllFiles={exam.clearAllFiles}
           isLargeUpload={exam.isLargeUpload}
           sectionProgress={exam.sectionProgress}
           totalQuestionsRequired={exam.totalQuestionsRequired}
