@@ -57,6 +57,7 @@ const PatternBuilder = () => {
             removeSection={builder.removeSection}
             updateSection={builder.updateSection}
             duplicateSection={builder.duplicateSection}
+            reorderSections={builder.reorderSections}
             canProceed={builder.canProceedStep3}
             onNext={builder.nextStep}
             onBack={builder.prevStep}
