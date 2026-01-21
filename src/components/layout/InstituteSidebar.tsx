@@ -72,6 +72,16 @@ const navItems: NavItem[] = [
   { title: "Question Bank", icon: FileQuestion, href: "/institute/questions" },
   { title: "Content Library", icon: Library, href: "/institute/content" },
   { title: "Exams", icon: ClipboardList, href: "/institute/exams" },
+  { 
+    title: "Exams New", 
+    icon: ClipboardList, 
+    href: "/institute/exams-new",
+    badge: "New",
+    subItems: [
+      { title: "Exams", icon: ClipboardList, href: "/institute/exams-new" },
+      { title: "Exam Patterns", icon: Library, href: "/institute/exams-new/patterns" },
+    ]
+  },
   { title: "Master Data", icon: Database, href: "/institute/master-data" },
   { title: "Roles & Access", icon: Shield, href: "/institute/roles" },
   { title: "Settings", icon: Settings, href: "/institute/settings" },
