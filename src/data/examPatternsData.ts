@@ -82,6 +82,11 @@ export interface ExamPattern {
   defaultNegativeMarks: number;
   hasPartialMarking: boolean;
   
+  // Real Exam UI Configuration
+  realExamUIAvailable: boolean; // true if this pattern has a specialized real-exam interface
+  realExamUIId: string | null; // e.g., "jee-main-nta", "jee-advanced-iit", "neet-nta"
+  realExamUILabel: string | null; // User-friendly label e.g., "NTA JEE Main Interface"
+  
   // Metadata
   category: 'competitive' | 'board' | 'custom';
   tags: string[];
@@ -102,6 +107,9 @@ const jeeMainPattern: ExamPattern = {
   subjects: ['physics', 'chemistry', 'mathematics'],
   totalDuration: 180,
   hasSectionWiseTime: false,
+  realExamUIAvailable: true,
+  realExamUIId: 'jee-main-nta',
+  realExamUILabel: 'NTA JEE Main Interface',
   sections: [
     // Physics Section A - MCQ
     {
@@ -214,6 +222,9 @@ const jeeAdvancedPattern: ExamPattern = {
   subjects: ['physics', 'chemistry', 'mathematics'],
   totalDuration: 180,
   hasSectionWiseTime: false,
+  realExamUIAvailable: true,
+  realExamUIId: 'jee-advanced-iit',
+  realExamUILabel: 'IIT JEE Advanced Interface',
   sections: [
     // Physics Section 1 - Single Correct
     {
@@ -416,6 +427,9 @@ const neetPattern: ExamPattern = {
   subjects: ['physics', 'chemistry', 'biology'],
   totalDuration: 200,
   hasSectionWiseTime: false,
+  realExamUIAvailable: true,
+  realExamUIId: 'neet-nta',
+  realExamUILabel: 'NTA NEET Interface',
   sections: [
     // Physics Section A
     {
@@ -528,6 +542,9 @@ const cbse10thPattern: ExamPattern = {
   subjects: [],
   totalDuration: 180,
   hasSectionWiseTime: false,
+  realExamUIAvailable: false,
+  realExamUIId: null,
+  realExamUILabel: null,
   sections: [
     {
       id: 'cbse10-sec-a',
@@ -620,6 +637,9 @@ const cbse12thPattern: ExamPattern = {
   subjects: [],
   totalDuration: 180,
   hasSectionWiseTime: false,
+  realExamUIAvailable: false,
+  realExamUIId: null,
+  realExamUILabel: null,
   sections: [
     {
       id: 'cbse12-sec-a',
@@ -730,6 +750,9 @@ const weeklyPhysicsTest: ExamPattern = {
   subjects: ['physics'],
   totalDuration: 45,
   hasSectionWiseTime: false,
+  realExamUIAvailable: false,
+  realExamUIId: null,
+  realExamUILabel: null,
   sections: [
     {
       id: 'weekly-phy-mcq',
@@ -780,6 +803,9 @@ const monthlyAssessment: ExamPattern = {
   subjects: [],
   totalDuration: 120,
   hasSectionWiseTime: false,
+  realExamUIAvailable: false,
+  realExamUIId: null,
+  realExamUILabel: null,
   sections: [
     {
       id: 'monthly-sec-a',
@@ -844,6 +870,9 @@ const chapterTest: ExamPattern = {
   subjects: [],
   totalDuration: 30,
   hasSectionWiseTime: false,
+  realExamUIAvailable: false,
+  realExamUIId: null,
+  realExamUILabel: null,
   sections: [
     {
       id: 'chapter-mcq',

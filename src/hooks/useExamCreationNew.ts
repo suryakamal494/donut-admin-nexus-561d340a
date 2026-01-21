@@ -15,6 +15,7 @@ import {
 
 export type Intent = "pattern" | "quick_test" | null;
 export type CreationMethod = "ai" | "bank" | "pdf";
+export type UIType = "platform" | "real_exam";
 
 export interface AddedQuestion {
   id: string;
@@ -59,6 +60,9 @@ export interface ExamCreationNewState {
   // Pattern path
   selectedPatternId: string | null;
   selectedPattern: ExamPattern | null;
+  
+  // UI Type (Platform UI vs Real Exam UI)
+  selectedUIType: UIType;
   
   // Subjects (for generic patterns or quick test)
   selectedSubjects: string[];
@@ -136,6 +140,7 @@ export function useExamCreationNew() {
     intent: preselectedPattern ? "pattern" : null,
     selectedPatternId: preselectedPatternId,
     selectedPattern: preselectedPattern,
+    selectedUIType: "platform",
     selectedSubjects: preselectedPattern?.hasFixedSubjects ? preselectedPattern.subjects : [],
     quickTestConfig: {
       totalQuestions: 20,
@@ -287,8 +292,29 @@ export function useExamCreationNew() {
       selectedPattern: pattern || null,
       selectedSubjects: pattern?.hasFixedSubjects ? pattern.subjects : prev.selectedSubjects,
       examName: pattern ? `${pattern.name} - Test` : prev.examName,
+      // Reset UI type to platform when pattern changes, unless the new pattern supports real exam UI
+      selectedUIType: pattern?.realExamUIAvailable ? prev.selectedUIType : "platform",
     }));
   }, []);
+
+  // ============================================
+  // UI TYPE ACTIONS
+  // ============================================
+  
+  const setSelectedUIType = useCallback((type: UIType) => {
+    setState(prev => {
+      // Only allow real_exam if the pattern supports it
+      if (type === "real_exam" && !prev.selectedPattern?.realExamUIAvailable) {
+        return prev;
+      }
+      return { ...prev, selectedUIType: type };
+    });
+  }, []);
+
+  // Computed: Check if real exam UI is available for current pattern
+  const canSelectRealExamUI = useMemo(() => {
+    return state.selectedPattern?.realExamUIAvailable === true;
+  }, [state.selectedPattern]);
 
   // ============================================
   // SUBJECT ACTIONS
@@ -553,12 +579,16 @@ export function useExamCreationNew() {
     totalQuestionsAdded,
     questionsRemaining,
     allPatterns: allExamPatterns,
+    canSelectRealExamUI,
     
     // Intent actions
     setIntent,
     
     // Pattern actions
     selectPattern,
+    
+    // UI Type actions
+    setSelectedUIType,
     
     // Subject actions
     toggleSubject,

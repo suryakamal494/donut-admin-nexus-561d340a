@@ -43,6 +43,9 @@ const CreateExamNew = () => {
           selectedPatternId={exam.selectedPatternId}
           selectedPattern={exam.selectedPattern}
           onSelectPattern={exam.selectPattern}
+          selectedUIType={exam.selectedUIType}
+          onSelectUIType={exam.setSelectedUIType}
+          canSelectRealExamUI={exam.canSelectRealExamUI}
           canProceed={exam.canProceedPattern}
           onNext={exam.nextStep}
           onBack={exam.prevStep}
