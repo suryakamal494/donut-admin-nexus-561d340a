@@ -38,6 +38,7 @@ import {
 } from "@/hooks/useExamCreationNew";
 import { ExamPattern, QuestionType, questionTypeLabels } from "@/data/examPatternsData";
 import { ProgressTracker } from "../ProgressTracker";
+import { AIGenerationPreview } from "../AIGenerationPreview";
 import { 
   mockBankQuestions, 
   BankQuestion, 
@@ -57,6 +58,7 @@ interface QuestionAdditionStepProps {
   addedQuestions: AddedQuestion[];
   selectedBankQuestionIds: string[];
   toggleBankQuestion: (questionId: string, question: AddedQuestion) => void;
+  addQuestions: (questions: AddedQuestion[]) => void;
   removeQuestion: (questionId: string) => void;
   uploadedFiles: File[];
   handleFileUpload: (files: File[]) => void;
@@ -82,6 +84,7 @@ export function QuestionAdditionStep({
   addedQuestions,
   selectedBankQuestionIds,
   toggleBankQuestion,
+  addQuestions,
   removeQuestion,
   uploadedFiles,
   handleFileUpload,
@@ -100,6 +103,7 @@ export function QuestionAdditionStep({
   const [subjectFilter, setSubjectFilter] = useState<string | null>(null);
   const [typeFilter, setTypeFilter] = useState<string | null>(null);
   const [showMobileProgress, setShowMobileProgress] = useState(false);
+  const [showAIPreview, setShowAIPreview] = useState(false);
 
   // Filter questions based on selected subjects and filters
   const filteredQuestions = useMemo(() => {
@@ -327,7 +331,10 @@ export function QuestionAdditionStep({
                 </CardContent>
               </Card>
 
-              <Button className="w-full gap-2 h-9 sm:h-10 text-xs sm:text-sm">
+              <Button 
+                onClick={() => setShowAIPreview(true)} 
+                className="w-full gap-2 h-10 sm:h-11 text-xs sm:text-sm"
+              >
                 <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                 Generate Questions
               </Button>
@@ -576,16 +583,26 @@ export function QuestionAdditionStep({
       )}
 
       {/* Navigation */}
-      <div className="flex justify-between pt-3 sm:pt-4 border-t gap-2">
-        <Button variant="outline" onClick={onBack} className="h-9 sm:h-10 text-xs sm:text-sm">
-          <ArrowLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5 sm:mr-2" />
+      <div className="flex flex-col-reverse sm:flex-row justify-between pt-4 border-t gap-3 pb-20 sm:pb-0">
+        <Button variant="outline" onClick={onBack} className="h-11 sm:h-10 text-sm">
+          <ArrowLeft className="w-4 h-4 mr-2" />
           Back
         </Button>
-        <Button onClick={onNext} disabled={!canProceed} className="h-9 sm:h-10 text-xs sm:text-sm">
+        <Button onClick={onNext} disabled={!canProceed} className="h-11 sm:h-10 text-sm">
           Next
-          <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 ml-1.5 sm:ml-2" />
+          <ArrowRight className="w-4 h-4 ml-2" />
         </Button>
       </div>
+
+      {/* AI Generation Preview */}
+      <AIGenerationPreview
+        open={showAIPreview}
+        onOpenChange={setShowAIPreview}
+        subjects={selectedSubjects}
+        aiConfig={aiConfig}
+        onAcceptQuestions={addQuestions}
+        sectionId={sectionProgress.length > 0 ? sectionProgress[0].sectionId : undefined}
+      />
     </div>
   );
 }

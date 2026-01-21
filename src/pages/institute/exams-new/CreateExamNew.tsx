@@ -92,6 +92,7 @@ const CreateExamNew = () => {
           addedQuestions={exam.addedQuestions}
           selectedBankQuestionIds={exam.selectedBankQuestionIds}
           toggleBankQuestion={exam.toggleBankQuestion}
+          addQuestions={exam.addQuestions}
           removeQuestion={exam.removeQuestion}
           uploadedFiles={exam.uploadedFiles}
           handleFileUpload={exam.handleFileUpload}
