@@ -114,7 +114,7 @@ const PatternBuilder = () => {
   };
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-4 sm:space-y-6 animate-fade-in pb-20 sm:pb-6">
       <PageHeader
         title={builder.isEditing ? "Edit Pattern" : "Create Pattern"}
         description={builder.isEditing ? "Modify your exam pattern configuration" : "Build a reusable exam pattern template"}
@@ -128,7 +128,7 @@ const PatternBuilder = () => {
 
       <PatternStepper currentStep={builder.currentStep} totalSteps={builder.totalSteps} />
 
-      <div className="bg-card rounded-2xl p-4 sm:p-8 shadow-soft border border-border/50 max-w-2xl mx-auto">
+      <div className="bg-card rounded-xl sm:rounded-2xl p-3 sm:p-6 lg:p-8 shadow-soft border border-border/50 max-w-xl sm:max-w-2xl lg:max-w-3xl mx-auto">
         {getStepContent()}
       </div>
     </div>
