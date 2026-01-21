@@ -180,6 +180,7 @@ export function MarkingStep({
                     variant={defaultNegativeMarks === preset ? "default" : "outline"}
                     size="sm"
                     onClick={() => setDefaultNegativeMarks(preset)}
+                    className="h-10 sm:h-9 min-w-[50px]"
                   >
                     −{preset}
                   </Button>
@@ -235,12 +236,12 @@ export function MarkingStep({
       </div>
 
       {/* Navigation */}
-      <div className="flex justify-between pt-4 border-t">
-        <Button variant="outline" onClick={onBack}>
+      <div className="flex flex-col-reverse sm:flex-row justify-between gap-3 pt-4 border-t pb-20 sm:pb-0">
+        <Button variant="outline" onClick={onBack} className="h-11 sm:h-10">
           <ArrowLeft className="w-4 h-4 mr-2" />
           Back
         </Button>
-        <Button onClick={onNext} disabled={!canProceed}>
+        <Button onClick={onNext} disabled={!canProceed} className="h-11 sm:h-10">
           Next
           <ArrowRight className="w-4 h-4 ml-2" />
         </Button>

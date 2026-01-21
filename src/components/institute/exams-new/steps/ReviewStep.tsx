@@ -83,26 +83,26 @@ export function ReviewStep({
       </div>
 
       {/* Summary Stats */}
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-3 gap-2 sm:gap-3">
         <Card className="bg-primary/5 border-primary/20">
-          <CardContent className="p-4 text-center">
-            <FileQuestion className="w-6 h-6 mx-auto text-primary mb-1" />
-            <p className="text-2xl font-bold">{totalQuestions}</p>
-            <p className="text-xs text-muted-foreground">Questions</p>
+          <CardContent className="p-3 sm:p-4 text-center">
+            <FileQuestion className="w-5 h-5 sm:w-6 sm:h-6 mx-auto text-primary mb-1" />
+            <p className="text-xl sm:text-2xl font-bold">{totalQuestions}</p>
+            <p className="text-[10px] sm:text-xs text-muted-foreground">Questions</p>
           </CardContent>
         </Card>
         <Card className="bg-primary/5 border-primary/20">
-          <CardContent className="p-4 text-center">
-            <Award className="w-6 h-6 mx-auto text-primary mb-1" />
-            <p className="text-2xl font-bold">{totalMarks}</p>
-            <p className="text-xs text-muted-foreground">Total Marks</p>
+          <CardContent className="p-3 sm:p-4 text-center">
+            <Award className="w-5 h-5 sm:w-6 sm:h-6 mx-auto text-primary mb-1" />
+            <p className="text-xl sm:text-2xl font-bold">{totalMarks}</p>
+            <p className="text-[10px] sm:text-xs text-muted-foreground">Total Marks</p>
           </CardContent>
         </Card>
         <Card className="bg-primary/5 border-primary/20">
-          <CardContent className="p-4 text-center">
-            <Clock className="w-6 h-6 mx-auto text-primary mb-1" />
-            <p className="text-2xl font-bold">{formatDuration(totalDuration)}</p>
-            <p className="text-xs text-muted-foreground">Duration</p>
+          <CardContent className="p-3 sm:p-4 text-center">
+            <Clock className="w-5 h-5 sm:w-6 sm:h-6 mx-auto text-primary mb-1" />
+            <p className="text-xl sm:text-2xl font-bold">{formatDuration(totalDuration)}</p>
+            <p className="text-[10px] sm:text-xs text-muted-foreground">Duration</p>
           </CardContent>
         </Card>
       </div>
@@ -116,9 +116,9 @@ export function ReviewStep({
               variant="ghost" 
               size="sm" 
               onClick={() => goToStep(1)}
-              className="h-8 text-xs"
+              className="h-10 sm:h-8 text-xs min-w-[60px]"
             >
-              <Edit className="w-3.5 h-3.5 mr-1" />
+              <Edit className="w-4 h-4 mr-1" />
               Edit
             </Button>
           </div>
@@ -168,9 +168,9 @@ export function ReviewStep({
               variant="ghost" 
               size="sm" 
               onClick={() => goToStep(3)}
-              className="h-8 text-xs"
+              className="h-10 sm:h-8 text-xs min-w-[60px]"
             >
-              <Edit className="w-3.5 h-3.5 mr-1" />
+              <Edit className="w-4 h-4 mr-1" />
               Edit
             </Button>
           </div>
@@ -249,9 +249,9 @@ export function ReviewStep({
               variant="ghost" 
               size="sm" 
               onClick={() => goToStep(4)}
-              className="h-8 text-xs"
+              className="h-10 sm:h-8 text-xs min-w-[60px]"
             >
-              <Edit className="w-3.5 h-3.5 mr-1" />
+              <Edit className="w-4 h-4 mr-1" />
               Edit
             </Button>
           </div>
@@ -287,12 +287,12 @@ export function ReviewStep({
       </Card>
 
       {/* Navigation */}
-      <div className="flex justify-between pt-4 border-t">
-        <Button variant="outline" onClick={onBack} disabled={isProcessing}>
+      <div className="flex flex-col-reverse sm:flex-row justify-between gap-3 pt-4 border-t pb-20 sm:pb-0">
+        <Button variant="outline" onClick={onBack} disabled={isProcessing} className="h-11 sm:h-10">
           <ArrowLeft className="w-4 h-4 mr-2" />
           Back
         </Button>
-        <Button onClick={onSave} disabled={isProcessing}>
+        <Button onClick={onSave} disabled={isProcessing} className="h-11 sm:h-10">
           {isProcessing ? (
             <>
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
