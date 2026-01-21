@@ -20,6 +20,12 @@ import {
   AlertCircle,
   ChevronDown,
   ChevronUp,
+  Image,
+  Calculator,
+  BookOpen,
+  Columns,
+  CheckCircle2,
+  HelpCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -32,20 +38,13 @@ import {
 } from "@/hooks/useExamCreationNew";
 import { ExamPattern, QuestionType, questionTypeLabels } from "@/data/examPatternsData";
 import { ProgressTracker } from "../ProgressTracker";
-
-// Mock questions for the bank
-const mockBankQuestions = [
-  { id: "q1", text: "What is Newton's first law of motion?", type: "single_correct" as QuestionType, subject: "physics", difficulty: "easy", cognitiveType: "conceptual", chapter: "Laws of Motion" },
-  { id: "q2", text: "Calculate the acceleration of a 5kg mass with 10N force.", type: "numerical" as QuestionType, subject: "physics", difficulty: "medium", cognitiveType: "numerical", chapter: "Laws of Motion" },
-  { id: "q3", text: "Explain the principle of conservation of momentum.", type: "short_answer" as QuestionType, subject: "physics", difficulty: "medium", cognitiveType: "conceptual", chapter: "Laws of Motion" },
-  { id: "q4", text: "What is the atomic number of Carbon?", type: "single_correct" as QuestionType, subject: "chemistry", difficulty: "easy", cognitiveType: "memory", chapter: "Periodic Table" },
-  { id: "q5", text: "Balance the equation: H2 + O2 → H2O", type: "single_correct" as QuestionType, subject: "chemistry", difficulty: "medium", cognitiveType: "application", chapter: "Chemical Equations" },
-  { id: "q6", text: "Solve: x² - 5x + 6 = 0", type: "numerical" as QuestionType, subject: "mathematics", difficulty: "easy", cognitiveType: "numerical", chapter: "Quadratic Equations" },
-  { id: "q7", text: "Find the derivative of sin(x)cos(x).", type: "single_correct" as QuestionType, subject: "mathematics", difficulty: "medium", cognitiveType: "application", chapter: "Differentiation" },
-  { id: "q8", text: "What is the powerhouse of the cell?", type: "single_correct" as QuestionType, subject: "biology", difficulty: "easy", cognitiveType: "memory", chapter: "Cell Biology" },
-  { id: "q9", text: "Describe the process of photosynthesis.", type: "long_answer" as QuestionType, subject: "biology", difficulty: "medium", cognitiveType: "conceptual", chapter: "Plant Physiology" },
-  { id: "q10", text: "A projectile is launched at 45°. Find max height if v=20m/s.", type: "numerical" as QuestionType, subject: "physics", difficulty: "hard", cognitiveType: "numerical", chapter: "Projectile Motion" },
-];
+import { 
+  mockBankQuestions, 
+  BankQuestion, 
+  passages, 
+  getPassageById,
+  groupQuestionsByPassage 
+} from "@/data/examQuestionBankData";
 
 interface QuestionAdditionStepProps {
   selectedPattern: ExamPattern | null;
@@ -97,18 +96,25 @@ export function QuestionAdditionStep({
   const [searchQuery, setSearchQuery] = useState("");
   const [difficultyFilter, setDifficultyFilter] = useState<string | null>(null);
   const [subjectFilter, setSubjectFilter] = useState<string | null>(null);
+  const [typeFilter, setTypeFilter] = useState<string | null>(null);
   const [showMobileProgress, setShowMobileProgress] = useState(false);
 
-  // Filter questions
+  // Filter questions based on selected subjects and filters
   const filteredQuestions = useMemo(() => {
     return mockBankQuestions.filter(q => {
       if (!selectedSubjects.includes(q.subject)) return false;
       if (searchQuery && !q.text.toLowerCase().includes(searchQuery.toLowerCase())) return false;
       if (difficultyFilter && q.difficulty !== difficultyFilter) return false;
       if (subjectFilter && q.subject !== subjectFilter) return false;
+      if (typeFilter && q.type !== typeFilter) return false;
       return true;
     });
-  }, [selectedSubjects, searchQuery, difficultyFilter, subjectFilter]);
+  }, [selectedSubjects, searchQuery, difficultyFilter, subjectFilter, typeFilter]);
+
+  // Group questions by passage for display
+  const { standalone, passageGroups } = useMemo(() => {
+    return groupQuestionsByPassage(filteredQuestions);
+  }, [filteredQuestions]);
 
   const handleFileDrop = (e: React.DragEvent) => {
     e.preventDefault();
@@ -122,9 +128,117 @@ export function QuestionAdditionStep({
   };
 
   const difficultyColors = {
-    easy: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
+    easy: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
     medium: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
-    hard: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
+    hard: "bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400",
+  };
+
+  // Render a single question card
+  const renderQuestionCard = (question: BankQuestion) => {
+    const isSelected = selectedBankQuestionIds.includes(question.id);
+
+    return (
+      <Card
+        key={question.id}
+        className={cn(
+          "cursor-pointer transition-all",
+          isSelected ? "border-primary bg-primary/5 ring-1 ring-primary/20" : "hover:border-primary/50"
+        )}
+        onClick={() =>
+          toggleBankQuestion(question.id, {
+            id: question.id,
+            text: question.text,
+            type: question.type,
+            subject: question.subject,
+            difficulty: question.difficulty,
+            cognitiveType: question.cognitiveType,
+            marks: question.marks || 4,
+            source: "bank",
+          })
+        }
+      >
+        <CardContent className="p-2.5 sm:p-3">
+          <div className="flex items-start gap-2 sm:gap-3">
+            <Checkbox checked={isSelected} className="mt-0.5 shrink-0" />
+            <div className="flex-1 min-w-0">
+              {/* Question text - truncate LaTeX for display */}
+              <p className="text-xs sm:text-sm line-clamp-2">
+                {question.text.replace(/\$[^$]+\$/g, '[formula]').substring(0, 150)}
+                {question.text.length > 150 ? '...' : ''}
+              </p>
+              
+              {/* Content indicators */}
+              <div className="flex flex-wrap gap-1 sm:gap-1.5 mt-1.5 sm:mt-2">
+                {/* Subject */}
+                <Badge variant="outline" className="text-[9px] sm:text-[10px] capitalize px-1 sm:px-1.5">
+                  {question.subject}
+                </Badge>
+                
+                {/* Difficulty */}
+                <Badge className={cn("text-[9px] sm:text-[10px] px-1 sm:px-1.5", difficultyColors[question.difficulty])}>
+                  {question.difficulty}
+                </Badge>
+                
+                {/* Question Type */}
+                <Badge variant="secondary" className="text-[9px] sm:text-[10px] px-1 sm:px-1.5 hidden sm:inline-flex">
+                  {questionTypeLabels[question.type]}
+                </Badge>
+                
+                {/* Math indicator */}
+                {question.hasMath && (
+                  <Badge variant="outline" className="text-[9px] sm:text-[10px] px-1 sm:px-1.5 gap-0.5">
+                    <Calculator className="w-2.5 h-2.5" />
+                    <span className="hidden sm:inline">Math</span>
+                  </Badge>
+                )}
+                
+                {/* Image indicator */}
+                {question.hasImage && (
+                  <Badge variant="outline" className="text-[9px] sm:text-[10px] px-1 sm:px-1.5 gap-0.5">
+                    <Image className="w-2.5 h-2.5" />
+                    <span className="hidden sm:inline">Image</span>
+                  </Badge>
+                )}
+                
+                {/* Matrix match indicator */}
+                {question.type === "match_the_following" && (
+                  <Badge variant="outline" className="text-[9px] sm:text-[10px] px-1 sm:px-1.5 gap-0.5">
+                    <Columns className="w-2.5 h-2.5" />
+                    <span className="hidden sm:inline">Matrix</span>
+                  </Badge>
+                )}
+                
+                {/* Multiple correct indicator */}
+                {question.type === "multiple_correct" && (
+                  <Badge variant="outline" className="text-[9px] sm:text-[10px] px-1 sm:px-1.5 gap-0.5">
+                    <CheckCircle2 className="w-2.5 h-2.5" />
+                    <span className="hidden sm:inline">Multi</span>
+                  </Badge>
+                )}
+                
+                {/* Assertion-Reasoning indicator */}
+                {question.type === "assertion_reasoning" && (
+                  <Badge variant="outline" className="text-[9px] sm:text-[10px] px-1 sm:px-1.5 gap-0.5">
+                    <HelpCircle className="w-2.5 h-2.5" />
+                    <span className="hidden sm:inline">A&R</span>
+                  </Badge>
+                )}
+              </div>
+              
+              {/* Marks */}
+              <div className="flex items-center justify-between mt-1.5">
+                <span className="text-[10px] text-muted-foreground">
+                  {question.chapter}
+                </span>
+                <span className="text-[10px] font-medium text-muted-foreground">
+                  {question.marks} marks
+                </span>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
   };
 
   return (
@@ -220,21 +334,21 @@ export function QuestionAdditionStep({
             {/* Question Bank Tab */}
             <TabsContent value="bank" className="mt-3 sm:mt-4 space-y-3 sm:space-y-4">
               {/* Filters */}
-              <div className="flex flex-col sm:flex-row gap-2">
-                <div className="relative flex-1">
+              <div className="flex flex-col gap-2">
+                <div className="relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                   <Input
                     placeholder="Search questions..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-9 h-9 sm:h-10 text-sm"
+                    className="pl-9 h-10 sm:h-11 text-sm"
                   />
                 </div>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                   <select
                     value={subjectFilter || ""}
                     onChange={(e) => setSubjectFilter(e.target.value || null)}
-                    className="h-9 sm:h-10 px-2 sm:px-3 rounded-md border bg-background text-xs sm:text-sm flex-1 sm:flex-none"
+                    className="h-9 sm:h-10 px-2 sm:px-3 rounded-md border bg-background text-xs sm:text-sm flex-1 min-w-[100px]"
                   >
                     <option value="">All Subjects</option>
                     {selectedSubjects.map((s) => (
@@ -246,76 +360,91 @@ export function QuestionAdditionStep({
                   <select
                     value={difficultyFilter || ""}
                     onChange={(e) => setDifficultyFilter(e.target.value || null)}
-                    className="h-9 sm:h-10 px-2 sm:px-3 rounded-md border bg-background text-xs sm:text-sm flex-1 sm:flex-none"
+                    className="h-9 sm:h-10 px-2 sm:px-3 rounded-md border bg-background text-xs sm:text-sm flex-1 min-w-[100px]"
                   >
                     <option value="">All Levels</option>
                     <option value="easy">Easy</option>
                     <option value="medium">Medium</option>
                     <option value="hard">Hard</option>
                   </select>
+                  <select
+                    value={typeFilter || ""}
+                    onChange={(e) => setTypeFilter(e.target.value || null)}
+                    className="h-9 sm:h-10 px-2 sm:px-3 rounded-md border bg-background text-xs sm:text-sm flex-1 min-w-[100px]"
+                  >
+                    <option value="">All Types</option>
+                    <option value="single_correct">Single Correct</option>
+                    <option value="multiple_correct">Multiple Correct</option>
+                    <option value="numerical">Numerical</option>
+                    <option value="integer">Integer</option>
+                    <option value="assertion_reasoning">Assertion-Reasoning</option>
+                    <option value="match_the_following">Matrix Match</option>
+                    <option value="paragraph">Paragraph</option>
+                  </select>
                 </div>
               </div>
 
-              {/* Questions List */}
-              <ScrollArea className="h-[280px] sm:h-[350px] pr-2">
-                <div className="space-y-2">
-                  {filteredQuestions.map((question) => {
-                    const isSelected = selectedBankQuestionIds.includes(question.id);
+              {/* Questions List with Passage Groups */}
+              <ScrollArea className="h-[320px] sm:h-[400px] pr-2">
+                <div className="space-y-3">
+                  {/* Passage-based Questions */}
+                  {passageGroups.map(({ passage, questions }) => (
+                    <div key={passage.id} className="border rounded-lg overflow-hidden">
+                      {/* Passage Header */}
+                      <div className="bg-muted/50 p-2.5 sm:p-3 border-b">
+                        <div className="flex items-center gap-2 mb-1.5">
+                          <BookOpen className="w-3.5 h-3.5 text-primary" />
+                          <span className="text-xs sm:text-sm font-medium">Passage-Based Questions</span>
+                          <Badge variant="secondary" className="text-[9px] capitalize ml-auto">
+                            {passage.subject}
+                          </Badge>
+                        </div>
+                        <p className="text-[10px] sm:text-xs text-muted-foreground line-clamp-3">
+                          {passage.text.replace(/\$[^$]+\$/g, '[formula]').replace(/\[Image:[^\]]+\]/g, '[diagram]').substring(0, 200)}...
+                        </p>
+                        <div className="flex gap-1 mt-1.5">
+                          {passage.hasMath && (
+                            <Badge variant="outline" className="text-[8px] px-1 gap-0.5">
+                              <Calculator className="w-2 h-2" />
+                              Math
+                            </Badge>
+                          )}
+                          {passage.hasImage && (
+                            <Badge variant="outline" className="text-[8px] px-1 gap-0.5">
+                              <Image className="w-2 h-2" />
+                              Diagram
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                      {/* Passage Questions */}
+                      <div className="p-2 space-y-2">
+                        {questions.map(renderQuestionCard)}
+                      </div>
+                    </div>
+                  ))}
 
-                    return (
-                      <Card
-                        key={question.id}
-                        className={cn(
-                          "cursor-pointer transition-all",
-                          isSelected ? "border-primary bg-primary/5" : "hover:border-primary/50"
-                        )}
-                        onClick={() =>
-                          toggleBankQuestion(question.id, {
-                            id: question.id,
-                            text: question.text,
-                            type: question.type,
-                            subject: question.subject,
-                            difficulty: question.difficulty,
-                            cognitiveType: question.cognitiveType,
-                            marks: 4,
-                            source: "bank",
-                          })
-                        }
-                      >
-                        <CardContent className="p-2.5 sm:p-3">
-                          <div className="flex items-start gap-2 sm:gap-3">
-                            <Checkbox checked={isSelected} className="mt-0.5 shrink-0" />
-                            <div className="flex-1 min-w-0">
-                              <p className="text-xs sm:text-sm line-clamp-2">{question.text}</p>
-                              <div className="flex flex-wrap gap-1 sm:gap-1.5 mt-1.5 sm:mt-2">
-                                <Badge variant="outline" className="text-[9px] sm:text-[10px] capitalize px-1 sm:px-1.5">
-                                  {question.subject}
-                                </Badge>
-                                <Badge className={cn("text-[9px] sm:text-[10px] px-1 sm:px-1.5", difficultyColors[question.difficulty as keyof typeof difficultyColors])}>
-                                  {question.difficulty}
-                                </Badge>
-                                <Badge variant="secondary" className="text-[9px] sm:text-[10px] px-1 sm:px-1.5 hidden sm:inline-flex">
-                                  {questionTypeLabels[question.type]}
-                                </Badge>
-                              </div>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    );
-                  })}
+                  {/* Standalone Questions */}
+                  {standalone.map(renderQuestionCard)}
 
                   {filteredQuestions.length === 0 && (
                     <div className="text-center py-6 sm:py-8 text-muted-foreground">
                       <AlertCircle className="w-6 h-6 sm:w-8 sm:h-8 mx-auto mb-2 opacity-50" />
                       <p className="text-xs sm:text-sm">No questions found</p>
+                      <p className="text-[10px] sm:text-xs mt-1">Try adjusting your filters</p>
                     </div>
                   )}
                 </div>
               </ScrollArea>
 
-              <div className="text-xs sm:text-sm text-muted-foreground">
-                {selectedBankQuestionIds.length} question{selectedBankQuestionIds.length !== 1 ? "s" : ""} selected
+              {/* Selection Summary */}
+              <div className="flex items-center justify-between p-2 sm:p-2.5 rounded-lg bg-muted/50">
+                <span className="text-xs sm:text-sm text-muted-foreground">
+                  {selectedBankQuestionIds.length} question{selectedBankQuestionIds.length !== 1 ? "s" : ""} selected
+                </span>
+                <span className="text-xs sm:text-sm font-medium">
+                  {filteredQuestions.length} available
+                </span>
               </div>
             </TabsContent>
 
