@@ -73,7 +73,7 @@ export function DurationStep({
                   variant={totalDuration === preset ? "default" : "outline"}
                   size="sm"
                   onClick={() => setTotalDuration(preset)}
-                  className="min-w-[70px]"
+                  className="min-w-[70px] h-10 sm:h-9"
                 >
                   {formatDuration(preset)}
                 </Button>
@@ -122,12 +122,12 @@ export function DurationStep({
       </div>
 
       {/* Navigation */}
-      <div className="flex justify-between pt-4 border-t">
-        <Button variant="outline" onClick={onBack}>
+      <div className="flex flex-col-reverse sm:flex-row justify-between gap-3 pt-4 border-t pb-20 sm:pb-0">
+        <Button variant="outline" onClick={onBack} className="h-11 sm:h-10">
           <ArrowLeft className="w-4 h-4 mr-2" />
           Back
         </Button>
-        <Button onClick={onNext} disabled={!canProceed}>
+        <Button onClick={onNext} disabled={!canProceed} className="h-11 sm:h-10">
           Next
           <ArrowRight className="w-4 h-4 ml-2" />
         </Button>

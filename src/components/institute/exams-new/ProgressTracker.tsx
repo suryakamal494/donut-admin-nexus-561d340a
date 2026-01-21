@@ -30,24 +30,24 @@ export function ProgressTracker({
 
   return (
     <Card className="sticky top-4">
-      <CardHeader className="pb-3">
+      <CardHeader className="p-3 sm:pb-3">
         <div className="flex items-center justify-between">
           <CardTitle className="text-sm font-medium">Progress</CardTitle>
           <Badge 
             variant={isComplete ? "default" : "secondary"}
             className={cn(
-              "text-xs",
+              "text-xs px-2 py-1",
               isComplete && "bg-green-500 hover:bg-green-600"
             )}
           >
             {totalAdded}/{totalRequired}
           </Badge>
         </div>
-        <Progress value={overallPercent} className="h-2" />
+        <Progress value={overallPercent} className="h-2.5 sm:h-2" />
       </CardHeader>
 
-      <CardContent className="pt-0">
-        <ScrollArea className="h-[250px] pr-2">
+      <CardContent className="pt-0 p-3 sm:p-6 sm:pt-0">
+        <ScrollArea className="h-[200px] sm:h-[250px] pr-2">
           <div className="space-y-3">
             {sectionProgress.map((section) => {
               const percent = Math.min((section.added / section.required) * 100, 100);

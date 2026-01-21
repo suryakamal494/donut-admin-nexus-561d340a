@@ -107,7 +107,7 @@ export function BasicInfoStep({
       {/* Category Selection */}
       <div className="space-y-3">
         <Label>Category</Label>
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {categoryOptions.map((option) => {
             const Icon = option.icon;
             const isSelected = category === option.value;
@@ -118,7 +118,7 @@ export function BasicInfoStep({
                 type="button"
                 onClick={() => setCategory(option.value)}
                 className={cn(
-                  "p-3 rounded-xl border-2 transition-all duration-200 text-left",
+                  "p-4 sm:p-3 rounded-xl border-2 transition-all duration-200 text-left min-h-[60px]",
                   isSelected
                     ? "border-primary bg-primary/5"
                     : "border-border hover:border-primary/50 hover:bg-muted/50"
@@ -172,7 +172,7 @@ export function BasicInfoStep({
                       type="button"
                       onClick={() => toggleSubject(subject.id)}
                       className={cn(
-                        "px-3 py-1.5 rounded-full text-sm font-medium transition-all",
+                        "px-4 py-2.5 min-h-[44px] rounded-full text-sm font-medium transition-all",
                         isSelected
                           ? "bg-primary text-primary-foreground"
                           : "bg-muted hover:bg-muted/80 text-foreground"
@@ -222,11 +222,11 @@ export function BasicInfoStep({
       </div>
 
       {/* Navigation */}
-      <div className="flex justify-between pt-4 border-t">
-        <Button variant="outline" onClick={onCancel}>
+      <div className="flex flex-col-reverse sm:flex-row justify-between gap-3 pt-4 border-t pb-20 sm:pb-0">
+        <Button variant="outline" onClick={onCancel} className="h-11 sm:h-10">
           Cancel
         </Button>
-        <Button onClick={onNext} disabled={!canProceed}>
+        <Button onClick={onNext} disabled={!canProceed} className="h-11 sm:h-10">
           Next
           <ArrowRight className="w-4 h-4 ml-2" />
         </Button>

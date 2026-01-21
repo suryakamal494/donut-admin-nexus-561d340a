@@ -139,7 +139,7 @@ const ExamsNew = () => {
   }), []);
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-6 animate-fade-in pb-20 sm:pb-0">
       <PageHeader
         title="Exams"
         description="Create and manage exams using patterns or quick tests"
@@ -287,25 +287,25 @@ const ExamsNew = () => {
 
                 {/* Actions */}
                 <div className="flex items-center gap-2 pt-2 border-t">
-                  <Button variant="outline" size="sm" className="flex-1 h-8 text-xs">
-                    <Eye className="w-3.5 h-3.5 mr-1.5" />
+                  <Button variant="outline" size="sm" className="flex-1 h-10 sm:h-9 text-xs">
+                    <Eye className="w-4 h-4 mr-1.5" />
                     View
                   </Button>
-                  <Button variant="outline" size="sm" className="flex-1 h-8 text-xs">
-                    <Edit className="w-3.5 h-3.5 mr-1.5" />
+                  <Button variant="outline" size="sm" className="flex-1 h-10 sm:h-9 text-xs">
+                    <Edit className="w-4 h-4 mr-1.5" />
                     Edit
                   </Button>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                      <Button variant="ghost" size="sm" className="h-10 w-10 sm:h-9 sm:w-9 p-0">
                         <MoreHorizontal className="w-4 h-4" />
                       </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem>Duplicate</DropdownMenuItem>
-                      <DropdownMenuItem>Assign Batches</DropdownMenuItem>
-                      <DropdownMenuItem>Schedule</DropdownMenuItem>
-                      <DropdownMenuItem className="text-destructive">Delete</DropdownMenuItem>
+                    <DropdownMenuContent align="end" className="bg-popover">
+                      <DropdownMenuItem className="min-h-[40px] sm:min-h-[32px]">Duplicate</DropdownMenuItem>
+                      <DropdownMenuItem className="min-h-[40px] sm:min-h-[32px]">Assign Batches</DropdownMenuItem>
+                      <DropdownMenuItem className="min-h-[40px] sm:min-h-[32px]">Schedule</DropdownMenuItem>
+                      <DropdownMenuItem className="text-destructive min-h-[40px] sm:min-h-[32px]">Delete</DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </div>

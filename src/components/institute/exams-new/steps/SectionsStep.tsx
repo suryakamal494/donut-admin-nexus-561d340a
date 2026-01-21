@@ -129,15 +129,15 @@ function SortableSectionCard({
     >
       <Collapsible open={isExpanded && !isDragging} onOpenChange={onToggleExpand}>
         <CollapsibleTrigger asChild>
-          <CardHeader className="p-4 cursor-pointer hover:bg-muted/50 transition-colors">
-            <div className="flex items-center gap-3">
+          <CardHeader className="p-3 sm:p-4 cursor-pointer hover:bg-muted/50 transition-colors">
+            <div className="flex items-center gap-2 sm:gap-3">
               <button
                 type="button"
-                className="touch-none cursor-grab active:cursor-grabbing p-1 -m-1 rounded hover:bg-muted"
+                className="touch-none cursor-grab active:cursor-grabbing min-w-[44px] min-h-[44px] flex items-center justify-center rounded hover:bg-muted"
                 {...attributes}
                 {...listeners}
               >
-                <GripVertical className="w-4 h-4 text-muted-foreground" />
+                <GripVertical className="w-5 h-5 text-muted-foreground" />
               </button>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
@@ -168,7 +168,7 @@ function SortableSectionCard({
         </CollapsibleTrigger>
 
         <CollapsibleContent>
-          <CardContent className="p-4 pt-0 space-y-4 border-t">
+          <CardContent className="p-3 sm:p-4 pt-0 space-y-4 border-t">
             {/* Section Name */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
@@ -240,7 +240,7 @@ function SortableSectionCard({
                       type="button"
                       onClick={() => toggleQuestionType(section.id, type)}
                       className={cn(
-                        "px-2.5 py-1 rounded-full text-xs font-medium transition-all",
+                        "px-3 py-2 min-h-[36px] sm:min-h-[32px] rounded-full text-xs font-medium transition-all",
                         isSelected
                           ? "bg-primary text-primary-foreground"
                           : "bg-muted hover:bg-muted/80 text-muted-foreground"
@@ -353,15 +353,15 @@ function SortableSectionCard({
             )}
 
             {/* Section Actions */}
-            <div className="flex gap-2 pt-2">
+            <div className="flex flex-col sm:flex-row gap-2 pt-2">
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
                 onClick={() => duplicateSection(section.id)}
-                className="gap-1"
+                className="gap-1.5 h-10 sm:h-9 flex-1 sm:flex-none"
               >
-                <Copy className="w-3.5 h-3.5" />
+                <Copy className="w-4 h-4" />
                 Duplicate
               </Button>
               {sectionsCount > 1 && (
@@ -370,9 +370,9 @@ function SortableSectionCard({
                   variant="outline"
                   size="sm"
                   onClick={() => removeSection(section.id)}
-                  className="gap-1 text-destructive hover:text-destructive"
+                  className="gap-1.5 h-10 sm:h-9 flex-1 sm:flex-none text-destructive hover:text-destructive"
                 >
-                  <Trash2 className="w-3.5 h-3.5" />
+                  <Trash2 className="w-4 h-4" />
                   Remove
                 </Button>
               )}
@@ -578,19 +578,19 @@ export function SectionsStep({
         type="button"
         variant="outline"
         onClick={addSection}
-        className="w-full gap-2 border-dashed"
+        className="w-full gap-2 h-11 border-dashed"
       >
         <Plus className="w-4 h-4" />
         Add Section
       </Button>
 
       {/* Navigation */}
-      <div className="flex justify-between pt-4 border-t">
-        <Button variant="outline" onClick={onBack}>
+      <div className="flex flex-col-reverse sm:flex-row justify-between gap-3 pt-4 border-t pb-20 sm:pb-0">
+        <Button variant="outline" onClick={onBack} className="h-11 sm:h-10">
           <ArrowLeft className="w-4 h-4 mr-2" />
           Back
         </Button>
-        <Button onClick={onNext} disabled={!canProceed}>
+        <Button onClick={onNext} disabled={!canProceed} className="h-11 sm:h-10">
           Next
           <ArrowRight className="w-4 h-4 ml-2" />
         </Button>
