@@ -58,6 +58,10 @@ const InstituteCreateExam = lazy(() => import("@/pages/institute/exams/CreateExa
 const InstituteUploadExam = lazy(() => import("@/pages/institute/exams/UploadExam"));
 const InstituteReviewExam = lazy(() => import("@/pages/institute/exams/ReviewExam"));
 const InstitutePreviousYearPapers = lazy(() => import("@/pages/institute/exams/PreviousYearPapers"));
+
+// Exams New Module
+const ExamsNew = lazy(() => import("@/pages/institute/exams-new/ExamsNew"));
+const ExamsNewPatterns = lazy(() => import("@/pages/institute/exams-new/Patterns"));
 const InstitutePYPView = lazy(() => import("@/pages/institute/exams/PYPView"));
 
 // Master Data & Roles
@@ -139,6 +143,10 @@ export default function InstituteRoutes() {
         <Route path="exams/review/:examId" element={<LazyPage><InstituteReviewExam /></LazyPage>} />
         <Route path="exams/previous-year-papers" element={<LazyPage><InstitutePreviousYearPapers /></LazyPage>} />
         <Route path="exams/pyp-view/:paperId" element={<LazyPage><InstitutePYPView /></LazyPage>} />
+        
+        {/* Exams New Module */}
+        <Route path="exams-new" element={<LazyPage><ExamsNew /></LazyPage>} />
+        <Route path="exams-new/patterns" element={<LazyPage><ExamsNewPatterns /></LazyPage>} />
         
         {/* Master Data & Roles */}
         <Route path="master-data" element={<LazyPage><InstituteMasterData /></LazyPage>} />
