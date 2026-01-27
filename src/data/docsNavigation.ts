@@ -35,8 +35,8 @@ export const docsNavigation: DocSection[] = [
         title: "Master Data",
         path: "01-superadmin/master-data",
         children: [
-          { title: "Curriculum", path: "01-superadmin/curriculum" },
-          { title: "Courses", path: "01-superadmin/courses" },
+          { title: "Curriculum", path: "01-superadmin/master-data-curriculum" },
+          { title: "Courses", path: "01-superadmin/master-data-courses" },
         ],
       },
       { title: "Institutes", path: "01-superadmin/institutes" },
@@ -63,7 +63,7 @@ export const docsNavigation: DocSection[] = [
         children: [
           { title: "Setup", path: "02-institute/timetable-setup" },
           { title: "Workspace", path: "02-institute/timetable-workspace" },
-          { title: "Substitution", path: "02-institute/substitution" },
+          { title: "Substitution", path: "02-institute/timetable-substitution" },
         ],
       },
       {
@@ -72,12 +72,12 @@ export const docsNavigation: DocSection[] = [
         children: [
           { title: "Setup", path: "02-institute/academic-schedule-setup" },
           { title: "Planner", path: "02-institute/academic-planner" },
-          { title: "Progress", path: "02-institute/academic-progress" },
+          { title: "Progress", path: "02-institute/batch-progress" },
         ],
       },
       { title: "Content Library", path: "02-institute/content-library" },
       { title: "Question Bank", path: "02-institute/question-bank" },
-      { title: "Exams", path: "02-institute/exams" },
+      { title: "Exams", path: "02-institute/exams-new" },
       { title: "Roles & Access", path: "02-institute/roles-access" },
     ],
   },
