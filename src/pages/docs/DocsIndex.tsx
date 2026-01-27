@@ -62,7 +62,7 @@ export default function DocsIndex() {
         {/* Quick Links */}
         <div className="mt-8 md:mt-12 p-4 md:p-6 bg-muted/30 rounded-xl">
           <h2 className="text-lg font-semibold mb-4">Quick Links</h2>
-          <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 md:grid-cols-4">
+          <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 md:grid-cols-3">
             <Link
               to="/docs/00-overview/README"
               className="text-sm text-primary hover:underline"
@@ -80,12 +80,6 @@ export default function DocsIndex() {
               className="text-sm text-primary hover:underline"
             >
               → Testing Scenarios
-            </Link>
-            <Link
-              to="/docs/07-technical/README"
-              className="text-sm text-primary hover:underline"
-            >
-              → Technical Docs
             </Link>
           </div>
         </div>
