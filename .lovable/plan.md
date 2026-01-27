@@ -1,477 +1,311 @@
 
-# Complete Documentation System - Implementation Plan
+# Documentation Audit Report & Front-End Portal Plan
 
-## Overview
+## Part 1: Documentation Audit Findings
 
-This plan creates a comprehensive documentation system for DonutAI in the `/docs` folder. The documentation will serve three audiences: **New Developers**, **QA/Testing Team**, and **Product Team**, covering all features, workflows, and cross-login flows.
+### What's Working Well
 
----
+| Aspect | Status | Details |
+|--------|--------|---------|
+| Feature Documentation Structure | ✅ Good | Each feature has: Overview, Access, UI Components, Features, Data Flow, Cross-Login Connections, Business Rules, Mobile Behavior |
+| Portal Coverage | ✅ Good | All 4 portals documented with README overviews |
+| Cross-Login Connections Table | ✅ Present | Each feature doc includes "Cross-Login Connections" section showing downstream/upstream impacts |
 
-## Documentation Structure
+### Gaps Identified
 
-```text
-/docs
-├── README.md                           # Master index with navigation
-├── ARCHITECTURE.md                     # System architecture overview
-│
-├── 01-superadmin/
-│   ├── README.md                       # SuperAdmin portal overview
-│   ├── dashboard.md                    # Dashboard features
-│   ├── master-data-curriculum.md       # Curriculum management
-│   ├── master-data-courses.md          # Course builder
-│   ├── institutes.md                   # Institute management + tiers
-│   ├── users.md                        # User management
-│   ├── content-library.md              # Global content
-│   ├── question-bank.md                # Questions + AI + PDF upload
-│   ├── exams.md                        # PYP + Grand Tests
-│   └── roles-access.md                 # RBAC system
-│
-├── 02-institute/
-│   ├── README.md                       # Institute Admin overview
-│   ├── dashboard.md                    # Setup checklist dashboard
-│   ├── batches.md                      # Batch creation wizard
-│   ├── teachers.md                     # Teacher management + bulk upload
-│   ├── students.md                     # Student registration + bulk upload
-│   ├── master-data.md                  # Read-only curriculum view
-│   ├── timetable-setup.md              # Periods, holidays, exam blocks
-│   ├── timetable-workspace.md          # Schedule creation
-│   ├── timetable-substitution.md       # Teacher replacement
-│   ├── academic-schedule-setup.md      # Hour allocation per chapter
-│   ├── academic-planner.md             # Auto-plan generation
-│   ├── batch-progress.md               # Syllabus tracking + drift
-│   ├── content-library.md              # Institute content
-│   ├── question-bank.md                # Institute questions
-│   ├── exams-new.md                    # Pattern-based exam creation
-│   └── roles-access.md                 # Staff management
-│
-├── 03-teacher/
-│   ├── README.md                       # Teacher portal overview
-│   ├── dashboard.md                    # Today's classes + pending actions
-│   ├── schedule.md                     # Weekly timetable view
-│   ├── lesson-plans.md                 # Plan creation + workspace
-│   ├── lesson-workspace.md             # Block editor + presentation mode
-│   ├── content-library.md              # Create + assign content
-│   ├── homework.md                     # 3-mode homework system
-│   ├── exams.md                        # Teacher assessments
-│   ├── academic-progress.md            # Teaching confirmation
-│   ├── notifications.md                # Alert system
-│   └── profile.md                      # Profile management
-│
-├── 04-student/
-│   ├── README.md                       # Student portal overview
-│   ├── dashboard.md                    # Today's schedule + homework
-│   ├── subjects.md                     # Subject cards + navigation
-│   ├── chapter-view.md                 # Three-mode system
-│   ├── classroom-mode.md               # Teacher-led content
-│   ├── mypath-mode.md                  # AI-driven learning
-│   ├── compete-mode.md                 # Challenges + benchmarks
-│   ├── content-viewer.md               # All content types
-│   ├── test-player.md                  # Exam interface
-│   ├── homework.md                     # Submission system
-│   ├── progress.md                     # Analytics + tracking
-│   └── notifications.md                # Student alerts
-│
-├── 05-cross-login-flows/
-│   ├── README.md                       # Cross-login overview
-│   ├── content-propagation.md          # SA → Institute → Teacher → Student
-│   ├── question-propagation.md         # Question bank flow
-│   ├── exam-flow.md                    # Exam creation to student
-│   ├── curriculum-course-flow.md       # Master data propagation
-│   ├── timetable-flow.md               # Schedule to teacher/student
-│   ├── academic-schedule-flow.md       # Planning to confirmation
-│   ├── homework-flow.md                # Assignment to submission
-│   └── batch-student-flow.md           # Batch assignment visibility
-│
-├── 06-testing-scenarios/
-│   ├── README.md                       # Testing guide overview
-│   ├── smoke-tests/
-│   │   ├── superadmin.md               # SA page-level tests
-│   │   ├── institute.md                # Institute page-level tests
-│   │   ├── teacher.md                  # Teacher page-level tests
-│   │   └── student.md                  # Student page-level tests
-│   ├── intra-login-tests/
-│   │   ├── superadmin.md               # SA internal dependencies
-│   │   ├── institute.md                # Institute internal dependencies
-│   │   ├── teacher.md                  # Teacher internal dependencies
-│   │   └── student.md                  # Student internal dependencies
-│   └── inter-login-tests/
-│       ├── content-tests.md            # Content across logins
-│       ├── exam-tests.md               # Exam across logins
-│       ├── timetable-tests.md          # Timetable across logins
-│       └── curriculum-tests.md         # Master data across logins
-│
-└── 07-technical/
-    ├── README.md                       # Technical overview
-    ├── project-structure.md            # File organization
-    ├── routing.md                      # Route architecture
-    ├── data-layer.md                   # Mock data structure
-    ├── component-patterns.md           # Shared component usage
-    ├── responsive-design.md            # Mobile-first standards
-    └── performance.md                  # Code splitting + optimization
-```
+#### 1. Missing Cross-Login Flow Documents (2 files)
+The README references these files but they don't exist:
+- `curriculum-course-flow.md` - Referenced but missing
+- `question-propagation.md` - Referenced but missing
+- `batch-student-flow.md` - Referenced but missing
 
----
+#### 2. Missing Testing Scenario Files
+| Missing File | Purpose |
+|-------------|---------|
+| `smoke-tests/superadmin.md` | SuperAdmin page-level tests |
+| `smoke-tests/institute.md` | Institute page-level tests |
+| `intra-login-tests/` folder | Module dependency tests within portals |
+| `inter-login-tests/` folder | Cross-portal scenario tests |
 
-## Document Templates
+#### 3. Missing Technical Documentation Files
+| Missing File | Purpose |
+|-------------|---------|
+| `project-structure.md` | File organization guide |
+| `routing.md` | Route architecture details |
+| `data-layer.md` | Mock data structure guide |
+| `component-patterns.md` | Shared component usage |
+| `responsive-design.md` | Mobile-first standards |
+| `performance.md` | Optimization patterns |
 
-### Feature Documentation Template
+#### 4. Cross-Functional Connectivity Gaps
 
-Each feature document follows this structure:
-
-```markdown
-# [Feature Name]
-
-## Overview
-Brief description of what this feature does and its business purpose.
-
-## Access
-- **Route**: `/panel/feature`
-- **Login Types**: Who can access
-- **Permissions Required**: What permissions needed
-
-## UI Components
-| Component | Description | Location |
-|-----------|-------------|----------|
-| PageHeader | Title + actions | Top |
-| FilterBar | Filtering options | Below header |
-| ... | ... | ... |
-
-## Features & Functionality
-
-### [Sub-feature 1]
-- Description
-- How it works
-- User interactions
-
-### [Sub-feature 2]
-...
-
-## Data Flow
-- Where data comes from
-- How data is processed
-- Where data goes
-
-## Cross-Login Connections
-| This Feature | Connects To | Direction | What Happens |
-|--------------|-------------|-----------|--------------|
-| ... | ... | ... | ... |
-
-## Business Rules
-1. Rule 1
-2. Rule 2
-...
-
-## Mobile Behavior
-- How UI adapts on mobile
-- Touch interactions
-- Responsive breakpoints
-
-## Related Documentation
-- Links to related features
-- Links to test scenarios
-```
-
-### Cross-Login Flow Template
-
-```markdown
-# [Flow Name] - Cross-Login Flow
-
-## Flow Overview
-What this flow accomplishes across login types.
-
-## Flow Diagram
-```text
-[Login A] ──creates──> [Entity] ──visible in──> [Login B] ──assigned to──> [Login C]
-```
-
-## Step-by-Step Flow
-
-### Step 1: [Action in Login A]
-- **Login**: Login type
-- **Location**: Route/page
-- **Action**: What user does
-- **Result**: What happens
-
-### Step 2: [Result in Login B]
-...
-
-## Permission Matrix
-| Action | SuperAdmin | Institute | Teacher | Student |
-|--------|------------|-----------|---------|---------|
-| Create | ... | ... | ... | ... |
-| View | ... | ... | ... | ... |
-| Edit | ... | ... | ... | ... |
-| Delete | ... | ... | ... | ... |
-
-## Constraints & Rules
-1. Constraint 1
-2. Constraint 2
-...
-
-## What Could Go Wrong
-| Scenario | Cause | Effect | How to Verify |
-|----------|-------|--------|---------------|
-| ... | ... | ... | ... |
-
-## Test Scenarios
-Reference to specific test cases in testing-scenarios folder.
-```
-
-### Testing Scenario Template
-
-```markdown
-# [Test Category] - [Login Type]
-
-## Overview
-What this test category covers.
-
-## Smoke Tests
-
-### [Feature 1] Smoke Tests
-| Test ID | Test Case | Steps | Expected Result | Frequency |
-|---------|-----------|-------|-----------------|-----------|
-| SM-001 | ... | ... | ... | Regression |
-| SM-002 | ... | ... | ... | One-time |
-
-### [Feature 2] Smoke Tests
-...
-
-## Intra-Login Tests
-
-### [Module A] → [Module B] Dependency
-| Test ID | Test Case | Precondition | Steps | Expected Result |
-|---------|-----------|--------------|-------|-----------------|
-| IL-001 | ... | ... | ... | ... |
-
-## Notes for Testers
-- Important things to remember
-- Common issues to watch for
-```
-
----
-
-## Implementation Phases
-
-### Phase 1: Foundation (Files 1-5)
-Create core structure and overview documents:
-1. `/docs/README.md` - Master index
-2. `/docs/ARCHITECTURE.md` - System architecture
-3. `/docs/01-superadmin/README.md` - SuperAdmin overview
-4. `/docs/02-institute/README.md` - Institute overview
-5. `/docs/03-teacher/README.md` - Teacher overview
-
-### Phase 2: SuperAdmin Documentation (Files 6-15)
-Complete SuperAdmin portal documentation:
-6. Dashboard, Master Data (Curriculum + Courses)
-7. Institutes, Users
-8. Content Library, Question Bank
-9. Exams, Roles & Access
-
-### Phase 3: Institute Documentation (Files 16-30)
-Complete Institute Admin documentation:
-10. Dashboard, Batches, Teachers, Students
-11. Master Data, Timetable (Setup + Workspace + Substitution)
-12. Academic Schedule (Setup + Planner + Progress)
-13. Content Library, Question Bank, Exams
-14. Roles & Access
-
-### Phase 4: Teacher Documentation (Files 31-42)
-Complete Teacher portal documentation:
-15. Dashboard, Schedule, Lesson Plans
-16. Lesson Workspace, Content Library
-17. Homework, Exams, Academic Progress
-18. Notifications, Profile
-
-### Phase 5: Student Documentation (Files 43-55)
-Complete Student portal documentation:
-19. Dashboard, Subjects, Chapter View
-20. Three Modes (Classroom, My Path, Compete)
-21. Content Viewer, Test Player
-22. Homework, Progress, Notifications
-
-### Phase 6: Cross-Login Flows (Files 56-64)
-Document all inter-login connections:
-23. README, Content Propagation
-24. Question Propagation, Exam Flow
-25. Curriculum/Course Flow, Timetable Flow
-26. Academic Schedule Flow, Homework Flow
-27. Batch-Student Flow
-
-### Phase 7: Testing Scenarios (Files 65-78)
-Complete testing documentation:
-28. Smoke Tests - All 4 login types
-29. Intra-Login Tests - All 4 login types
-30. Inter-Login Tests - All major flows
-
-### Phase 8: Technical Documentation (Files 79-85)
-Developer-focused documentation:
-31. Project Structure, Routing
-32. Data Layer, Component Patterns
-33. Responsive Design, Performance
-
----
-
-## Key Documentation Content
-
-### Content Propagation Flow (Example)
+**Curriculum CRUD Impact (Not fully traced):**
+The Curriculum documentation mentions it connects to Content/Questions but doesn't explicitly document the chain:
 
 ```text
-CONTENT PROPAGATION ACROSS LOGINS
+Current:
+Curriculum → Institute Master Data (read-only)
+Curriculum → Batch Creation
+Curriculum → Content Library (classification)
 
-┌─────────────┐    creates    ┌─────────────┐
-│ SUPER ADMIN │──────────────>│   GLOBAL    │
-│             │               │   CONTENT   │
-└─────────────┘               └──────┬──────┘
-                                     │
-                    visible to (read-only)
-                                     │
-                                     v
-┌─────────────┐    creates    ┌─────────────┐
-│  INSTITUTE  │──────────────>│  INSTITUTE  │
-│    ADMIN    │               │   CONTENT   │
-└─────────────┘               └──────┬──────┘
-                                     │
-                    visible to (subject-scoped)
-                                     │
-                                     v
-┌─────────────┐    creates    ┌─────────────┐
-│   TEACHER   │──────────────>│   TEACHER   │
-│             │               │   CONTENT   │
-└─────────────┘               └──────┬──────┘
-                                     │
-                         assigns to batch
-                                     │
-                                     v
-┌─────────────┐               ┌─────────────┐
-│   STUDENT   │<──────────────│  ASSIGNED   │
-│             │   visibility  │   CONTENT   │
-└─────────────┘               └─────────────┘
-
-PERMISSION MATRIX:
-| Action      | SuperAdmin | Institute | Teacher | Student |
-|-------------|------------|-----------|---------|---------|
-| Create      | Global     | Institute | Own     | No      |
-| Edit        | Own only   | Own only  | Own only| No      |
-| Delete      | Own only   | Own only  | Own only| No      |
-| View Global | Yes        | Yes       | Yes     | No      |
-| View Inst.  | No         | Own       | Scoped  | No      |
-| Assign      | Yes        | Yes       | Yes     | No      |
-| Access      | All        | All       | Scoped  | Assigned|
-
-SCOPING RULES:
-1. Teacher sees content only for their assigned subjects
-2. Student sees content only if:
-   - Assigned to their batch by teacher, OR
-   - Part of lesson plan for their class
-3. Institute cannot see other institutes' content
-4. Global content cannot be edited by Institute/Teacher
+Missing explicit documentation:
+Curriculum → Exam Creation (question classification)
+Curriculum → Timetable (subject-period mapping)
+Curriculum → Teacher Assignment (subject expertise)
+Curriculum → Student Subjects View
 ```
 
-### Timetable Flow (Example)
+**Timetable Impact (Partially documented):**
+```text
+Documented:
+Timetable → Teacher Schedule
+Timetable → Student Schedule
+
+Missing:
+Timetable → Academic Planner (periods per week calculation)
+Timetable → Lesson Plans (slot availability)
+Timetable → Teaching Confirmation (class instances)
+```
+
+---
+
+## Part 2: Front-End Documentation Portal Plan
+
+### Recommendation: Build In-App Documentation Browser
+
+Rather than relying on GitHub markdown, I recommend building a **Documentation Portal** within the DonutAI platform itself. This provides:
+
+1. **Proper Navigation** - Sidebar menu with categorized sections
+2. **Search Functionality** - Find any feature quickly
+3. **Role-Based Views** - Show relevant docs based on user type
+4. **Live Updates** - Documentation stays with the codebase
+
+### Proposed UI Structure
 
 ```text
-TIMETABLE FLOW ACROSS LOGINS
+┌─────────────────────────────────────────────────────────────────────────┐
+│ 📚 DonutAI Documentation                              [🔍 Search...]   │
+├─────────────────────────────────────────────────────────────────────────┤
+│ ┌──────────────────┐  ┌───────────────────────────────────────────────┐ │
+│ │                  │  │                                               │ │
+│ │ 📂 SuperAdmin    │  │  # Master Data - Curriculum                   │ │
+│ │   ├─ Dashboard   │  │                                               │ │
+│ │   ├─ Curriculum  │  │  > Create and manage curriculum structures   │ │
+│ │   ├─ Courses     │  │                                               │ │
+│ │   ├─ Institutes  │  │  ## Overview                                  │ │
+│ │   ├─ Content     │  │  The Curriculum Management module is the      │ │
+│ │   └─ ...         │  │  foundation of the platform's academic...     │ │
+│ │                  │  │                                               │ │
+│ │ 📂 Institute     │  │  ## Cross-Login Connections                   │ │
+│ │   ├─ Dashboard   │  │  | Feature | Connects To | Direction |        │ │
+│ │   ├─ Batches     │  │  |---------|-------------|-----------|        │ │
+│ │   ├─ Timetable   │  │  | Curr... | Inst...     | Downstream|        │ │
+│ │   └─ ...         │  │                                               │ │
+│ │                  │  │                                               │ │
+│ │ 📂 Teacher       │  │                                               │ │
+│ │ 📂 Student       │  │                                               │ │
+│ │                  │  │                                               │ │
+│ │ 📂 Cross-Login   │  │                                               │ │
+│ │   Flows          │  │                                               │ │
+│ │                  │  │                                               │ │
+│ │ 📂 Testing       │  │                                               │ │
+│ │ 📂 Technical     │  │                                               │ │
+│ └──────────────────┘  └───────────────────────────────────────────────┘ │
+└─────────────────────────────────────────────────────────────────────────┘
+```
 
-INSTITUTE ADMIN (Creator)
-├── Setup
-│   ├── Define periods (start/end times)
-│   ├── Configure breaks
-│   ├── Set holidays
-│   └── Block exam dates
-│
-├── Workspace
-│   ├── Assign teachers to slots
-│   ├── Map subjects to periods
-│   └── Handle conflicts
-│
-└── Publish
-    └── Timetable becomes active
+### Route Structure
 
-           │
-           │ propagates to
-           v
+```text
+/docs                           → Documentation Home (index with search)
+/docs/superadmin                → SuperAdmin section overview
+/docs/superadmin/curriculum     → Curriculum documentation
+/docs/superadmin/courses        → Courses documentation
+...
+/docs/institute                 → Institute section overview
+/docs/institute/batches         → Batches documentation
+...
+/docs/cross-login-flows         → Cross-login flows overview
+/docs/cross-login-flows/content → Content propagation flow
+...
+/docs/testing                   → Testing scenarios overview
+/docs/testing/smoke-tests       → Smoke test list
+...
+/docs/technical                 → Technical overview
+/docs/technical/routing         → Routing architecture
+```
 
-TEACHER (Consumer)
-├── My Schedule Page
-│   ├── Sees only their classes
-│   ├── Filtered by their subjects
-│   └── Shows batch information
-│
-├── Dashboard
-│   ├── Today's classes
-│   └── Current/next class widget
-│
-└── Lesson Plans
-    └── Can create plans for scheduled slots
+### Implementation Approach
 
-           │
-           │ propagates to
-           v
+#### Option A: Markdown Reader Component (Recommended)
+- Create a component that reads `/docs` markdown files
+- Parse and render with proper styling
+- Sidebar navigation auto-generated from folder structure
+- Search across all documents
+- **Pros**: Documentation stays in markdown, easy to maintain
+- **Cons**: Requires markdown parsing library
 
-STUDENT (Consumer)
-├── Dashboard
-│   ├── Today's schedule
-│   └── Upcoming classes
+#### Option B: Static Pages
+- Convert each markdown to React component
+- More control over styling
+- **Pros**: Full customization
+- **Cons**: Harder to maintain, duplication
+
+### Recommended Tech Stack
+
+| Component | Library | Purpose |
+|-----------|---------|---------|
+| Markdown Parser | `react-markdown` | Render .md as React |
+| Syntax Highlighting | `react-syntax-highlighter` | Code blocks |
+| Search | `fuse.js` | Fuzzy search across docs |
+| Navigation | Existing sidebar pattern | Consistent with platform |
+| Routing | React Router | Already in use |
+
+### Navigation Structure
+
+```text
+Documentation
+├── 📘 Getting Started
+│   ├── Architecture Overview
+│   └── How to Use This Documentation
 │
-└── Cannot modify anything
+├── 🔴 SuperAdmin Portal
+│   ├── Dashboard
+│   ├── Master Data
+│   │   ├── Curriculum
+│   │   └── Courses
+│   ├── Institutes
+│   ├── Content Library
+│   ├── Question Bank
+│   ├── Exams
+│   └── Roles & Access
+│
+├── 🟢 Institute Portal
+│   ├── Dashboard
+│   ├── Batches
+│   ├── Teachers
+│   ├── Students
+│   ├── Master Data
+│   ├── Timetable
+│   │   ├── Setup
+│   │   ├── Workspace
+│   │   └── Substitution
+│   ├── Academic Schedule
+│   │   ├── Setup
+│   │   ├── Planner
+│   │   └── Progress
+│   ├── Content Library
+│   ├── Question Bank
+│   ├── Exams
+│   └── Roles & Access
+│
+├── 🔵 Teacher Portal
+│   ├── Dashboard
+│   ├── Schedule
+│   ├── Lesson Plans
+│   ├── Content Library
+│   ├── Homework
+│   ├── Exams
+│   └── Academic Progress
+│
+├── 🟣 Student Portal
+│   ├── Dashboard
+│   ├── Subjects
+│   ├── Chapter View
+│   │   ├── Classroom Mode
+│   │   ├── My Path Mode
+│   │   └── Compete Mode
+│   ├── Content Viewer
+│   ├── Tests
+│   ├── Homework
+│   └── Progress
+│
+├── 🔄 Cross-Login Flows
+│   ├── Content Propagation
+│   ├── Curriculum Flow
+│   ├── Exam Flow
+│   ├── Timetable Flow
+│   ├── Academic Schedule Flow
+│   └── Homework Flow
+│
+├── 🧪 Testing Scenarios
+│   ├── Smoke Tests
+│   ├── Intra-Login Tests
+│   └── Inter-Login Tests
+│
+└── ⚙️ Technical
+    ├── Project Structure
+    ├── Routing
+    ├── Data Layer
+    ├── Component Patterns
+    └── Performance
 ```
 
 ---
 
-## File Naming Conventions
+## Part 3: Action Items Summary
 
-- All lowercase with hyphens
-- Descriptive names matching feature names
-- README.md for folder overviews
-- Consistent naming across similar features
+### Immediate Actions (Documentation Gaps)
+
+1. **Create missing cross-login flow files:**
+   - `curriculum-course-flow.md`
+   - `question-propagation.md`
+   - `batch-student-flow.md`
+
+2. **Create missing smoke test files:**
+   - `smoke-tests/superadmin.md`
+   - `smoke-tests/institute.md`
+
+3. **Create intra-login and inter-login test folders:**
+   - `intra-login-tests/superadmin.md`
+   - `intra-login-tests/institute.md`
+   - `intra-login-tests/teacher.md`
+   - `intra-login-tests/student.md`
+   - `inter-login-tests/content-tests.md`
+   - `inter-login-tests/exam-tests.md`
+   - `inter-login-tests/timetable-tests.md`
+   - `inter-login-tests/curriculum-tests.md`
+
+4. **Create technical documentation files:**
+   - `project-structure.md`
+   - `routing.md`
+   - `data-layer.md`
+   - `component-patterns.md`
+   - `responsive-design.md`
+   - `performance.md`
+
+### Documentation Portal Implementation
+
+1. **Create Documentation Browser UI**
+   - New route: `/docs/*`
+   - Sidebar navigation component
+   - Markdown viewer component
+   - Search functionality
+
+2. **Build Components**
+   - `DocsLayout.tsx` - Main layout with sidebar
+   - `DocsSidebar.tsx` - Navigation menu
+   - `DocsViewer.tsx` - Markdown renderer
+   - `DocsSearch.tsx` - Search interface
+
+3. **Features**
+   - Collapsible sidebar sections
+   - Breadcrumb navigation
+   - Related docs links
+   - Print-friendly view
+   - Mobile-responsive design
 
 ---
 
-## Maintenance Strategy
+## Summary
 
-### For New Features
-1. Create documentation file in appropriate folder
-2. Update parent README.md with link
-3. Add cross-login flow if applicable
-4. Add testing scenarios
+| Area | Current State | Action Needed |
+|------|--------------|---------------|
+| Feature Docs | 85% Complete | Add cross-login sections to a few docs |
+| Cross-Login Flows | 60% Complete | Create 3 missing flow files |
+| Testing Scenarios | 30% Complete | Create smoke, intra, inter test files |
+| Technical Docs | 10% Complete | Create 6 technical files |
+| Front-End Access | 0% | Build documentation portal UI |
 
-### For Feature Updates
-1. Update relevant documentation file
-2. Update cross-login flows if behavior changed
-3. Update testing scenarios
+Total missing files: ~20 documentation files + 1 documentation browser feature
 
-### Documentation Review
-- Review quarterly for accuracy
-- Update after major releases
-- QA team validates test scenarios
-
----
-
-## Total Files to Create
-
-| Category | File Count |
-|----------|------------|
-| Core Structure | 5 |
-| SuperAdmin Docs | 10 |
-| Institute Docs | 15 |
-| Teacher Docs | 12 |
-| Student Docs | 13 |
-| Cross-Login Flows | 9 |
-| Testing Scenarios | 14 |
-| Technical Docs | 7 |
-| **Total** | **85 files** |
-
----
-
-## Execution Approach
-
-I will create these documents in batches, proceeding automatically through each phase without requiring prompts between phases. Each batch will include:
-- Multiple related files created together
-- Consistent formatting and cross-references
-- Complete content based on codebase analysis
-
-The documentation will be immediately usable for:
-- Onboarding new team members
-- QA test case creation
-- Feature understanding
-- Cross-login dependency tracking
