@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import { Search } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import Fuse from "fuse.js";
@@ -25,6 +25,23 @@ interface DocsSearchProps {
 export function DocsSearch({ className }: DocsSearchProps) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
+
+  // Keyboard shortcut: Cmd+K (Mac) or Ctrl+K (Windows/Linux)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+        e.preventDefault();
+        setOpen((prev) => !prev);
+      }
+      // Close on Escape
+      if (e.key === "Escape" && open) {
+        setOpen(false);
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [open]);
   const navigate = useNavigate();
 
   const allDocs = useMemo(() => flattenDocsNavigation(), []);
@@ -62,12 +79,15 @@ export function DocsSearch({ className }: DocsSearchProps) {
         >
           <Search className="absolute left-3 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Search documentation..."
-            className="pl-9 w-full md:w-64 bg-background"
+            placeholder="Search docs..."
+            className="pl-9 pr-16 w-full md:w-64 bg-background"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onFocus={() => setOpen(true)}
           />
+          <kbd className="absolute right-2 pointer-events-none hidden sm:inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
+            <span className="text-xs">⌘</span>K
+          </kbd>
         </div>
       </PopoverTrigger>
       <PopoverContent 
