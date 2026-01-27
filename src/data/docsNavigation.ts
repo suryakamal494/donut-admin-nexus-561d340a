@@ -175,20 +175,6 @@ export const docsNavigation: DocSection[] = [
       },
     ],
   },
-  {
-    title: "Technical",
-    icon: "⚙️",
-    color: "text-gray-600",
-    items: [
-      { title: "Overview", path: "07-technical/README" },
-      { title: "Project Structure", path: "07-technical/project-structure" },
-      { title: "Routing", path: "07-technical/routing" },
-      { title: "Data Layer", path: "07-technical/data-layer" },
-      { title: "Component Patterns", path: "07-technical/component-patterns" },
-      { title: "Responsive Design", path: "07-technical/responsive-design" },
-      { title: "Performance", path: "07-technical/performance" },
-    ],
-  },
 ];
 
 // Flatten navigation for search
