@@ -105,7 +105,7 @@ export function DocsLayout() {
         {/* Breadcrumbs - Mobile/Tablet */}
         <div className="flex items-center gap-1 px-4 pb-2 overflow-x-auto scrollbar-hide text-sm lg:hidden">
           {breadcrumbs.map((crumb, index) => (
-            <div key={crumb.path} className="flex items-center gap-1 shrink-0">
+            <div key={`mobile-${index}-${crumb.path}`} className="flex items-center gap-1 shrink-0">
               {index > 0 && (
                 <ChevronRight className="h-3 w-3 text-muted-foreground" />
               )}
@@ -137,7 +137,7 @@ export function DocsLayout() {
           {/* Desktop breadcrumbs */}
           <div className="hidden lg:flex items-center gap-1 px-6 py-3 border-b border-border text-sm">
             {breadcrumbs.map((crumb, index) => (
-              <div key={crumb.path} className="flex items-center gap-1">
+              <div key={`desktop-${index}-${crumb.path}`} className="flex items-center gap-1">
                 {index > 0 && (
                   <ChevronRight className="h-3 w-3 text-muted-foreground" />
                 )}
