@@ -21,6 +21,7 @@ const SuperAdminRoutes = lazy(() => import("./routes/SuperAdminRoutes"));
 const InstituteRoutes = lazy(() => import("./routes/InstituteRoutes"));
 const TeacherRoutes = lazy(() => import("./routes/TeacherRoutes"));
 const StudentRoutes = lazy(() => import("./routes/StudentRoutes"));
+const DocsRoutes = lazy(() => import("./routes/DocsRoutes"));
 
 const queryClient = new QueryClient();
 
@@ -67,6 +68,9 @@ function AppContent() {
         } />
         <Route path="/student/*" element={
           <ModuleBoundary><StudentRoutes /></ModuleBoundary>
+        } />
+        <Route path="/docs/*" element={
+          <ModuleBoundary><DocsRoutes /></ModuleBoundary>
         } />
         
         {/* 404 */}
