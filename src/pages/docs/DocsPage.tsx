@@ -1,15 +1,12 @@
-import { useParams } from "react-router-dom";
+import { useParams, Navigate } from "react-router-dom";
 import { DocsViewer } from "@/components/docs/DocsViewer";
 
 export default function DocsPage() {
   const { "*": docPath } = useParams();
 
-  if (!docPath) {
-    return (
-      <div className="flex items-center justify-center h-full">
-        <p className="text-muted-foreground">Select a document from the sidebar</p>
-      </div>
-    );
+  // If no path or just wildcards/invalid paths, redirect to docs index
+  if (!docPath || docPath === "*" || docPath.trim() === "") {
+    return <Navigate to="/docs" replace />;
   }
 
   return <DocsViewer docPath={docPath} className="h-full" />;
