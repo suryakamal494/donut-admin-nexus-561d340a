@@ -1,264 +1,217 @@
 
-# UI Review Fixes Implementation Plan
+# Classification Flow Fixes Implementation Plan
 
 ## Overview
 
-This plan addresses 7 UI issues identified in the Donut AI UI Review document across Super Admin and Institute login portals. The fixes focus on making non-functional buttons work, adding missing question types, and implementing intuitive bulk data entry workflows.
+This plan updates the classification flow across Question Bank and Content Library creation pages to ensure consistency:
+1. **Remove** Class context dropdown when Course mode is selected
+2. **Add** mandatory Topic selection after Chapter
+3. **Add** Difficulty selection in classification sidebar (after Topic)
+4. **Add** Cognitive Type selection in Create Question (after Difficulty)
 
 ---
 
-## Issue Summary
+## Current State vs Required State
 
-| # | Module | Issue | Complexity |
-|---|--------|-------|------------|
-| 1 | Master Data | Add Chapter/Topic not functional | High |
-| 2 | Users | View button not functional | Low |
-| 3 | Courses | Edit button not available | Medium |
-| 4 | Questions | Paragraph-based question missing | High |
-| 5 | Questions | No class-chapter relation in Course mode | Medium |
-| 6 | Exams | Exam flow document | Skipped |
-| 7 | Questions | Missing UI for Assertion-Reasoning, True/False, Fill in Blanks | Medium |
+| Field | Curriculum Mode | Course Mode | Notes |
+|-------|-----------------|-------------|-------|
+| Curriculum/Course | Required | Required | Source selector |
+| Class | Required | **REMOVE** | No class context for courses |
+| Subject | Required | Required | |
+| Chapter | Required | Required | |
+| Topic | **ADD (Mandatory)** | **ADD (Mandatory)** | Currently missing or optional |
+| Difficulty | **ADD in sidebar** | **ADD in sidebar** | Move/add to classification |
+| Cognitive Type | **ADD** (Questions only) | **ADD** (Questions only) | New field |
 
 ---
 
 ## Implementation Details
 
-### Issue 1: Add Chapter & Add Topic Dialogs (High Priority)
+### 1. Super Admin - Create Question (`src/pages/questions/CreateQuestion.tsx`)
 
-**Current Problem**: QuickAdd menu shows toast messages instead of opening creation dialogs.
+**Changes:**
 
-**Solution**: Create two new dialog components with bulk copy-paste support.
+**a) Remove Class Context in Course Mode (lines 550-563)**
+- Delete the entire "Class (Context)" dropdown block that appears after Course selection
+- Flow becomes: Course → Chapter → Topic
 
-**Files to Create**:
-- `src/components/parameters/AddChapterDialog.tsx`
-- `src/components/parameters/AddTopicDialog.tsx`
-
-**AddChapterDialog Flow**:
-1. Select Curriculum (dropdown)
-2. Select Class (dropdown)
-3. Select Subject (dropdown)
-4. Text input area supporting:
-   - Single chapter entry
-   - Multi-line paste (one chapter per line)
-5. Preview parsed chapters before submission
-6. Submit creates all chapters linked to selected curriculum/class/subject
-
-**AddTopicDialog Flow**:
-1. Select Curriculum (dropdown)
-2. Select Class (dropdown) - filters subjects
-3. Select Subject (dropdown) - filters chapters
-4. Select Chapter (dropdown) - required, topics go under this chapter
-5. Text input area supporting:
-   - Single topic entry
-   - Multi-line paste (one topic per line)
-6. Preview parsed topics before submission
-
-**Bulk Parse Logic**:
+**b) Add Topic State and Dropdown**
 ```typescript
-// Example: Parse newline-separated input
-const parseMultipleEntries = (text: string): string[] => {
-  return text
-    .split(/[\n\r]+/)
-    .map(line => line.trim())
-    .filter(line => line.length > 0);
+// Add state
+const [selectedTopicId, setSelectedTopicId] = useState("");
+
+// Add topic getter (import from cbseMasterData)
+import { getTopicsByChapter } from "@/data/cbseMasterData";
+
+// Get topics based on selected chapter
+const availableTopics = selectedChapterId 
+  ? getTopicsByChapter(selectedChapterId) 
+  : [];
+```
+
+**c) Add Topic Dropdown (after Chapter)**
+```tsx
+{selectedChapterId && (
+  <div className="space-y-2">
+    <Label>Topic *</Label>
+    <Select value={selectedTopicId} onValueChange={setSelectedTopicId}>
+      <SelectTrigger><SelectValue placeholder="Select topic" /></SelectTrigger>
+      <SelectContent>
+        {availableTopics.map((topic) => (
+          <SelectItem key={topic.id} value={topic.id}>{topic.name}</SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  </div>
+)}
+```
+
+**d) Add Cognitive Type State and Dropdown (after Difficulty)**
+```typescript
+// Add state
+const [selectedCognitiveType, setSelectedCognitiveType] = useState("");
+
+// Add cognitive types array
+const cognitiveTypes = [
+  { id: "logical", label: "Logical" },
+  { id: "analytical", label: "Analytical" },
+  { id: "conceptual", label: "Conceptual" },
+  { id: "numerical", label: "Numerical" },
+  { id: "application", label: "Application" },
+  { id: "memory", label: "Memory" },
+];
+```
+
+**e) Reset cascade on parent change**
+- When Chapter changes: reset Topic
+- Update validation to require Topic
+
+---
+
+### 2. Super Admin - Create Content (`src/pages/content/CreateContent.tsx`)
+
+**Changes:**
+
+**a) Add Topic State**
+```typescript
+const [selectedTopicId, setSelectedTopicId] = useState("");
+```
+
+**b) Update Topic Dropdown to be Mandatory**
+- Change label from "Topic" to "Topic *"
+- Change placeholder from "Select topic (optional)" to "Select topic"
+- Wire up to actual data using `getTopicsByChapter`
+
+**c) Add Difficulty Dropdown (after Topic)**
+```tsx
+<div className="space-y-2">
+  <Label>Difficulty</Label>
+  <Select value={selectedDifficulty} onValueChange={setSelectedDifficulty}>
+    <SelectTrigger><SelectValue placeholder="Select difficulty" /></SelectTrigger>
+    <SelectContent>
+      <SelectItem value="easy">Easy</SelectItem>
+      <SelectItem value="medium">Medium</SelectItem>
+      <SelectItem value="hard">Hard</SelectItem>
+    </SelectContent>
+  </Select>
+</div>
+```
+
+**d) Remove hard-coded topic options**
+- Currently shows "Newton's Laws" and "Work & Energy" as static options
+- Replace with dynamic data from `getTopicsByChapter()`
+
+---
+
+### 3. Institute - Create Question (`src/pages/institute/questions/CreateQuestion.tsx`)
+
+**Review Current State:**
+- Already has Difficulty and Cognitive Type selectors
+- Uses different track selection (assignedTracks)
+- Need to verify Topic is present and mandatory
+
+**Changes Required:**
+- Ensure Topic dropdown appears after Chapter
+- Mark Topic as mandatory (Label should show *)
+- Verify Course mode doesn't show Class dropdown
+
+---
+
+### 4. Institute - Create Content (`src/pages/institute/content/CreateContent.tsx`)
+
+**Current State:**
+- Has Topic dropdown but shows as "Select topic (optional)"
+- No Difficulty selector
+
+**Changes:**
+- Change Topic label to "Topic *"
+- Change placeholder to "Select topic"
+- Add Difficulty dropdown after Topic
+- Update submit validation to require Topic
+
+---
+
+## Technical Notes
+
+### Data Helper Functions
+
+Already available in `src/data/cbseMasterData.ts`:
+```typescript
+// Get topics for a chapter
+export const getTopicsByChapter = (chapterId: string): CBSETopic[] => {
+  return allCBSETopics.filter(t => t.chapterId === chapterId);
 };
 ```
 
-**File to Modify**: `src/pages/parameters/Parameters.tsx`
-- Import new dialogs
-- Add state for dialog visibility
-- Update QuickAddMenu `onAddChapter` and `onAddTopic` to open dialogs
+For course-owned chapters, need to check `src/data/masterData.ts` for topic retrieval.
 
----
+### Reset Cascade Logic
 
-### Issue 2: User View Dialog (Low Priority)
-
-**Current Problem**: "View" dropdown option has no handler.
-
-**Solution**: Create a simple user detail dialog.
-
-**File to Create**: `src/components/users/UserViewDialog.tsx`
-
-**Content** (Basic Info):
-- Full Name
-- Email Address
-- Mobile Number
-- Role (Student/Teacher/Parent)
-- Status (Active/Inactive badge)
-- Class (if applicable)
-- Course (if applicable)
-
-**File to Modify**: `src/pages/users/Users.tsx`
-- Import UserViewDialog
-- Add state: `selectedUser` and `showViewDialog`
-- Add `onClick` handler to View menu item
-
----
-
-### Issue 3: Course Edit Functionality (Medium Priority)
-
-**Current Problem**: No way to edit course metadata from the course list.
-
-**Solution**: Add Edit button to course cards and create edit dialog.
-
-**File to Create**: `src/components/parameters/courses/CourseEditDialog.tsx`
-
-**Editable Fields**:
-- Course Name
-- Description
-- Category (Foundation/Competitive)
-- Status (Draft/Published)
-- Associated Curriculums (multi-select)
-- Associated Classes (multi-select)
-
-**Files to Modify**:
-- `src/components/parameters/courses/CourseListPanel.tsx` - Add Edit icon button to each course card
-- `src/pages/parameters/Courses.tsx` - Add dialog state and handlers
-
----
-
-### Issue 4: Paragraph-Based Question Type (High Priority)
-
-**Current Problem**: No support for paragraph questions where multiple sub-questions relate to one passage.
-
-**Solution**: Add "Paragraph Based" question type with nested question creation.
-
-**File to Modify**: `src/pages/questions/CreateQuestion.tsx`
-
-**UI Flow**:
-1. Select "Paragraph Based" from question types
-2. Enter the paragraph/passage text
-3. Select number of questions for this paragraph (1-10 selector)
-4. For each sub-question:
-   - Question type dropdown (MCQ/Multiple/Numerical only for sub-questions)
-   - Question text
-   - Options (if MCQ/Multiple)
-   - Answer input
-5. Navigation: "Previous Question" / "Next Question" buttons or horizontal stepper
-6. All sub-questions share the same classification (curriculum/class/subject/chapter)
-
-**Mobile-First Design**:
-- Stacked layout for paragraph + questions
-- Swipe or button navigation between sub-questions
-- Clear progress indicator (1/5, 2/5, etc.)
-- Save progress locally before final submit
-
-**Data Structure**:
+When a parent selection changes, all children must reset:
 ```typescript
-interface ParagraphQuestion {
-  type: 'paragraph';
-  passage: string;
-  subQuestions: {
-    type: 'mcq' | 'multiple' | 'numerical';
-    text: string;
-    options?: string[];
-    correctAnswer: string | number;
-  }[];
+// On Course change
+setSelectedCourseId(v);
+setSelectedChapterId("");
+setSelectedTopicId("");
+
+// On Chapter change  
+setSelectedChapterId(v);
+setSelectedTopicId("");
+```
+
+### Validation Updates
+
+Add Topic to required fields validation:
+```typescript
+if (!selectedTopicId) {
+  toast.error("Please select a topic");
+  return;
 }
 ```
 
 ---
 
-
-
-
-### Issue 7: Missing Question Type UIs (Medium Priority)
-
-**Current Problem**: Assertion-Reasoning, True/False, and Fill in Blanks lack specialized input UIs.
-
-**Files to Modify**: `src/pages/questions/CreateQuestion.tsx`
-
-#### 7a. True/False Question Type
-- Add "True/False" to `questionTypes` array
-- UI: Question text + two radio buttons (True/False) for correct answer
-
-#### 7b. Assertion-Reasoning UI
-- When "Assertion-Reasoning" is selected, show:
-  - Assertion (Statement 1) textarea
-  - Reasoning (Statement 2) textarea
-  - Options (A, B, C, D with standard assertion-reasoning combinations):
-    - A: Both true, reasoning explains assertion
-    - B: Both true, reasoning doesn't explain
-    - C: Assertion true, reasoning false
-    - D: Assertion false, reasoning true
-  - Correct option selector
-
-#### 7c. Fill in Blanks UI
-- When "Fill in Blanks" is selected, show:
-  - Rich text input with blank marker support (e.g., `____` or `[blank]`)
-  - Multiple blanks support with ordered answers
-  - Answer inputs for each blank (auto-detect from question text)
-  - Example: "The capital of France is ____" -> Answer: "Paris"
-
----
-
 ## File Change Summary
 
-| Action | File Path |
-|--------|-----------|
-| Create | `src/components/parameters/AddChapterDialog.tsx` |
-| Create | `src/components/parameters/AddTopicDialog.tsx` |
-| Create | `src/components/users/UserViewDialog.tsx` |
-| Create | `src/components/parameters/courses/CourseEditDialog.tsx` |
-| Modify | `src/pages/parameters/Parameters.tsx` |
-| Modify | `src/pages/users/Users.tsx` |
-| Modify | `src/pages/parameters/Courses.tsx` |
-| Modify | `src/components/parameters/courses/CourseListPanel.tsx` |
-| Modify | `src/pages/questions/CreateQuestion.tsx` |
-| Modify | `src/components/parameters/index.ts` (export new components) |
-| Modify | `src/components/users/index.ts` (create if needed) |
+| File | Changes |
+|------|---------|
+| `src/pages/questions/CreateQuestion.tsx` | Remove Class in Course mode, Add Topic (mandatory), Add Cognitive Type |
+| `src/pages/content/CreateContent.tsx` | Make Topic mandatory with real data, Add Difficulty |
+| `src/pages/institute/questions/CreateQuestion.tsx` | Verify Topic mandatory, remove Class in Course mode if present |
+| `src/pages/institute/content/CreateContent.tsx` | Make Topic mandatory, Add Difficulty |
 
 ---
 
-## Technical Implementation Notes
+## Classification Flow After Implementation
 
-### Bulk Copy-Paste Parser
-```typescript
-// Shared utility for parsing multi-line input
-// Location: src/lib/parseUtils.ts
-
-export const parseBulkInput = (input: string): string[] => {
-  return input
-    .split(/[\n\r]+/)
-    .map(line => line.trim())
-    .filter(line => line.length > 0 && line.length <= 200);
-};
+**Curriculum Mode (Create Question/Content):**
+```
+Curriculum → Class → Subject → Chapter → Topic* → Difficulty → Cognitive Type (Questions only)
 ```
 
-### Mobile-First Responsive Considerations
-- All new dialogs use `ResponsiveDialog` pattern (Drawer on mobile, Dialog on desktop)
-- Touch targets minimum 44px
-- Dropdowns use proper z-index and solid backgrounds
-- Paragraph question navigation uses large tap buttons, not swipe gestures for accessibility
+**Course Mode (Create Question/Content):**
+```
+Course → Subject → Chapter → Topic* → Difficulty → Cognitive Type (Questions only)
+```
 
-### Validation
-- Chapter/Topic names: Required, 1-200 characters, trim whitespace
-- Paragraph passage: Required, 10-5000 characters
-- Sub-questions: Minimum 1, maximum 10 per paragraph
-- All inputs sanitized before submission
-
----
-
-## Implementation Order
-
-1. **Phase 1** (Quick Wins):
-   - Issue 2: User View Dialog
-   - Issue 7a: True/False question type
-
-2. **Phase 2** (Medium Effort):
-   - Issue 3: Course Edit Dialog
-   - Issue 5: Class dropdown in Course mode
-   - Issue 7b & 7c: Assertion-Reasoning and Fill in Blanks UIs
-
-3. **Phase 3** (High Effort):
-   - Issue 1: Add Chapter Dialog with bulk support
-   - Issue 1: Add Topic Dialog with bulk support
-   - Issue 4: Paragraph-Based Question Type
-
----
-
-## Estimated Scope
-
-- **New Components**: 4 dialog components + 1 utility file
-- **Modified Files**: 7 existing files
-- **Total Changes**: ~800-1000 lines of code
+\* = Mandatory field
