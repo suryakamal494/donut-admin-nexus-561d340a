@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Layers, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -8,11 +9,15 @@ import {
   CourseContentPanel,
   CourseManageDialog
 } from "@/components/parameters";
-import { CourseStats } from "@/components/parameters/courses";
+import { CourseStats, CourseEditDialog } from "@/components/parameters/courses";
 import { useCourses } from "@/hooks/useCourses";
+import { Course } from "@/types/masterData";
 
 const Courses = () => {
   const navigate = useNavigate();
+  const [editingCourse, setEditingCourse] = useState<Course | null>(null);
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  
   const { 
     selectedCourseId, 
     selectedSubjectId, 
@@ -23,6 +28,11 @@ const Courses = () => {
     handleCourseSelect,
     handleSubjectSelect,
   } = useCourses();
+
+  const handleEditCourse = (course: Course) => {
+    setEditingCourse(course);
+    setShowEditDialog(true);
+  };
 
   return (
     <div className="space-y-4 md:space-y-6 animate-fade-in">
@@ -75,6 +85,7 @@ const Courses = () => {
           <CourseListPanel 
             selectedCourseId={selectedCourseId}
             onSelectCourse={handleCourseSelect}
+            onEditCourse={handleEditCourse}
           />
           <CourseSubjectPanel 
             selectedCourseId={selectedCourseId}
@@ -92,6 +103,13 @@ const Courses = () => {
       <CourseManageDialog 
         open={showManageDialog}
         onOpenChange={setShowManageDialog}
+      />
+
+      {/* Course Edit Dialog */}
+      <CourseEditDialog
+        course={editingCourse}
+        open={showEditDialog}
+        onOpenChange={setShowEditDialog}
       />
     </div>
   );
