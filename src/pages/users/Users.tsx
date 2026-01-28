@@ -6,10 +6,18 @@ import { PageHeader } from "@/components/ui/page-header";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { mockUsers } from "@/data/mockData";
+import { mockUsers, User } from "@/data/mockData";
+import { UserViewDialog } from "@/components/users";
 
 const Users = () => {
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [showViewDialog, setShowViewDialog] = useState(false);
+
+  const handleViewUser = (user: User) => {
+    setSelectedUser(user);
+    setShowViewDialog(true);
+  };
 
   const filteredUsers = mockUsers.filter((user) =>
     user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -69,7 +77,7 @@ const Users = () => {
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild><Button variant="ghost" size="icon"><MoreHorizontal className="w-4 h-4" /></Button></DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem><Eye className="w-4 h-4 mr-2" />View</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleViewUser(user)}><Eye className="w-4 h-4 mr-2" />View</DropdownMenuItem>
                         <DropdownMenuItem><Edit className="w-4 h-4 mr-2" />Edit</DropdownMenuItem>
                         <DropdownMenuItem className="text-destructive"><Trash2 className="w-4 h-4 mr-2" />Delete</DropdownMenuItem>
                       </DropdownMenuContent>
@@ -81,6 +89,12 @@ const Users = () => {
           </Table>
         </div>
       </div>
+
+      <UserViewDialog
+        user={selectedUser}
+        open={showViewDialog}
+        onOpenChange={setShowViewDialog}
+      />
     </div>
   );
 };
