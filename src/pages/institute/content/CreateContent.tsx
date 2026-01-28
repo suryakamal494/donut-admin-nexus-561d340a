@@ -44,6 +44,7 @@ const InstituteCreateContent = () => {
   const [selectedSubject, setSelectedSubject] = useState("");
   const [selectedChapter, setSelectedChapter] = useState("");
   const [selectedTopic, setSelectedTopic] = useState("");
+  const [selectedDifficulty, setSelectedDifficulty] = useState("");
 
   // Pre-populate form for edit mode
   useEffect(() => {
@@ -225,9 +226,9 @@ const InstituteCreateContent = () => {
               {/* Topic */}
               {selectedChapter && (
                 <div className="space-y-2">
-                  <Label>Topic</Label>
+                  <Label>Topic *</Label>
                   <Select value={selectedTopic} onValueChange={setSelectedTopic}>
-                    <SelectTrigger><SelectValue placeholder="Select topic (optional)" /></SelectTrigger>
+                    <SelectTrigger><SelectValue placeholder="Select topic" /></SelectTrigger>
                     <SelectContent>
                       {availableTopics.map(topic => (
                         <SelectItem key={topic.id} value={topic.id}>{topic.name}</SelectItem>
@@ -236,6 +237,19 @@ const InstituteCreateContent = () => {
                   </Select>
                 </div>
               )}
+
+              {/* Difficulty */}
+              <div className="space-y-2">
+                <Label>Difficulty</Label>
+                <Select value={selectedDifficulty} onValueChange={setSelectedDifficulty}>
+                  <SelectTrigger><SelectValue placeholder="Select difficulty" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="easy">Easy</SelectItem>
+                    <SelectItem value="medium">Medium</SelectItem>
+                    <SelectItem value="hard">Hard</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </div>
 

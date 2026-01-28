@@ -10,7 +10,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { assignedTracks } from "@/data/instituteData";
-import { getChaptersByClassAndSubject } from "@/data/cbseMasterData";
+import { getChaptersByClassAndSubject, getTopicsByChapter } from "@/data/cbseMasterData";
 import { getSubjectsForCourse, getChaptersForCourseBySubject, subjects as masterSubjects } from "@/data/masterData";
 import { classes } from "@/data/mockData";
 import { mockQuestions } from "@/data/questionsData";
@@ -58,6 +58,7 @@ const CreateQuestion = () => {
   const [selectedClassId, setSelectedClassId] = useState("");
   const [selectedSubjectId, setSelectedSubjectId] = useState("");
   const [selectedChapterId, setSelectedChapterId] = useState("");
+  const [selectedTopicId, setSelectedTopicId] = useState("");
   const [selectedDifficulty, setSelectedDifficulty] = useState("");
   const [selectedCognitiveType, setSelectedCognitiveType] = useState("");
 
@@ -117,11 +118,18 @@ const CreateQuestion = () => {
     return [];
   }, [selectedCourse, selectedClassId, selectedSubjectId, isCBSE]);
 
+  // Get topics based on selected chapter
+  const availableTopics = useMemo(() => {
+    if (!selectedChapterId) return [];
+    return getTopicsByChapter(selectedChapterId);
+  }, [selectedChapterId]);
+
   const handleCourseChange = (courseId: string) => {
     setSelectedCourse(courseId);
     setSelectedClassId("");
     setSelectedSubjectId("");
     setSelectedChapterId("");
+    setSelectedTopicId("");
   };
 
   const handleSubmit = () => {
@@ -309,12 +317,27 @@ const CreateQuestion = () => {
                   {/* Chapter */}
                   {selectedSubjectId && (isCBSE ? selectedClassId : true) && (
                     <div className="space-y-2">
-                      <Label>Chapter</Label>
-                      <Select value={selectedChapterId} onValueChange={setSelectedChapterId}>
+                      <Label>Chapter *</Label>
+                      <Select value={selectedChapterId} onValueChange={(v) => { setSelectedChapterId(v); setSelectedTopicId(""); }}>
                         <SelectTrigger><SelectValue placeholder="Select chapter" /></SelectTrigger>
                         <SelectContent>
                           {availableChapters.map((ch) => (
                             <SelectItem key={ch.id} value={ch.id}>{ch.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+
+                  {/* Topic */}
+                  {selectedChapterId && (
+                    <div className="space-y-2">
+                      <Label>Topic *</Label>
+                      <Select value={selectedTopicId} onValueChange={setSelectedTopicId}>
+                        <SelectTrigger><SelectValue placeholder="Select topic" /></SelectTrigger>
+                        <SelectContent>
+                          {availableTopics.map((topic) => (
+                            <SelectItem key={topic.id} value={topic.id}>{topic.name}</SelectItem>
                           ))}
                         </SelectContent>
                       </Select>

@@ -10,10 +10,19 @@ import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { SourceTypeSelector } from "@/components/parameters";
 import { ContentSourceType } from "@/components/parameters/SourceTypeSelector";
-import { getActiveCurriculums, getPublishedCourses, getAllCourseChapters, courses as masterCourses } from "@/data/masterData";
+import { getActiveCurriculums, getPublishedCourses, getAllCourseChapters } from "@/data/masterData";
 import { classes, subjects } from "@/data/mockData";
-import { getChaptersByClassAndSubject } from "@/data/cbseMasterData";
+import { getChaptersByClassAndSubject, getTopicsByChapter } from "@/data/cbseMasterData";
 import { countBlanks } from "@/lib/parseUtils";
+
+const cognitiveTypes = [
+  { id: "logical", label: "Logical" },
+  { id: "analytical", label: "Analytical" },
+  { id: "conceptual", label: "Conceptual" },
+  { id: "numerical", label: "Numerical" },
+  { id: "application", label: "Application" },
+  { id: "memory", label: "Memory" },
+];
 
 const questionTypes = [
   { id: "mcq", label: "MCQ (Single Correct)" },
@@ -76,14 +85,12 @@ const CreateQuestion = () => {
   const [selectedClassId, setSelectedClassId] = useState("");
   const [selectedSubjectId, setSelectedSubjectId] = useState("");
   const [selectedChapterId, setSelectedChapterId] = useState("");
+  const [selectedTopicId, setSelectedTopicId] = useState("");
+  const [selectedDifficulty, setSelectedDifficulty] = useState("");
+  const [selectedCognitiveType, setSelectedCognitiveType] = useState("");
 
   const activeCurriculums = getActiveCurriculums();
   const publishedCourses = getPublishedCourses();
-
-  // Get available classes for selected course
-  const selectedCourseData = masterCourses.find(c => c.id === selectedCourseId);
-  const courseAllowedClasses = selectedCourseData?.allowedClasses || [];
-  const filteredClasses = classes.filter(cls => courseAllowedClasses.includes(cls.id));
 
   // Get chapters based on source type - now includes ALL course chapters (owned + mapped)
   const availableChapters = sourceType === 'curriculum' && selectedClassId && selectedSubjectId
@@ -91,6 +98,9 @@ const CreateQuestion = () => {
     : sourceType === 'course' && selectedCourseId
       ? getAllCourseChapters(selectedCourseId)
       : [];
+
+  // Get topics based on selected chapter
+  const availableTopics = selectedChapterId ? getTopicsByChapter(selectedChapterId) : [];
 
   // Handle fill in blanks question text change
   const handleFillQuestionChange = (text: string) => {
@@ -141,6 +151,7 @@ const CreateQuestion = () => {
     setSelectedClassId("");
     setSelectedSubjectId("");
     setSelectedChapterId("");
+    setSelectedTopicId("");
   };
 
   return (
@@ -524,7 +535,7 @@ const CreateQuestion = () => {
                   </div>
                   <div className="space-y-2">
                     <Label>Chapter *</Label>
-                    <Select value={selectedChapterId} onValueChange={setSelectedChapterId}>
+                    <Select value={selectedChapterId} onValueChange={(v) => { setSelectedChapterId(v); setSelectedTopicId(""); }}>
                       <SelectTrigger><SelectValue placeholder="Select chapter" /></SelectTrigger>
                       <SelectContent>
                         {availableChapters.map((ch) => (
@@ -533,12 +544,25 @@ const CreateQuestion = () => {
                       </SelectContent>
                     </Select>
                   </div>
+                  {selectedChapterId && (
+                    <div className="space-y-2">
+                      <Label>Topic *</Label>
+                      <Select value={selectedTopicId} onValueChange={setSelectedTopicId}>
+                        <SelectTrigger><SelectValue placeholder="Select topic" /></SelectTrigger>
+                        <SelectContent>
+                          {availableTopics.map((topic) => (
+                            <SelectItem key={topic.id} value={topic.id}>{topic.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
                 </>
               ) : (
                 <>
                   <div className="space-y-2">
                     <Label>Course *</Label>
-                    <Select value={selectedCourseId} onValueChange={(v) => { setSelectedCourseId(v); setSelectedClassId(""); setSelectedChapterId(""); }}>
+                    <Select value={selectedCourseId} onValueChange={(v) => { setSelectedCourseId(v); setSelectedChapterId(""); setSelectedTopicId(""); }}>
                       <SelectTrigger><SelectValue placeholder="Select course" /></SelectTrigger>
                       <SelectContent>
                         {publishedCourses.map((course) => (
@@ -547,23 +571,9 @@ const CreateQuestion = () => {
                       </SelectContent>
                     </Select>
                   </div>
-                  {selectedCourseId && filteredClasses.length > 0 && (
-                    <div className="space-y-2">
-                      <Label>Class (Context)</Label>
-                      <Select value={selectedClassId} onValueChange={(v) => { setSelectedClassId(v); setSelectedChapterId(""); }}>
-                        <SelectTrigger><SelectValue placeholder="Select class level" /></SelectTrigger>
-                        <SelectContent>
-                          {filteredClasses.map((cls) => (
-                            <SelectItem key={cls.id} value={cls.id}>{cls.name}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <p className="text-xs text-muted-foreground">Helps organize by class level</p>
-                    </div>
-                  )}
                   <div className="space-y-2">
                     <Label>Chapter *</Label>
-                    <Select value={selectedChapterId} onValueChange={setSelectedChapterId}>
+                    <Select value={selectedChapterId} onValueChange={(v) => { setSelectedChapterId(v); setSelectedTopicId(""); }}>
                       <SelectTrigger><SelectValue placeholder="Select chapter" /></SelectTrigger>
                       <SelectContent>
                         {availableChapters.map((ch) => (
@@ -572,16 +582,42 @@ const CreateQuestion = () => {
                       </SelectContent>
                     </Select>
                   </div>
+                  {selectedChapterId && (
+                    <div className="space-y-2">
+                      <Label>Topic *</Label>
+                      <Select value={selectedTopicId} onValueChange={setSelectedTopicId}>
+                        <SelectTrigger><SelectValue placeholder="Select topic" /></SelectTrigger>
+                        <SelectContent>
+                          {availableTopics.map((topic) => (
+                            <SelectItem key={topic.id} value={topic.id}>{topic.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
                 </>
               )}
 
               <div className="space-y-2">
                 <Label>Difficulty</Label>
-                <Select><SelectTrigger><SelectValue placeholder="Select difficulty" /></SelectTrigger>
+                <Select value={selectedDifficulty} onValueChange={setSelectedDifficulty}>
+                  <SelectTrigger><SelectValue placeholder="Select difficulty" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="easy">Easy</SelectItem>
                     <SelectItem value="medium">Medium</SelectItem>
                     <SelectItem value="hard">Hard</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Cognitive Type</Label>
+                <Select value={selectedCognitiveType} onValueChange={setSelectedCognitiveType}>
+                  <SelectTrigger><SelectValue placeholder="Select cognitive type" /></SelectTrigger>
+                  <SelectContent>
+                    {cognitiveTypes.map((cog) => (
+                      <SelectItem key={cog.id} value={cog.id}>{cog.label}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
