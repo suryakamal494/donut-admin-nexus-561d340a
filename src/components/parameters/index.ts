@@ -14,3 +14,5 @@ export { ClassFormDialog } from "./ClassFormDialog";
 export { SubjectFormDialog } from "./SubjectFormDialog";
 export { ChapterFormDialog } from "./ChapterFormDialog";
 export { TopicFormDialog } from "./TopicFormDialog";
+export { AddChapterDialog } from "./AddChapterDialog";
+export { AddTopicDialog } from "./AddTopicDialog";

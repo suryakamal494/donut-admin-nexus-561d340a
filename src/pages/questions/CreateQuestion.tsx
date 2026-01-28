@@ -22,6 +22,7 @@ const questionTypes = [
   { id: "truefalse", label: "True/False" },
   { id: "assertion", label: "Assertion-Reasoning" },
   { id: "fill", label: "Fill in Blanks" },
+  { id: "paragraph", label: "Paragraph Based" },
   { id: "short", label: "Short Answer" },
   { id: "long", label: "Long Answer" },
 ];
@@ -33,6 +34,14 @@ const assertionReasoningOptions = [
   { id: "C", label: "Assertion is correct, but Reason is incorrect" },
   { id: "D", label: "Assertion is incorrect, but Reason is correct" },
 ];
+
+// Sub-question type for paragraph questions
+interface SubQuestion {
+  type: 'mcq' | 'multiple' | 'numerical';
+  text: string;
+  options: string[];
+  correctAnswer: string;
+}
 
 const CreateQuestion = () => {
   const [questionType, setQuestionType] = useState("mcq");
@@ -47,6 +56,15 @@ const CreateQuestion = () => {
   // Fill in Blanks state
   const [fillQuestion, setFillQuestion] = useState("");
   const [blankAnswers, setBlankAnswers] = useState<string[]>([]);
+  
+  // Paragraph-based state
+  const [passage, setPassage] = useState("");
+  const [subQuestionCount, setSubQuestionCount] = useState(2);
+  const [subQuestions, setSubQuestions] = useState<SubQuestion[]>([
+    { type: 'mcq', text: '', options: ['', '', '', ''], correctAnswer: '' },
+    { type: 'mcq', text: '', options: ['', '', '', ''], correctAnswer: '' },
+  ]);
+  const [currentSubQuestion, setCurrentSubQuestion] = useState(0);
   
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -83,6 +101,30 @@ const CreateQuestion = () => {
       const newAnswers = [...prev];
       while (newAnswers.length < blankCount) newAnswers.push("");
       return newAnswers.slice(0, blankCount);
+    });
+  };
+
+  // Handle sub-question count change for paragraph type
+  const handleSubQuestionCountChange = (count: number) => {
+    setSubQuestionCount(count);
+    setSubQuestions(prev => {
+      const newQuestions = [...prev];
+      while (newQuestions.length < count) {
+        newQuestions.push({ type: 'mcq', text: '', options: ['', '', '', ''], correctAnswer: '' });
+      }
+      return newQuestions.slice(0, count);
+    });
+    if (currentSubQuestion >= count) {
+      setCurrentSubQuestion(count - 1);
+    }
+  };
+
+  // Update a specific sub-question
+  const updateSubQuestion = (index: number, updates: Partial<SubQuestion>) => {
+    setSubQuestions(prev => {
+      const newQuestions = [...prev];
+      newQuestions[index] = { ...newQuestions[index], ...updates };
+      return newQuestions;
     });
   };
 
@@ -276,6 +318,150 @@ const CreateQuestion = () => {
                       </div>
                     </div>
                   )}
+                </div>
+              )}
+              {questionType === "paragraph" && (
+                <div className="space-y-4">
+                  {/* Passage */}
+                  <div className="space-y-1.5 sm:space-y-2">
+                    <Label className="text-sm">Passage / Paragraph</Label>
+                    <Textarea 
+                      placeholder="Enter the passage or paragraph that the questions will be based on..."
+                      value={passage}
+                      onChange={(e) => setPassage(e.target.value)}
+                      className="min-h-32 text-sm" 
+                    />
+                  </div>
+
+                  {/* Number of Questions */}
+                  <div className="space-y-1.5 sm:space-y-2">
+                    <Label className="text-sm">Number of Questions</Label>
+                    <Select 
+                      value={subQuestionCount.toString()} 
+                      onValueChange={(v) => handleSubQuestionCountChange(parseInt(v))}
+                    >
+                      <SelectTrigger className="h-9 w-32">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(n => (
+                          <SelectItem key={n} value={n.toString()}>{n} Question{n > 1 ? 's' : ''}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Sub-Question Navigation */}
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {subQuestions.map((_, index) => (
+                      <Button
+                        key={index}
+                        type="button"
+                        variant={currentSubQuestion === index ? "default" : "outline"}
+                        size="sm"
+                        className={cn(
+                          "h-8 w-8 p-0",
+                          currentSubQuestion === index && "gradient-button"
+                        )}
+                        onClick={() => setCurrentSubQuestion(index)}
+                      >
+                        {index + 1}
+                      </Button>
+                    ))}
+                  </div>
+
+                  {/* Current Sub-Question Editor */}
+                  <div className="border rounded-lg p-3 sm:p-4 bg-muted/30 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-medium text-sm">Question {currentSubQuestion + 1}</h4>
+                      <Select 
+                        value={subQuestions[currentSubQuestion]?.type || 'mcq'}
+                        onValueChange={(v) => updateSubQuestion(currentSubQuestion, { type: v as 'mcq' | 'multiple' | 'numerical' })}
+                      >
+                        <SelectTrigger className="h-8 w-36 text-xs">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="mcq">MCQ (Single)</SelectItem>
+                          <SelectItem value="multiple">Multiple Correct</SelectItem>
+                          <SelectItem value="numerical">Numerical</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Question Text</Label>
+                      <Textarea
+                        placeholder="Enter question text..."
+                        value={subQuestions[currentSubQuestion]?.text || ''}
+                        onChange={(e) => updateSubQuestion(currentSubQuestion, { text: e.target.value })}
+                        className="min-h-16 text-sm"
+                      />
+                    </div>
+
+                    {(subQuestions[currentSubQuestion]?.type === 'mcq' || subQuestions[currentSubQuestion]?.type === 'multiple') && (
+                      <div className="space-y-2">
+                        <Label className="text-xs">Options</Label>
+                        {subQuestions[currentSubQuestion]?.options.map((opt, optIndex) => (
+                          <div key={optIndex} className="flex items-center gap-2">
+                            <span className="w-6 h-6 rounded bg-background flex items-center justify-center text-xs font-medium shrink-0">
+                              {String.fromCharCode(65 + optIndex)}
+                            </span>
+                            <Input
+                              placeholder={`Option ${optIndex + 1}`}
+                              value={opt}
+                              onChange={(e) => {
+                                const newOptions = [...(subQuestions[currentSubQuestion]?.options || [])];
+                                newOptions[optIndex] = e.target.value;
+                                updateSubQuestion(currentSubQuestion, { options: newOptions });
+                              }}
+                              className="flex-1 h-8 text-sm"
+                            />
+                            <input 
+                              type={subQuestions[currentSubQuestion]?.type === 'multiple' ? 'checkbox' : 'radio'}
+                              name={`sub-q-${currentSubQuestion}`}
+                              className="w-4 h-4"
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {subQuestions[currentSubQuestion]?.type === 'numerical' && (
+                      <div className="space-y-1.5">
+                        <Label className="text-xs">Correct Answer</Label>
+                        <Input
+                          type="number"
+                          placeholder="Enter numerical answer"
+                          value={subQuestions[currentSubQuestion]?.correctAnswer || ''}
+                          onChange={(e) => updateSubQuestion(currentSubQuestion, { correctAnswer: e.target.value })}
+                          className="h-8 text-sm w-40"
+                        />
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Navigation Buttons */}
+                  <div className="flex justify-between">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentSubQuestion(prev => Math.max(0, prev - 1))}
+                      disabled={currentSubQuestion === 0}
+                    >
+                      ← Previous
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentSubQuestion(prev => Math.min(subQuestions.length - 1, prev + 1))}
+                      disabled={currentSubQuestion === subQuestions.length - 1}
+                    >
+                      Next →
+                    </Button>
+                  </div>
                 </div>
               )}
               <div className="space-y-1.5 sm:space-y-2">
