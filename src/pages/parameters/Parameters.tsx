@@ -10,7 +10,9 @@ import {
   CurriculumTabs,
   CurriculumManageDialog,
   ClassFormDialog,
-  SubjectFormDialog
+  SubjectFormDialog,
+  AddChapterDialog,
+  AddTopicDialog
 } from "@/components/parameters";
 import { cbseDataStats } from "@/data/cbseMasterData";
 import { masterDataStats } from "@/data/masterData";
@@ -23,6 +25,8 @@ const Parameters = () => {
   const [showCurriculumDialog, setShowCurriculumDialog] = useState(false);
   const [showAddClassDialog, setShowAddClassDialog] = useState(false);
   const [showAddSubjectDialog, setShowAddSubjectDialog] = useState(false);
+  const [showAddChapterDialog, setShowAddChapterDialog] = useState(false);
+  const [showAddTopicDialog, setShowAddTopicDialog] = useState(false);
 
   const handleClassSelect = (classId: string) => {
     setSelectedClassId(classId);
@@ -65,21 +69,8 @@ const Parameters = () => {
               onAddClass={() => setShowAddClassDialog(true)}
               onAddSubject={() => setShowAddSubjectDialog(true)}
               onAddCurriculum={() => setShowCurriculumDialog(true)}
-              onAddChapter={() => {
-                if (!selectedClassId || !selectedSubjectId) {
-                  toast.info("Please select a class and subject first");
-                  return;
-                }
-                // Scroll to add chapter button - will be handled by ContentPanel
-                toast.info("Use the 'Add Chapter' button in the content panel");
-              }}
-              onAddTopic={() => {
-                if (!selectedClassId || !selectedSubjectId) {
-                  toast.info("Please select a class and subject first");
-                  return;
-                }
-                toast.info("Expand a chapter and click 'Add Topic'");
-              }}
+              onAddChapter={() => setShowAddChapterDialog(true)}
+              onAddTopic={() => setShowAddTopicDialog(true)}
             />
           </div>
         }
@@ -158,6 +149,18 @@ const Parameters = () => {
       <SubjectFormDialog
         open={showAddSubjectDialog}
         onOpenChange={setShowAddSubjectDialog}
+      />
+
+      {/* Add Chapter Dialog (Bulk) */}
+      <AddChapterDialog
+        open={showAddChapterDialog}
+        onOpenChange={setShowAddChapterDialog}
+      />
+
+      {/* Add Topic Dialog (Bulk) */}
+      <AddTopicDialog
+        open={showAddTopicDialog}
+        onOpenChange={setShowAddTopicDialog}
       />
     </div>
   );
