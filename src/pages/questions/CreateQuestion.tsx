@@ -18,6 +18,7 @@ const questionTypes = [
   { id: "mcq", label: "MCQ (Single Correct)" },
   { id: "multiple", label: "Multiple Correct" },
   { id: "numerical", label: "Numerical" },
+  { id: "truefalse", label: "True/False" },
   { id: "assertion", label: "Assertion-Reasoning" },
   { id: "fill", label: "Fill in Blanks" },
   { id: "short", label: "Short Answer" },
@@ -27,6 +28,7 @@ const questionTypes = [
 const CreateQuestion = () => {
   const [questionType, setQuestionType] = useState("mcq");
   const [options, setOptions] = useState(["", "", "", ""]);
+  const [trueFalseAnswer, setTrueFalseAnswer] = useState<"true" | "false" | "">("");
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -120,6 +122,35 @@ const CreateQuestion = () => {
                 <div className="space-y-1.5 sm:space-y-2">
                   <Label className="text-sm">Correct Answer</Label>
                   <Input type="number" placeholder="Enter numerical answer" className="h-9 text-sm" />
+                </div>
+              )}
+              {questionType === "truefalse" && (
+                <div className="space-y-1.5 sm:space-y-2">
+                  <Label className="text-sm">Correct Answer</Label>
+                  <div className="flex gap-4 pt-1">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input 
+                        type="radio" 
+                        name="truefalse" 
+                        value="true"
+                        checked={trueFalseAnswer === "true"}
+                        onChange={(e) => setTrueFalseAnswer(e.target.value as "true" | "false")}
+                        className="w-4 h-4 sm:w-5 sm:h-5 accent-primary" 
+                      />
+                      <span className="text-sm font-medium">True</span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input 
+                        type="radio" 
+                        name="truefalse" 
+                        value="false"
+                        checked={trueFalseAnswer === "false"}
+                        onChange={(e) => setTrueFalseAnswer(e.target.value as "true" | "false")}
+                        className="w-4 h-4 sm:w-5 sm:h-5 accent-primary" 
+                      />
+                      <span className="text-sm font-medium">False</span>
+                    </label>
+                  </div>
                 </div>
               )}
               <div className="space-y-1.5 sm:space-y-2">
