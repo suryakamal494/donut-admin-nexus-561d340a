@@ -35,7 +35,6 @@ const CreateContent = () => {
   const [selectedSubjectId, setSelectedSubjectId] = useState("");
   const [selectedChapterId, setSelectedChapterId] = useState("");
   const [selectedTopicId, setSelectedTopicId] = useState("");
-  const [selectedDifficulty, setSelectedDifficulty] = useState("");
   const [visibleInCurriculum, setVisibleInCurriculum] = useState(true);
   const [visibleInCourses, setVisibleInCourses] = useState<string[]>([]);
 
@@ -248,18 +247,6 @@ const CreateContent = () => {
                   </Select>
                 </div>
               )}
-
-              <div className="space-y-2">
-                <Label>Difficulty</Label>
-                <Select value={selectedDifficulty} onValueChange={setSelectedDifficulty}>
-                  <SelectTrigger><SelectValue placeholder="Select difficulty" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="easy">Easy</SelectItem>
-                    <SelectItem value="medium">Medium</SelectItem>
-                    <SelectItem value="hard">Hard</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
             </div>
           </div>
 
