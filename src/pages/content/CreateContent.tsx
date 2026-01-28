@@ -13,7 +13,7 @@ import { SourceTypeSelector, VisibilitySelector } from "@/components/parameters"
 import { ContentSourceType } from "@/components/parameters/SourceTypeSelector";
 import { getActiveCurriculums, getPublishedCourses, getCourseOwnedChapters } from "@/data/masterData";
 import { classes, subjects } from "@/data/mockData";
-import { getChaptersByClassAndSubject } from "@/data/cbseMasterData";
+import { getChaptersByClassAndSubject, getTopicsByChapter } from "@/data/cbseMasterData";
 
 const contentTypes = [
   { id: "video", label: "Video", icon: Video, accept: ".mp4,.webm,.mov", description: "MP4, WebM, MOV" },
@@ -34,6 +34,8 @@ const CreateContent = () => {
   const [selectedClassId, setSelectedClassId] = useState("");
   const [selectedSubjectId, setSelectedSubjectId] = useState("");
   const [selectedChapterId, setSelectedChapterId] = useState("");
+  const [selectedTopicId, setSelectedTopicId] = useState("");
+  const [selectedDifficulty, setSelectedDifficulty] = useState("");
   const [visibleInCurriculum, setVisibleInCurriculum] = useState(true);
   const [visibleInCourses, setVisibleInCourses] = useState<string[]>([]);
 
@@ -47,6 +49,9 @@ const CreateContent = () => {
       ? getCourseOwnedChapters(selectedCourseId)
       : [];
 
+  // Get topics based on selected chapter
+  const availableTopics = selectedChapterId ? getTopicsByChapter(selectedChapterId) : [];
+
   const handleSubmit = () => {
     toast({ title: "Content Created!", description: "Content has been added to the library." });
     navigate("/superadmin/content");
@@ -59,6 +64,7 @@ const CreateContent = () => {
     setSelectedClassId("");
     setSelectedSubjectId("");
     setSelectedChapterId("");
+    setSelectedTopicId("");
   };
 
   const selectedTypeData = contentTypes.find(t => t.id === selectedType);
@@ -192,7 +198,7 @@ const CreateContent = () => {
                   </div>
                   <div className="space-y-2">
                     <Label>Chapter *</Label>
-                    <Select value={selectedChapterId} onValueChange={setSelectedChapterId}>
+                    <Select value={selectedChapterId} onValueChange={(v) => { setSelectedChapterId(v); setSelectedTopicId(""); }}>
                       <SelectTrigger><SelectValue placeholder="Select chapter" /></SelectTrigger>
                       <SelectContent>
                         {availableChapters.map((ch) => (
@@ -206,7 +212,7 @@ const CreateContent = () => {
                 <>
                   <div className="space-y-2">
                     <Label>Course *</Label>
-                    <Select value={selectedCourseId} onValueChange={(v) => { setSelectedCourseId(v); setSelectedChapterId(""); }}>
+                    <Select value={selectedCourseId} onValueChange={(v) => { setSelectedCourseId(v); setSelectedChapterId(""); setSelectedTopicId(""); }}>
                       <SelectTrigger><SelectValue placeholder="Select course" /></SelectTrigger>
                       <SelectContent>
                         {publishedCourses.map((course) => (
@@ -217,7 +223,7 @@ const CreateContent = () => {
                   </div>
                   <div className="space-y-2">
                     <Label>Chapter *</Label>
-                    <Select value={selectedChapterId} onValueChange={setSelectedChapterId}>
+                    <Select value={selectedChapterId} onValueChange={(v) => { setSelectedChapterId(v); setSelectedTopicId(""); }}>
                       <SelectTrigger><SelectValue placeholder="Select chapter" /></SelectTrigger>
                       <SelectContent>
                         {availableChapters.map((ch) => (
@@ -229,13 +235,28 @@ const CreateContent = () => {
                 </>
               )}
 
+              {selectedChapterId && (
+                <div className="space-y-2">
+                  <Label>Topic *</Label>
+                  <Select value={selectedTopicId} onValueChange={setSelectedTopicId}>
+                    <SelectTrigger><SelectValue placeholder="Select topic" /></SelectTrigger>
+                    <SelectContent>
+                      {availableTopics.map((topic) => (
+                        <SelectItem key={topic.id} value={topic.id}>{topic.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
               <div className="space-y-2">
-                <Label>Topic</Label>
-                <Select>
-                  <SelectTrigger><SelectValue placeholder="Select topic (optional)" /></SelectTrigger>
+                <Label>Difficulty</Label>
+                <Select value={selectedDifficulty} onValueChange={setSelectedDifficulty}>
+                  <SelectTrigger><SelectValue placeholder="Select difficulty" /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="newton">Newton's Laws</SelectItem>
-                    <SelectItem value="energy">Work & Energy</SelectItem>
+                    <SelectItem value="easy">Easy</SelectItem>
+                    <SelectItem value="medium">Medium</SelectItem>
+                    <SelectItem value="hard">Hard</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
