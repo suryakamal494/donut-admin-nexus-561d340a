@@ -1,6 +1,7 @@
-import { BookOpen, Star } from "lucide-react";
+import { BookOpen, Edit2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { courses, getChapterCountForCourse } from "@/data/masterData";
 import { Course } from "@/types/masterData";
@@ -8,6 +9,7 @@ import { Course } from "@/types/masterData";
 interface CourseListPanelProps {
   selectedCourseId: string | null;
   onSelectCourse: (courseId: string) => void;
+  onEditCourse?: (course: Course) => void;
 }
 
 const courseTypeStyles: Record<string, string> = {
@@ -16,7 +18,7 @@ const courseTypeStyles: Record<string, string> = {
   olympiad: "bg-purple-500/10 text-purple-600 dark:text-purple-400",
 };
 
-export const CourseListPanel = ({ selectedCourseId, onSelectCourse }: CourseListPanelProps) => {
+export const CourseListPanel = ({ selectedCourseId, onSelectCourse, onEditCourse }: CourseListPanelProps) => {
   return (
     <div className="flex flex-col h-full border-r border-border/50">
       <div className="p-3 border-b border-border/50 bg-muted/30">
@@ -75,14 +77,32 @@ export const CourseListPanel = ({ selectedCourseId, onSelectCourse }: CourseList
                       )}
                     </div>
                   </div>
-                  <span className={cn(
-                    "text-xs px-2 py-0.5 rounded-full min-w-[32px] text-center shrink-0",
-                    isSelected
-                      ? "bg-white/20 text-white"
-                      : "bg-primary/10 text-primary"
-                  )}>
-                    {chapterCount}
-                  </span>
+                  <div className="flex items-center gap-1 shrink-0">
+                    {onEditCourse && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className={cn(
+                          "h-7 w-7",
+                          isSelected ? "hover:bg-white/20 text-white" : "hover:bg-muted"
+                        )}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onEditCourse(course);
+                        }}
+                      >
+                        <Edit2 className="w-3.5 h-3.5" />
+                      </Button>
+                    )}
+                    <span className={cn(
+                      "text-xs px-2 py-0.5 rounded-full min-w-[32px] text-center",
+                      isSelected
+                        ? "bg-white/20 text-white"
+                        : "bg-primary/10 text-primary"
+                    )}>
+                      {chapterCount}
+                    </span>
+                  </div>
                 </div>
               </button>
             );

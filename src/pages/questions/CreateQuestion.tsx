@@ -10,9 +10,10 @@ import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { SourceTypeSelector } from "@/components/parameters";
 import { ContentSourceType } from "@/components/parameters/SourceTypeSelector";
-import { getActiveCurriculums, getPublishedCourses, getAllCourseChapters } from "@/data/masterData";
+import { getActiveCurriculums, getPublishedCourses, getAllCourseChapters, courses as masterCourses } from "@/data/masterData";
 import { classes, subjects } from "@/data/mockData";
 import { getChaptersByClassAndSubject } from "@/data/cbseMasterData";
+import { countBlanks } from "@/lib/parseUtils";
 
 const questionTypes = [
   { id: "mcq", label: "MCQ (Single Correct)" },
@@ -25,10 +26,28 @@ const questionTypes = [
   { id: "long", label: "Long Answer" },
 ];
 
+// Assertion-Reasoning standard options
+const assertionReasoningOptions = [
+  { id: "A", label: "Both Assertion and Reason are correct, and Reason is the correct explanation for Assertion" },
+  { id: "B", label: "Both Assertion and Reason are correct, but Reason is NOT the correct explanation for Assertion" },
+  { id: "C", label: "Assertion is correct, but Reason is incorrect" },
+  { id: "D", label: "Assertion is incorrect, but Reason is correct" },
+];
+
 const CreateQuestion = () => {
   const [questionType, setQuestionType] = useState("mcq");
   const [options, setOptions] = useState(["", "", "", ""]);
   const [trueFalseAnswer, setTrueFalseAnswer] = useState<"true" | "false" | "">("");
+  
+  // Assertion-Reasoning state
+  const [assertion, setAssertion] = useState("");
+  const [reasoning, setReasoning] = useState("");
+  const [assertionAnswer, setAssertionAnswer] = useState("");
+  
+  // Fill in Blanks state
+  const [fillQuestion, setFillQuestion] = useState("");
+  const [blankAnswers, setBlankAnswers] = useState<string[]>([]);
+  
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -43,12 +62,29 @@ const CreateQuestion = () => {
   const activeCurriculums = getActiveCurriculums();
   const publishedCourses = getPublishedCourses();
 
+  // Get available classes for selected course
+  const selectedCourseData = masterCourses.find(c => c.id === selectedCourseId);
+  const courseAllowedClasses = selectedCourseData?.allowedClasses || [];
+  const filteredClasses = classes.filter(cls => courseAllowedClasses.includes(cls.id));
+
   // Get chapters based on source type - now includes ALL course chapters (owned + mapped)
   const availableChapters = sourceType === 'curriculum' && selectedClassId && selectedSubjectId
     ? getChaptersByClassAndSubject(selectedClassId, selectedSubjectId)
     : sourceType === 'course' && selectedCourseId
       ? getAllCourseChapters(selectedCourseId)
       : [];
+
+  // Handle fill in blanks question text change
+  const handleFillQuestionChange = (text: string) => {
+    setFillQuestion(text);
+    const blankCount = countBlanks(text);
+    // Resize answers array to match blank count
+    setBlankAnswers(prev => {
+      const newAnswers = [...prev];
+      while (newAnswers.length < blankCount) newAnswers.push("");
+      return newAnswers.slice(0, blankCount);
+    });
+  };
 
   const handleSubmit = () => {
     toast({ title: "Question Created!", description: "Question has been added to the bank." });
@@ -153,6 +189,95 @@ const CreateQuestion = () => {
                   </div>
                 </div>
               )}
+              {questionType === "assertion" && (
+                <div className="space-y-3 sm:space-y-4">
+                  <div className="space-y-1.5 sm:space-y-2">
+                    <Label className="text-sm">Assertion (Statement 1)</Label>
+                    <Textarea 
+                      placeholder="Enter the assertion statement..."
+                      value={assertion}
+                      onChange={(e) => setAssertion(e.target.value)}
+                      className="min-h-20 text-sm" 
+                    />
+                  </div>
+                  <div className="space-y-1.5 sm:space-y-2">
+                    <Label className="text-sm">Reason (Statement 2)</Label>
+                    <Textarea 
+                      placeholder="Enter the reasoning statement..."
+                      value={reasoning}
+                      onChange={(e) => setReasoning(e.target.value)}
+                      className="min-h-20 text-sm" 
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-sm">Correct Answer</Label>
+                    <div className="space-y-2">
+                      {assertionReasoningOptions.map((opt) => (
+                        <label 
+                          key={opt.id} 
+                          className={cn(
+                            "flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-all",
+                            assertionAnswer === opt.id 
+                              ? "border-primary bg-primary/5" 
+                              : "border-border hover:border-primary/50"
+                          )}
+                        >
+                          <input 
+                            type="radio"
+                            name="assertion-answer"
+                            value={opt.id}
+                            checked={assertionAnswer === opt.id}
+                            onChange={(e) => setAssertionAnswer(e.target.value)}
+                            className="w-4 h-4 mt-0.5 accent-primary shrink-0"
+                          />
+                          <span className="text-xs sm:text-sm leading-snug">
+                            <strong className="mr-1">({opt.id})</strong>
+                            {opt.label}
+                          </span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+              {questionType === "fill" && (
+                <div className="space-y-3 sm:space-y-4">
+                  <div className="space-y-1.5 sm:space-y-2">
+                    <Label className="text-sm">Question with Blanks</Label>
+                    <p className="text-xs text-muted-foreground">Use ___ (3+ underscores), [blank], or {"{blank}"} to mark blanks</p>
+                    <Textarea 
+                      placeholder="The capital of France is ____ and it is located in ____."
+                      value={fillQuestion}
+                      onChange={(e) => handleFillQuestionChange(e.target.value)}
+                      className="min-h-24 text-sm" 
+                    />
+                  </div>
+                  {countBlanks(fillQuestion) > 0 && (
+                    <div className="space-y-2">
+                      <Label className="text-sm">Answers ({countBlanks(fillQuestion)} blank{countBlanks(fillQuestion) > 1 ? 's' : ''} detected)</Label>
+                      <div className="space-y-2">
+                        {blankAnswers.map((answer, index) => (
+                          <div key={index} className="flex items-center gap-2">
+                            <span className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center text-xs font-medium shrink-0">
+                              {index + 1}
+                            </span>
+                            <Input
+                              placeholder={`Answer for blank ${index + 1}`}
+                              value={answer}
+                              onChange={(e) => {
+                                const newAnswers = [...blankAnswers];
+                                newAnswers[index] = e.target.value;
+                                setBlankAnswers(newAnswers);
+                              }}
+                              className="flex-1 h-9 text-sm"
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
               <div className="space-y-1.5 sm:space-y-2">
                 <Label className="text-sm">Solution (Optional)</Label>
                 <Textarea placeholder="Explain the solution..." className="min-h-20 sm:min-h-24 text-sm" />
@@ -227,7 +352,7 @@ const CreateQuestion = () => {
                 <>
                   <div className="space-y-2">
                     <Label>Course *</Label>
-                    <Select value={selectedCourseId} onValueChange={(v) => { setSelectedCourseId(v); setSelectedChapterId(""); }}>
+                    <Select value={selectedCourseId} onValueChange={(v) => { setSelectedCourseId(v); setSelectedClassId(""); setSelectedChapterId(""); }}>
                       <SelectTrigger><SelectValue placeholder="Select course" /></SelectTrigger>
                       <SelectContent>
                         {publishedCourses.map((course) => (
@@ -236,6 +361,20 @@ const CreateQuestion = () => {
                       </SelectContent>
                     </Select>
                   </div>
+                  {selectedCourseId && filteredClasses.length > 0 && (
+                    <div className="space-y-2">
+                      <Label>Class (Context)</Label>
+                      <Select value={selectedClassId} onValueChange={(v) => { setSelectedClassId(v); setSelectedChapterId(""); }}>
+                        <SelectTrigger><SelectValue placeholder="Select class level" /></SelectTrigger>
+                        <SelectContent>
+                          {filteredClasses.map((cls) => (
+                            <SelectItem key={cls.id} value={cls.id}>{cls.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <p className="text-xs text-muted-foreground">Helps organize by class level</p>
+                    </div>
+                  )}
                   <div className="space-y-2">
                     <Label>Chapter *</Label>
                     <Select value={selectedChapterId} onValueChange={setSelectedChapterId}>
