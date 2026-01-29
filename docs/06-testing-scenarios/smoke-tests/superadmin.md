@@ -211,16 +211,173 @@ When a tier is assigned, only enabled features appear in the institute sidebar. 
 
 ## Content Library Smoke Tests
 
+### Purpose
+
+The Content Library is the central repository for all educational materials. SuperAdmin creates global content that flows to institutes based on curriculum/course visibility settings.
+
+**Four Content Types:**
+1. **Video** - Lecture videos, tutorials (MP4, WebM, MOV)
+2. **Document** - PDFs, presentations, Word docs (PDF, PPT, PPTX, DOC, DOCX)
+3. **HTML** - Interactive HTML files, iframe content (HTML, HTM)
+4. **External URL** - YouTube, Vimeo, Google Slides embeds
+
+**Classification Requirements:**
+- Curriculum: Curriculum → Class → Subject → Chapter → Topic (ALL mandatory)
+- Course: Course → Subject → Chapter → Topic (ALL mandatory)
+
+**Visibility Logic:**
+Content visibility is set per curriculum/course. Only institutes with matching curriculum/course assignments can access the content.
+
+### Content Library Page Tests
+
 | Test ID | Test Case | Steps | Expected Result | Priority |
 |---------|-----------|-------|-----------------|----------|
-| SA-CL-001 | Content page loads | Navigate to `/superadmin/content` | Grid loads | Critical |
-| SA-CL-002 | Filters work | Apply type/class/subject filters | Grid filters | High |
-| SA-CL-003 | Create content | Click "Create", fill form, upload | Content created | Critical |
-| SA-CL-004 | AI generate | Click "AI Generate", configure, generate | Content created | High |
-| SA-CL-005 | Preview content | Click view on card | Preview opens | High |
-| SA-CL-006 | Edit content | Click edit, modify, save | Changes saved | Medium |
-| SA-CL-007 | Delete content | Click delete on unassigned | Content removed | Medium |
-| SA-CL-008 | Pagination works | Click load more | More items load | Low |
+| SA-CL-001 | Content library page loads | Navigate to `/superadmin/content` | Page loads with header, search bar, filters, view toggle (Grid/List), Create Content button, AI Content Generator button, content grid, and pagination | Critical |
+| SA-CL-002 | Default view is Grid | Open content library | Grid view is active by default, content displayed as cards | High |
+| SA-CL-003 | Search by title works | Enter title text in search box | Content filters by title match in real-time | Critical |
+| SA-CL-004 | Search by description works | Enter description text in search | Content filters by description match | High |
+| SA-CL-005 | Search clears correctly | Click clear/X on search | All content displays again, search box empty | Medium |
+| SA-CL-006 | Type filter works | Select "Video" from type dropdown | Only video content displays | High |
+| SA-CL-007 | Subject filter works | Select "Physics" from subject filter | Only Physics content displays | High |
+| SA-CL-008 | Class filter works | Select "Class 11" from class filter | Content filters to Class 11 only | High |
+| SA-CL-009 | Chapter filter works | Select specific chapter | Content filters to that chapter only | Medium |
+| SA-CL-010 | Multiple filters combine | Apply type + subject + class filters | Content matches ALL selected filters (AND logic) | Critical |
+| SA-CL-011 | Filter reset works | Click reset/clear all filters button | All filters cleared, full content shown | Medium |
+| SA-CL-012 | Grid view displays cards | View in Grid mode | Content cards with thumbnail, title, type badge, classification, action buttons visible | High |
+| SA-CL-013 | List view displays rows | Click List view toggle | Content displays as rows with columns: Title, Type, Subject, Chapter, Actions | High |
+| SA-CL-014 | Toggle between views | Switch Grid → List → Grid | View changes correctly, content remains intact | Medium |
+| SA-CL-015 | Pagination displays | Scroll to bottom of content | Page numbers or "Load More" button visible | High |
+| SA-CL-016 | Pagination navigation | Click page 2 or "Load More" | New content loads, page indicator updates | High |
+| SA-CL-017 | Pagination with filters | Apply filter, then paginate | Pagination respects active filters, only matching content shown | High |
+
+### Content Card Functionality Tests
+
+| Test ID | Test Case | Steps | Expected Result | Priority |
+|---------|-----------|-------|-----------------|----------|
+| SA-CL-018 | Preview button works | Click Preview on any content card | Preview dialog/page opens showing full content with player/viewer | Critical |
+| SA-CL-019 | Video preview plays | Preview a video content item | Video player loads, playback controls work, video plays without errors | Critical |
+| SA-CL-020 | PDF preview displays | Preview a PDF document | PDF viewer loads, all pages viewable, scrolling works, no "document not supported" error | Critical |
+| SA-CL-021 | PPT preview displays | Preview a PPT/PPTX document | Presentation viewer loads, slides navigable, no rendering errors | Critical |
+| SA-CL-022 | HTML content preview | Preview HTML content | HTML renders correctly in iframe, no 504 or server errors | High |
+| SA-CL-023 | External URL preview (YouTube) | Preview YouTube/Vimeo content | Video embed displays, playback works, no "error with link" message | Critical |
+| SA-CL-024 | External URL preview (Google Slides) | Preview Google Slides embed | Slides display in embed, navigation works | High |
+| SA-CL-025 | Edit button works | Click Edit on any content card | Edit form opens with all fields pre-filled with current values | Critical |
+| SA-CL-026 | Edit saves changes | Modify title/description, save | Changes saved, reflected immediately in library view | High |
+| SA-CL-027 | Delete button works | Click Delete on unassigned content | Confirmation dialog appears with warning | High |
+| SA-CL-028 | Delete confirmation | Confirm deletion in dialog | Content removed from library, success message shown | Medium |
+| SA-CL-029 | Content type badge visible | View any content card | Type badge (Video, PDF, PPT, HTML, URL) displayed prominently | Medium |
+| SA-CL-030 | Classification visible on card | View any content card | Subject, Chapter, and Topic tags visible on card | Medium |
+| SA-CL-031 | Visibility tags shown | View any content card | Curriculum/Course visibility badges displayed | Medium |
+
+### Create Content - Manual Upload Tests
+
+| Test ID | Test Case | Steps | Expected Result | Priority |
+|---------|-----------|-------|-----------------|----------|
+| SA-CC-001 | Create Content page loads | Click "Create Content" button | Split screen: Content Type & Details (left 2/3) + Classification & Visibility (right 1/3) | Critical |
+| SA-CC-002 | Four content types visible | View content type section | Video, Document, HTML, External URL cards/options displayed | Critical |
+| SA-CC-003 | Video type selection | Click Video type card | Card highlighted, file upload zone shows "MP4, WebM, MOV" accepted formats | High |
+| SA-CC-004 | Document type selection | Click Document type card | Card highlighted, file upload shows "PDF, PPT, PPTX, DOC, DOCX" formats | High |
+| SA-CC-005 | HTML type selection | Click HTML type card | Card highlighted, file upload shows "HTML, HTM" formats | High |
+| SA-CC-006 | External URL selection | Click External URL type | URL input field appears instead of file upload | High |
+
+### Classification Validation Tests
+
+| Test ID | Test Case | Steps | Expected Result | Priority |
+|---------|-----------|-------|-----------------|----------|
+| SA-CC-007 | Curriculum requires all fields | Select Curriculum source, leave Chapter empty, try Save | Validation error: "Please select Chapter" or similar | Critical |
+| SA-CC-008 | Topic is mandatory | Select Curriculum → Class → Subject → Chapter, leave Topic empty, try Save | Validation error: "Please select Topic" | Critical |
+| SA-CC-009 | Course requires all fields | Select Course source, leave Chapter empty, try Save | Validation error: "Please select Chapter" | Critical |
+| SA-CC-010 | Classification cascade (Class → Subject) | Select Class | Subject dropdown populates with subjects for that class | High |
+| SA-CC-011 | Classification cascade (Subject → Chapter) | Select Subject | Chapter dropdown populates with chapters for that subject | High |
+| SA-CC-012 | Classification cascade (Chapter → Topic) | Select Chapter | Topic dropdown populates with topics for that chapter | High |
+
+### Visibility Tests
+
+| Test ID | Test Case | Steps | Expected Result | Priority |
+|---------|-----------|-------|-----------------|----------|
+| SA-CC-013 | Visibility section present | View Classification sidebar | Visibility section with curriculum/course checkboxes visible | Critical |
+| SA-CC-014 | Multiple curriculum selection | Check CBSE, ICSE, State Board checkboxes | All three selected, shown in selection summary/badges | High |
+| SA-CC-015 | Multiple course selection | Check JEE, NEET checkboxes | Both courses selected, shown in summary | High |
+| SA-CC-016 | Mixed visibility selection | Select CBSE curriculum + JEE course | Both visible in selection summary | High |
+
+### Content Type Creation Flow Tests
+
+| Test ID | Test Case | Steps | Expected Result | Priority |
+|---------|-----------|-------|-----------------|----------|
+| SA-CC-017 | Video upload complete flow | Select Video, upload MP4 file, fill title/description, complete classification, set visibility, Save | Content saved successfully, redirects to Content Library, new video visible in grid | Critical |
+| SA-CC-018 | Video preview after creation | After saving video, click Preview on new content | Video plays correctly with full playback controls, no errors | Critical |
+| SA-CC-019 | Document PDF upload flow | Select Document, upload PDF file, fill details, complete classification, Save | PDF content saved, visible in library | Critical |
+| SA-CC-020 | PDF preview after creation | After saving PDF, click Preview | PDF displays, pages navigable, no "document not supported" error | Critical |
+| SA-CC-021 | Document PPT upload flow | Select Document, upload PPTX file, fill details, complete classification, Save | PPT content saved, visible in library | Critical |
+| SA-CC-022 | PPT preview after creation | After saving PPT, click Preview | Slides display correctly, navigation works | Critical |
+| SA-CC-023 | HTML file upload flow | Select HTML, upload .html file, fill details, complete classification, Save | HTML content saved to library | High |
+| SA-CC-024 | HTML preview after creation | After saving HTML, click Preview | HTML renders in iframe, no 504 or server errors, interactive elements work | High |
+| SA-CC-025 | External URL - YouTube flow | Select External URL, paste YouTube embed URL, fill details, complete classification, Save | Content saved with URL reference | Critical |
+| SA-CC-026 | YouTube preview after creation | After saving, click Preview | Video embeds and plays correctly, no "error with link" message | Critical |
+| SA-CC-027 | External URL - Vimeo flow | Select External URL, paste Vimeo URL, fill details, Save | Content saved | High |
+| SA-CC-028 | External URL - Google Slides flow | Select External URL, paste Google Slides embed URL, fill details, Save | Content saved | High |
+| SA-CC-029 | Google Slides preview | After saving, click Preview | Slides display in embed, navigation works | High |
+
+### Complete Lifecycle Tests
+
+| Test ID | Test Case | Steps | Expected Result | Priority |
+|---------|-----------|-------|-----------------|----------|
+| SA-CC-030 | Create → Preview → Edit cycle | Create video content, preview it, then click Edit | Full cycle works: Create saves successfully, Preview shows video playing, Edit opens form with all values pre-filled | Critical |
+| SA-CC-031 | Edit updates correctly | In Edit mode, change title, save | Title updated in library view immediately | High |
+| SA-CC-032 | Content visible after refresh | Create content, refresh browser page | New content still visible in library (persisted) | High |
+
+### AI Content Generator Tests
+
+| Test ID | Test Case | Steps | Expected Result | Priority |
+|---------|-----------|-------|-----------------|----------|
+| SA-AG-001 | AI Generator page loads | Click "AI Content Generator" button | 3-step wizard opens with Step 1 (Classification) active | Critical |
+| SA-AG-002 | Step indicator visible | View wizard header | Steps 1-2-3 indicator shows current step highlighted | Medium |
+
+### Step 1 - Classification Tests
+
+| Test ID | Test Case | Steps | Expected Result | Priority |
+|---------|-----------|-------|-----------------|----------|
+| SA-AG-003 | Classification panel visible | View Step 1 | Source type toggle, curriculum/course dropdowns, visibility section all present | Critical |
+| SA-AG-004 | Curriculum classification flow | Select Curriculum → Class → Subject → Chapter → Topic | All dropdowns cascade correctly, each filters based on previous | Critical |
+| SA-AG-005 | Course classification flow | Switch to Course, select Course → Subject → Chapter → Topic | Dropdowns work correctly for course mode | High |
+| SA-AG-006 | Visibility multi-select | Check multiple curricula/courses in visibility section | All selected items shown in selection summary | High |
+| SA-AG-007 | Cannot proceed without classification | Leave Chapter or Topic empty, click Next | Next button disabled or validation error shown | Critical |
+| SA-AG-008 | Proceed to Step 2 | Complete all classification, click Next | Advances to Step 2 (Describe Content) | Critical |
+
+### Step 2 - Prompt & Options Tests
+
+| Test ID | Test Case | Steps | Expected Result | Priority |
+|---------|-----------|-------|-----------------|----------|
+| SA-AG-009 | Prompt section visible | View Step 2 | Text area for prompt, style selector (Detailed/Concise), slide count control | Critical |
+| SA-AG-010 | Prompt text area works | Enter detailed prompt (50+ characters) | Text accepted, character count shown | High |
+| SA-AG-011 | Style preset selection | Click "Concise" option | Concise option selected/highlighted | Medium |
+| SA-AG-012 | Slide count control | Adjust slider/input to 15 slides | Control updates, count shows "15" | Medium |
+| SA-AG-013 | Minimum prompt validation | Enter less than 20 characters, try Generate | Validation error or Generate button disabled | High |
+| SA-AG-014 | Generate button initiates | Complete prompt, click "Generate Presentation" | Loading indicator appears, button shows processing state | Critical |
+| SA-AG-015 | Generation progress | Wait during AI generation | Progress indicator/spinner visible, then transitions to Step 3 | Critical |
+
+### Step 3 - Preview & Edit Tests
+
+| Test ID | Test Case | Steps | Expected Result | Priority |
+|---------|-----------|-------|-----------------|----------|
+| SA-AG-016 | Slides generated display | After generation completes | Split view: Slide thumbnails on left panel, full slide preview on right panel | Critical |
+| SA-AG-017 | Slide count matches request | Requested 10 slides in Step 2 | 10 slide thumbnails visible in left panel | High |
+| SA-AG-018 | Slide navigation | Click slide 3 thumbnail | Slide 3 displays in main preview panel | High |
+| SA-AG-019 | Drag and drop reorder | Drag slide 2 to position 5 | Slide order updates, slide 2 now in position 5, order persists | High |
+| SA-AG-020 | Content within slide boundaries | View any generated slide | Text/content contained within slide boundaries, no overflow | Critical |
+| SA-AG-021 | Edit slide content | Click on slide text, modify content | Text updates in real-time on the slide | High |
+| SA-AG-022 | Delete slide | Click delete icon/button on slide 3 | Slide removed, thumbnail list updates, count decreases | Medium |
+| SA-AG-023 | Duplicate slide | Click duplicate on slide 1 | New slide added after slide 1 with identical content | Medium |
+| SA-AG-024 | Save to Library button | Click "Save to Library" | Presentation saved, redirects to Content Library homepage | Critical |
+
+### Post-Save Verification Tests
+
+| Test ID | Test Case | Steps | Expected Result | Priority |
+|---------|-----------|-------|-----------------|----------|
+| SA-AG-025 | Content visible in library | After save, view Content Library | New AI-generated presentation appears in content grid | Critical |
+| SA-AG-026 | Preview generated content | Click Preview on new AI content | All slides display correctly with proper formatting | Critical |
+| SA-AG-027 | Edit generated content | Click Edit on new AI content | Edit form opens with title, description, classification pre-filled | High |
+| SA-AG-028 | Classification correct on card | View content card for AI content | Correct subject, chapter, topic badges displayed | High |
 
 ---
 
@@ -239,6 +396,13 @@ The Question Bank is the central repository for all educational questions. Quest
 **Propagation Rule:**
 If SuperAdmin creates a CBSE Physics question, only institutes assigned CBSE will see it. Institutes assigned only ICSE will NOT see CBSE questions.
 
+**Display Verification Requirements:**
+After creating any question, verify:
+1. Math formulas render correctly via KaTeX (no broken symbols)
+2. Images display properly (no missing images)
+3. ChemSketch diagrams visible (for Chemistry questions)
+4. All classification tags displayed (Subject, Chapter, Topic, Difficulty, Cognitive)
+
 ### Question Bank Page Tests
 
 | Test ID | Test Case | Steps | Expected Result | Priority |
@@ -252,8 +416,8 @@ If SuperAdmin creates a CBSE Physics question, only institutes assigned CBSE wil
 | SA-QB-007 | Question card displays all info | View any question card | Shows: Type badge, Difficulty badge, Cognitive badge, Subject, Chapter, Topic, Curriculum/Course tag | Critical |
 | SA-QB-008 | Preview button works | Click Preview button on any card | Question preview dialog opens with full content, options, solution | Critical |
 | SA-QB-009 | View Solution works | Click View Solution in preview | Solution and explanation displayed | High |
-| SA-QB-010 | Math type (LaTeX) renders | View question with mathematical formulas | Formulas render correctly via KaTeX | High |
-| SA-QB-011 | Images display | View question with images | Images load and display correctly | High |
+| SA-QB-010 | Math type (LaTeX) renders | View question with mathematical formulas | Formulas render correctly via KaTeX, no broken symbols or garbled text | High |
+| SA-QB-011 | Images display | View question with images | Images load and display correctly, no missing images | High |
 | SA-QB-012 | Edit button works | Click Edit button on question | Edit form opens with current values pre-filled | High |
 | SA-QB-013 | Delete button works | Click Delete on unused question | Confirmation dialog, then question removed | Medium |
 
@@ -263,17 +427,17 @@ If SuperAdmin creates a CBSE Physics question, only institutes assigned CBSE wil
 |---------|-----------|-------|-----------------|----------|
 | SA-QB-014 | Create Question page loads | Click "Add Question" button | Split screen opens: Question Details (left) + Classification (right) | Critical |
 | SA-QB-015 | Classification validation | Fill question but leave Chapter empty | Validation error, cannot save | High |
-| SA-QB-016 | MCQ Single creation | Select MCQ type, fill question text, add 4 options, select 1 correct, add solution, select full classification, save | Question saved, redirects to bank, card displays correctly with MCQ badge | Critical |
-| SA-QB-017 | Multiple Correct creation | Select Multiple Correct, fill question, add options, check 2+ correct answers, complete classification, save | Question saved with multiple correct answers visible | Critical |
-| SA-QB-018 | Numerical creation | Select Numerical, fill question text, enter numeric answer (with optional range), save | Question saved, displays with number input preview | Critical |
-| SA-QB-019 | True/False creation | Select True/False, fill question, select True or False answer, save | Question saved with T/F option preview | Critical |
-| SA-QB-020 | Fill in Blanks creation | Select Fill in Blanks, enter question with `___blank___` markers, fill answers for each blank, save | Question saved, blanks detected correctly, answers saved per blank | Critical |
-| SA-QB-021 | Assertion-Reasoning creation | Select Assertion-Reasoning, enter Assertion text, enter Reason text, select correct option (A/B/C/D), save | Question saved with standard AR format and options | Critical |
-| SA-QB-022 | Paragraph Based creation | Select Paragraph, enter passage text, add 3 sub-questions with different types (MCQ, Numerical, True/False), save | Paragraph with all sub-questions saved correctly | Critical |
-| SA-QB-023 | Short Answer creation | Select Short Answer, fill question, enter expected answer, save | Question saved | High |
-| SA-QB-024 | Long Answer creation | Select Long Answer, fill question, enter model answer, save | Question saved | High |
-| SA-QB-025 | Each type displays correctly | After creating each of 9 types, view in bank | Each card shows correct type badge, preview renders type-specific UI | Critical |
-| SA-QB-026 | Each type editable | Click Edit on each question type | Edit form shows correct fields for that specific type | High |
+| SA-QB-016 | MCQ Single creation | Select MCQ type, fill question text, add 4 options, select 1 correct, add solution, complete classification (Curriculum/Course → Subject → Chapter → Topic → Difficulty → Cognitive), save | Question saved, redirects to bank. **Verify**: Card displays MCQ badge, question text renders correctly (math formulas via KaTeX display properly, images visible, ChemSketch diagrams render), all classification tags shown (Subject, Chapter, Topic, Difficulty, Cognitive badges visible) | Critical |
+| SA-QB-017 | Multiple Correct creation | Select Multiple Correct, fill question, add options, check 2+ correct answers, complete classification, save | Question saved with multiple correct answers. **Verify**: Card shows Multiple Correct badge, all selected correct options marked, math/images render, all tags displayed | Critical |
+| SA-QB-018 | Numerical creation | Select Numerical, fill question text with mathematical content, enter numeric answer (with optional range), complete classification, save | Question saved, displays with number input preview. **Verify**: Mathematical expressions render via KaTeX, numeric answer format shown, all classification tags visible | Critical |
+| SA-QB-019 | True/False creation | Select True/False, fill question, select True or False answer, complete classification, save | Question saved with T/F option preview. **Verify**: Question renders correctly, selected answer visible, all tags displayed | Critical |
+| SA-QB-020 | Fill in Blanks creation | Select Fill in Blanks, enter question with `___blank___` markers, fill answers for each blank, complete classification, save | Question saved, blanks detected correctly, answers saved per blank. **Verify**: Blank markers render as input fields in preview, all tags displayed | Critical |
+| SA-QB-021 | Assertion-Reasoning creation | Select Assertion-Reasoning, enter Assertion text, enter Reason text, select correct option (A/B/C/D), complete classification, save | Question saved with standard AR format and options. **Verify**: Both assertion and reason display, options A-D visible, all tags displayed | Critical |
+| SA-QB-022 | Paragraph Based creation | Select Paragraph, enter passage text with mathematical content, add 3 sub-questions with different types (MCQ, Numerical, True/False), complete classification, save | Paragraph with all sub-questions saved correctly. **Verify**: Passage text renders (math formulas via KaTeX, images display), all sub-questions visible with their types, all tags displayed | Critical |
+| SA-QB-023 | Short Answer creation | Select Short Answer, fill question with any images/math, enter expected answer, complete classification, save | Question saved. **Verify**: Question content renders correctly, answer field visible, all tags displayed | High |
+| SA-QB-024 | Long Answer creation | Select Long Answer, fill question with diagrams/images, enter model answer, complete classification, save | Question saved. **Verify**: Question renders with all images/diagrams, model answer visible in preview, all tags displayed | High |
+| SA-QB-025 | Each type displays correctly | After creating each of 9 types, view in bank | Each card shows correct type badge, preview renders type-specific UI, math/images render correctly | Critical |
+| SA-QB-026 | Each type editable | Click Edit on each question type | Edit form shows correct fields for that specific type, existing content pre-filled | High |
 
 ### AI Question Generator Tests
 
@@ -291,24 +455,24 @@ If SuperAdmin creates a CBSE Physics question, only institutes assigned CBSE wil
 | SA-QB-036 | Review page shows questions | After generation completes | All generated questions displayed with preview capability | Critical |
 | SA-QB-037 | Select/deselect questions | Click checkboxes on individual questions | Can select/deselect specific questions | High |
 | SA-QB-038 | Edit question in review | Click Edit on generated question | Can modify question before saving to bank | High |
-| SA-QB-039 | Add selected to bank | Select desired questions, click "Add to Bank" | Selected questions saved to bank, redirects to Question Bank | Critical |
-| SA-QB-040 | Verify in bank | After adding, view in Question Bank | New questions appear with correct classification and tags | Critical |
+| SA-QB-039 | Add selected to bank | Select desired questions, click "Add to Bank" | Selected questions saved to bank, redirects to Question Bank. **Verify**: All 7 tags (Curriculum, Class, Subject, Chapter, Topic, Difficulty, Cognitive) OR 6 tags for Course mode automatically assigned and visible on each card | Critical |
+| SA-QB-040 | Verify AI questions in bank | After adding, view new questions in Question Bank | Questions appear with: (1) Correct classification tags displayed on cards, (2) Math formulas rendered via KaTeX without broken symbols, (3) Any images intact and displaying, (4) AI-assigned difficulty/cognitive badges visible | Critical |
 
 ### Upload PDF Tests
 
 | Test ID | Test Case | Steps | Expected Result | Priority |
 |---------|-----------|-------|-----------------|----------|
 | SA-QB-041 | Upload PDF page loads | Click "Upload PDF" button | 3-step wizard opens: Step 1 Classification active | Critical |
-| SA-QB-042 | Step 1: Select classification | Select Curriculum → Class → Subject (NO chapter required) | Proceeds to Step 2 when Continue clicked | High |
+| SA-QB-042 | Step 1: Select classification | Select Curriculum → Class → Subject (NO chapter required at this step) | Proceeds to Step 2 when Continue clicked | High |
 | SA-QB-043 | Step 2: Upload file | Select PDF file via file picker or drag-drop | File uploads, progress indicator shown, success message | Critical |
 | SA-QB-044 | Step 2: Processing indicator | After upload | "Processing..." indicator, then "Upload successful. Click Review to continue." | High |
 | SA-QB-045 | Step 3: Review page | Click "Go to Review" or navigate to Step 3 | Extracted questions displayed in grid/list format | Critical |
-| SA-QB-046 | AI-assigned chapter/topic | View extracted questions in review | Chapter, Topic, Difficulty, Cognitive Type automatically tagged by AI | Critical |
-| SA-QB-047 | OCR verification - Math | View question with mathematical content | LaTeX formulas extracted and rendered correctly | High |
-| SA-QB-048 | OCR verification - Images | View question with images | Images extracted and displayed correctly | High |
+| SA-QB-046 | AI-assigned chapter/topic | View extracted questions in review | **Critical Check**: Chapter, Topic, Difficulty, Cognitive Type automatically tagged by AI. Verify ALL fields populated (no empty tags) | Critical |
+| SA-QB-047 | OCR verification - Math | View question with mathematical content | **Verify**: LaTeX formulas extracted and rendered correctly via KaTeX, no broken symbols or garbled text | High |
+| SA-QB-048 | OCR verification - Images | View question with images/diagrams | **Verify**: All diagrams/images from PDF extracted and display correctly, no missing images | High |
 | SA-QB-049 | Edit in review | Click Edit on extracted question | Can modify question text, options, classification before saving | High |
-| SA-QB-050 | Preview in review | Click Preview on question | Full question preview with formatting | High |
-| SA-QB-051 | Add selected to bank | Select questions, click "Add to Bank" | Selected questions saved with OCR-extracted content | Critical |
+| SA-QB-050 | Preview in review | Click Preview on question | Full question preview with formatting, math rendering, images | High |
+| SA-QB-051 | Add selected to bank | Select questions, click "Add to Bank" | Selected questions saved with OCR-extracted content. **Full verification cycle**: Preview each type after adding, verify math/images render correctly, confirm all 7/6 tags assigned and displayed on card | Critical |
 
 ---
 
