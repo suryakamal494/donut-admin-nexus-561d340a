@@ -20,17 +20,102 @@ The Institutes module manages all educational institutions on the platform. Supe
 
 | Component | Description | Location |
 |-----------|-------------|----------|
-| PageHeader | Title + "Add Institute" action | Top |
-| FilterBar | Search, status, tier filters | Below header |
-| InstituteTable | List of all institutes | Main content |
-| InstituteForm | Create/edit institute | Dialog |
-| TierConfigDialog | Tier assignment | Dialog |
+| PageHeader | Title + "Add Institute" action button | Top |
+| FilterBar | Search box, Plan filter, Status filter | Below header |
+| InstituteTable | List of all institutes with actions | Main content |
+| ActionMenu | Per-row actions: View, Edit, Assign, Billing | Row actions |
+| AddInstituteWizard | 4-step creation wizard | Full-page/Dialog |
 
 ---
 
-## Features & Functionality
+## All Institutes Page
 
-### Institute Properties
+### Filters and Search
+
+| Filter | Type | Function |
+|--------|------|----------|
+| Search | Text input | Filters by institute name or code |
+| Plan | Dropdown | Filters by tier (Basic, Standard, Premium) |
+| Status | Dropdown | Filters by status (Active, Inactive, Pending) |
+
+### Action Menu
+
+Each institute row has an Actions menu with:
+
+| Action | Description | Result |
+|--------|-------------|--------|
+| **View Details** | Opens read-only detail page | Shows all institute information |
+| **Edit** | Opens edit form | Modify institute details |
+| **Assign Curriculum/Courses** | Opens assignment dialog | Multi-select curricula and courses |
+| **Billing** | Opens billing management | View/modify billing status |
+
+### Assign Curriculum/Courses Dialog
+
+When clicking "Assign Curriculum/Courses":
+1. Dialog opens with checkboxes for all available Curricula
+2. Checkboxes for all available Courses
+3. Multi-select allowed (can assign multiple)
+4. **"Create Custom Course for this Institute"** button - Creates a course exclusive to this institute
+5. Save updates the institute's assignments
+
+---
+
+## Add Institute Wizard
+
+The "Add Institute" button opens a 4-step wizard:
+
+### Step 1: Institute Details
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| Institute Name | Text | Yes | Full name of institution |
+| Institute Code | Text | Yes | Unique identifier |
+| Institute Type | Dropdown | Yes | School, College, Coaching |
+| Address | Textarea | Yes | Physical location |
+| City | Text | Yes | City name |
+| State | Text | Yes | State/Province |
+| Contact Person | Text | Yes | Primary contact name |
+| Email | Email | Yes | Official email |
+| Phone | Text | Yes | Contact number |
+
+### Step 2: Admin Setup
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| Admin Name | Text | Yes | Institute admin's full name |
+| Admin Email | Email | Yes | Admin login email |
+| Mobile Number | Phone | Yes | Admin mobile with validation |
+| Password | Password | Yes | Initial password with visibility toggle |
+| Confirm Password | Password | Yes | Password confirmation |
+
+### Step 3: Plan Selection
+
+- Displays plan cards from Tier Management
+- Each card shows:
+  - Plan name and price
+  - Feature list
+  - Limits (batches, teachers, students)
+  - **Preview button** - Opens popup with full plan details
+- Select one plan to proceed
+
+### Step 4: Assign Curriculums & Courses
+
+| Element | Type | Description |
+|---------|------|-------------|
+| Curriculum Checkboxes | Multi-select | Check all curricula to assign |
+| Course Checkboxes | Multi-select | Check all courses to assign |
+| Selection Summary | Display | Shows count of selected items |
+| Create Custom Course | Button | Opens custom course builder for this institute |
+| Skip & Create | Button | Creates institute without assignments |
+| Create Institute | Button | Creates institute with all selections |
+
+**Create Custom Course for this Institute**: Opens a specialized course builder that creates a course exclusive to this institute, automatically assigned upon creation.
+
+**Skip & Create**: Skips curriculum/course assignment (can be done later via Assign action). Creates institute immediately.
+
+---
+
+## Institute Properties
 
 | Field | Type | Description |
 |-------|------|-------------|
@@ -42,21 +127,13 @@ The Institutes module manages all educational institutions on the platform. Supe
 | Email | Email | Admin email |
 | Phone | Text | Contact number |
 | Status | Enum | Active, Inactive, Pending |
-| Tier | Enum | Basic, Standard, Premium |
+| Tier/Plan | Enum | Basic, Standard, Premium |
 | Curricula | Multi-select | Assigned curricula |
 | Courses | Multi-select | Assigned courses |
 
-### Create Institute Flow
+---
 
-1. Click "Add Institute"
-2. Fill basic details (name, code, type)
-3. Add contact information
-4. Select curricula and courses
-5. Assign feature tier
-6. Create admin account
-7. Activate institute
-
-### Institute Tiers
+## Institute Tiers
 
 | Tier | Features | Limits |
 |------|----------|--------|
@@ -76,28 +153,6 @@ The Institutes module manages all educational institutions on the platform. Supe
 | Advanced Analytics | ✗ | ✗ | ✓ |
 | Custom Reports | ✗ | ✗ | ✓ |
 | API Access | ✗ | ✗ | ✓ |
-
-### Manage Institutes
-
-| Action | How | Result |
-|--------|-----|--------|
-| View | Click row | Opens detail view |
-| Edit | Click edit icon | Edit dialog |
-| Change Status | Status dropdown | Activate/deactivate |
-| Change Tier | Tier button | Tier config dialog |
-| Delete | Click delete | Confirmation + remove |
-
-### Assign Curricula/Courses
-
-```text
-Institute: ABC School
-├── Assigned Curricula:
-│   ├── ✓ CBSE
-│   └── ✓ ICSE
-└── Assigned Courses:
-    ├── ✓ JEE Foundation
-    └── ✓ NEET Foundation
-```
 
 ---
 
@@ -131,28 +186,32 @@ Downstream:
 | Course Assignment | Institute Batch Creation | Downstream | Available track options |
 | Tier Assignment | Institute Features | Downstream | Enables/disables features |
 | Status Change | All Institute Users | Downstream | Login enabled/disabled |
+| Custom Course | Course Builder | Both | Creates institute-specific course |
 
 ---
 
 ## Business Rules
 
 1. **Institute codes must be unique** across platform
-2. **At least one curriculum required** for activation
-3. **Admin account created** with institute
-4. **Tier limits enforced** - cannot exceed batch/teacher/student limits
-5. **Inactive institutes** - users cannot login
-6. **Curriculum removal** - only if no batches using it
-7. **Course removal** - only if no batches using it
+2. **At least one curriculum OR course recommended** for activation (can skip)
+3. **Admin account created** with institute (Step 2)
+4. **Tier limits enforced** - Cannot exceed batch/teacher/student limits
+5. **Inactive institutes** - Users cannot login
+6. **Curriculum removal** - Only if no batches using it
+7. **Course removal** - Only if no batches using it
+8. **Custom courses** - Exclusive to the creating institute
 
 ---
 
 ## Mobile Behavior
 
 - Table: Horizontal scroll, priority columns
-- Filters: Collapsible filter panel
-- Create form: Full-screen stepped flow
+- Filters: Collapsible filter panel with pills
+- Add Institute wizard: Full-screen stepped flow
 - Actions: Bottom action sheet
+- Plan selection: Swipeable card carousel
 - Tier config: Bottom drawer
+- Touch targets: Minimum 44px
 
 ---
 
@@ -160,6 +219,7 @@ Downstream:
 
 - [Institute Portal Overview](../02-institute/README.md)
 - [Users Management](./users.md)
+- [Tier Management](./tier-management.md)
 - [SuperAdmin Smoke Tests](../06-testing-scenarios/smoke-tests/superadmin.md)
 - [Institute Intra-Login Tests](../06-testing-scenarios/intra-login-tests/superadmin.md)
 
