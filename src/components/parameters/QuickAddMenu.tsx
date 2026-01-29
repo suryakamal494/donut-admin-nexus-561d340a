@@ -10,7 +10,6 @@ import {
 
 interface QuickAddMenuProps {
   onAddClass?: () => void;
-  onAddCourse?: () => void;
   onAddCurriculum?: () => void;
   onAddSubject?: () => void;
   onAddChapter?: () => void;
@@ -19,7 +18,6 @@ interface QuickAddMenuProps {
 
 export const QuickAddMenu = ({
   onAddClass,
-  onAddCourse,
   onAddCurriculum,
   onAddSubject,
   onAddChapter,
@@ -37,10 +35,6 @@ export const QuickAddMenu = ({
         <DropdownMenuItem onClick={onAddClass} className="gap-2 cursor-pointer">
           <GraduationCap className="w-4 h-4" />
           Add Class
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={onAddCourse} className="gap-2 cursor-pointer">
-          <FileText className="w-4 h-4" />
-          Add Course
         </DropdownMenuItem>
         <DropdownMenuItem onClick={onAddCurriculum} className="gap-2 cursor-pointer">
           <FolderTree className="w-4 h-4" />

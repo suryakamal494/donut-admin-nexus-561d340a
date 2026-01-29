@@ -37,6 +37,7 @@ interface SourcePanelProps {
   onClearSelection: () => void;
   onAddSelected: () => void;
   onCreateChapter: () => void;
+  onCreateTopic: () => void;
 }
 
 export const SourcePanel = ({
@@ -55,6 +56,7 @@ export const SourcePanel = ({
   onClearSelection,
   onAddSelected,
   onCreateChapter,
+  onCreateTopic,
 }: SourcePanelProps) => {
   return (
     <div className="bg-card rounded-lg sm:rounded-xl border border-border/50 shadow-soft overflow-hidden flex flex-col">
@@ -179,7 +181,16 @@ export const SourcePanel = ({
         >
           <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
           <span className="hidden sm:inline">Create Course-Only Chapter</span>
-          <span className="sm:hidden">Create Custom Chapter</span>
+          <span className="sm:hidden">Create Chapter</span>
+        </Button>
+        <Button 
+          variant="ghost" 
+          className="w-full gap-1.5 sm:gap-2 h-8 sm:h-9 text-xs sm:text-sm"
+          onClick={onCreateTopic}
+        >
+          <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+          <span className="hidden sm:inline">Create Course-Only Topic</span>
+          <span className="sm:hidden">Create Topic</span>
         </Button>
       </div>
     </div>

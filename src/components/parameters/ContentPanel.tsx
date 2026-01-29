@@ -169,8 +169,8 @@ export const ContentPanel = ({ selectedClassId, selectedSubjectId }: ContentPane
       </div>
 
       {/* Content */}
-      <ScrollArea className="flex-1">
-        <div className="p-3 space-y-1">
+      <ScrollArea className="flex-1 h-full">
+        <div className="p-3 space-y-1 pb-8">
           {chapters.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               <Layers className="w-8 h-8 mx-auto mb-2 opacity-30" />

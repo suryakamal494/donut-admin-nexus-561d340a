@@ -27,7 +27,7 @@ const AIQuestions = () => {
   const [selectedClassId, setSelectedClassId] = useState("");
   const [selectedSubjectId, setSelectedSubjectId] = useState("");
   const [selectedChapterId, setSelectedChapterId] = useState("");
-  const [selectedTopicId, setSelectedTopicId] = useState("");
+  const [selectedTopicIds, setSelectedTopicIds] = useState<string[]>([]);
   
   // Question generation state
   const [selectedTypes, setSelectedTypes] = useState<QuestionType[]>(["mcq_single"]);
@@ -65,7 +65,15 @@ const AIQuestions = () => {
     setSelectedClassId("");
     setSelectedSubjectId("");
     setSelectedChapterId("");
-    setSelectedTopicId("");
+    setSelectedTopicIds([]);
+  };
+
+  const toggleTopicSelection = (topicId: string) => {
+    setSelectedTopicIds(prev => 
+      prev.includes(topicId) 
+        ? prev.filter(id => id !== topicId)
+        : [...prev, topicId]
+    );
   };
 
   const handleGenerate = () => {
@@ -280,7 +288,7 @@ const AIQuestions = () => {
                     </div>
                     <div className="space-y-2">
                       <Label>Class *</Label>
-                      <Select value={selectedClassId} onValueChange={(v) => { setSelectedClassId(v); setSelectedSubjectId(""); setSelectedChapterId(""); setSelectedTopicId(""); }}>
+                      <Select value={selectedClassId} onValueChange={(v) => { setSelectedClassId(v); setSelectedSubjectId(""); setSelectedChapterId(""); setSelectedTopicIds([]); }}>
                         <SelectTrigger><SelectValue placeholder="Select class" /></SelectTrigger>
                         <SelectContent>
                           {classes.map((cls) => (
@@ -291,7 +299,7 @@ const AIQuestions = () => {
                     </div>
                     <div className="space-y-2">
                       <Label>Subject *</Label>
-                      <Select value={selectedSubjectId} onValueChange={(v) => { setSelectedSubjectId(v); setSelectedChapterId(""); setSelectedTopicId(""); }}>
+                      <Select value={selectedSubjectId} onValueChange={(v) => { setSelectedSubjectId(v); setSelectedChapterId(""); setSelectedTopicIds([]); }}>
                         <SelectTrigger><SelectValue placeholder="Select subject" /></SelectTrigger>
                         <SelectContent>
                           {subjects.map((sub) => (
@@ -302,7 +310,7 @@ const AIQuestions = () => {
                     </div>
                     <div className="space-y-2">
                       <Label>Chapter</Label>
-                      <Select value={selectedChapterId} onValueChange={(v) => { setSelectedChapterId(v); setSelectedTopicId(""); }}>
+                      <Select value={selectedChapterId} onValueChange={(v) => { setSelectedChapterId(v); setSelectedTopicIds([]); }}>
                         <SelectTrigger><SelectValue placeholder="Select chapter" /></SelectTrigger>
                         <SelectContent>
                           {availableChapters.map((ch) => (
@@ -313,15 +321,32 @@ const AIQuestions = () => {
                     </div>
                     {availableTopics.length > 0 && (
                       <div className="space-y-2">
-                        <Label>Topic (Optional)</Label>
-                        <Select value={selectedTopicId} onValueChange={setSelectedTopicId}>
-                          <SelectTrigger><SelectValue placeholder="Select topic" /></SelectTrigger>
-                          <SelectContent>
-                            {availableTopics.map((topic) => (
-                              <SelectItem key={topic.id} value={topic.id}>{topic.name}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                        <Label className="flex items-center justify-between">
+                          <span>Topics (Optional)</span>
+                          {selectedTopicIds.length > 0 && (
+                            <span className="text-xs text-primary font-medium">{selectedTopicIds.length} selected</span>
+                          )}
+                        </Label>
+                        <div className="border rounded-lg p-2 max-h-32 overflow-y-auto space-y-1">
+                          {availableTopics.map((topic) => (
+                            <div
+                              key={topic.id}
+                              className={`flex items-center gap-2 p-2 rounded cursor-pointer transition-colors ${
+                                selectedTopicIds.includes(topic.id)
+                                  ? "bg-primary/10 border-primary/30"
+                                  : "hover:bg-muted/50"
+                              }`}
+                              onClick={() => toggleTopicSelection(topic.id)}
+                            >
+                              <Checkbox
+                                checked={selectedTopicIds.includes(topic.id)}
+                                onCheckedChange={() => toggleTopicSelection(topic.id)}
+                                className="h-4 w-4"
+                              />
+                              <span className="text-sm truncate">{topic.name}</span>
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     )}
                   </>
@@ -340,7 +365,7 @@ const AIQuestions = () => {
                     </div>
                     <div className="space-y-2">
                       <Label>Chapter</Label>
-                      <Select value={selectedChapterId} onValueChange={setSelectedChapterId}>
+                      <Select value={selectedChapterId} onValueChange={(v) => { setSelectedChapterId(v); setSelectedTopicIds([]); }}>
                         <SelectTrigger><SelectValue placeholder="Select chapter" /></SelectTrigger>
                         <SelectContent>
                           {availableChapters.map((ch) => (

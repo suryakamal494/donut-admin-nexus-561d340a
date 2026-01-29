@@ -51,6 +51,12 @@ export interface NewChapterForm {
   subjectId: string;
 }
 
+export interface NewTopicForm {
+  name: string;
+  subjectId: string;
+  chapterId: string;
+}
+
 export function useCourseBuilder() {
   const [searchParams] = useSearchParams();
   
@@ -64,6 +70,7 @@ export function useCourseBuilder() {
   });
   const [showCreateCourseDialog, setShowCreateCourseDialog] = useState(false);
   const [showCreateChapterDialog, setShowCreateChapterDialog] = useState(false);
+  const [showCreateTopicDialog, setShowCreateTopicDialog] = useState(false);
   
   // Source panel filters
   const [sourceCurriculumId, setSourceCurriculumId] = useState<string>("cbse");
@@ -92,6 +99,13 @@ export function useCourseBuilder() {
   const [newChapter, setNewChapter] = useState<NewChapterForm>({
     name: "",
     subjectId: "",
+  });
+  
+  // New topic form
+  const [newTopic, setNewTopic] = useState<NewTopicForm>({
+    name: "",
+    subjectId: "",
+    chapterId: "",
   });
 
   const sensors = useSensors(
@@ -326,6 +340,19 @@ export function useCourseBuilder() {
     setNewChapter({ name: "", subjectId: "" });
   };
 
+  const handleCreateTopic = () => {
+    if (!newTopic.name || !newTopic.chapterId || !selectedCourseId) {
+      toast.error("Please fill in required fields");
+      return;
+    }
+    
+    // In production, this would add a topic to the course-owned chapter
+    // For now, just show success message
+    toast.success(`Course-only topic "${newTopic.name}" created`);
+    setShowCreateTopicDialog(false);
+    setNewTopic({ name: "", subjectId: "", chapterId: "" });
+  };
+
   const handleSaveDraft = () => {
     setIsDirty(false);
     toast.success("Course saved as draft");
@@ -378,6 +405,8 @@ export function useCourseBuilder() {
     setShowCreateCourseDialog,
     showCreateChapterDialog,
     setShowCreateChapterDialog,
+    showCreateTopicDialog,
+    setShowCreateTopicDialog,
     sourceCurriculumId,
     setSourceCurriculumId,
     sourceClassId,
@@ -390,6 +419,8 @@ export function useCourseBuilder() {
     setNewCourse,
     newChapter,
     setNewChapter,
+    newTopic,
+    setNewTopic,
     sensors,
     availableChapters,
     currentCourseChapters,
@@ -406,6 +437,7 @@ export function useCourseBuilder() {
     handleDragEnd,
     handleCreateCourse,
     handleCreateChapter,
+    handleCreateTopic,
     handleSaveDraft,
     handlePublish,
     getSubjectName,
