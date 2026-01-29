@@ -1,449 +1,720 @@
 
+# Comprehensive Documentation Update: Exams & Roles and Access
 
-# Comprehensive Documentation Update Plan: Content Library & Question Bank Enhancements
+## Summary
 
-## Summary of Your Requirements
-
-Based on your detailed instructions, the following areas need to be updated:
-
----
-
-## PART 1: Question Bank Smoke Test Enhancements
-
-### Issue 1.1: Add Display Verification to Manual Question Creation
-
-**Current Gap**: Expected results don't explicitly mention verification of math type, images, LaTeX, ChemSketch display after saving.
-
-**Solution**: Update smoke tests SA-QB-016 through SA-QB-024 to include display verification in expected results:
-
-| Test ID | Current Expected Result | Updated Expected Result |
-|---------|------------------------|-------------------------|
-| SA-QB-016 | Question saved, redirects to bank, card displays correctly with MCQ badge | Question saved, redirects to bank. **Verify**: Card displays MCQ badge, question text renders correctly (math formulas via KaTeX, images display, ChemSketch diagrams visible), all classification tags shown (Subject, Chapter, Topic, Difficulty, Cognitive) |
-| SA-QB-017 to SA-QB-024 | Similar updates for each question type | Add math type, image, and tag verification to each |
-
-### Issue 1.2: AI Question Generator - Add Tag Verification
-
-**Current Gap**: SA-QB-040 doesn't explicitly verify all classification tags are correctly assigned.
-
-**Solution**: Expand SA-QB-039 and SA-QB-040:
-
-| Test ID | Updated Expected Result |
-|---------|-------------------------|
-| SA-QB-039 | Selected questions saved to bank. **Verify**: All 7 tags (Curriculum, Class, Subject, Chapter, Topic, Difficulty, Cognitive) OR 6 tags for Course automatically assigned |
-| SA-QB-040 | Questions appear with: (1) Correct classification tags displayed, (2) Math formulas rendered, (3) Images intact, (4) AI-assigned difficulty/cognitive visible |
-
-### Issue 1.3: Upload PDF - Add Tag & OCR Verification
-
-**Current Gap**: SA-QB-046-051 need stronger emphasis on verifying AI-assigned tags and OCR quality.
-
-**Solution**: Expand expected results:
-
-| Test ID | Updated Expected Result |
-|---------|-------------------------|
-| SA-QB-046 | **Critical Check**: Chapter, Topic, Difficulty, Cognitive Type automatically tagged by AI. Verify all fields populated (no empty tags) |
-| SA-QB-047 | LaTeX formulas extracted correctly. **Verify**: Mathematical expressions render via KaTeX, no broken symbols or garbled text |
-| SA-QB-048 | Images extracted. **Verify**: All diagrams/images from PDF display correctly, no missing images |
-| SA-QB-051 | After adding to bank, **full verification cycle**: Preview each type, verify math/images render, confirm all 7/6 tags assigned and displayed on card |
+Based on my exploration of the current codebase and documentation, I will update the following areas:
+1. **Exams Feature Documentation** - Enhance with detailed PYP and Grand Test workflows
+2. **Exams Smoke Tests** - Expand from 9 basic tests to 60+ comprehensive tests
+3. **Exams Inter-Login Tests** - Add Grand Test assignment flow and schedule/audience propagation tests
+4. **Roles & Access Feature Documentation** - Add detailed module permissions and team member workflows
+5. **Roles & Access Smoke Tests** - Expand from 9 basic tests to 40+ comprehensive tests
+6. **Roles & Access Inter-Login Tests** - Create new file for cross-login permission verification
 
 ---
 
-## PART 2: Content Library Smoke Tests - Complete Overhaul
+## PART 1: Exams Feature Documentation Updates
 
-### Issue 2.1: Current Content Library Smoke Tests are Too Basic
-
-**Current State** (from file review):
-```
-| SA-CL-001 | Content page loads | Navigate to `/superadmin/content` | Grid loads | Critical |
-| SA-CL-002 | Filters work | Apply type/class/subject filters | Grid filters | High |
-... (8 basic tests total)
-```
-
-**Solution**: Replace with comprehensive 40+ test cases organized by functionality.
-
-### Content Library Page Smoke Tests (NEW)
-
-| Test ID | Test Case | Steps | Expected Result | Priority |
-|---------|-----------|-------|-----------------|----------|
-| SA-CL-001 | Content library page loads | Navigate to `/superadmin/content` | Page loads with header, search bar, filters, view toggle (Grid/List), two action buttons (Create Content, AI Content Generator), content grid, and pagination | Critical |
-| SA-CL-002 | Default view is Grid | Open content library | Grid view is active by default | High |
-| SA-CL-003 | Search by title works | Enter title text in search box | Content filters by title match | Critical |
-| SA-CL-004 | Search by description works | Enter description text in search | Content filters by description match | High |
-| SA-CL-005 | Search clears correctly | Click clear/X on search | All content displays again | Medium |
-| SA-CL-006 | Type filter works | Select "Video" from type filter | Only video content displays | High |
-| SA-CL-007 | Subject filter works | Select "Physics" from subject filter | Only Physics content displays | High |
-| SA-CL-008 | Class filter works | Select "Class 11" | Content filters to Class 11 only | High |
-| SA-CL-009 | Chapter filter works | Select chapter | Content filters to that chapter | Medium |
-| SA-CL-010 | Multiple filters combine | Apply type + subject + class | Content matches ALL selected filters | Critical |
-| SA-CL-011 | Filter reset works | Click reset/clear all | All filters cleared, full content shown | Medium |
-| SA-CL-012 | Grid view displays cards | View in Grid mode | Content cards with thumbnail, title, type badge, actions visible | High |
-| SA-CL-013 | List view displays rows | Click List view toggle | Content displays as rows with details | High |
-| SA-CL-014 | Toggle between views | Switch Grid → List → Grid | View changes correctly, content intact | Medium |
-| SA-CL-015 | Pagination displays | Scroll to bottom | Page numbers or Load More visible | High |
-| SA-CL-016 | Pagination navigation | Click page 2 or Load More | New content loads, page updates | High |
-| SA-CL-017 | Pagination with filters | Apply filter, then paginate | Pagination respects active filters | High |
-
-### Content Card Functionality Tests
-
-| Test ID | Test Case | Steps | Expected Result | Priority |
-|---------|-----------|-------|-----------------|----------|
-| SA-CL-018 | Preview button works | Click Preview on any card | Preview dialog/page opens showing full content | Critical |
-| SA-CL-019 | Video preview plays | Preview a video content | Video player loads, playback works | Critical |
-| SA-CL-020 | PDF preview displays | Preview a PDF document | PDF viewer loads, pages viewable | Critical |
-| SA-CL-021 | PPT preview displays | Preview a PPT document | Presentation viewer loads, slides navigable | Critical |
-| SA-CL-022 | HTML content preview | Preview HTML content | HTML renders correctly in iframe | High |
-| SA-CL-023 | External URL preview | Preview YouTube/external URL | Embed displays, video playable | Critical |
-| SA-CL-024 | Edit button works | Click Edit on any card | Edit form opens with pre-filled values | Critical |
-| SA-CL-025 | Edit saves changes | Modify title, save | Changes saved, reflected in list | High |
-| SA-CL-026 | Delete button works | Click Delete on content | Confirmation dialog appears | High |
-| SA-CL-027 | Delete confirmation | Confirm deletion | Content removed from list | Medium |
-| SA-CL-028 | Content type badge visible | View any card | Type badge (Video, PDF, PPT, etc.) displayed | Medium |
-| SA-CL-029 | Classification visible | View any card | Subject, Chapter visible on card | Medium |
-
----
-
-## PART 3: Create Content Smoke Tests (4 Content Types)
-
-### Purpose Section to Add
-
-```markdown
-### Purpose
-
-The Create Content feature allows SuperAdmin to add educational content to the global library. Content is classified by curriculum/course hierarchy and made visible to institutes based on visibility settings.
-
-**Four Content Types:**
-1. **Video** - Upload MP4, WebM, MOV files for lecture videos
-2. **Document** - Upload PDF, PPT, PPTX, DOC, DOCX for reading materials
-3. **HTML** - Upload HTML/HTM files for interactive content or iframe embeds
-4. **External URL** - Embed YouTube, Vimeo, Google Slides, or other external services
-
-**Classification Rules:**
-- Curriculum: Curriculum → Class → Subject → Chapter → Topic (all mandatory)
-- Course: Course → Subject → Chapter → Topic (all mandatory)
-
-**Visibility Purpose:**
-Content can be visible across multiple curricula and courses simultaneously. When creating content, selecting multiple curricula/courses means:
-- Content appears for ALL institutes assigned those curricula/courses
-- Strict boundary: If content is tagged CBSE, institutes with only ICSE won't see it
-```
-
-### Create Content Smoke Tests (NEW)
-
-| Test ID | Test Case | Steps | Expected Result | Priority |
-|---------|-----------|-------|-----------------|----------|
-| SA-CC-001 | Create Content page loads | Click "Create Content" button | Split screen: Content Type & Upload (left 2/3) + Classification & Visibility (right 1/3) | Critical |
-| SA-CC-002 | Four content types visible | View content type section | Video, Document, HTML, External URL cards displayed | Critical |
-| SA-CC-003 | Video type selection | Click Video type card | Card selected (highlighted), file upload shows "MP4, WebM, MOV" | High |
-| SA-CC-004 | Document type selection | Click Document type card | Card selected, file upload shows "PDF, PPT, DOC" | High |
-| SA-CC-005 | HTML type selection | Click HTML type card | Card selected, file upload shows "HTML, HTM" | High |
-| SA-CC-006 | External URL selection | Click External URL type | URL input field appears instead of file upload | High |
-
-### Classification Validation Tests
-
-| Test ID | Test Case | Steps | Expected Result | Priority |
-|---------|-----------|-------|-----------------|----------|
-| SA-CC-007 | Curriculum source requires all fields | Select Curriculum, leave Chapter empty, try Save | Validation error: "Please select Chapter" | Critical |
-| SA-CC-008 | Topic is mandatory | Select Curriculum → Class → Subject → Chapter, leave Topic empty, try Save | Validation error: "Please select Topic" | Critical |
-| SA-CC-009 | Course source requires all fields | Select Course mode, leave Chapter empty, try Save | Validation error: "Please select Chapter" | Critical |
-| SA-CC-010 | Classification cascade | Select Class | Subject dropdown populates with subjects for that class | High |
-| SA-CC-011 | Chapter cascade | Select Subject | Chapter dropdown populates with chapters for that subject | High |
-| SA-CC-012 | Topic cascade | Select Chapter | Topic dropdown populates with topics for that chapter | High |
-
-### Visibility Tests
-
-| Test ID | Test Case | Steps | Expected Result | Priority |
-|---------|-----------|-------|-----------------|----------|
-| SA-CC-013 | Visibility section present | View Classification sidebar | Visibility section with curriculum/course checkboxes visible | Critical |
-| SA-CC-014 | Multiple curriculum selection | Check CBSE, ICSE, State Board | All three selected, shown in selection | High |
-| SA-CC-015 | Multiple course selection | Check JEE, NEET | Both courses selected | High |
-| SA-CC-016 | Mixed visibility | Select CBSE curriculum + JEE course | Both visible in selection summary | High |
-
-### Content Type-Specific Creation Tests
-
-| Test ID | Test Case | Steps | Expected Result | Priority |
-|---------|-----------|-------|-----------------|----------|
-| SA-CC-017 | Video upload flow | Select Video, upload MP4, fill title, select classification, save | Content saved, redirects to library | Critical |
-| SA-CC-018 | Video preview verification | After saving, click Preview on new video | Video plays correctly, no errors | Critical |
-| SA-CC-019 | Document PDF upload | Select Document, upload PDF, fill details, save | PDF content saved | Critical |
-| SA-CC-020 | PDF preview verification | Preview the uploaded PDF | PDF displays, pages navigable, no "document not supported" error | Critical |
-| SA-CC-021 | Document PPT upload | Select Document, upload PPTX, fill details, save | PPT content saved | Critical |
-| SA-CC-022 | PPT preview verification | Preview the uploaded PPT | Slides display correctly, navigation works | Critical |
-| SA-CC-023 | HTML file upload | Select HTML, upload .html file, fill details, save | HTML content saved | High |
-| SA-CC-024 | HTML preview verification | Preview the HTML content | HTML renders in iframe, no 504 or server errors | High |
-| SA-CC-025 | External URL - YouTube | Select External URL, paste YouTube embed URL, save | Content saved with URL | Critical |
-| SA-CC-026 | YouTube preview verification | Preview the YouTube content | Video embeds and plays correctly, no "error with link" | Critical |
-| SA-CC-027 | External URL - Vimeo | Select External URL, paste Vimeo URL, save | Content saved | High |
-| SA-CC-028 | External URL - Google Slides | Select External URL, paste Google Slides embed, save | Content saved | High |
-| SA-CC-029 | Google Slides preview | Preview Google Slides content | Slides display in embed | High |
-
-### Complete Cycle Tests
-
-| Test ID | Test Case | Steps | Expected Result | Priority |
-|---------|-----------|-------|-----------------|----------|
-| SA-CC-030 | Create → View → Edit cycle | Create video, preview, then edit | Full cycle works: Create saves, Preview shows video, Edit opens form with values | Critical |
-| SA-CC-031 | Edit updates correctly | In Edit, change title, save | Title updated in library view | High |
-| SA-CC-032 | Content visible after refresh | Create content, refresh page | New content visible in library | High |
-
----
-
-## PART 4: AI Content Generator Smoke Tests (Complete)
-
-### Purpose Section to Add
-
-```markdown
-### Purpose
-
-The AI Content Generator creates PowerPoint presentations automatically based on classification and prompts. Teachers and institutes use this to quickly generate teaching materials.
-
-**3-Step Process:**
-1. **Step 1 - Classification**: Select curriculum/course → class → subject → chapter → topic + set visibility
-2. **Step 2 - Prompt**: Describe content needs, select detailed/concise style, set slide count
-3. **Step 3 - Preview & Edit**: Review generated slides, reorder via drag-drop, edit content, save to library
-
-**Output**: PowerPoint-style presentations saved as library content
-```
-
-### AI Content Generator Tests (NEW)
-
-| Test ID | Test Case | Steps | Expected Result | Priority |
-|---------|-----------|-------|-----------------|----------|
-| SA-AG-001 | AI Generator page loads | Click "AI Content Generator" button | 3-step wizard opens with Step 1 (Classification) active | Critical |
-| SA-AG-002 | Step indicator visible | View header | Steps 1-2-3 indicator shows Step 1 highlighted | Medium |
-
-### Step 1 - Classification Tests
-
-| Test ID | Test Case | Steps | Expected Result | Priority |
-|---------|-----------|-------|-----------------|----------|
-| SA-AG-003 | Classification panel visible | View Step 1 | Source type toggle, curriculum/course dropdowns, visibility section | Critical |
-| SA-AG-004 | Curriculum flow | Select Curriculum → Class → Subject → Chapter → Topic | All dropdowns cascade correctly | Critical |
-| SA-AG-005 | Course flow | Switch to Course, select Course → Chapter → Topic | Dropdowns work for course mode | High |
-| SA-AG-006 | Visibility multi-select | Check multiple curricula/courses in visibility | All selected items shown | High |
-| SA-AG-007 | Cannot proceed without classification | Leave Chapter empty, click Next | Next button disabled or validation error | Critical |
-| SA-AG-008 | Proceed to Step 2 | Complete classification, click Next | Advances to Step 2 | Critical |
-
-### Step 2 - Prompt Tests
-
-| Test ID | Test Case | Steps | Expected Result | Priority |
-|---------|-----------|-------|-----------------|----------|
-| SA-AG-009 | Prompt section visible | View Step 2 | Text area for prompt, style selector (Detailed/Concise), slide count slider | Critical |
-| SA-AG-010 | Prompt text area | Enter detailed prompt (50+ characters) | Text accepted | High |
-| SA-AG-011 | Style preset selection | Click "Concise" | Concise option selected | Medium |
-| SA-AG-012 | Slide count slider | Adjust slider to 15 slides | Slider updates, count shows "15" | Medium |
-| SA-AG-013 | Minimum prompt validation | Enter less than 20 characters, try Generate | Validation error or Generate disabled | High |
-| SA-AG-014 | Generate button | Complete prompt, click "Generate Presentation" | Loading indicator appears | Critical |
-| SA-AG-015 | Generation progress | Wait during generation | Progress/spinner visible, then Step 3 loads | Critical |
-
-### Step 3 - Preview & Edit Tests
-
-| Test ID | Test Case | Steps | Expected Result | Priority |
-|---------|-----------|-------|-----------------|----------|
-| SA-AG-016 | Slides generated | After generation | Slide thumbnails on left, full slide preview on right | Critical |
-| SA-AG-017 | Slide count matches | Requested 10 slides | 10 slide thumbnails visible | High |
-| SA-AG-018 | Slide navigation | Click slide 3 thumbnail | Slide 3 displays in preview panel | High |
-| SA-AG-019 | Drag and drop reorder | Drag slide 2 to position 5 | Slide order updates, slide 2 now in position 5 | High |
-| SA-AG-020 | Content stays within slides | View any slide | Text/content contained within slide boundaries, not overflowing | Critical |
-| SA-AG-021 | Edit slide content | Click on slide text, modify | Text updates in real-time | High |
-| SA-AG-022 | Delete slide | Click delete on slide 3 | Slide removed, count decreases | Medium |
-| SA-AG-023 | Duplicate slide | Click duplicate on slide 1 | New slide added after slide 1 | Medium |
-| SA-AG-024 | Save to Library button | Click "Save to Library" | Presentation saved, redirects to Content Library | Critical |
-
-### Post-Save Verification Tests
-
-| Test ID | Test Case | Steps | Expected Result | Priority |
-|---------|-----------|-------|-----------------|----------|
-| SA-AG-025 | Content visible in library | After save, view Content Library | New AI-generated presentation appears in list | Critical |
-| SA-AG-026 | Preview generated content | Click Preview on new content | All slides display correctly | Critical |
-| SA-AG-027 | Edit generated content | Click Edit on new content | Edit form opens, can modify details | High |
-| SA-AG-028 | Classification correct | View content card | Correct subject, chapter, topic displayed | High |
-
----
-
-## PART 5: Content Library Cross-Login Tests (Inter-Login)
-
-### Add to `docs/06-testing-scenarios/inter-login-tests/content-tests.md`
-
-#### New Section: Content Visibility Based on Curriculum/Course Assignment
-
-```markdown
-## Content Visibility Based on Curriculum Assignment
-
-### Purpose
-Content visibility is STRICTLY controlled by institute curriculum/course assignments. When SuperAdmin creates content with visibility set to specific curricula/courses, only institutes with matching assignments can access that content.
-
-### Critical Business Rules
-1. Content tagged with CBSE is ONLY visible to institutes assigned CBSE
-2. Content tagged with ICSE is NOT visible to CBSE-only institutes
-3. Content tagged with BOTH CBSE and ICSE is visible to BOTH types of institutes
-4. Tier must enable Content Library access for content to be visible
-
-### Boundary Enforcement
-This is the most critical test - strict boundaries must be enforced to prevent content leakage between curricula/courses.
-```
-
-#### New Test Cases
-
-| Test ID | Test Case | Steps | Expected Result |
-|---------|-----------|-------|-----------------|
-| CT-040 | CBSE content to CBSE institute | SA creates content with CBSE visibility, Institute has CBSE | Content visible in institute library |
-| CT-041 | CBSE content NOT to ICSE institute | SA creates content with CBSE visibility, Institute has only ICSE | Content NOT visible in institute library |
-| CT-042 | Multi-curriculum content visibility | SA creates content with CBSE + ICSE, Institute has CBSE | Content visible |
-| CT-043 | Course-based visibility | SA creates content with JEE visibility, Institute has JEE | Content visible |
-| CT-044 | Course content NOT to non-assigned | SA creates JEE content, Institute has only NEET | Content NOT visible |
-| CT-045 | Mixed curriculum + course | SA creates CBSE + JEE content, Institute has CBSE only | Content visible (has CBSE) |
-| CT-046 | Tier blocks content access | Institute tier has Content Library disabled | Content Library not in sidebar, no access |
-| CT-047 | Tier enables content access | Institute tier has Content Library enabled | Content Library visible in sidebar |
-
-#### Content Preview Across Logins
-
-| Test ID | Test Case | Steps | Expected Result |
-|---------|-----------|-------|-----------------|
-| CT-048 | Video preview works at SA | SA creates video, previews | Video plays correctly |
-| CT-049 | Same video at Institute | Institute views same video | Video plays correctly (no errors) |
-| CT-050 | Same video at Teacher | Teacher views same video | Video plays correctly |
-| CT-051 | PDF preview works at SA | SA creates PDF, previews | PDF displays |
-| CT-052 | Same PDF at Institute | Institute views same PDF | PDF displays (no "not supported" error) |
-| CT-053 | Same PDF at Teacher | Teacher views same PDF | PDF displays correctly |
-| CT-054 | PPT preview works at SA | SA creates PPT, previews | PPT displays |
-| CT-055 | Same PPT at Institute | Institute views same PPT | PPT displays (no errors) |
-| CT-056 | HTML preview across logins | SA creates HTML, Institute/Teacher view | HTML renders in all portals |
-| CT-057 | External URL across logins | SA creates YouTube embed, all portals view | Video plays in all portals |
-
-#### Institute-Created Content Privacy
-
-| Test ID | Test Case | Steps | Expected Result |
-|---------|-----------|-------|-----------------|
-| CT-058 | Institute A content NOT visible to SA | Institute A creates content | SuperAdmin CANNOT see Institute A's content |
-| CT-059 | Institute A content NOT visible to Institute B | Institute A creates content | Institute B CANNOT see Institute A's content |
-| CT-060 | Institute content visible to own teachers | Institute creates content | Teachers of that institute CAN see content |
-| CT-061 | Institute content NOT visible to other teachers | Institute A creates content | Teachers of Institute B CANNOT see content |
-
-#### Global Content Read-Only Enforcement
-
-| Test ID | Test Case | Steps | Expected Result |
-|---------|-----------|-------|-----------------|
-| CT-062 | Global content read-only at Institute | Institute views global content | No Edit/Delete buttons visible, only Preview |
-| CT-063 | Global content read-only at Teacher | Teacher views global content | No Edit/Delete buttons visible, only Preview |
-| CT-064 | Institute content editable by Institute | Institute views own content | Edit/Delete buttons available |
-
----
-
-## PART 6: Feature Documentation Updates
-
-### File: `docs/01-superadmin/content-library.md`
+### File: `docs/01-superadmin/exams.md`
 
 **Updates Required:**
 
-1. **Replace Content Types Section**:
-
+### 1.1 Add Previous Year Papers Display Section
 ```markdown
-### Content Types
+## Previous Year Papers Tab
 
-| Type | Icon | Description | Formats | Upload Method |
-|------|------|-------------|---------|---------------|
-| Video | 🎬 | Lecture videos, tutorials | MP4, WebM, MOV | File upload |
-| Document | 📄 | PDFs, presentations, Word docs | PDF, PPT, PPTX, DOC, DOCX | File upload |
-| HTML | 🌐 | Interactive HTML content | HTML, HTM | File upload |
-| External URL | 🔗 | Embedded external content | YouTube, Vimeo, Google Slides | URL input |
+### Purpose
+Previous Year Papers (PYP) are official historical question papers from competitive exams (JEE Mains, JEE Advanced, NEET). They are organized by exam type and displayed year-wise for easy navigation.
+
+### Display Structure
+Papers are grouped hierarchically:
+- **Exam Type** (JEE Mains, JEE Advanced, NEET)
+  - **Year** (2024, 2023, 2022, etc.)
+    - **Individual Papers** (with session info if applicable)
+
+### Paper Card Actions
+| Action | Icon | Description |
+|--------|------|-------------|
+| View | Eye | Opens full preview of question paper with all questions |
+| Edit | Pencil | Opens review/configure page to modify questions, tagging |
+| Stats | BarChart | Shows performance statistics across attempts |
 ```
 
-2. **Replace Create Content Section**:
-
+### 1.2 Add Grand Tests Section
 ```markdown
-### Create Content - Manual Upload
+## Grand Tests Tab
 
-**Page Layout**: Split screen with Content Details (left 2/3) and Classification + Visibility (right 1/3)
+### Purpose
+Grand Tests are platform-wide mock examinations created by SuperAdmin to be conducted across multiple institutes. They serve as benchmarking assessments where students from different institutes compete together.
 
-**Step 1: Select Content Type**
-- Choose from 4 types: Video, Document, HTML, External URL
-- Each type shows accepted formats
+### Display Structure
+Grand Tests are displayed in a **grid layout** (not year-wise like PYP).
 
-**Step 2: Upload or Enter URL**
-- Video/Document/HTML: Drag & drop or browse for file
-- External URL: Paste embed URL (YouTube, Vimeo, Google Slides, etc.)
+### Grand Test Card Actions
+| Action | Icon | Description |
+|--------|------|-------------|
+| View | Eye | Opens full preview of question paper |
+| Edit | Pencil | Opens exam editor to modify questions |
+| Schedule | Calendar | Set date and time for exam availability |
+| Audience | Users | Select which institutes can take this test |
+| Stats | BarChart | View performance analytics |
+| Delete | Trash | Remove draft tests |
 
-**Step 3: Content Details**
-- Title (required)
-- Description
-- Learning Objectives
+### Schedule Functionality
+- **Purpose**: Set when students can start taking the exam
+- **Fields**: Date picker + Time slot selector (30-minute intervals)
+- **Constraint**: Can only select future dates
+- **Effect**: Students can only start exam after scheduled time
 
-**Step 4: Classification** (ALL fields mandatory)
-- Source Type: Curriculum OR Course
-- For Curriculum: Curriculum → Class → Subject → Chapter → Topic
-- For Course: Course → Subject → Chapter → Topic
-
-**Step 5: Visibility** (Critical for propagation)
-- Select which curricula should see this content
-- Select which courses should see this content
-- Content appears ONLY to institutes with matching assignments
+### Audience Functionality
+- **Purpose**: Select which institutes participate in this Grand Test
+- **Options**:
+  - Direct Users (platform-registered students)
+  - All Institutes (automatic assignment)
+  - Selected Institutes (choose specific ones)
+- **Effect**: Only assigned institutes see the test in their portal
+- **Cascade**: Institute then assigns to specific batches
 ```
 
-3. **Add Visibility Rules Section**:
-
+### 1.3 Update Create PYP Flow
 ```markdown
-### Visibility & Propagation Rules
+## Create Previous Year Paper Flow
 
-**How Visibility Works:**
-When creating content, the Visibility section determines which institutes can access the content:
+### Purpose
+Upload official competitive exam papers to create tests that match actual exam format.
 
-| Visibility Setting | Who Sees It |
-|--------------------|-------------|
-| CBSE only | Only institutes assigned CBSE |
-| ICSE only | Only institutes assigned ICSE |
-| CBSE + ICSE | Institutes assigned CBSE OR ICSE |
-| JEE course | Only institutes assigned JEE |
-| CBSE + JEE | Institutes assigned CBSE OR JEE |
+### 3-Step Wizard
 
-**Critical Boundary Rule:**
-Content created for CBSE is NEVER visible to institutes with only ICSE assignment. This boundary is strictly enforced.
+**Step 1: Exam Configuration**
+| Field | Required | Description |
+|-------|----------|-------------|
+| Competitive Exam | Yes | JEE Main, JEE Advanced, NEET |
+| Exam Year | Yes | Year of the paper (2024, 2023, etc.) |
+| Session | No | January, February, etc. (for multi-session exams) |
+| Paper Name | Yes | Auto-generated from above, can customize |
 
-**Tier Requirement:**
-Institute must have Content Library enabled in their tier to access any content.
+**Step 2: Upload PDF**
+- Upload official question paper PDF (max 50MB)
+- System extracts questions, sections, and marking scheme
+- Processing indicator shown during extraction
+
+**Step 3: Review & Configure**
+- All extracted questions displayed for verification
+- Check: 
+  - Question count matches original paper
+  - Question text, options, solutions correctly extracted
+  - Math formulas (LaTeX) render correctly
+  - Images/diagrams display properly
+  - Chapter/Topic tags AI-assigned correctly
+  - Difficulty/Cognitive tags assigned
+- Edit any question before publishing
+- Publish when verification complete
 ```
 
-4. **Add AI Content Generator Section**:
-
+### 1.4 Update Create Grand Test Flow
 ```markdown
-### AI Content Generator
+## Create Grand Test Flow
 
-The AI Content Generator creates PowerPoint presentations automatically.
+### Purpose
+Create mock tests to conduct across institutes for benchmarking.
 
-**Objective**: Generate teaching slides based on topic context and user instructions.
+### 4-Step Wizard
 
-**3-Step Wizard:**
+**Step 1: Test Configuration**
+| Field | Required | Description |
+|-------|----------|-------------|
+| Test Name | Yes | Custom name for the test |
+| Content Source | Yes | Curriculum OR Course selection |
+| Exam Pattern | Yes | JEE Main, JEE Advanced, NEET |
 
-**Step 1: Classification**
-- Select source type (Curriculum/Course)
-- Complete classification: Curriculum → Class → Subject → Chapter → Topic
-- Set visibility (which curricula/courses should see this content)
+**Step 2: Creation Method**
+| Method | Description |
+|--------|-------------|
+| Generate using AI | AI creates questions based on specifications |
+| Upload PDF | Extract questions from existing document |
 
-**Step 2: Describe Content**
-- Enter detailed prompt (minimum 20 characters)
-- Select style: Detailed (comprehensive) or Concise (brief)
-- Set slide count (1-20 slides)
+**Step 3: AI Settings (if AI method)**
+| Configuration | Description |
+|---------------|-------------|
+| Subject Distribution | Questions per subject (Physics, Chemistry, Math/Bio) |
+| Difficulty Distribution | Easy %, Medium %, Hard % (must total 100%) |
+| Cognitive Distribution | Logical %, Analytical %, Conceptual %, Numerical %, Application %, Memory % (must total 100%) |
 
-**Step 3: Preview & Edit**
-- View generated slides in split panel
-- Left: Slide thumbnails with drag-drop reordering
-- Right: Full slide preview with editable content
-- Actions: Delete slide, Duplicate slide, Edit text
-- Save to Library when complete
+**Step 3: Upload PDF (if PDF method)**
+- Same as PYP flow
 
-**Output**: 
-Presentation saved to Content Library, accessible based on visibility settings
+**Step 4: Complete**
+- Redirects to Review & Configure page
+- Same verification process as PYP
+```
+
+### 1.5 Add Cross-Login Assignment Flow
+```markdown
+## Grand Test Assignment Flow
+
+### SuperAdmin → Institute → Batch → Student
+
+```text
+SuperAdmin creates Grand Test
+         │
+         ▼
+SuperAdmin clicks "Audience" → Selects Institutes
+         │
+         ▼
+Selected Institutes see Grand Test in their Exams module
+         │
+         ▼
+Institute assigns Grand Test to specific Batches
+         │
+         ▼
+Students in assigned Batches see test in Tests list
+         │
+         ▼
+Students can start ONLY after scheduled time
+```
+
+### Key Business Rules
+1. Grand Test created by SA is NOT automatically visible to all institutes
+2. SA must explicitly assign via Audience dialog
+3. Assigned institutes can only assign to their own batches (not edit test)
+4. Only students in assigned batches can attempt
+5. Schedule controls when exam becomes available
 ```
 
 ---
 
-## PART 7: Navigation Verification
+## PART 2: Exams Smoke Tests (Complete Overhaul)
 
-All files created/updated must be verified in `src/data/docsNavigation.ts`. Current state shows:
+### File: `docs/06-testing-scenarios/smoke-tests/superadmin.md`
 
-**Already Added:**
-- Tier Management (line 43)
-- Users (line 44)
-- Tier Management Tests (inter-login)
-- Question Bank Tests (inter-login)
+**Replace Exams Smoke Tests section with:**
 
-**Verify Content Tests** are already in navigation (currently exists at path "06-testing-scenarios/inter-login-tests/content-tests")
+### Exams Page Tests
+
+| Test ID | Test Case | Steps | Expected Result | Priority |
+|---------|-----------|-------|-----------------|----------|
+| SA-EX-001 | Exams page loads | Navigate to `/superadmin/exams` | Page loads with two tabs: Previous Year Papers, Grand Tests | Critical |
+| SA-EX-002 | Previous Year Papers tab active by default | Open page | PYP tab highlighted, content shows | High |
+| SA-EX-003 | Grand Tests tab switch | Click Grand Tests tab | Tab switches, Grand Tests grid displays | High |
+| SA-EX-004 | PYP search works | Enter text in PYP search box | Papers filter by name match | High |
+| SA-EX-005 | PYP exam type filter | Select "JEE Main" from filter | Only JEE Main papers display | High |
+| SA-EX-006 | GT search works | In Grand Tests tab, enter text | Tests filter by name match | High |
+| SA-EX-007 | GT status filter | Select "Scheduled" from status filter | Only scheduled tests display | High |
+
+### PYP Display Tests
+
+| Test ID | Test Case | Steps | Expected Result | Priority |
+|---------|-----------|-------|-----------------|----------|
+| SA-EX-008 | PYP grouped by exam type | View PYP tab | Papers grouped under JEE Main, JEE Advanced, NEET sections | Critical |
+| SA-EX-009 | Year accordion displays | View any exam type section | Years displayed (2024, 2023, etc.) as expandable accordions | Critical |
+| SA-EX-010 | Year accordion expands | Click on year accordion | Papers for that year display | High |
+| SA-EX-011 | Paper card displays | View any paper in expanded year | Card shows paper name, session, question count | High |
+| SA-EX-012 | View button works | Click View on any paper | Redirects to exam review page with question preview | Critical |
+| SA-EX-013 | Edit button works | Click Edit on any paper | Redirects to exam review page in edit mode | High |
+| SA-EX-014 | Stats button works | Click Stats on any paper | Stats display (or toast if not implemented) | Medium |
+
+### Grand Test Display Tests
+
+| Test ID | Test Case | Steps | Expected Result | Priority |
+|---------|-----------|-------|-----------------|----------|
+| SA-EX-015 | GT displays in grid | View Grand Tests tab | Tests displayed as cards in grid layout | Critical |
+| SA-EX-016 | GT card info displays | View any GT card | Shows: Name, pattern, status badge, question count, created date | High |
+| SA-EX-017 | View button works | Click View on GT card | Redirects to exam review page | Critical |
+| SA-EX-018 | Edit button works | Click Edit on GT card | Redirects to exam review page | High |
+| SA-EX-019 | Schedule button works | Click Schedule on GT card | Schedule dialog opens | Critical |
+| SA-EX-020 | Audience button works | Click Audience on GT card | Audience dialog opens | Critical |
+
+### Schedule Dialog Tests
+
+| Test ID | Test Case | Steps | Expected Result | Priority |
+|---------|-----------|-------|-----------------|----------|
+| SA-EX-021 | Schedule dialog loads | Click Schedule on GT | Dialog opens with date picker and time selector | Critical |
+| SA-EX-022 | Date picker works | Click date picker | Calendar opens, can select date | High |
+| SA-EX-023 | Past dates disabled | View calendar | Past dates are grayed out/unselectable | Critical |
+| SA-EX-024 | Time selector works | Click time dropdown | 30-minute time slots available (00:00 to 23:30) | High |
+| SA-EX-025 | Save schedule | Select date and time, click Save | Schedule saved, toast confirmation shown | Critical |
+| SA-EX-026 | Cancel schedule | Click Cancel | Dialog closes, no changes saved | Medium |
+
+### Audience Dialog Tests
+
+| Test ID | Test Case | Steps | Expected Result | Priority |
+|---------|-----------|-------|-----------------|----------|
+| SA-EX-027 | Audience dialog loads | Click Audience on GT | Dialog opens with Direct Users and Institutes sections | Critical |
+| SA-EX-028 | Direct Users toggle | Toggle Direct Users switch | Switch enables/disables, count updates | High |
+| SA-EX-029 | Institutes toggle | Toggle Institutes switch | Switch enables/disables, institute options appear | High |
+| SA-EX-030 | All Institutes option | Select "All Institutes" radio | All institutes count displayed | High |
+| SA-EX-031 | Select Specific Institutes | Select "Select Specific Institutes" radio | Institute list appears with checkboxes | Critical |
+| SA-EX-032 | Institute checkbox toggle | Check/uncheck institute | Selected count updates | High |
+| SA-EX-033 | Select All button | Click "Select All" | All institutes checked | Medium |
+| SA-EX-034 | Estimated participants | Make selections | Participant count updates in summary | High |
+| SA-EX-035 | Save audience | Make selections, click Save | Audience saved, toast confirmation | Critical |
+| SA-EX-036 | Validation - no audience | Uncheck all, try Save | Error: "Please select at least one audience" | High |
+
+### Create PYP Wizard Tests
+
+| Test ID | Test Case | Steps | Expected Result | Priority |
+|---------|-----------|-------|-----------------|----------|
+| SA-EX-037 | Create PYP page loads | Click "Create Previous Year Paper" | 3-step wizard opens, Step 1 active | Critical |
+| SA-EX-038 | Step 1: Competitive Exam selection | Select "JEE Main" | Selection highlighted | Critical |
+| SA-EX-039 | Step 1: Year selection | Select year from dropdown | Year selected | Critical |
+| SA-EX-040 | Step 1: Session selection (optional) | Select session | Session selected | Medium |
+| SA-EX-041 | Step 1: Paper name auto-generates | Select exam type and year | Paper name auto-fills (e.g., "JEE Main 2024") | High |
+| SA-EX-042 | Step 1: Paper name editable | Edit auto-generated name | Custom name accepted | Medium |
+| SA-EX-043 | Step 1: Next button validation | Leave exam type empty, try Next | Next button disabled | Critical |
+| SA-EX-044 | Step 1: Proceed to Step 2 | Fill all required, click Next | Advances to Step 2 | Critical |
+| SA-EX-045 | Step 2: Upload area displays | View Step 2 | Drag-drop upload area visible | High |
+| SA-EX-046 | Step 2: File upload | Select PDF file | File name displayed, success state | Critical |
+| SA-EX-047 | Step 2: Non-PDF rejection | Try to upload non-PDF | Error toast: "Please upload a PDF file" | High |
+| SA-EX-048 | Step 2: Large file rejection | Try to upload >50MB file | Error toast: "File size must be less than 50MB" | High |
+| SA-EX-049 | Step 2: Upload & Create | Click "Upload & Create Test" | Processing indicator, then Step 3 | Critical |
+| SA-EX-050 | Step 3: Success state | After upload completes | Success message, "Review & Configure" button | Critical |
+| SA-EX-051 | Step 3: Navigate to review | Click "Review & Configure" | Redirects to exam review page | Critical |
+
+### Create Grand Test Wizard Tests
+
+| Test ID | Test Case | Steps | Expected Result | Priority |
+|---------|-----------|-------|-----------------|----------|
+| SA-EX-052 | Create GT page loads | Click "Create Grand Test" | 4-step wizard opens, Step 1 active | Critical |
+| SA-EX-053 | Step 1: Test name entry | Enter test name | Name accepted | Critical |
+| SA-EX-054 | Step 1: Content source toggle | Click Curriculum/Course | Selection toggles correctly | High |
+| SA-EX-055 | Step 1: Curriculum dropdown | Select curriculum | Dropdown populates and selects | High |
+| SA-EX-056 | Step 1: Course dropdown | Switch to Course, select | Course selected | High |
+| SA-EX-057 | Step 1: Pattern selection | Select JEE Main pattern | Pattern highlighted with description | Critical |
+| SA-EX-058 | Step 1: Next validation | Leave test name empty | Next disabled | High |
+| SA-EX-059 | Step 2: Method selection | View Step 2 | AI Generate and Upload PDF options visible | Critical |
+| SA-EX-060 | Step 2: AI method selection | Click "Generate using AI" | AI option highlighted | High |
+| SA-EX-061 | Step 2: PDF method selection | Click "Upload PDF" | PDF option highlighted | High |
+| SA-EX-062 | Step 3 (AI): Subject distribution | View AI settings | Subject sliders for Physics, Chemistry, Math/Bio | High |
+| SA-EX-063 | Step 3 (AI): Difficulty distribution | View difficulty sliders | Easy, Medium, Hard sliders (total 100%) | High |
+| SA-EX-064 | Step 3 (AI): Cognitive distribution | View cognitive sliders | All 6 cognitive types with percentages | High |
+| SA-EX-065 | Step 3 (AI): Generate | Click "Create Grand Test" | Processing, then Step 4 | Critical |
+| SA-EX-066 | Step 4: Success state | After creation | Success message with navigation options | Critical |
+
+---
+
+## PART 3: Exams Inter-Login Tests Updates
+
+### File: `docs/06-testing-scenarios/inter-login-tests/exam-tests.md`
+
+**Add new sections:**
+
+### Grand Test Assignment Flow Tests
+
+| Test ID | Test Case | Steps | Expected Result |
+|---------|-----------|-------|-----------------|
+| EX-050 | GT not visible without audience | SA creates GT, does NOT assign audience | Institute does NOT see GT |
+| EX-051 | GT visible after audience assigned | SA assigns Institute A in Audience | Institute A sees GT in Exams |
+| EX-052 | Unassigned institute doesn't see GT | SA assigns only Institute A | Institute B does NOT see GT |
+| EX-053 | Multiple institutes see GT | SA assigns Institute A and B | Both see GT |
+| EX-054 | GT read-only at Institute | Institute opens assigned GT | View only, no edit/delete |
+| EX-055 | Institute assigns GT to batch | Institute clicks Assign on GT | Batch selection available |
+| EX-056 | Unassigned batch doesn't see GT | GT assigned to Batch A only | Batch B students don't see |
+| EX-057 | Student sees assigned GT | Student in assigned batch | Test appears in Tests list |
+
+### Schedule Propagation Tests
+
+| Test ID | Test Case | Steps | Expected Result |
+|---------|-----------|-------|-----------------|
+| EX-058 | Schedule reflects at Institute | SA schedules GT for tomorrow 9 AM | Institute sees same schedule |
+| EX-059 | Student can't start before schedule | GT scheduled for future | "Available at [time]" shown |
+| EX-060 | Student can start after schedule | Current time > scheduled time | "Start Test" button active |
+| EX-061 | Schedule change propagates | SA changes schedule | Institute/Student see updated time |
+
+### PYP Propagation Tests
+
+| Test ID | Test Case | Steps | Expected Result |
+|---------|-----------|-------|-----------------|
+| EX-062 | PYP visible to Institute | SA creates PYP, assigns | Institute sees in PYP tab |
+| EX-063 | PYP year grouping at Institute | Institute views PYP | Same year-wise grouping as SA |
+| EX-064 | PYP preview works at Institute | Institute clicks View | Full question preview displays |
+| EX-065 | PYP read-only at Institute | Institute views PYP | No edit/delete options |
+
+---
+
+## PART 4: Roles & Access Feature Documentation Updates
+
+### File: `docs/01-superadmin/roles-access.md`
+
+**Updates Required:**
+
+### 4.1 Add Role Types Tab Section
+```markdown
+## Role Types Tab
+
+### Purpose
+Role Types define permission templates that can be assigned to team members. Each role type specifies which modules a member can access and what actions they can perform.
+
+### Display
+Roles are displayed as cards showing:
+- Role name
+- Description
+- Member count (number of team members with this role)
+- System role badge (if applicable)
+- Action buttons (Edit, Delete for non-system roles)
+
+### System Roles
+System roles are pre-defined and cannot be deleted:
+| Role | Description | Editable |
+|------|-------------|----------|
+| Super Admin | Full access to all modules | No |
+
+### Create Role Flow
+1. Click "Create Role" button
+2. Fill Basic Info:
+   - Role Name (required)
+   - Description
+3. Configure Module Permissions:
+   - Dashboard: View only
+   - Institutes: View, Create, Edit, Delete + Tier Management toggle
+   - Question Bank: VCUD + Scope (Class/Subject) + Capabilities (Manual, AI, PDF)
+   - Exams: VCUD + Types (Grand Tests, PYP) + Scope
+   - Content Library: VCUD + Capabilities (Manual, AI) + Scope
+   - Master Data: VCUD
+   - Users: VCUD
+   - Roles & Access: VCUD
+4. Click Create
+```
+
+### 4.2 Add Team Members Tab Section
+```markdown
+## Team Members Tab
+
+### Purpose
+Team Members are SuperAdmin portal users who have limited access based on their assigned role type. This enables delegation of specific tasks to team members.
+
+### Display
+Members displayed in a table showing:
+- Name
+- Email
+- Mobile
+- Role Type
+- Status (Active/Inactive)
+- Created Date
+- Actions (Edit, Delete)
+
+### Add Member Flow
+1. Click "Add Member" button
+2. Fill member details:
+   - Full Name (required)
+   - Email (required)
+   - Mobile Number
+   - Select Role Type (required)
+   - Set Status (Active/Inactive)
+3. Click Save
+
+### Edit Member
+- Change role type
+- Update status
+- Modify contact details
+```
+
+### 4.3 Add Module Permissions Detail
+```markdown
+## Module Permission Matrix
+
+### Permission Types
+| Permission | Description |
+|------------|-------------|
+| View | Can see the module and its content |
+| Create | Can create new items (questions, content, exams) |
+| Edit | Can modify existing items |
+| Delete | Can remove items |
+
+### Special Permissions
+| Module | Special Permission | Description |
+|--------|-------------------|-------------|
+| Institutes | Tier Management | Can create/edit tier plans |
+| Question Bank | Scope | Limit to specific classes/subjects |
+| Question Bank | Capabilities | Manual, AI Generation, PDF Upload toggles |
+| Exams | Types | Grand Tests, Previous Year Papers toggles |
+| Exams | Scope | Inherits from Question Bank or custom |
+| Content Library | Capabilities | Manual Upload, AI Generation toggles |
+| Content Library | Scope | Inherits from Question Bank or custom |
+
+### Scope Configuration
+Scope limits visibility to specific classes and/or subjects:
+- **All Classes / Specific Classes**: Toggle or multi-select
+- **All Subjects / Specific Subjects**: Toggle or multi-select
+- **Inherit from Question Bank**: Reuse QB scope for Exams/Content
+```
+
+### 4.4 Add Cross-Login Permission Effect
+```markdown
+## How Permissions Affect Team Member Login
+
+When a team member logs in with their credentials:
+1. System loads their assigned role type
+2. Sidebar shows ONLY modules they have View permission for
+3. Within modules:
+   - Create button hidden if no Create permission
+   - Edit button hidden if no Edit permission
+   - Delete button hidden if no Delete permission
+4. Capabilities control available actions:
+   - No AI permission = "Generate with AI" button hidden
+   - No PDF permission = "Upload PDF" button hidden
+5. Scope limits visible content:
+   - Only assigned subjects/classes visible in filters and lists
+
+### Example: Content Manager - Physics
+```text
+Sidebar Shows: Dashboard, Institutes (view only), Content Library, Question Bank
+Content Library Actions: Create, Edit (AI hidden, only Manual Upload)
+Question Bank Actions: Create, Edit (AI, PDF visible)
+Visible Content: Only Physics questions/content
+```
+
+### Content Created by Team Member
+- Content is NOT exclusive to the team member
+- All content created appears in SuperAdmin view
+- Follows global visibility rules (curriculum/course assignment)
+- SuperAdmin can edit/delete content created by team members
+```
+
+---
+
+## PART 5: Roles & Access Smoke Tests
+
+### File: `docs/06-testing-scenarios/smoke-tests/superadmin.md`
+
+**Replace Roles & Access section with:**
+
+### Roles & Access Page Tests
+
+| Test ID | Test Case | Steps | Expected Result | Priority |
+|---------|-----------|-------|-----------------|----------|
+| SA-RA-001 | Roles page loads | Navigate to `/superadmin/roles` | Page loads with two tabs: Role Types, Team Members | Critical |
+| SA-RA-002 | Role Types tab active by default | Open page | Role Types tab highlighted, role cards display | High |
+| SA-RA-003 | Team Members tab switch | Click Team Members tab | Tab switches, member table displays | High |
+| SA-RA-004 | Create Role button visible | View Role Types tab | "Create Role" button in header | High |
+| SA-RA-005 | Add Member button visible | View Team Members tab | "Add Member" button in header | High |
+
+### Role Types Tab Tests
+
+| Test ID | Test Case | Steps | Expected Result | Priority |
+|---------|-----------|-------|-----------------|----------|
+| SA-RA-006 | Role cards display | View Role Types | Cards show name, description, member count | High |
+| SA-RA-007 | System role badge | View Super Admin card | "System" badge visible | Medium |
+| SA-RA-008 | System role no delete | View Super Admin card | No Delete button | Critical |
+| SA-RA-009 | Custom role has edit/delete | View custom role card | Edit and Delete buttons visible | High |
+
+### Create Role Dialog Tests
+
+| Test ID | Test Case | Steps | Expected Result | Priority |
+|---------|-----------|-------|-----------------|----------|
+| SA-RA-010 | Create role dialog opens | Click "Create Role" | Dialog opens with form | Critical |
+| SA-RA-011 | Role name required | Leave name empty, try save | Save disabled | Critical |
+| SA-RA-012 | Description optional | Leave description empty, fill name | Can save | Medium |
+| SA-RA-013 | Dashboard permission | View Dashboard section | Only View toggle available | High |
+| SA-RA-014 | Institutes permissions | View Institutes section | View, Create, Edit, Delete + Tier Management | High |
+| SA-RA-015 | Tier Management toggle | Toggle Tier Management | Checkbox works | High |
+| SA-RA-016 | Question Bank permissions | View Question Bank section | VCUD + Scope + Capabilities sections | Critical |
+| SA-RA-017 | QB Scope - All Classes | Toggle "All Classes" | All classes selected | High |
+| SA-RA-018 | QB Scope - Specific Classes | Uncheck All Classes | Class multi-select appears | High |
+| SA-RA-019 | QB Capabilities - Manual | Toggle Manual | Checkbox toggles | High |
+| SA-RA-020 | QB Capabilities - AI | Toggle AI Generation | Checkbox toggles | High |
+| SA-RA-021 | QB Capabilities - PDF | Toggle PDF Upload | Checkbox toggles | High |
+| SA-RA-022 | Exams permissions | View Exams section | VCUD + Types + Scope | Critical |
+| SA-RA-023 | Exams Types - Grand Tests | Toggle Grand Tests | Checkbox toggles | High |
+| SA-RA-024 | Exams Types - PYP | Toggle Previous Year Papers | Checkbox toggles | High |
+| SA-RA-025 | Exams Scope inherit | View Scope section | "Inherit from QB" option available | High |
+| SA-RA-026 | Content Library permissions | View Content Library section | VCUD + Capabilities + Scope | Critical |
+| SA-RA-027 | CL Capabilities | Toggle Manual Upload, AI | Checkboxes toggle | High |
+| SA-RA-028 | Master Data permissions | View Master Data section | VCUD toggles | High |
+| SA-RA-029 | Users permissions | View Users section | VCUD toggles | High |
+| SA-RA-030 | Roles & Access permissions | View Roles & Access section | VCUD toggles | High |
+| SA-RA-031 | Save new role | Fill form, click Create | Role card appears in list, toast confirmation | Critical |
+| SA-RA-032 | Cancel create | Click Cancel | Dialog closes, no role created | Medium |
+
+### Edit Role Tests
+
+| Test ID | Test Case | Steps | Expected Result | Priority |
+|---------|-----------|-------|-----------------|----------|
+| SA-RA-033 | Edit dialog opens | Click Edit on role card | Dialog opens with pre-filled values | Critical |
+| SA-RA-034 | Name pre-filled | View dialog | Role name shown | High |
+| SA-RA-035 | Permissions pre-filled | View dialog | Current permissions reflected | High |
+| SA-RA-036 | Save changes | Modify and save | Role updated, toast confirmation | Critical |
+
+### Delete Role Tests
+
+| Test ID | Test Case | Steps | Expected Result | Priority |
+|---------|-----------|-------|-----------------|----------|
+| SA-RA-037 | Delete custom role | Click Delete on custom role | Role removed, toast confirmation | High |
+| SA-RA-038 | System role protected | Try to delete Super Admin | Delete button not available | Critical |
+
+### Team Members Tab Tests
+
+| Test ID | Test Case | Steps | Expected Result | Priority |
+|---------|-----------|-------|-----------------|----------|
+| SA-RA-039 | Member table displays | View Team Members tab | Table with columns: Name, Email, Role, Status, Actions | Critical |
+| SA-RA-040 | Member row shows role | View any row | Role type name displayed | High |
+| SA-RA-041 | Edit button visible | View member row | Edit action available | High |
+| SA-RA-042 | Delete button visible | View member row | Delete action available | High |
+
+### Add Member Dialog Tests
+
+| Test ID | Test Case | Steps | Expected Result | Priority |
+|---------|-----------|-------|-----------------|----------|
+| SA-RA-043 | Add member dialog opens | Click "Add Member" | Dialog opens with form | Critical |
+| SA-RA-044 | Name required | Leave name empty | Save disabled | Critical |
+| SA-RA-045 | Email required | Leave email empty | Save disabled | Critical |
+| SA-RA-046 | Mobile optional | Leave mobile empty | Can save | Medium |
+| SA-RA-047 | Role type dropdown | Click role type | All created roles available | Critical |
+| SA-RA-048 | Status toggle | Toggle Active/Inactive | Status changes | High |
+| SA-RA-049 | Save member | Fill form, save | Member appears in table, toast confirmation | Critical |
+| SA-RA-050 | Role member count updates | After adding member | Role card shows incremented count | High |
+
+### Edit Member Tests
+
+| Test ID | Test Case | Steps | Expected Result | Priority |
+|---------|-----------|-------|-----------------|----------|
+| SA-RA-051 | Edit member dialog opens | Click Edit on member | Dialog with pre-filled values | Critical |
+| SA-RA-052 | Change role type | Select different role | Change accepted | High |
+| SA-RA-053 | Save member changes | Modify and save | Member updated, toast | Critical |
+
+### Delete Member Tests
+
+| Test ID | Test Case | Steps | Expected Result | Priority |
+|---------|-----------|-------|-----------------|----------|
+| SA-RA-054 | Delete member | Click Delete on member | Member removed, toast | High |
+| SA-RA-055 | Role count decrements | After delete | Role card shows decremented count | High |
+
+---
+
+## PART 6: Roles & Access Inter-Login Tests (NEW FILE)
+
+### File: `docs/06-testing-scenarios/inter-login-tests/roles-access-tests.md`
+
+**Create new file with:**
+
+```markdown
+# Roles & Access Cross-Portal Tests
+
+> Tests for role permissions affecting team member login experience.
+
+---
+
+## Overview
+
+These tests verify that role permissions correctly control what team members can see and do when they log in. The principle is: permissions defined in SuperAdmin must accurately reflect in the team member's portal experience.
+
+---
+
+## Sidebar Visibility Tests
+
+| Test ID | Test Case | Steps | Expected Result |
+|---------|-----------|-------|-----------------|
+| RA-001 | Only permitted modules in sidebar | Create role with only QB View, assign to member, member logs in | Member sidebar shows only Dashboard, Question Bank |
+| RA-002 | All modules with full permissions | Assign role with all View permissions | All modules visible in sidebar |
+| RA-003 | Institutes visibility | Role has Institutes View | Institutes visible in sidebar |
+| RA-004 | Institutes hidden | Role has NO Institutes View | Institutes NOT in sidebar |
+| RA-005 | Exams visibility | Role has Exams View | Exams visible in sidebar |
+| RA-006 | Content Library visibility | Role has Content View | Content Library visible in sidebar |
+| RA-007 | Roles & Access visibility | Role has Roles View | Roles & Access visible in sidebar |
+
+---
+
+## Action Button Visibility Tests
+
+| Test ID | Test Case | Steps | Expected Result |
+|---------|-----------|-------|-----------------|
+| RA-008 | Create button with permission | Role has QB Create | "Add Question" button visible |
+| RA-009 | Create button without permission | Role has QB View only | "Add Question" button hidden |
+| RA-010 | Edit button with permission | Role has QB Edit | Edit button on question cards |
+| RA-011 | Edit button without permission | Role has QB View only | No Edit button on cards |
+| RA-012 | Delete button with permission | Role has QB Delete | Delete button on cards |
+| RA-013 | Delete button without permission | Role has no QB Delete | No Delete button on cards |
+
+---
+
+## Capability Visibility Tests
+
+| Test ID | Test Case | Steps | Expected Result |
+|---------|-----------|-------|-----------------|
+| RA-014 | AI Generation enabled | Role has QB + AI capability | "Generate with AI" button visible |
+| RA-015 | AI Generation disabled | Role has QB + NO AI | "Generate with AI" button hidden |
+| RA-016 | PDF Upload enabled | Role has QB + PDF capability | "Upload PDF" button visible |
+| RA-017 | PDF Upload disabled | Role has QB + NO PDF | "Upload PDF" button hidden |
+| RA-018 | Manual only | Role has QB + Manual only | Only "Add Question" visible, AI/PDF hidden |
+| RA-019 | Content AI enabled | Role has CL + AI capability | AI Content Generator button visible |
+| RA-020 | Content AI disabled | Role has CL + NO AI | AI Content Generator hidden |
+
+---
+
+## Scope Restriction Tests
+
+| Test ID | Test Case | Steps | Expected Result |
+|---------|-----------|-------|-----------------|
+| RA-021 | All subjects visible | Role scope: All Subjects | All subjects in filters |
+| RA-022 | Specific subjects only | Role scope: Physics, Chemistry only | Only Physics, Chemistry in subject filter |
+| RA-023 | Filtered questions | Role scope: Physics only | Only Physics questions displayed |
+| RA-024 | Create within scope | Role scope: Physics, member creates | Question saved, visible to SA |
+| RA-025 | All classes visible | Role scope: All Classes | All classes in filters |
+| RA-026 | Specific classes only | Role scope: Class 11, 12 | Only 11, 12 in class filter |
+
+---
+
+## Exam Type Restriction Tests
+
+| Test ID | Test Case | Steps | Expected Result |
+|---------|-----------|-------|-----------------|
+| RA-027 | Grand Tests enabled | Role has Exams + GT type | Grand Tests tab visible |
+| RA-028 | Grand Tests disabled | Role has Exams + NO GT | Grand Tests tab hidden or disabled |
+| RA-029 | PYP enabled | Role has Exams + PYP type | Previous Year Papers tab visible |
+| RA-030 | PYP disabled | Role has Exams + NO PYP | PYP tab hidden or disabled |
+| RA-031 | Both types enabled | Role has both types | Both tabs functional |
+
+---
+
+## Content Creation Attribution Tests
+
+| Test ID | Test Case | Steps | Expected Result |
+|---------|-----------|-------|-----------------|
+| RA-032 | Team member creates content | Member creates question | Question visible in SuperAdmin QB |
+| RA-033 | Team member creates exam | Member creates GT (if permitted) | GT visible in SuperAdmin Exams |
+| RA-034 | SuperAdmin can edit member content | View question created by member | Edit/Delete available for SA |
+| RA-035 | Content follows visibility rules | Member creates with CBSE visibility | CBSE institutes can see content |
+| RA-036 | No exclusive content | Member creates content | Content NOT hidden from SA or other members |
+
+---
+
+## Tier Management Permission Tests
+
+| Test ID | Test Case | Steps | Expected Result |
+|---------|-----------|-------|-----------------|
+| RA-037 | Tier Management enabled | Role has Institutes + Tier Mgmt | Tier Management accessible |
+| RA-038 | Tier Management disabled | Role has Institutes + NO Tier | Tier page/section not accessible |
+| RA-039 | Can create tier | Role has Tier + Create | Create Tier button works |
+| RA-040 | Can only view tiers | Role has Tier view only | View tiers, no create/edit buttons |
+
+---
+
+## Edge Cases
+
+| Test ID | Test Case | Steps | Expected Result |
+|---------|-----------|-------|-----------------|
+| RA-041 | Role change reflects | Change member's role | Next login shows new permissions |
+| RA-042 | Member deactivated | Set member status Inactive | Cannot log in |
+| RA-043 | Member reactivated | Set member status Active | Can log in again |
+| RA-044 | Delete role with members | Try to delete role with assigned members | Warning or prevented |
+| RA-045 | Empty scope | Role has QB but no subjects selected | No content visible (or all - verify behavior) |
+
+---
+
+*Last Updated: January 2025*
+```
+
+---
+
+## PART 7: Navigation Update
+
+### File: `src/data/docsNavigation.ts`
+
+**Add Roles & Access Inter-Login Tests to navigation:**
+
+In the Inter-Login Tests section (around line 169-175), add:
+```typescript
+{ title: "Roles & Access Tests", path: "06-testing-scenarios/inter-login-tests/roles-access-tests" },
+```
 
 ---
 
@@ -451,18 +722,21 @@ All files created/updated must be verified in `src/data/docsNavigation.ts`. Curr
 
 | File | Action | Changes |
 |------|--------|---------|
-| `docs/06-testing-scenarios/smoke-tests/superadmin.md` | UPDATE | Replace Content Library section (~8 tests → 65+ tests), add verification requirements to Question Bank tests |
-| `docs/01-superadmin/content-library.md` | UPDATE | Add 4 content types, visibility rules, AI generator details, propagation rules |
-| `docs/06-testing-scenarios/inter-login-tests/content-tests.md` | UPDATE | Add 25+ new tests for curriculum/course visibility boundaries, cross-portal preview verification, institute privacy |
+| `docs/01-superadmin/exams.md` | UPDATE | Add PYP display structure, GT actions (Schedule, Audience), creation flows, assignment flow |
+| `docs/01-superadmin/roles-access.md` | UPDATE | Add Role Types detail, Team Members detail, module permissions matrix, cross-login effect |
+| `docs/06-testing-scenarios/smoke-tests/superadmin.md` | UPDATE | Replace Exams tests (9 → 66), replace Roles tests (9 → 55) |
+| `docs/06-testing-scenarios/inter-login-tests/exam-tests.md` | UPDATE | Add GT assignment flow (8 tests), schedule propagation (4 tests), PYP propagation (4 tests) |
+| `docs/06-testing-scenarios/inter-login-tests/roles-access-tests.md` | CREATE | New file with 45 cross-login permission tests |
+| `src/data/docsNavigation.ts` | UPDATE | Add Roles & Access Tests to Inter-Login navigation |
 
 ---
 
 ## Execution Order
 
-1. **Update Question Bank smoke tests** - Add display verification (math, images, tags) to expected results
-2. **Overhaul Content Library smoke tests** - Replace basic tests with 65+ comprehensive tests
-3. **Add Create Content tests** - 4 content types with full cycle verification
-4. **Add AI Content Generator tests** - 3-step wizard with preview/edit tests
-5. **Update Feature Documentation** - Content types, visibility rules, AI generator
-6. **Expand Inter-Login Tests** - Curriculum/course visibility boundaries, cross-portal preview
-
+1. Update `docs/01-superadmin/exams.md` - Add PYP/GT display, actions, flows
+2. Update `docs/06-testing-scenarios/smoke-tests/superadmin.md` - Replace Exams section with 66 tests
+3. Update `docs/06-testing-scenarios/inter-login-tests/exam-tests.md` - Add 16 new assignment/schedule tests
+4. Update `docs/01-superadmin/roles-access.md` - Add Role Types, Team Members, permissions detail
+5. Update `docs/06-testing-scenarios/smoke-tests/superadmin.md` - Replace Roles section with 55 tests
+6. Create `docs/06-testing-scenarios/inter-login-tests/roles-access-tests.md` - New file with 45 tests
+7. Update `src/data/docsNavigation.ts` - Add Roles & Access Tests navigation
