@@ -1,217 +1,190 @@
 
-# Classification Flow Fixes Implementation Plan
+# UI Fixes & Enhancements Implementation Plan
 
-## Overview
+## Issue Summary
 
-This plan updates the classification flow across Question Bank and Content Library creation pages to ensure consistency:
-1. **Remove** Class context dropdown when Course mode is selected
-2. **Add** mandatory Topic selection after Chapter
-3. **Add** Difficulty selection in classification sidebar (after Topic)
-4. **Add** Cognitive Type selection in Create Question (after Difficulty)
+I've analyzed all the issues you've raised. Here's my understanding and the solutions for each:
 
 ---
 
-## Current State vs Required State
+## Issue 1: Remove "Add Course" from Curriculum Quick Add Menu
 
-| Field | Curriculum Mode | Course Mode | Notes |
-|-------|-----------------|-------------|-------|
-| Curriculum/Course | Required | Required | Source selector |
-| Class | Required | **REMOVE** | No class context for courses |
-| Subject | Required | Required | |
-| Chapter | Required | Required | |
-| Topic | **ADD (Mandatory)** | **ADD (Mandatory)** | Currently missing or optional |
-| Difficulty | **ADD in sidebar** | **ADD in sidebar** | Move/add to classification |
-| Cognitive Type | **ADD** (Questions only) | **ADD** (Questions only) | New field |
+**Location:** `/superadmin/parameters` - Curriculum page Quick Add menu
+
+**Current State:** The Quick Add dropdown menu shows: Add Class, **Add Course**, Add Curriculum, Add Subject, Add Chapter, Add Topic
+
+**Problem:** "Add Course" doesn't belong in the Curriculum page - courses are managed separately in `/superadmin/parameters/courses` or Course Builder.
+
+**Solution:** Remove the "Add Course" menu item from `QuickAddMenu.tsx`. The menu will show only curriculum-related items.
 
 ---
 
-## Implementation Details
+## Issue 2: Add "Create Course-Only Topic" in Course Builder
 
-### 1. Super Admin - Create Question (`src/pages/questions/CreateQuestion.tsx`)
+**Location:** `/superadmin/parameters/course-builder`
 
-**Changes:**
+**Current State:** Course Builder has a dialog to create "Course-Only Chapters" that belong exclusively to that course. However, there's no option to add course-only topics.
 
-**a) Remove Class Context in Course Mode (lines 550-563)**
-- Delete the entire "Class (Context)" dropdown block that appears after Course selection
-- Flow becomes: Course → Chapter → Topic
+**Problem:** When course-only chapters are created, there's no UI to add topics to them.
 
-**b) Add Topic State and Dropdown**
-```typescript
-// Add state
-const [selectedTopicId, setSelectedTopicId] = useState("");
-
-// Add topic getter (import from cbseMasterData)
-import { getTopicsByChapter } from "@/data/cbseMasterData";
-
-// Get topics based on selected chapter
-const availableTopics = selectedChapterId 
-  ? getTopicsByChapter(selectedChapterId) 
-  : [];
-```
-
-**c) Add Topic Dropdown (after Chapter)**
-```tsx
-{selectedChapterId && (
-  <div className="space-y-2">
-    <Label>Topic *</Label>
-    <Select value={selectedTopicId} onValueChange={setSelectedTopicId}>
-      <SelectTrigger><SelectValue placeholder="Select topic" /></SelectTrigger>
-      <SelectContent>
-        {availableTopics.map((topic) => (
-          <SelectItem key={topic.id} value={topic.id}>{topic.name}</SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
-  </div>
-)}
-```
-
-**d) Add Cognitive Type State and Dropdown (after Difficulty)**
-```typescript
-// Add state
-const [selectedCognitiveType, setSelectedCognitiveType] = useState("");
-
-// Add cognitive types array
-const cognitiveTypes = [
-  { id: "logical", label: "Logical" },
-  { id: "analytical", label: "Analytical" },
-  { id: "conceptual", label: "Conceptual" },
-  { id: "numerical", label: "Numerical" },
-  { id: "application", label: "Application" },
-  { id: "memory", label: "Memory" },
-];
-```
-
-**e) Reset cascade on parent change**
-- When Chapter changes: reset Topic
-- Update validation to require Topic
+**Solution:** Create a new `CreateTopicDialog.tsx` component in the course-builder folder:
+- Subject dropdown (from course's available subjects)
+- Chapter dropdown (filtered to course-owned chapters only)
+- Topic name input (supports bulk paste like other dialogs)
+- Integrate into SourcePanel with a new "Create Course-Only Topic" button
 
 ---
 
-### 2. Super Admin - Create Content (`src/pages/content/CreateContent.tsx`)
+## Issue 3: Remove Duplicate "Question Text" for Fill in Blanks
 
-**Changes:**
+**Location:** `/superadmin/questions/create` - Fill in Blanks type
 
-**a) Add Topic State**
-```typescript
-const [selectedTopicId, setSelectedTopicId] = useState("");
-```
+**Current State (from image 1):**
+- "Question Text" textarea (generic)
+- "Question with Blanks" textarea (specific for blanks)
 
-**b) Update Topic Dropdown to be Mandatory**
-- Change label from "Topic" to "Topic *"
-- Change placeholder from "Select topic (optional)" to "Select topic"
-- Wire up to actual data using `getTopicsByChapter`
+**Problem:** Having both is confusing. The "Question with Blanks" field already serves as the question text.
 
-**c) Add Difficulty Dropdown (after Topic)**
-```tsx
-<div className="space-y-2">
-  <Label>Difficulty</Label>
-  <Select value={selectedDifficulty} onValueChange={setSelectedDifficulty}>
-    <SelectTrigger><SelectValue placeholder="Select difficulty" /></SelectTrigger>
-    <SelectContent>
-      <SelectItem value="easy">Easy</SelectItem>
-      <SelectItem value="medium">Medium</SelectItem>
-      <SelectItem value="hard">Hard</SelectItem>
-    </SelectContent>
-  </Select>
-</div>
-```
-
-**d) Remove hard-coded topic options**
-- Currently shows "Newton's Laws" and "Work & Energy" as static options
-- Replace with dynamic data from `getTopicsByChapter()`
+**Solution:** When question type is "fill" (Fill in Blanks), hide the generic "Question Text" textarea. Only show the specialized "Question with Blanks" field.
 
 ---
 
-### 3. Institute - Create Question (`src/pages/institute/questions/CreateQuestion.tsx`)
+## Issue 4: Remove Duplicate "Question Text" for Paragraph Based
 
-**Review Current State:**
-- Already has Difficulty and Cognitive Type selectors
-- Uses different track selection (assignedTracks)
-- Need to verify Topic is present and mandatory
+**Location:** `/superadmin/questions/create` - Paragraph Based type
 
-**Changes Required:**
-- Ensure Topic dropdown appears after Chapter
-- Mark Topic as mandatory (Label should show *)
-- Verify Course mode doesn't show Class dropdown
+**Current State (from image 2):**
+- "Question Text" textarea (generic)
+- "Passage / Paragraph" textarea (specific for passage)
 
----
+**Problem:** Similar confusion - the passage IS the question context. The sub-questions handle individual question text.
 
-### 4. Institute - Create Content (`src/pages/institute/content/CreateContent.tsx`)
-
-**Current State:**
-- Has Topic dropdown but shows as "Select topic (optional)"
-- No Difficulty selector
-
-**Changes:**
-- Change Topic label to "Topic *"
-- Change placeholder to "Select topic"
-- Add Difficulty dropdown after Topic
-- Update submit validation to require Topic
+**Solution:** When question type is "paragraph", hide the generic "Question Text" textarea. Only show the "Passage / Paragraph" field.
 
 ---
 
-## Technical Notes
+## Issue 5: Add Fill in Blanks and True/False to Paragraph Sub-Questions
 
-### Data Helper Functions
+**Location:** `/superadmin/questions/create` - Paragraph Based sub-questions
 
-Already available in `src/data/cbseMasterData.ts`:
-```typescript
-// Get topics for a chapter
-export const getTopicsByChapter = (chapterId: string): CBSETopic[] => {
-  return allCBSETopics.filter(t => t.chapterId === chapterId);
-};
-```
+**Current State:** Sub-question type dropdown has: MCQ (Single), Multiple Correct, Numerical
 
-For course-owned chapters, need to check `src/data/masterData.ts` for topic retrieval.
+**Problem:** Missing "Fill in Blanks" and "True/False" as sub-question types.
 
-### Reset Cascade Logic
+**Solution:** Expand the SubQuestion interface and dropdown to include:
+- MCQ (Single)
+- Multiple Correct
+- Numerical
+- Fill in Blanks (new)
+- True/False (new)
 
-When a parent selection changes, all children must reset:
-```typescript
-// On Course change
-setSelectedCourseId(v);
-setSelectedChapterId("");
-setSelectedTopicId("");
-
-// On Chapter change  
-setSelectedChapterId(v);
-setSelectedTopicId("");
-```
-
-### Validation Updates
-
-Add Topic to required fields validation:
-```typescript
-if (!selectedTopicId) {
-  toast.error("Please select a topic");
-  return;
-}
-```
+Each type will render its appropriate UI (blanks with answer fields, true/false with radio buttons).
 
 ---
 
-## File Change Summary
+## Issue 6: Add Multi-Select Topic Filter in AI Question Generator
+
+**Location:** `/superadmin/questions/ai`
+
+**Current State:** After selecting Chapter, there's a single-select Topic dropdown (optional).
+
+**Problem:** Users should be able to select multiple topics to generate questions across multiple topics.
+
+**Solution:** Replace the single-select with a multi-select checkbox list:
+- Show all topics under the selected chapter
+- Allow multiple selection via checkboxes
+- Update state to store array of topic IDs
+- Display selected count badge
+
+---
+
+## Issue 7: Update Content Edit Dialog Visibility
+
+**Location:** `/superadmin/content` - Edit Content dialog
+
+**Current State:** 
+- Settings section has "Duration (minutes)" field
+- Visibility options: Public, Private, Restricted (RadioGroup)
+
+**Problem:** Duration doesn't belong in edit. Visibility should show Curriculum/Course checkboxes like Create Content page.
+
+**Solution:** 
+1. Remove "Duration (minutes)" field from the edit dialog
+2. Remove the Public/Private/Restricted RadioGroup
+3. Replace with visibility checkboxes matching Create Content:
+   - "Regular Curriculum" checkbox
+   - List of published courses (checkboxes for each)
+
+---
+
+## Issue 8: Review Edit Options for Master Data Items + Fix Scroll
+
+**Location:** `/superadmin/parameters` - Curriculum panel
+
+**Current State (after review):**
+- Classes: Has edit option in ClassPanel
+- Subjects: Has edit option in SubjectPanel  
+- Chapters: Has edit option (Edit icon) in ContentPanel
+- Topics: Has edit option (Edit icon) in ContentPanel
+
+**UI Bug:** The chapters list in ContentPanel doesn't scroll properly when there are many topics expanded.
+
+**Solution:** 
+1. Verify all edit icons are working (they appear to be present)
+2. Fix the scroll issue by ensuring the ContentPanel's ScrollArea properly handles the full height and allows scrolling for the chapters list
+3. Review the height calculation in the grid layout
+
+---
+
+## Technical Implementation Details
+
+### Files to Modify:
 
 | File | Changes |
 |------|---------|
-| `src/pages/questions/CreateQuestion.tsx` | Remove Class in Course mode, Add Topic (mandatory), Add Cognitive Type |
-| `src/pages/content/CreateContent.tsx` | Make Topic mandatory with real data, Add Difficulty |
-| `src/pages/institute/questions/CreateQuestion.tsx` | Verify Topic mandatory, remove Class in Course mode if present |
-| `src/pages/institute/content/CreateContent.tsx` | Make Topic mandatory, Add Difficulty |
+| `src/components/parameters/QuickAddMenu.tsx` | Remove "Add Course" menu item |
+| `src/components/parameters/course-builder/CreateTopicDialog.tsx` | **NEW** - Course-only topic creation dialog |
+| `src/components/parameters/course-builder/SourcePanel.tsx` | Add "Create Course-Only Topic" button |
+| `src/components/parameters/course-builder/index.ts` | Export new dialog |
+| `src/hooks/useCourseBuilder.ts` | Add topic creation state and handlers |
+| `src/pages/questions/CreateQuestion.tsx` | Hide Question Text for fill/paragraph, expand sub-question types |
+| `src/pages/questions/AIQuestions.tsx` | Multi-select topic filter |
+| `src/components/content/ContentEditDialog.tsx` | Replace visibility with curriculum/course checkboxes |
+| `src/components/parameters/ContentPanel.tsx` | Fix scroll for chapters list |
+
+### Sub-Question Type Enhancement:
+
+```typescript
+// Updated interface
+interface SubQuestion {
+  type: 'mcq' | 'multiple' | 'numerical' | 'fill' | 'truefalse';
+  text: string;
+  options: string[];
+  correctAnswer: string;
+  blankAnswers?: string[]; // for fill type
+}
+```
+
+### ContentPanel Scroll Fix:
+
+The issue is likely in the ScrollArea height calculation. Will ensure:
+```tsx
+<ScrollArea className="flex-1 h-full overflow-y-auto">
+```
 
 ---
 
-## Classification Flow After Implementation
+## Execution Order
 
-**Curriculum Mode (Create Question/Content):**
-```
-Curriculum → Class → Subject → Chapter → Topic* → Difficulty → Cognitive Type (Questions only)
-```
+1. **Quick wins first:**
+   - Remove "Add Course" from Quick Add menu
+   - Hide duplicate Question Text for fill/paragraph types
+   - Add sub-question types (Fill/True-False)
 
-**Course Mode (Create Question/Content):**
-```
-Course → Subject → Chapter → Topic* → Difficulty → Cognitive Type (Questions only)
-```
+2. **Medium complexity:**
+   - Fix ContentPanel scroll issue
+   - Update Content Edit dialog visibility
+   - Add multi-select topics in AI Generator
 
-\* = Mandatory field
+3. **New feature:**
+   - Create Course-Only Topic dialog and integration
