@@ -478,33 +478,269 @@ After creating any question, verify:
 
 ## Exams Smoke Tests
 
+### Purpose
+
+The Exams module manages platform-wide examinations: Previous Year Papers (PYP) from competitive exams and Grand Tests for benchmarking across institutes.
+
+**Key Concepts:**
+- PYP: Official historical papers organized by exam type (JEE, NEET) and year
+- Grand Tests: Custom mock exams assigned to specific institutes via Audience
+- Schedule: Controls when students can start the exam
+- Both types require PDF upload or AI generation for questions
+
+### Exams Page Tests
+
 | Test ID | Test Case | Steps | Expected Result | Priority |
 |---------|-----------|-------|-----------------|----------|
-| SA-EX-001 | Exams page loads | Navigate to `/superadmin/exams` | Table loads | Critical |
-| SA-EX-002 | Tabs switch | Click PYP/Grand Test tabs | Table filters | High |
-| SA-EX-003 | Create PYP | Click create, select PYP, configure | Exam created | Critical |
-| SA-EX-004 | Create Grand Test | Click create, select GT, configure | Exam created | Critical |
-| SA-EX-005 | Add questions | In wizard, select from bank | Questions added | High |
-| SA-EX-006 | Preview exam | Click preview on exam | Preview opens | High |
-| SA-EX-007 | Publish exam | Click publish | Status changes | High |
-| SA-EX-008 | Assign institutes | Select institutes in wizard | Assignment saved | High |
-| SA-EX-009 | Archive exam | Click archive | Exam archived | Medium |
+| SA-EX-001 | Exams page loads | Navigate to `/superadmin/exams` | Page loads with two tabs: Previous Year Papers, Grand Tests | Critical |
+| SA-EX-002 | Previous Year Papers tab active by default | Open exams page | PYP tab highlighted, PYP content displays | High |
+| SA-EX-003 | Grand Tests tab switch | Click Grand Tests tab | Tab switches, Grand Tests grid displays | High |
+| SA-EX-004 | PYP search works | Enter text in PYP search box | Papers filter by name match | High |
+| SA-EX-005 | PYP exam type filter | Select "JEE Main" from filter dropdown | Only JEE Main papers display | High |
+| SA-EX-006 | GT search works | In Grand Tests tab, enter text in search | Tests filter by name match | High |
+| SA-EX-007 | GT status filter | Select "Scheduled" from status filter | Only scheduled tests display | High |
+
+### PYP Display Tests
+
+| Test ID | Test Case | Steps | Expected Result | Priority |
+|---------|-----------|-------|-----------------|----------|
+| SA-EX-008 | PYP grouped by exam type | View PYP tab | Papers grouped under JEE Main, JEE Advanced, NEET sections | Critical |
+| SA-EX-009 | Year accordion displays | View any exam type section | Years displayed (2024, 2023, etc.) as expandable accordions | Critical |
+| SA-EX-010 | Year accordion expands | Click on year accordion | Papers for that year display with session info | High |
+| SA-EX-011 | Paper card displays info | View any paper in expanded year | Card shows paper name, session (if applicable), question count | High |
+| SA-EX-012 | View button works | Click View on any paper | Redirects to exam review page with full question preview | Critical |
+| SA-EX-013 | Edit button works | Click Edit on any paper | Redirects to exam review page in edit mode | High |
+| SA-EX-014 | Stats button works | Click Stats on any paper | Stats display (performance analytics) | Medium |
+
+### Grand Test Display Tests
+
+| Test ID | Test Case | Steps | Expected Result | Priority |
+|---------|-----------|-------|-----------------|----------|
+| SA-EX-015 | GT displays in grid | View Grand Tests tab | Tests displayed as cards in grid layout | Critical |
+| SA-EX-016 | GT card info displays | View any GT card | Shows: Name, pattern badge, status badge, question count, created date | High |
+| SA-EX-017 | View button works | Click View on GT card | Redirects to exam review page with question preview | Critical |
+| SA-EX-018 | Edit button works | Click Edit on GT card | Redirects to exam review page in edit mode | High |
+| SA-EX-019 | Schedule button works | Click Schedule on GT card | Schedule dialog opens | Critical |
+| SA-EX-020 | Audience button works | Click Audience on GT card | Audience dialog opens | Critical |
+| SA-EX-021 | Delete button works (draft) | Click Delete on draft GT | Confirmation dialog, then GT removed | Medium |
+| SA-EX-022 | Delete hidden for published | View published GT card | Delete button not visible | Medium |
+
+### Schedule Dialog Tests
+
+| Test ID | Test Case | Steps | Expected Result | Priority |
+|---------|-----------|-------|-----------------|----------|
+| SA-EX-023 | Schedule dialog loads | Click Schedule on GT | Dialog opens with date picker and time selector | Critical |
+| SA-EX-024 | Date picker works | Click date picker | Calendar opens, can select future date | High |
+| SA-EX-025 | Past dates disabled | View calendar | Past dates are grayed out/unselectable | Critical |
+| SA-EX-026 | Time selector works | Click time dropdown | 30-minute time slots available (00:00, 00:30, 01:00, etc.) | High |
+| SA-EX-027 | Save schedule | Select date and time, click Save | Schedule saved, toast confirmation, dialog closes | Critical |
+| SA-EX-028 | Cancel schedule | Click Cancel | Dialog closes, no changes saved | Medium |
+| SA-EX-029 | Schedule reflected on card | After saving schedule | GT card shows scheduled date/time badge | High |
+
+### Audience Dialog Tests
+
+| Test ID | Test Case | Steps | Expected Result | Priority |
+|---------|-----------|-------|-----------------|----------|
+| SA-EX-030 | Audience dialog loads | Click Audience on GT | Dialog opens with Direct Users toggle and Institutes section | Critical |
+| SA-EX-031 | Direct Users toggle | Toggle Direct Users switch | Switch enables/disables, count updates | High |
+| SA-EX-032 | Institutes toggle | Toggle Institutes switch | Switch enables/disables, institute options appear | High |
+| SA-EX-033 | All Institutes option | Select "All Institutes" radio | All institutes count displayed in summary | High |
+| SA-EX-034 | Select Specific Institutes | Select "Select Specific Institutes" radio | Institute checklist appears with search | Critical |
+| SA-EX-035 | Institute checkbox toggle | Check/uncheck individual institutes | Selected count updates in summary | High |
+| SA-EX-036 | Institute search | Type in institute search box | List filters by institute name | Medium |
+| SA-EX-037 | Select All button | Click "Select All" | All institutes checked | Medium |
+| SA-EX-038 | Deselect All button | Click "Deselect All" | All institutes unchecked | Medium |
+| SA-EX-039 | Estimated participants | Make selections | Participant count updates in summary | High |
+| SA-EX-040 | Save audience | Make selections, click Save | Audience saved, toast confirmation, dialog closes | Critical |
+| SA-EX-041 | Validation - no audience | Uncheck all, try Save | Error: "Please select at least one audience" | High |
+
+### Create PYP Wizard Tests
+
+| Test ID | Test Case | Steps | Expected Result | Priority |
+|---------|-----------|-------|-----------------|----------|
+| SA-EX-042 | Create PYP button works | Click "Create Previous Year Paper" button | 3-step wizard opens with Step 1 active | Critical |
+| SA-EX-043 | Step 1: Competitive Exam selection | Select "JEE Main" from exam type | Selection highlighted | Critical |
+| SA-EX-044 | Step 1: Year selection | Select year from dropdown (2024, 2023, etc.) | Year selected | Critical |
+| SA-EX-045 | Step 1: Session selection (optional) | Select session (January, April) | Session selected | Medium |
+| SA-EX-046 | Step 1: Paper name auto-generates | Select exam type and year | Paper name auto-fills (e.g., "JEE Main 2024") | High |
+| SA-EX-047 | Step 1: Paper name editable | Edit auto-generated name | Custom name accepted | Medium |
+| SA-EX-048 | Step 1: Next button validation | Leave exam type empty, try Next | Next button disabled or validation error | Critical |
+| SA-EX-049 | Step 1: Proceed to Step 2 | Fill all required fields, click Next | Advances to Step 2 (Upload PDF) | Critical |
+| SA-EX-050 | Step 2: Upload area displays | View Step 2 | Drag-drop upload area visible with accepted formats | High |
+| SA-EX-051 | Step 2: File upload success | Select PDF file via picker or drag-drop | File name displayed, upload progress, success state | Critical |
+| SA-EX-052 | Step 2: Non-PDF rejection | Try to upload non-PDF file (.doc, .jpg) | Error toast: "Please upload a PDF file" | High |
+| SA-EX-053 | Step 2: Large file rejection | Try to upload file >50MB | Error toast: "File size must be less than 50MB" | High |
+| SA-EX-054 | Step 2: Upload & Create | Click "Upload & Create Test" | Processing indicator shown during extraction | Critical |
+| SA-EX-055 | Step 3: Success state | After upload/extraction completes | Success message displayed, "Review & Configure" button available | Critical |
+| SA-EX-056 | Step 3: Navigate to review | Click "Review & Configure" | Redirects to exam review page with extracted questions | Critical |
+
+### Create Grand Test Wizard Tests
+
+| Test ID | Test Case | Steps | Expected Result | Priority |
+|---------|-----------|-------|-----------------|----------|
+| SA-EX-057 | Create GT button works | Click "Create Grand Test" button | 4-step wizard opens with Step 1 active | Critical |
+| SA-EX-058 | Step 1: Test name entry | Enter test name | Name accepted in input field | Critical |
+| SA-EX-059 | Step 1: Content source toggle | Click Curriculum/Course toggle | Selection toggles between Curriculum and Course | High |
+| SA-EX-060 | Step 1: Curriculum dropdown | Select curriculum from dropdown | Dropdown populates and selects correctly | High |
+| SA-EX-061 | Step 1: Course dropdown | Switch to Course mode, select course | Course selected correctly | High |
+| SA-EX-062 | Step 1: Pattern selection | Select JEE Main pattern | Pattern card highlighted with section description | Critical |
+| SA-EX-063 | Step 1: Next validation | Leave test name empty, try Next | Next button disabled or validation error | High |
+| SA-EX-064 | Step 1: Proceed to Step 2 | Fill all required, click Next | Advances to Step 2 (Creation Method) | Critical |
+| SA-EX-065 | Step 2: Method options visible | View Step 2 | "Generate using AI" and "Upload PDF" options displayed | Critical |
+| SA-EX-066 | Step 2: AI method selection | Click "Generate using AI" | AI option highlighted/selected | High |
+| SA-EX-067 | Step 2: PDF method selection | Click "Upload PDF" | PDF option highlighted/selected | High |
+| SA-EX-068 | Step 3 (AI): Subject sliders | View AI settings step | Subject distribution sliders for Physics, Chemistry, Math/Bio | High |
+| SA-EX-069 | Step 3 (AI): Difficulty sliders | View difficulty distribution | Easy, Medium, Hard sliders (must total 100%) | High |
+| SA-EX-070 | Step 3 (AI): Difficulty validation | Set sliders that don't total 100% | Validation error shown | High |
+| SA-EX-071 | Step 3 (AI): Cognitive sliders | View cognitive distribution | All 6 cognitive types with percentage sliders | High |
+| SA-EX-072 | Step 3 (AI): Generate button | Click "Create Grand Test" | Processing indicator, AI generation starts | Critical |
+| SA-EX-073 | Step 4: Success state | After generation completes | Success message, navigation options displayed | Critical |
+| SA-EX-074 | Step 4: Go to Review | Click "Review & Configure" | Redirects to exam review page | Critical |
+
+### Exam Review & Configure Tests
+
+| Test ID | Test Case | Steps | Expected Result | Priority |
+|---------|-----------|-------|-----------------|----------|
+| SA-EX-075 | Review page loads | Navigate to exam review | Page loads with sections and questions | Critical |
+| SA-EX-076 | Question count visible | View review page | Total question count matches expected | High |
+| SA-EX-077 | Section tabs work | Click different section tabs | Questions filter by section | High |
+| SA-EX-078 | Math formulas render | View question with LaTeX | Formulas render via KaTeX correctly | Critical |
+| SA-EX-079 | Images display | View question with images | All images load and display | High |
+| SA-EX-080 | Edit question | Click Edit on any question | Edit form opens with current values | High |
+| SA-EX-081 | Save edits | Modify question and save | Changes saved, reflected in list | High |
+| SA-EX-082 | Classification tags visible | View any question | Chapter, Topic, Difficulty, Cognitive tags displayed | High |
+| SA-EX-083 | Publish exam | Click Publish button | Exam status changes to Published, toast confirmation | Critical |
 
 ---
 
 ## Roles & Access Smoke Tests
 
+### Purpose
+
+The Roles & Access module implements Role-Based Access Control for the SuperAdmin portal. It allows creation of custom roles with granular permissions, enabling delegation of specific platform management tasks to team members.
+
+**Key Concepts:**
+- Role Types: Define permission templates (what modules/actions are allowed)
+- Team Members: Users assigned to role types (limited access based on role)
+- Permissions: View, Create, Edit, Delete per module
+- Special permissions: Tier Management, Scope (class/subject), Capabilities (AI, PDF)
+- System roles (Super Admin) cannot be deleted
+
+### Roles & Access Page Tests
+
 | Test ID | Test Case | Steps | Expected Result | Priority |
 |---------|-----------|-------|-----------------|----------|
-| SA-RA-001 | Roles page loads | Navigate to `/superadmin/roles` | Tabs load | Critical |
-| SA-RA-002 | Roles tab works | Click Roles tab | Role list shows | High |
-| SA-RA-003 | Members tab works | Click Members tab | Member list shows | High |
-| SA-RA-004 | Create role | Click "Create Role", configure, save | Role created | Critical |
-| SA-RA-005 | Permission toggles | Toggle permissions in builder | Toggles work | High |
-| SA-RA-006 | Scope config | Configure scope settings | Settings save | Medium |
-| SA-RA-007 | Assign member | Add member, select role | Assignment works | High |
-| SA-RA-008 | Edit role | Click edit, modify, save | Changes saved | Medium |
-| SA-RA-009 | Delete role | Click delete (after reassign) | Role removed | Low |
+| SA-RA-001 | Roles page loads | Navigate to `/superadmin/roles` | Page loads with two tabs: Role Types, Team Members | Critical |
+| SA-RA-002 | Role Types tab active by default | Open page | Role Types tab highlighted, role cards display | High |
+| SA-RA-003 | Team Members tab switch | Click Team Members tab | Tab switches, member table displays | High |
+| SA-RA-004 | Create Role button visible | View Role Types tab | "Create Role" button visible in header | High |
+| SA-RA-005 | Add Member button visible | View Team Members tab | "Add Member" button visible in header | High |
+
+### Role Types Tab Tests
+
+| Test ID | Test Case | Steps | Expected Result | Priority |
+|---------|-----------|-------|-----------------|----------|
+| SA-RA-006 | Role cards display | View Role Types tab | Cards show role name, description, member count | High |
+| SA-RA-007 | System role badge | View Super Admin card | "System" badge visible indicating protected role | Medium |
+| SA-RA-008 | System role no delete | View Super Admin card | No Delete button available for system roles | Critical |
+| SA-RA-009 | Custom role has edit/delete | View any custom role card | Edit and Delete buttons visible | High |
+| SA-RA-010 | Member count accurate | View role card | Member count matches actual assigned members | Medium |
+
+### Create Role Dialog Tests
+
+| Test ID | Test Case | Steps | Expected Result | Priority |
+|---------|-----------|-------|-----------------|----------|
+| SA-RA-011 | Create role dialog opens | Click "Create Role" button | Dialog/page opens with form sections | Critical |
+| SA-RA-012 | Role name required | Leave name empty, try save | Save button disabled or validation error | Critical |
+| SA-RA-013 | Description optional | Leave description empty, fill name | Can save successfully | Medium |
+| SA-RA-014 | Dashboard permission section | View Dashboard section | Only View toggle available (dashboard is view-only) | High |
+| SA-RA-015 | Institutes permissions | View Institutes section | View, Create, Edit, Delete toggles + Tier Management checkbox | High |
+| SA-RA-016 | Tier Management toggle | Toggle Tier Management checkbox | Checkbox enables/disables correctly | High |
+| SA-RA-017 | Question Bank permissions | View Question Bank section | VCUD toggles + Scope section + Capabilities section | Critical |
+| SA-RA-018 | QB Scope - All Classes toggle | Toggle "All Classes" | When ON, class multi-select hidden; when OFF, appears | High |
+| SA-RA-019 | QB Scope - Specific Classes | Uncheck All Classes, select specific classes | Selected classes saved in scope | High |
+| SA-RA-020 | QB Scope - All Subjects toggle | Toggle "All Subjects" | When ON, subject multi-select hidden; when OFF, appears | High |
+| SA-RA-021 | QB Scope - Specific Subjects | Uncheck All Subjects, select specific subjects | Selected subjects saved in scope | High |
+| SA-RA-022 | QB Capabilities - Manual | Toggle Manual Entry capability | Checkbox toggles correctly | High |
+| SA-RA-023 | QB Capabilities - AI | Toggle AI Generation capability | Checkbox toggles correctly | High |
+| SA-RA-024 | QB Capabilities - PDF | Toggle PDF Upload capability | Checkbox toggles correctly | High |
+| SA-RA-025 | Exams permissions | View Exams section | VCUD toggles + Types section + Scope section | Critical |
+| SA-RA-026 | Exams Types - Grand Tests | Toggle Grand Tests type | Checkbox toggles correctly | High |
+| SA-RA-027 | Exams Types - PYP | Toggle Previous Year Papers type | Checkbox toggles correctly | High |
+| SA-RA-028 | Exams Scope - Inherit option | View Scope section | "Inherit from Question Bank" option available | High |
+| SA-RA-029 | Exams Scope - Custom | Uncheck inherit, configure custom scope | Custom scope fields appear | Medium |
+| SA-RA-030 | Content Library permissions | View Content Library section | VCUD toggles + Capabilities + Scope | Critical |
+| SA-RA-031 | CL Capabilities - Manual | Toggle Manual Upload capability | Checkbox toggles correctly | High |
+| SA-RA-032 | CL Capabilities - AI | Toggle AI Generation capability | Checkbox toggles correctly | High |
+| SA-RA-033 | Master Data permissions | View Master Data section | VCUD toggles available | High |
+| SA-RA-034 | Users permissions | View Users section | VCUD toggles available | High |
+| SA-RA-035 | Roles & Access permissions | View Roles & Access section | VCUD toggles available | High |
+| SA-RA-036 | Save new role | Fill form completely, click Create/Save | Role card appears in list, toast confirmation | Critical |
+| SA-RA-037 | Cancel create | Click Cancel | Dialog closes, no role created | Medium |
+
+### Edit Role Tests
+
+| Test ID | Test Case | Steps | Expected Result | Priority |
+|---------|-----------|-------|-----------------|----------|
+| SA-RA-038 | Edit dialog opens | Click Edit on any custom role card | Dialog opens with pre-filled values | Critical |
+| SA-RA-039 | Name pre-filled | View dialog | Current role name shown in field | High |
+| SA-RA-040 | Permissions pre-filled | View dialog | Current permissions reflected (toggles in correct state) | High |
+| SA-RA-041 | Save changes | Modify permissions, click Save | Role updated, toast confirmation | Critical |
+| SA-RA-042 | Cancel edit | Click Cancel | Dialog closes, no changes saved | Medium |
+
+### Delete Role Tests
+
+| Test ID | Test Case | Steps | Expected Result | Priority |
+|---------|-----------|-------|-----------------|----------|
+| SA-RA-043 | Delete custom role (no members) | Click Delete on role with 0 members | Role removed immediately, toast confirmation | High |
+| SA-RA-044 | Delete role with members warning | Click Delete on role with assigned members | Warning: "Reassign members before deleting" | Critical |
+| SA-RA-045 | System role protected | Try to delete Super Admin role | Delete button not available | Critical |
+
+### Team Members Tab Tests
+
+| Test ID | Test Case | Steps | Expected Result | Priority |
+|---------|-----------|-------|-----------------|----------|
+| SA-RA-046 | Member table displays | View Team Members tab | Table with columns: Name, Email, Mobile, Role, Status, Actions | Critical |
+| SA-RA-047 | Member row shows role | View any member row | Role type name displayed in Role column | High |
+| SA-RA-048 | Status badge visible | View any member row | Active/Inactive status badge displayed | High |
+| SA-RA-049 | Edit button visible | View member row | Edit action available (button or menu) | High |
+| SA-RA-050 | Delete button visible | View member row | Delete action available | High |
+| SA-RA-051 | Search members | Type in search box | Table filters by name or email match | Medium |
+
+### Add Member Dialog Tests
+
+| Test ID | Test Case | Steps | Expected Result | Priority |
+|---------|-----------|-------|-----------------|----------|
+| SA-RA-052 | Add member dialog opens | Click "Add Member" button | Dialog opens with form fields | Critical |
+| SA-RA-053 | Name required | Leave name empty, try save | Save disabled or validation error | Critical |
+| SA-RA-054 | Email required | Leave email empty, try save | Save disabled or validation error | Critical |
+| SA-RA-055 | Email validation | Enter invalid email format | Validation error shown | High |
+| SA-RA-056 | Mobile optional | Leave mobile empty | Can save successfully | Medium |
+| SA-RA-057 | Role type dropdown | Click role type dropdown | All created role types available in list | Critical |
+| SA-RA-058 | Role type required | Leave role unselected, try save | Validation error | Critical |
+| SA-RA-059 | Status toggle | Toggle Active/Inactive switch | Status changes correctly | High |
+| SA-RA-060 | Default status Active | Open add dialog | Status defaults to Active | Medium |
+| SA-RA-061 | Save member | Fill all required fields, click Save | Member appears in table, toast confirmation | Critical |
+| SA-RA-062 | Role member count updates | After adding member | Role card shows incremented member count | High |
+
+### Edit Member Tests
+
+| Test ID | Test Case | Steps | Expected Result | Priority |
+|---------|-----------|-------|-----------------|----------|
+| SA-RA-063 | Edit member dialog opens | Click Edit on member row | Dialog opens with pre-filled values | Critical |
+| SA-RA-064 | Current values shown | View dialog | Name, email, role, status pre-filled correctly | High |
+| SA-RA-065 | Change role type | Select different role from dropdown | Change accepted | High |
+| SA-RA-066 | Change status | Toggle status Active/Inactive | Status changes | High |
+| SA-RA-067 | Save member changes | Modify and click Save | Member updated in table, toast confirmation | Critical |
+
+### Delete Member Tests
+
+| Test ID | Test Case | Steps | Expected Result | Priority |
+|---------|-----------|-------|-----------------|----------|
+| SA-RA-068 | Delete member confirmation | Click Delete on member | Confirmation dialog appears | High |
+| SA-RA-069 | Confirm delete | Click Confirm in dialog | Member removed from table, toast confirmation | High |
+| SA-RA-070 | Role count decrements | After deleting member | Role card shows decremented member count | High |
+| SA-RA-071 | Cancel delete | Click Cancel in confirmation | Member not deleted | Medium |
 
 ---
 
@@ -512,11 +748,14 @@ After creating any question, verify:
 
 | Test ID | Test Case | Steps | Expected Result | Priority |
 |---------|-----------|-------|-----------------|----------|
-| SA-M-001 | Responsive layout | View on 375px width | Layout adapts | Critical |
-| SA-M-002 | Tables scroll | View tables on mobile | Horizontal scroll works | High |
-| SA-M-003 | Dialogs work | Open any dialog on mobile | Full-screen drawer | High |
-| SA-M-004 | Touch targets | Tap buttons/links | 44px+ targets | High |
-| SA-M-005 | Filters collapse | View filter bar on mobile | Pills scroll | Medium |
+| SA-M-001 | Responsive layout | View on 375px width | Layout adapts correctly | Critical |
+| SA-M-002 | Tables scroll | View tables on mobile | Horizontal scroll works smoothly | High |
+| SA-M-003 | Dialogs work | Open any dialog on mobile | Full-screen drawer instead of modal | High |
+| SA-M-004 | Touch targets | Tap buttons/links | 44px+ touch targets | High |
+| SA-M-005 | Filters collapse | View filter bar on mobile | Horizontal scroll for filter pills | Medium |
+| SA-M-006 | Exams tabs work | Switch PYP/GT tabs on mobile | Tabs switch correctly | High |
+| SA-M-007 | Role cards stack | View Role Types on mobile | Cards stack vertically | Medium |
+| SA-M-008 | Member table scrolls | View Team Members on mobile | Horizontal scroll with priority columns | High |
 
 ---
 

@@ -128,4 +128,74 @@ These tests verify that exams and questions flow correctly between portals, from
 
 ---
 
+## Grand Test Assignment Flow Tests
+
+### Purpose
+
+These tests verify that Grand Tests created by SuperAdmin correctly propagate to institutes and subsequently to students through the assignment chain.
+
+| Test ID | Test Case | Steps | Expected Result |
+|---------|-----------|-------|-----------------|
+| EX-050 | GT not visible without audience | SA creates GT, does NOT assign any audience | Institute does NOT see GT in their Exams module |
+| EX-051 | GT visible after audience assigned | SA creates GT, assigns Institute A in Audience dialog | Institute A sees GT in their Exams module |
+| EX-052 | Unassigned institute doesn't see GT | SA assigns GT only to Institute A | Institute B does NOT see the GT |
+| EX-053 | Multiple institutes see GT | SA assigns GT to Institute A and Institute B | Both institutes see the GT in their Exams |
+| EX-054 | GT read-only at Institute | Institute opens assigned GT | View only mode, no edit/delete buttons available |
+| EX-055 | Institute assigns GT to batch | Institute clicks Assign on GT | Batch selection dialog opens, can select batches |
+| EX-056 | Unassigned batch doesn't see GT | GT assigned to Batch A only | Students in Batch B do not see the test |
+| EX-057 | Student sees assigned GT | Student is in assigned batch | Test appears in student's Tests list |
+| EX-058 | GT with no batch assignment | Institute doesn't assign GT to any batch | No students see the test |
+
+---
+
+## Schedule Propagation Tests
+
+### Purpose
+
+These tests verify that schedule settings from SuperAdmin correctly propagate and control exam availability for institutes and students.
+
+| Test ID | Test Case | Steps | Expected Result |
+|---------|-----------|-------|-----------------|
+| EX-059 | Schedule reflects at Institute | SA schedules GT for tomorrow 9:00 AM | Institute sees same schedule date/time on GT card |
+| EX-060 | Student can't start before schedule | GT scheduled for future time | "Available at [date/time]" shown, Start button disabled |
+| EX-061 | Student can start after schedule | Current time > scheduled time | "Start Test" button is active/enabled |
+| EX-062 | Schedule change propagates | SA changes schedule to different date/time | Institute and Student see updated schedule immediately |
+| EX-063 | Past schedule allows immediate start | GT scheduled for past time (already passed) | Student can start immediately |
+| EX-064 | Countdown displayed | GT scheduled for near future | Countdown timer shown to students |
+
+---
+
+## PYP Propagation Tests
+
+### Purpose
+
+These tests verify that Previous Year Papers created by SuperAdmin correctly propagate to institutes.
+
+| Test ID | Test Case | Steps | Expected Result |
+|---------|-----------|-------|-----------------|
+| EX-065 | PYP visible to Institute | SA creates PYP, assigns to institute | Institute sees PYP in their Previous Year Papers tab |
+| EX-066 | PYP year grouping at Institute | Institute views PYP tab | Same year-wise accordion grouping as SuperAdmin (2024, 2023, etc.) |
+| EX-067 | PYP preview works at Institute | Institute clicks View on PYP | Full question preview displays correctly |
+| EX-068 | PYP read-only at Institute | Institute views PYP | No edit/delete options available, view and assign only |
+| EX-069 | Institute assigns PYP to batch | Institute assigns PYP to specific batch | Students in batch see the PYP in their tests |
+| EX-070 | PYP questions render at Institute | Institute previews PYP questions | Math formulas, images render correctly |
+
+---
+
+## Exam Content Consistency Tests
+
+### Purpose
+
+These tests verify that exam content (questions, sections, marking) is consistent across all portals.
+
+| Test ID | Test Case | Steps | Expected Result |
+|---------|-----------|-------|-----------------|
+| EX-071 | Question count matches | SA creates 75-question exam, Institute views | Institute sees exactly 75 questions |
+| EX-072 | Section structure preserved | SA creates 3-section exam | Institute sees same 3 sections with same question distribution |
+| EX-073 | Marking scheme preserved | SA sets +4/-1 for MCQ | Institute and student see same marking scheme |
+| EX-074 | Math renders at Student | SA creates exam with LaTeX questions | Student sees formulas rendered correctly in test player |
+| EX-075 | Images display at Student | SA creates exam with images | Student sees all images in test player |
+
+---
+
 *Last Updated: January 2025*

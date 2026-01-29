@@ -175,6 +175,7 @@ export const docsNavigation: DocSection[] = [
           { title: "Curriculum Tests", path: "06-testing-scenarios/inter-login-tests/curriculum-tests" },
           { title: "Tier Management Tests", path: "06-testing-scenarios/inter-login-tests/tier-institute-tests" },
           { title: "Question Bank Tests", path: "06-testing-scenarios/inter-login-tests/question-bank-tests" },
+          { title: "Roles & Access Tests", path: "06-testing-scenarios/inter-login-tests/roles-access-tests" },
         ],
       },
     ],
