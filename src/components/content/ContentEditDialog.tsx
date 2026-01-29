@@ -5,10 +5,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Checkbox } from "@/components/ui/checkbox";
 import { ContentItem } from "./ContentCard";
-import { ContentTypeIcon, getContentTypeLabel, ContentType } from "./ContentTypeIcon";
+import { ContentTypeIcon, getContentTypeLabel } from "./ContentTypeIcon";
 import { classes, subjects, chapters } from "@/data/mockData";
+import { getActiveCurriculums, getPublishedCourses } from "@/data/masterData";
 import { useToast } from "@/hooks/use-toast";
 
 interface ContentEditDialogProps {
@@ -22,10 +23,23 @@ export const ContentEditDialog = ({ content, open, onOpenChange, onSave }: Conte
   const { toast } = useToast();
   const [formData, setFormData] = useState<Partial<ContentItem>>({});
   const [filteredChapters, setFilteredChapters] = useState<typeof chapters>([]);
+  const [selectedCurriculums, setSelectedCurriculums] = useState<string[]>([]);
+  const [selectedCourses, setSelectedCourses] = useState<string[]>([]);
+  
+  const activeCurriculums = getActiveCurriculums();
+  const publishedCourses = getPublishedCourses();
 
   useEffect(() => {
     if (content) {
       setFormData({ ...content });
+      // Initialize visibility selections - default to all curriculums if public
+      if (content.visibility === 'public') {
+        setSelectedCurriculums(activeCurriculums.map(c => c.id));
+        setSelectedCourses([]);
+      } else {
+        setSelectedCurriculums([]);
+        setSelectedCourses([]);
+      }
     }
   }, [content]);
 
@@ -228,18 +242,6 @@ export const ContentEditDialog = ({ content, open, onOpenChange, onSave }: Conte
             )}
 
             <div className="grid grid-cols-2 gap-4">
-              {(content.type === "video" || content.type === "audio" || content.type === "animation") && (
-                <div className="space-y-2">
-                  <Label htmlFor="duration">Duration (minutes)</Label>
-                  <Input
-                    id="duration"
-                    type="number"
-                    value={formData.duration || ""}
-                    onChange={(e) => setFormData(prev => ({ ...prev, duration: parseInt(e.target.value) || undefined }))}
-                    placeholder="e.g., 15"
-                  />
-                </div>
-              )}
 
               {(content.type === "pdf" || content.type === "ppt" || content.type === "scorm") && (
                 <div className="space-y-2">
@@ -255,50 +257,83 @@ export const ContentEditDialog = ({ content, open, onOpenChange, onSave }: Conte
             </div>
           </div>
 
-          {/* Settings */}
+          {/* Visibility */}
           <div className="space-y-4">
             <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
-              Settings
+              Visibility
             </h3>
             
             <div className="space-y-3">
-              <Label>Visibility</Label>
-              <RadioGroup
-                value={formData.visibility}
-                onValueChange={(v) => handleChange("visibility", v)}
-                className="flex flex-wrap gap-3 sm:gap-4"
-              >
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="public" id="public" />
-                  <Label htmlFor="public" className="font-normal cursor-pointer">Public</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="private" id="private" />
-                  <Label htmlFor="private" className="font-normal cursor-pointer">Private</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="restricted" id="restricted" />
-                  <Label htmlFor="restricted" className="font-normal cursor-pointer">Restricted</Label>
-                </div>
-              </RadioGroup>
+              <Label>Available in Curriculums</Label>
+              <div className="space-y-2 max-h-32 overflow-y-auto border rounded-lg p-2">
+                {activeCurriculums.map((curr) => (
+                  <label
+                    key={curr.id}
+                    className="flex items-center gap-2 p-2 rounded hover:bg-muted/50 cursor-pointer"
+                  >
+                    <Checkbox
+                      checked={selectedCurriculums.includes(curr.id)}
+                      onCheckedChange={(checked) => {
+                        setSelectedCurriculums(prev => 
+                          checked 
+                            ? [...prev, curr.id]
+                            : prev.filter(id => id !== curr.id)
+                        );
+                      }}
+                    />
+                    <span className="text-sm">{curr.name}</span>
+                  </label>
+                ))}
+              </div>
             </div>
 
-            <div className="space-y-2">
-              <Label>Status</Label>
-              <Select 
-                value={formData.status} 
-                onValueChange={(v) => handleChange("status", v)}
-              >
-                <SelectTrigger className="w-48">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="bg-popover">
-                  <SelectItem value="published">Published</SelectItem>
-                  <SelectItem value="draft">Draft</SelectItem>
-                  <SelectItem value="archived">Archived</SelectItem>
-                </SelectContent>
-              </Select>
+            <div className="space-y-3">
+              <Label>Available in Courses</Label>
+              <div className="space-y-2 max-h-32 overflow-y-auto border rounded-lg p-2">
+                {publishedCourses.length === 0 ? (
+                  <p className="text-xs text-muted-foreground p-2">No published courses</p>
+                ) : (
+                  publishedCourses.map((course) => (
+                    <label
+                      key={course.id}
+                      className="flex items-center gap-2 p-2 rounded hover:bg-muted/50 cursor-pointer"
+                    >
+                      <Checkbox
+                        checked={selectedCourses.includes(course.id)}
+                        onCheckedChange={(checked) => {
+                          setSelectedCourses(prev => 
+                            checked 
+                              ? [...prev, course.id]
+                              : prev.filter(id => id !== course.id)
+                          );
+                        }}
+                      />
+                      <span className="text-sm">{course.name}</span>
+                    </label>
+                  ))
+                )}
+              </div>
             </div>
+          </div>
+
+          {/* Status */}
+          <div className="space-y-4">
+            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+              Status
+            </h3>
+            <Select 
+              value={formData.status} 
+              onValueChange={(v) => handleChange("status", v)}
+            >
+              <SelectTrigger className="w-48">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="bg-popover">
+                <SelectItem value="published">Published</SelectItem>
+                <SelectItem value="draft">Draft</SelectItem>
+                <SelectItem value="archived">Archived</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
 

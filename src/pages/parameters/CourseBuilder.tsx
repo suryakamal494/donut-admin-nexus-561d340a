@@ -9,6 +9,7 @@ import {
   CourseSelector,
   CreateCourseDialog,
   CreateChapterDialog,
+  CreateTopicDialog,
   EmptyState,
 } from "@/components/parameters/course-builder";
 
@@ -79,6 +80,7 @@ const CourseBuilder = () => {
             onClearSelection={builder.handleClearSelection}
             onAddSelected={builder.handleAddSelectedChapters}
             onCreateChapter={() => builder.setShowCreateChapterDialog(true)}
+            onCreateTopic={() => builder.setShowCreateTopicDialog(true)}
           />
 
           {/* Right Panel: Target */}
@@ -114,6 +116,16 @@ const CourseBuilder = () => {
         newChapter={builder.newChapter}
         onChapterChange={builder.setNewChapter}
         onCreate={builder.handleCreateChapter}
+      />
+
+      {/* Create Topic Dialog */}
+      <CreateTopicDialog
+        open={builder.showCreateTopicDialog}
+        onOpenChange={builder.setShowCreateTopicDialog}
+        courseChapters={builder.currentCourseChapters}
+        newTopic={builder.newTopic}
+        setNewTopic={builder.setNewTopic}
+        onCreateTopic={builder.handleCreateTopic}
       />
     </div>
   );

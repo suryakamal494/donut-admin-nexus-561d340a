@@ -46,10 +46,11 @@ const assertionReasoningOptions = [
 
 // Sub-question type for paragraph questions
 interface SubQuestion {
-  type: 'mcq' | 'multiple' | 'numerical';
+  type: 'mcq' | 'multiple' | 'numerical' | 'fill' | 'truefalse';
   text: string;
   options: string[];
   correctAnswer: string;
+  blankAnswers?: string[];
 }
 
 const CreateQuestion = () => {
@@ -189,10 +190,13 @@ const CreateQuestion = () => {
                   ))}
                 </div>
               </div>
-              <div className="space-y-1.5 sm:space-y-2">
-                <Label className="text-sm">Question Text</Label>
-                <Textarea placeholder="Enter your question..." className="min-h-24 sm:min-h-32 text-sm" />
-              </div>
+              {/* Hide Question Text for fill and paragraph types */}
+              {questionType !== "fill" && questionType !== "paragraph" && (
+                <div className="space-y-1.5 sm:space-y-2">
+                  <Label className="text-sm">Question Text</Label>
+                  <Textarea placeholder="Enter your question..." className="min-h-24 sm:min-h-32 text-sm" />
+                </div>
+              )}
               {(questionType === "mcq" || questionType === "multiple") && (
                 <div className="space-y-1.5 sm:space-y-2">
                   <Label className="text-sm">Options</Label>
@@ -387,15 +391,17 @@ const CreateQuestion = () => {
                       <h4 className="font-medium text-sm">Question {currentSubQuestion + 1}</h4>
                       <Select 
                         value={subQuestions[currentSubQuestion]?.type || 'mcq'}
-                        onValueChange={(v) => updateSubQuestion(currentSubQuestion, { type: v as 'mcq' | 'multiple' | 'numerical' })}
+                        onValueChange={(v) => updateSubQuestion(currentSubQuestion, { type: v as SubQuestion['type'] })}
                       >
-                        <SelectTrigger className="h-8 w-36 text-xs">
+                        <SelectTrigger className="h-8 w-40 text-xs">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="mcq">MCQ (Single)</SelectItem>
                           <SelectItem value="multiple">Multiple Correct</SelectItem>
                           <SelectItem value="numerical">Numerical</SelectItem>
+                          <SelectItem value="fill">Fill in Blanks</SelectItem>
+                          <SelectItem value="truefalse">True/False</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -448,6 +454,81 @@ const CreateQuestion = () => {
                           onChange={(e) => updateSubQuestion(currentSubQuestion, { correctAnswer: e.target.value })}
                           className="h-8 text-sm w-40"
                         />
+                      </div>
+                    )}
+
+                    {subQuestions[currentSubQuestion]?.type === 'fill' && (
+                      <div className="space-y-2">
+                        <Label className="text-xs">Question with Blanks</Label>
+                        <p className="text-[10px] text-muted-foreground">Use ___ (3+ underscores) to mark blanks</p>
+                        <Textarea
+                          placeholder="The capital of France is ____ ."
+                          value={subQuestions[currentSubQuestion]?.text || ''}
+                          onChange={(e) => {
+                            const text = e.target.value;
+                            const blankCount = countBlanks(text);
+                            const currentBlankAnswers = subQuestions[currentSubQuestion]?.blankAnswers || [];
+                            const newBlankAnswers = [...currentBlankAnswers];
+                            while (newBlankAnswers.length < blankCount) newBlankAnswers.push("");
+                            updateSubQuestion(currentSubQuestion, { 
+                              text, 
+                              blankAnswers: newBlankAnswers.slice(0, blankCount) 
+                            });
+                          }}
+                          className="min-h-16 text-sm"
+                        />
+                        {countBlanks(subQuestions[currentSubQuestion]?.text || '') > 0 && (
+                          <div className="space-y-1.5">
+                            <Label className="text-xs">Answers ({countBlanks(subQuestions[currentSubQuestion]?.text || '')} blank(s))</Label>
+                            {(subQuestions[currentSubQuestion]?.blankAnswers || []).map((ans, idx) => (
+                              <div key={idx} className="flex items-center gap-2">
+                                <span className="w-6 h-6 rounded bg-background flex items-center justify-center text-xs font-medium shrink-0">
+                                  {idx + 1}
+                                </span>
+                                <Input
+                                  placeholder={`Answer ${idx + 1}`}
+                                  value={ans}
+                                  onChange={(e) => {
+                                    const newAnswers = [...(subQuestions[currentSubQuestion]?.blankAnswers || [])];
+                                    newAnswers[idx] = e.target.value;
+                                    updateSubQuestion(currentSubQuestion, { blankAnswers: newAnswers });
+                                  }}
+                                  className="flex-1 h-7 text-sm"
+                                />
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {subQuestions[currentSubQuestion]?.type === 'truefalse' && (
+                      <div className="space-y-2">
+                        <Label className="text-xs">Correct Answer</Label>
+                        <div className="flex gap-4">
+                          <label className="flex items-center gap-2 cursor-pointer">
+                            <input 
+                              type="radio" 
+                              name={`sub-tf-${currentSubQuestion}`}
+                              value="true"
+                              checked={subQuestions[currentSubQuestion]?.correctAnswer === "true"}
+                              onChange={(e) => updateSubQuestion(currentSubQuestion, { correctAnswer: e.target.value })}
+                              className="w-4 h-4 accent-primary" 
+                            />
+                            <span className="text-sm font-medium">True</span>
+                          </label>
+                          <label className="flex items-center gap-2 cursor-pointer">
+                            <input 
+                              type="radio" 
+                              name={`sub-tf-${currentSubQuestion}`}
+                              value="false"
+                              checked={subQuestions[currentSubQuestion]?.correctAnswer === "false"}
+                              onChange={(e) => updateSubQuestion(currentSubQuestion, { correctAnswer: e.target.value })}
+                              className="w-4 h-4 accent-primary" 
+                            />
+                            <span className="text-sm font-medium">False</span>
+                          </label>
+                        </div>
                       </div>
                     )}
                   </div>
