@@ -9,7 +9,7 @@
 These smoke tests verify that each SuperAdmin page loads correctly and core functionality works. Run these after deployments or major changes.
 
 **Test Execution Notes:**
-1. **Run order**: Dashboard → Master Data → Institutes → Users → Content → Questions → Exams → Roles
+1. **Run order**: Dashboard → Master Data → Tier Management → Institutes → Users → Content → Questions → Exams → Roles
 2. **Data setup**: Ensure at least one of each entity exists
 3. **Cleanup**: Delete test data after verification
 4. **Screenshots**: Capture failures for debugging
@@ -102,6 +102,49 @@ The Courses module manages specialized academic tracks (JEE, NEET, Olympiad, Fou
 
 ---
 
+## Tier Management Smoke Tests
+
+### Purpose
+
+Tier Management controls which features each institute has access to. When an institute is created and assigned a tier, only the features enabled in that tier will appear in the institute portal.
+
+**Key Concepts:**
+- Tiers define feature access (sidebar items, AI capabilities, limits)
+- User limits (students, teachers, batches) are tier-specific
+- Tier changes reflect immediately in institute portals
+
+**Feature Categories:**
+- Content Management (Content Library, AI Content Generator)
+- Question Management (Question Bank, AI Question Generator, PDF Upload)
+- Exam Management (Exams, Patterns, Live Assessments)
+- Academic Tools (Timetable, Syllabus Tracker)
+- Analytics (Basic Reports, Advanced Analytics, Custom Reports)
+- Administration (Roles & Access)
+
+### Tier Page Tests
+
+| Test ID | Test Case | Steps | Expected Result | Priority |
+|---------|-----------|-------|-----------------|----------|
+| SA-TM-001 | Tier page loads | Navigate to `/superadmin/institutes/tiers` | Page loads with tier cards and feature comparison table | Critical |
+| SA-TM-002 | All tier cards displayed | View page | Basic, Standard/Pro, Premium/Enterprise cards visible with pricing | High |
+| SA-TM-003 | Feature comparison shows all features | Scroll feature comparison table | All 18+ features listed in categories | Critical |
+| SA-TM-004 | Feature categories grouped | View comparison table | Content, Questions, Exams, Analytics, Administration sections visible | High |
+| SA-TM-005 | Edit tier button works | Click "Edit" on any tier card | Navigates to tier edit page/dialog | High |
+
+### Create Tier Tests
+
+| Test ID | Test Case | Steps | Expected Result | Priority |
+|---------|-----------|-------|-----------------|----------|
+| SA-TM-006 | Create new tier button | Click "Create New Tier" button | Form opens with 3 sections: Basic Info, User Limits, Features by Category | Critical |
+| SA-TM-007 | Basic info form | Fill tier name, price, billing cycle, description | Form accepts input, validation works | High |
+| SA-TM-008 | User limits form | Set max students, max teachers, max batches, storage | Limits saved correctly, 0 = unlimited | High |
+| SA-TM-009 | Feature toggles work | Toggle individual features in each category | Toggles enable/disable features | Critical |
+| SA-TM-010 | All institute features listed | View feature toggles section | Dashboard, Batches, Teachers, Students, Timetable, Syllabus Tracker, Question Bank, AI Question Generator, PDF Question Upload, Content Library, AI Content Generator, Exams, Exam Patterns, Live Assessments, Basic Reports, Advanced Analytics, Custom Reports, Roles & Access all present | Critical |
+| SA-TM-011 | Save new tier | Complete all sections, click Save | Tier created successfully, appears in comparison | Critical |
+| SA-TM-012 | New tier in comparison | After creating tier | New column appears in comparison table with correct feature toggles | High |
+
+---
+
 ## Institutes Smoke Tests
 
 ### Purpose
@@ -113,6 +156,9 @@ The Institutes module manages all educational institutions on the platform. Supe
 - Tier-based feature access (Basic, Standard, Premium)
 - 4-step wizard for institute creation
 - Custom courses can be created specifically for an institute
+
+**How Tiers Affect Institutes:**
+When a tier is assigned, only enabled features appear in the institute sidebar. AI buttons (Generate with AI, Upload PDF) are hidden if those features are disabled in the tier.
 
 ### All Institutes Page Tests
 
@@ -180,18 +226,89 @@ The Institutes module manages all educational institutions on the platform. Supe
 
 ## Question Bank Smoke Tests
 
+### Purpose
+
+The Question Bank is the central repository for all educational questions. Questions created here propagate to institutes based on their curriculum/course assignments.
+
+**Key Concepts:**
+- Questions require full classification: Curriculum/Course + Subject + Chapter + Topic + Difficulty + Cognitive Type
+- 9 question types: MCQ, Multiple Correct, Numerical, True/False, Fill in Blanks, Assertion-Reasoning, Paragraph, Short Answer, Long Answer
+- 3 creation methods: Manual Entry, AI Generation, PDF Extraction
+- Questions propagate ONLY to institutes with matching curriculum/course assignments
+
+**Propagation Rule:**
+If SuperAdmin creates a CBSE Physics question, only institutes assigned CBSE will see it. Institutes assigned only ICSE will NOT see CBSE questions.
+
+### Question Bank Page Tests
+
 | Test ID | Test Case | Steps | Expected Result | Priority |
 |---------|-----------|-------|-----------------|----------|
-| SA-QB-001 | Questions page loads | Navigate to `/superadmin/questions` | List loads | Critical |
-| SA-QB-002 | Filters work | Apply type/difficulty filters | List filters | High |
-| SA-QB-003 | Add manual question | Click "Add", fill form, save | Question created | Critical |
-| SA-QB-004 | AI generate | Click "AI Generate", configure, review, accept | Questions created | High |
-| SA-QB-005 | PDF upload | Upload PDF, review extraction, accept | Questions created | High |
-| SA-QB-006 | Preview question | Click on question card | Preview opens | High |
-| SA-QB-007 | LaTeX renders | Create question with formula | Formula displays | High |
-| SA-QB-008 | Edit question | Click edit, modify, save | Changes saved | Medium |
-| SA-QB-009 | Delete question | Click delete on unused | Question removed | Medium |
-| SA-QB-010 | Virtual scroll works | Scroll through 100+ questions | Smooth scrolling | Low |
+| SA-QB-001 | Questions page loads | Navigate to `/superadmin/questions` | Page loads with filters, 3 action buttons (Upload PDF, Generate with AI, Add Question), question cards | Critical |
+| SA-QB-002 | Subject filter works | Select subject from dropdown | List filters to selected subject only | High |
+| SA-QB-003 | Type filter works | Select MCQ/Numerical/etc from dropdown | List filters to selected type only | High |
+| SA-QB-004 | Difficulty filter works | Select Easy/Medium/Hard/Expert | List filters to selected difficulty | High |
+| SA-QB-005 | Cognitive filter works | Select Logical/Analytical/Conceptual/etc | List filters to selected cognitive type | High |
+| SA-QB-006 | Search works | Type in search box | Questions filter by text match | High |
+| SA-QB-007 | Question card displays all info | View any question card | Shows: Type badge, Difficulty badge, Cognitive badge, Subject, Chapter, Topic, Curriculum/Course tag | Critical |
+| SA-QB-008 | Preview button works | Click Preview button on any card | Question preview dialog opens with full content, options, solution | Critical |
+| SA-QB-009 | View Solution works | Click View Solution in preview | Solution and explanation displayed | High |
+| SA-QB-010 | Math type (LaTeX) renders | View question with mathematical formulas | Formulas render correctly via KaTeX | High |
+| SA-QB-011 | Images display | View question with images | Images load and display correctly | High |
+| SA-QB-012 | Edit button works | Click Edit button on question | Edit form opens with current values pre-filled | High |
+| SA-QB-013 | Delete button works | Click Delete on unused question | Confirmation dialog, then question removed | Medium |
+
+### Create Question - Manual Entry Tests (9 Types)
+
+| Test ID | Test Case | Steps | Expected Result | Priority |
+|---------|-----------|-------|-----------------|----------|
+| SA-QB-014 | Create Question page loads | Click "Add Question" button | Split screen opens: Question Details (left) + Classification (right) | Critical |
+| SA-QB-015 | Classification validation | Fill question but leave Chapter empty | Validation error, cannot save | High |
+| SA-QB-016 | MCQ Single creation | Select MCQ type, fill question text, add 4 options, select 1 correct, add solution, select full classification, save | Question saved, redirects to bank, card displays correctly with MCQ badge | Critical |
+| SA-QB-017 | Multiple Correct creation | Select Multiple Correct, fill question, add options, check 2+ correct answers, complete classification, save | Question saved with multiple correct answers visible | Critical |
+| SA-QB-018 | Numerical creation | Select Numerical, fill question text, enter numeric answer (with optional range), save | Question saved, displays with number input preview | Critical |
+| SA-QB-019 | True/False creation | Select True/False, fill question, select True or False answer, save | Question saved with T/F option preview | Critical |
+| SA-QB-020 | Fill in Blanks creation | Select Fill in Blanks, enter question with `___blank___` markers, fill answers for each blank, save | Question saved, blanks detected correctly, answers saved per blank | Critical |
+| SA-QB-021 | Assertion-Reasoning creation | Select Assertion-Reasoning, enter Assertion text, enter Reason text, select correct option (A/B/C/D), save | Question saved with standard AR format and options | Critical |
+| SA-QB-022 | Paragraph Based creation | Select Paragraph, enter passage text, add 3 sub-questions with different types (MCQ, Numerical, True/False), save | Paragraph with all sub-questions saved correctly | Critical |
+| SA-QB-023 | Short Answer creation | Select Short Answer, fill question, enter expected answer, save | Question saved | High |
+| SA-QB-024 | Long Answer creation | Select Long Answer, fill question, enter model answer, save | Question saved | High |
+| SA-QB-025 | Each type displays correctly | After creating each of 9 types, view in bank | Each card shows correct type badge, preview renders type-specific UI | Critical |
+| SA-QB-026 | Each type editable | Click Edit on each question type | Edit form shows correct fields for that specific type | High |
+
+### AI Question Generator Tests
+
+| Test ID | Test Case | Steps | Expected Result | Priority |
+|---------|-----------|-------|-----------------|----------|
+| SA-QB-027 | AI Generator page loads | Click "Generate with AI" button | AI Question Generator page opens with classification panel (left) and generation options (right) | Critical |
+| SA-QB-028 | Question types multi-select | Click on multiple question type chips | Can select multiple types simultaneously (MCQ + Numerical + etc.) | High |
+| SA-QB-029 | Difficulty level selection | Select difficulty levels | Single or multiple difficulties selectable | High |
+| SA-QB-030 | Cognitive type selection | Select cognitive types | Selection works correctly | High |
+| SA-QB-031 | Number of questions | Enter count (1-50) | Accepts valid number, rejects invalid | High |
+| SA-QB-032 | Classification: Curriculum flow | Select Curriculum → Class → Subject → Chapter | Each dropdown filters based on previous selection | High |
+| SA-QB-033 | Topic MULTI-SELECT | After chapter selected, view topics list | Can select MULTIPLE topics simultaneously | Critical |
+| SA-QB-034 | Additional instructions | Enter custom instructions in text area | Text area accepts input | Medium |
+| SA-QB-035 | Generate button works | Fill all required fields, click Generate Questions | Progress indicator appears, then review page loads with generated questions | Critical |
+| SA-QB-036 | Review page shows questions | After generation completes | All generated questions displayed with preview capability | Critical |
+| SA-QB-037 | Select/deselect questions | Click checkboxes on individual questions | Can select/deselect specific questions | High |
+| SA-QB-038 | Edit question in review | Click Edit on generated question | Can modify question before saving to bank | High |
+| SA-QB-039 | Add selected to bank | Select desired questions, click "Add to Bank" | Selected questions saved to bank, redirects to Question Bank | Critical |
+| SA-QB-040 | Verify in bank | After adding, view in Question Bank | New questions appear with correct classification and tags | Critical |
+
+### Upload PDF Tests
+
+| Test ID | Test Case | Steps | Expected Result | Priority |
+|---------|-----------|-------|-----------------|----------|
+| SA-QB-041 | Upload PDF page loads | Click "Upload PDF" button | 3-step wizard opens: Step 1 Classification active | Critical |
+| SA-QB-042 | Step 1: Select classification | Select Curriculum → Class → Subject (NO chapter required) | Proceeds to Step 2 when Continue clicked | High |
+| SA-QB-043 | Step 2: Upload file | Select PDF file via file picker or drag-drop | File uploads, progress indicator shown, success message | Critical |
+| SA-QB-044 | Step 2: Processing indicator | After upload | "Processing..." indicator, then "Upload successful. Click Review to continue." | High |
+| SA-QB-045 | Step 3: Review page | Click "Go to Review" or navigate to Step 3 | Extracted questions displayed in grid/list format | Critical |
+| SA-QB-046 | AI-assigned chapter/topic | View extracted questions in review | Chapter, Topic, Difficulty, Cognitive Type automatically tagged by AI | Critical |
+| SA-QB-047 | OCR verification - Math | View question with mathematical content | LaTeX formulas extracted and rendered correctly | High |
+| SA-QB-048 | OCR verification - Images | View question with images | Images extracted and displayed correctly | High |
+| SA-QB-049 | Edit in review | Click Edit on extracted question | Can modify question text, options, classification before saving | High |
+| SA-QB-050 | Preview in review | Click Preview on question | Full question preview with formatting | High |
+| SA-QB-051 | Add selected to bank | Select questions, click "Add to Bank" | Selected questions saved with OCR-extracted content | Critical |
 
 ---
 
