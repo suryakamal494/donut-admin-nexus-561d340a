@@ -1,278 +1,179 @@
 
 
-# AI Question Generator Enhancement: Advanced Type Configuration
+# UI Audit: AI Question Generator -- Complete Findings
 
-## Research Findings: Current State Analysis
-
-### What I Found in SuperAdmin AI Generator (`/superadmin/questions/ai`)
-
-**File:** `src/pages/questions/AIQuestions.tsx` (396 lines)
-
-The current SuperAdmin generator is a single-page form with:
-- **Question Types**: All 10 types shown as checkboxes (MCQ Single, MCQ Multiple, Numerical, Assertion-Reasoning, Paragraph, Matrix Match, Fill in Blanks, True/False, Short Answer, Long Answer)
-- **Difficulty Level**: Simple dropdown (Mostly Easy, Mixed, Mostly Hard)
-- **Number of Questions**: Text input (1-50)
-- **Additional Instructions**: Free text area
-- **Classification sidebar**: Curriculum/Course cascading dropdowns
-
-**What's MISSING:**
-- No per-type quantity breakdown (if you select 4 types and want 10 questions, there's no way to say "3 MCQ, 3 Numerical, 2 Paragraph, 2 Assertion-Reasoning")
-- Selecting "Paragraph" gives NO option for: how many paragraphs, how many sub-questions per paragraph, what sub-question types
-- Selecting "Assertion-Reasoning" gives NO special configuration
-- Selecting "Matrix Match" gives NO option for number of rows/columns
-- No cognitive type selection at all (unlike Institute version)
-- No difficulty multi-select (unlike Institute version)
+## Audit Scope
+Audited both the SuperAdmin (`/superadmin/questions/ai`) and Institute (`/institute/questions/ai`) AI Question Generators, including the shared `TypeConfigPanel` component, across desktop and mobile viewports. Compared layout, responsiveness, consistency, and identified UI issues.
 
 ---
 
-### What I Found in Institute AI Generator (`/institute/questions/ai`)
+## Issue 1: Label Truncation in Institute Panel (CRITICAL -- visible in your screenshot)
 
-**File:** `src/pages/institute/questions/AIQuestions.tsx` (585 lines)
+**What you see:** Your screenshot shows question type labels truncated to "MC...", "Num...", "Ass...", "Para...", "Matr..." on desktop.
 
-The Institute version is MORE advanced than SuperAdmin:
-- **Course Selection**: Track-based (CBSE, JEE Mains)
-- **Question Types**: Only shows FIRST 6 types (`.slice(0, 6)` on line 368) - so Paragraph, Matrix Match, Fill in Blanks, True/False are HIDDEN
-- **Question Count**: Slider (1-20)
-- **Difficulty Mix**: Multi-select badges (Easy, Medium, Hard)
-- **Cognitive Types**: Multi-select checkboxes (6 types)
-- **Generated Questions Panel**: Right side with select/deselect and "Add to Bank"
+**Root Cause:** The Institute panel uses `grid-cols-2` with `truncate` class on labels inside a narrow `lg:col-span-1` card (~33% width). Since the settings panel is only 1/3 of the screen on desktop, the 2-column grid squeezes each type checkbox into ~140px, which is not enough for labels like "Assertion-Reasoning" (18 characters) or "MCQ (Multiple)" (14 characters).
 
-**What's MISSING:**
-- Paragraph, Matrix Match, Fill in Blanks, True/False types are completely hidden from the selection
-- Same lack of per-type quantity distribution
-- Same lack of complex type configuration
+**SuperAdmin comparison:** SuperAdmin uses `lg:col-span-2` (66% width) for its form + `md:grid-cols-3`, giving each label ~200px -- no truncation.
+
+**Fix:** Change the Institute question type grid to `grid-cols-1 sm:grid-cols-2` so on narrow containers it stacks vertically, and reduce font size with `text-xs` to prevent truncation. Alternatively, use shorter labels when inside the narrow Institute sidebar.
 
 ---
 
-### What Manual Creation DOES Support (the reference standard)
+## Issue 2: Negative Default Value (-1) in Custom Setup (CRITICAL -- visible in your screenshot)
 
-**File:** `src/pages/questions/CreateQuestion.tsx` (730 lines)
+**What you see:** Your second screenshot shows "MCQ (Single)" with a value of "-1" in the Type Distribution panel.
 
-The manual question creation form handles each type with specific UI:
+**Root Cause:** In `TypeConfigPanel.tsx` (line 79-86), when custom mode is enabled, the distribution initialization calculates:
+```
+perType = Math.floor(totalCount / selectedTypes.length)
+newDist[firstType] = totalCount - perType * (selectedTypes.length - 1)
+```
+The Institute panel passes `totalCount={typeConfig?.mode === 'custom' ? 0 : questionCount}`. When custom mode activates, totalCount becomes 0, so:
+- `perType = Math.floor(0 / 2) = 0`
+- First type gets `0 - 0 * 1 = 0` ...but this doesn't explain -1.
 
-| Question Type | Manual Form Has | AI Generator Has |
-|---------------|----------------|------------------|
-| MCQ (Single) | 4 options + radio for correct | Nothing specific |
-| MCQ (Multiple) | 4 options + checkboxes | Nothing specific |
-| Numerical | Number input for answer | Nothing specific |
-| True/False | Radio: True/False | Nothing specific |
-| Fill in Blanks | Blank detection (\_\_\_), answer fields per blank | Nothing specific |
-| Assertion-Reasoning | Assertion textarea + Reason textarea + 4 standard options (A/B/C/D) | Nothing specific |
-| Paragraph | Passage textarea + sub-question count (1-10) + per-sub-question type selector (MCQ/Multiple/Numerical/Fill/T-F) | Nothing specific |
-| Matrix Match | Column A items + Column B items + matching | Not even available in Institute |
-| Short Answer | Text area | Nothing specific |
-| Long Answer | Text area | Nothing specific |
+Actually, the issue is more subtle: on initial toggle, `totalCount` is still the slider value (e.g., 5). But with 3 types selected (MCQ + Paragraph + Matrix), paragraph auto-calculates as `count * subQuestionsPerParagraph = 1 * 3 = 3`, matrix as 1, leaving `5 - 3*(3-1) = 5 - 6 = -1` for the first type.
+
+**Fix:** Add a `Math.max(0, ...)` guard on the first type's distribution calculation.
 
 ---
 
-## Pain Points Being Addressed
+## Issue 3: Section Ordering Inconsistency Between Panels
 
-1. **No complex type configuration**: When Paragraph/Assertion-Reasoning/Matrix Match are selected in AI Generator, there's zero guidance for the AI on HOW to structure them
-2. **No per-type quantity control**: Users can't specify "I want 5 MCQ and 3 Numerical and 2 Paragraph" -- it's all random
-3. **Institute is missing question types**: `.slice(0, 6)` hides 4 important types entirely
-4. **Inconsistency between panels**: SuperAdmin and Institute generators have different features, different layouts
+**SuperAdmin order:**
+1. Question Types
+2. Custom Setup Panel (TypeConfigPanel)
+3. Difficulty Mix
+4. Cognitive Types
+5. Number of Questions (hidden in custom mode)
+6. Additional Instructions
 
----
+**Institute order:**
+1. Course Selection
+2. Class/Subject/Chapter dropdowns
+3. Number of Questions (hidden in custom mode)
+4. Question Types
+5. Custom Setup Panel (TypeConfigPanel)
+6. Difficulty Mix
+7. Cognitive Types
+8. Additional Instructions
 
-## Proposed Solution: "Custom Setup" Toggle
+**Issue:** In the Institute panel, "Number of Questions" appears BEFORE Question Types, which is confusing -- users pick a count before seeing what types are available. In SuperAdmin, it's placed after types, which is more logical.
 
-### Core Concept
-Add a simple toggle between two modes:
-- **Quick Mode** (default) -- Current behavior. Select types, count, difficulty. AI decides distribution.
-- **Custom Setup** -- Expandable section that reveals per-type configuration ONLY for the types that need it.
-
-This keeps the simple experience for users who don't need fine control, while giving power users the options they need.
-
-### How It Works for Users
-
-When a user selects question types and toggles "Custom Setup":
-
-**For Simple Types** (MCQ Single, MCQ Multiple, Numerical, True/False, Short Answer, Long Answer):
-- Just a quantity field: "How many of this type?"
-
-**For Paragraph**:
-- How many paragraphs? (1-5)
-- Sub-questions per paragraph? (2-5)  
-- What sub-question types? (MCQ, Multiple Correct, Numerical, Fill in Blanks, True/False)
-
-**For Assertion-Reasoning**:
-- How many? (quantity field)
-- Subject focus (same as classification -- inherited)
-
-**For Matrix Match**:
-- How many matrix questions? (1-5)
-- Items per column? (3-5)
-
-**For Fill in Blanks**:
-- How many? (quantity field)
-- Blanks per question? (1-3)
+**Fix:** Move "Number of Questions" to appear AFTER Question Types in the Institute panel, consistent with SuperAdmin.
 
 ---
 
-## Impact Analysis
+## Issue 4: Layout Architecture Difference
 
-### Where Changes Happen in SuperAdmin Panel
+**SuperAdmin:** Uses a 2-column + 1-sidebar layout (`lg:col-span-2` for form, `lg:col-span-1` for classification). The form gets 66% width on desktop.
 
-**File:** `src/pages/questions/AIQuestions.tsx`
+**Institute:** Uses a 1-column + 2-column layout (`lg:col-span-1` for settings, `lg:col-span-2` for generated questions). The settings panel only gets 33% width.
 
-| Area | Current | After Change |
-|------|---------|-------------|
-| Question Types section | 10 checkboxes, flat list | Same checkboxes + "Custom Setup" toggle below |
-| Below question types | Nothing | Collapsible "Custom Setup" panel with per-type config |
-| Difficulty | Single dropdown (Easy/Mixed/Hard) | Multi-select badges (align with Institute) |
-| Cognitive Types | Missing entirely | Add multi-select (align with Institute) |
-| Number of Questions | Single input for total | In Quick mode: same. In Custom mode: auto-calculated from per-type counts |
+**Impact:** This is the fundamental cause of Issue 1. The Institute settings panel is squeezed into 1/3 of the screen, making all form elements cramped. Question type checkboxes, TypeConfigPanel inputs, and cognitive type chips all suffer.
 
-### Where Changes Happen in Institute Panel
-
-**File:** `src/pages/institute/questions/AIQuestions.tsx`
-
-| Area | Current | After Change |
-|------|---------|-------------|
-| Question Types | Only first 6 shown (`.slice(0,6)`) | Show ALL 10 types (remove the `.slice`) |
-| Below question types | Nothing | Same "Custom Setup" toggle and panel |
-| Question Count | Slider 1-20 | In Quick mode: same slider. In Custom mode: auto-calculated |
-| Rest of the form | Already has difficulty + cognitive | No change needed |
-
-### What Does NOT Change
-- Classification sidebar (both panels) -- untouched
-- Manual Create Question pages -- untouched  
-- Question Bank listing pages -- untouched
-- Question Card components -- untouched
-- Teacher Exam AI Generation Sheet -- separate component, untouched
-- Any other pages or components -- untouched
+**Fix:** This is an intentional layout difference (Institute shows generated questions alongside). The fix should focus on making the form elements adapt to the narrower width: use smaller text, single-column type grids, or collapsible sections. No layout restructure needed.
 
 ---
 
-## Technical Implementation Details
+## Issue 5: Mobile Responsiveness Gaps in Institute Panel
 
-### New Shared Component: `TypeConfigPanel`
+**TypeConfigPanel on mobile (inside Institute's narrow card):**
+- The `grid-cols-2` for paragraph/matrix/fill config inputs works but is very tight
+- Sub-question type chips wrap correctly but touch targets are small (py-1.5 = ~30px, below the 44px minimum)
+- Number inputs (`w-16 h-8`) are small for touch interaction
 
-Create a new reusable component that both SuperAdmin and Institute pages import:
+**SuperAdmin on mobile:**
+- Form has full width, so grid-cols-2 works well
+- Touch targets meet 44px minimum thanks to `p-2 sm:p-2.5` on type checkboxes
 
-**File:** `src/components/questions/TypeConfigPanel.tsx`
+**Fix:** Increase touch targets in TypeConfigPanel: sub-question chips should be `py-2` minimum, number inputs should be `h-10` on mobile.
 
-This component receives:
-- `selectedTypes`: which question types are checked
-- `totalCount`: the total question count
-- `onConfigChange`: callback with the configuration object
+---
 
-It renders:
-- A toggle: "Let AI Decide" vs "Custom Setup"
-- When "Custom Setup" is active, shows per-type configuration cards
+## Issue 6: "questions" Label Hidden on Mobile But Layout Not Adjusted
 
-### Configuration Data Structure
+In TypeConfigPanel (line 254), the "questions" text label is `hidden sm:inline` with `w-14`. On mobile, this text disappears but the `w-14` space is still reserved in the flex container since it's on the span, not the container.
 
-```typescript
-interface TypeConfig {
-  mode: 'auto' | 'custom';
-  // Per-type quantities (only in custom mode)
-  typeDistribution?: Record<QuestionType, number>;
-  // Paragraph-specific
-  paragraphConfig?: {
-    count: number;           // How many paragraphs
-    subQuestionsPerParagraph: number;  // 2-5
-    subQuestionTypes: string[];        // Which types for sub-questions
-  };
-  // Matrix Match specific
-  matrixConfig?: {
-    count: number;           // How many matrix questions
-    itemsPerColumn: number;  // 3-5 items
-  };
-  // Fill in Blanks specific
-  fillConfig?: {
-    count: number;
-    blanksPerQuestion: number; // 1-3
-  };
-}
+**Fix:** Wrap the label in a container that is `hidden sm:flex` to fully remove it from layout on mobile.
+
+---
+
+## Issue 7: Missing Responsive Classes in Institute Panel
+
+The Institute panel's question type checkboxes use:
+```tsx
+className="flex items-center gap-2 p-2 rounded-lg border cursor-pointer transition-all text-sm"
 ```
 
-### Phase-Wise Implementation
-
-**Phase 1: SuperAdmin Panel**
-
-Step 1: Create the shared `TypeConfigPanel` component
-Step 2: Integrate into `src/pages/questions/AIQuestions.tsx`
-Step 3: Add missing Difficulty multi-select and Cognitive Type selection (align with Institute)
-Step 4: Wire up the configuration to the generate function
-
-**Phase 2: Institute Panel**
-
-Step 1: Remove `.slice(0, 6)` to show all 10 question types
-Step 2: Import and integrate the same `TypeConfigPanel` component
-Step 3: Wire up configuration to generate function (already has most infrastructure)
-
-### UI Design for Custom Setup Panel
-
-```
-+--------------------------------------------------+
-| Question Types *                                  |
-| [x] MCQ Single  [x] Numerical  [ ] True/False    |
-| [x] Paragraph   [ ] Matrix     [x] Assertion     |
-| [x] Fill Blanks  [ ] Short     [ ] Long Answer   |
-|                                                   |
-| 4 types selected                                  |
-|                                                   |
-| ┌──────────────────────────────────────────────┐  |
-| │ ○ Let AI Decide    ● Custom Setup            │  |
-| └──────────────────────────────────────────────┘  |
-|                                                   |
-| ▼ Custom Setup                                    |
-| ┌──────────────────────────────────────────────┐  |
-| │ MCQ Single              [  3  ] questions    │  |
-| │ ─────────────────────────────────────────    │  |
-| │ Numerical               [  2  ] questions    │  |
-| │ ─────────────────────────────────────────    │  |
-| │ Paragraph                                    │  |
-| │   Paragraphs:          [  2  ]               │  |
-| │   Questions/paragraph: [  3  ]               │  |
-| │   Sub-question types:                        │  |
-| │   [x] MCQ  [x] Numerical  [ ] Fill          │  |
-| │ ─────────────────────────────────────────    │  |
-| │ Assertion-Reasoning     [  2  ] questions    │  |
-| │ ─────────────────────────────────────────    │  |
-| │ Fill in Blanks          [  2  ] questions    │  |
-| │   Blanks per question:  [  2  ]              │  |
-| │                                              │  |
-| │ Total: 15 questions                          │  |
-| └──────────────────────────────────────────────┘  |
-+--------------------------------------------------+
+While SuperAdmin uses responsive classes:
+```tsx
+className="flex items-center gap-1.5 sm:gap-2 p-2 sm:p-2.5 rounded-lg sm:rounded-xl border cursor-pointer transition-all"
 ```
 
-On mobile, this renders as a full-width stacked layout within the existing form flow.
+**Fix:** Align Institute's type checkbox styling with SuperAdmin's responsive approach (smaller gaps/padding on mobile, larger on desktop).
 
-### Files to Create
+---
 
-| File | Purpose |
-|------|---------|
-| `src/components/questions/TypeConfigPanel.tsx` | Shared "Custom Setup" component |
+## Issue 8: TypeConfigPanel totalCount Logic When Switching Modes
+
+When the user toggles Custom Setup ON and then OFF, the `typeConfig.mode` switches back to "auto", but `typeDistribution` still contains stale per-type values. The parent page correctly shows the slider again, but the next time custom mode is toggled ON, the old distribution values persist.
+
+**Fix:** Reset `typeDistribution` to empty when switching back to auto mode.
+
+---
+
+## Summary Table
+
+| Issue | Severity | Panel | Status |
+|-------|----------|-------|--------|
+| 1. Label truncation ("MC...", "Para...") | Critical | Institute | Needs fix |
+| 2. Negative value (-1) in distribution | Critical | Both | Needs fix |
+| 3. Section ordering inconsistency | Medium | Institute | Needs fix |
+| 4. Layout width difference (1/3 vs 2/3) | Info | Institute | By design, adapt components |
+| 5. Touch targets below 44px in TypeConfigPanel | Medium | Both | Needs fix |
+| 6. Hidden "questions" label layout gap | Low | Both | Needs fix |
+| 7. Missing responsive classes in Institute | Medium | Institute | Needs fix |
+| 8. Stale distribution on mode toggle | Low | Both | Needs fix |
+
+---
+
+## Proposed Fix Plan
+
+### Phase 1: Institute Panel Fixes (Priority -- matches your screenshots)
+
+**Step 1 -- Fix label truncation (Issue 1 + 7):**
+- Change Institute type grid to `grid-cols-1 sm:grid-cols-2`
+- Add responsive text classes: `text-xs sm:text-sm`
+- Add responsive padding: `p-2 sm:p-2.5`
+
+**Step 2 -- Fix negative value bug (Issue 2):**
+- In `TypeConfigPanel.tsx`, add `Math.max(0, ...)` guard on first type calculation
+- Initialize distribution with minimum of 1 per simple type
+
+**Step 3 -- Fix section ordering (Issue 3):**
+- Move "Number of Questions" slider to appear AFTER "Question Types" in Institute panel
+
+### Phase 2: Shared Component Fixes (Both panels)
+
+**Step 4 -- Fix touch targets (Issue 5):**
+- Sub-question type chips: increase to `py-2 min-h-[44px]`
+- Number inputs: `h-8 sm:h-10` for better mobile tapping
+
+**Step 5 -- Fix "questions" label layout (Issue 6):**
+- Change to `hidden sm:flex` wrapper instead of just `hidden sm:inline` on text
+
+**Step 6 -- Fix stale distribution (Issue 8):**
+- Reset `typeDistribution` to `{}` when switching from custom back to auto mode
 
 ### Files to Modify
 
-| File | Change | Risk |
-|------|--------|------|
-| `src/pages/questions/AIQuestions.tsx` | Add TypeConfigPanel, add Difficulty multi-select, add Cognitive Types | Low -- only this page affected |
-| `src/pages/institute/questions/AIQuestions.tsx` | Remove `.slice(0,6)`, add TypeConfigPanel | Low -- only this page affected |
+| File | Changes |
+|------|---------|
+| `src/components/questions/TypeConfigPanel.tsx` | Fix Issues 2, 5, 6, 8 |
+| `src/pages/institute/questions/AIQuestions.tsx` | Fix Issues 1, 3, 7 |
 
-### Files NOT Modified (Safety Confirmation)
-- `src/pages/questions/CreateQuestion.tsx` -- Manual creation, untouched
-- `src/pages/institute/questions/CreateQuestion.tsx` -- Manual creation, untouched
-- `src/components/questions/QuestionCard.tsx` -- Display component, untouched
-- `src/data/questionsData.ts` -- Data types, untouched
-- `src/components/teacher/exams/AIGenerationSheet.tsx` -- Teacher exam AI, untouched
+### Files NOT Modified
+- `src/pages/questions/AIQuestions.tsx` -- SuperAdmin form is already well-structured
 - All other pages and components -- untouched
-
----
-
-## Summary
-
-| What | Description |
-|------|-------------|
-| **Problem** | AI Generator has no configuration for complex question types (Paragraph, Matrix Match, Assertion-Reasoning) and no per-type quantity control |
-| **Solution** | Add a "Custom Setup" toggle that reveals type-specific configuration only when needed |
-| **Affected in SuperAdmin** | Only `src/pages/questions/AIQuestions.tsx` + new shared component |
-| **Affected in Institute** | Only `src/pages/institute/questions/AIQuestions.tsx` (reuses same shared component) |
-| **User Experience** | Default stays simple (Quick mode). Advanced users toggle "Custom Setup" for fine control |
-| **Phase 1** | SuperAdmin panel -- create shared component + integrate |
-| **Phase 2** | Institute panel -- show all types + integrate same component |
 
