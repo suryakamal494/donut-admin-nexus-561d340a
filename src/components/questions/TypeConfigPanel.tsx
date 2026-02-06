@@ -76,17 +76,9 @@ export const TypeConfigPanel = ({
   // Initialize distribution when types change
   useEffect(() => {
     if (isCustom && selectedTypes.length > 0) {
-      const perType = Math.max(1, Math.floor(totalCount / selectedTypes.length));
       const newDist: Partial<Record<QuestionType, number>> = {};
-      selectedTypes.forEach((type, i) => {
-        // Give remainder to first type
-        newDist[type] =
-          i === 0
-            ? totalCount - perType * (selectedTypes.length - 1)
-            : perType;
-      });
 
-      // Override paragraph count from paragraphConfig
+      // Override complex types from their configs first
       if (selectedTypes.includes("paragraph")) {
         const pConfig = config.paragraphConfig;
         newDist["paragraph"] = pConfig.count * pConfig.subQuestionsPerParagraph;
@@ -97,6 +89,18 @@ export const TypeConfigPanel = ({
       if (selectedTypes.includes("fill_blanks")) {
         newDist["fill_blanks"] = config.fillConfig.count;
       }
+
+      // Calculate remaining budget for simple types
+      const complexTotal = Object.values(newDist).reduce((sum, v) => sum + (v || 0), 0);
+      const simpleSelectedTypes = selectedTypes.filter(t => !COMPLEX_TYPES.includes(t));
+      const remaining = Math.max(0, totalCount - complexTotal);
+      const perSimple = simpleSelectedTypes.length > 0 ? Math.max(1, Math.floor(remaining / simpleSelectedTypes.length)) : 0;
+
+      simpleSelectedTypes.forEach((type, i) => {
+        newDist[type] = i === 0
+          ? Math.max(0, remaining - perSimple * (simpleSelectedTypes.length - 1))
+          : perSimple;
+      });
 
       setConfig((prev) => ({ ...prev, typeDistribution: newDist }));
     }
@@ -201,6 +205,7 @@ export const TypeConfigPanel = ({
               setConfig((prev) => ({
                 ...prev,
                 mode: checked ? "custom" : "auto",
+                typeDistribution: checked ? prev.typeDistribution : {},
               }));
               if (checked) setIsOpen(true);
             }}
@@ -235,9 +240,9 @@ export const TypeConfigPanel = ({
               {simpleTypes.map((type) => (
                 <div
                   key={type}
-                  className="flex items-center justify-between py-2.5 border-b border-border/30 last:border-b-0"
+                  className="flex items-center justify-between py-2.5 min-h-[44px] border-b border-border/30 last:border-b-0"
                 >
-                  <span className="text-sm font-medium">
+                  <span className="text-xs sm:text-sm font-medium">
                     {questionTypeLabels[type]}
                   </span>
                   <div className="flex items-center gap-2">
@@ -249,9 +254,9 @@ export const TypeConfigPanel = ({
                       onChange={(e) =>
                         updateDistribution(type, parseInt(e.target.value) || 0)
                       }
-                      className="w-16 h-8 text-center text-sm"
+                      className="w-16 h-8 sm:h-10 text-center text-sm"
                     />
-                    <span className="text-xs text-muted-foreground w-14 hidden sm:inline">
+                    <span className="text-xs text-muted-foreground hidden sm:inline">
                       questions
                     </span>
                   </div>
@@ -320,7 +325,7 @@ export const TypeConfigPanel = ({
                         <div
                           key={sub.id}
                           className={cn(
-                            "flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border cursor-pointer transition-all text-xs",
+                            "flex items-center gap-1.5 px-2.5 py-2 min-h-[44px] rounded-lg border cursor-pointer transition-all text-xs",
                             config.paragraphConfig.subQuestionTypes.includes(
                               sub.id
                             )
@@ -333,7 +338,7 @@ export const TypeConfigPanel = ({
                             checked={config.paragraphConfig.subQuestionTypes.includes(
                               sub.id
                             )}
-                            className="h-3 w-3"
+                            className="h-3.5 w-3.5"
                           />
                           <span>{sub.label}</span>
                         </div>
