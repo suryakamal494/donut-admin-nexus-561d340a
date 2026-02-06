@@ -33,6 +33,7 @@ import { getSubjectsForCourse, getChaptersForCourseBySubject, subjects as master
 import { classes } from "@/data/mockData";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { TypeConfigPanel, TypeConfig } from "@/components/questions/TypeConfigPanel";
 
 const difficultyLevels = ["easy", "medium", "hard"];
 
@@ -63,6 +64,7 @@ const AIQuestions = () => {
   const [difficultyMix, setDifficultyMix] = useState<string[]>(["medium"]);
   const [selectedCognitiveTypes, setSelectedCognitiveTypes] = useState<string[]>(["conceptual"]);
   const [additionalContext, setAdditionalContext] = useState("");
+  const [typeConfig, setTypeConfig] = useState<TypeConfig | null>(null);
 
   // Get the selected track details
   const selectedTrack = assignedTracks.find(t => t.id === selectedCourse);
@@ -345,27 +347,28 @@ const AIQuestions = () => {
                 </div>
               )}
 
-              {/* Question Count */}
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <Label>Number of Questions</Label>
-                  <Badge variant="secondary">{questionCount}</Badge>
+              {/* Question Count - hidden in custom mode */}
+              {(!typeConfig || typeConfig.mode === "auto") && (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <Label>Number of Questions</Label>
+                    <Badge variant="secondary">{questionCount}</Badge>
+                  </div>
+                  <Slider
+                    value={[questionCount]}
+                    onValueChange={([v]) => setQuestionCount(v)}
+                    min={1}
+                    max={20}
+                    step={1}
+                  />
                 </div>
-                <Slider
-                  value={[questionCount]}
-                  onValueChange={([v]) => setQuestionCount(v)}
-                  min={1}
-                  max={20}
-                  step={1}
-                />
-              </div>
+              )}
 
               {/* Question Types */}
               <div className="space-y-3">
                 <Label>Question Types *</Label>
                 <div className="grid grid-cols-2 gap-2">
                   {(Object.entries(questionTypeLabels) as [QuestionType, string][])
-                    .slice(0, 6)
                     .map(([type, label]) => (
                       <div
                         key={type}
@@ -382,7 +385,21 @@ const AIQuestions = () => {
                       </div>
                     ))}
                 </div>
+                {selectedTypes.length > 0 && (
+                  <p className="text-xs text-muted-foreground">
+                    {selectedTypes.length} type(s) selected
+                  </p>
+                )}
               </div>
+
+              {/* Custom Setup Panel */}
+              {selectedTypes.length > 0 && (
+                <TypeConfigPanel
+                  selectedTypes={selectedTypes}
+                  totalCount={typeConfig?.mode === 'custom' ? 0 : questionCount}
+                  onConfigChange={setTypeConfig}
+                />
+              )}
 
               {/* Difficulty */}
               <div className="space-y-3">
