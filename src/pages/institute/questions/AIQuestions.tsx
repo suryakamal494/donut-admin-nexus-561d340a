@@ -347,6 +347,43 @@ const AIQuestions = () => {
                 </div>
               )}
 
+              {/* Question Types */}
+              <div className="space-y-3">
+                <Label>Question Types *</Label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 sm:gap-2">
+                  {(Object.entries(questionTypeLabels) as [QuestionType, string][])
+                    .map(([type, label]) => (
+                      <div
+                        key={type}
+                        className={cn(
+                          "flex items-center gap-1.5 sm:gap-2 p-2 sm:p-2.5 rounded-lg sm:rounded-xl border cursor-pointer transition-all text-xs sm:text-sm min-h-[44px]",
+                          selectedTypes.includes(type)
+                            ? "border-primary bg-primary/5"
+                            : "border-border hover:border-primary/30"
+                        )}
+                        onClick={() => handleTypeToggle(type)}
+                      >
+                        <Checkbox checked={selectedTypes.includes(type)} className="shrink-0" />
+                        <span>{label}</span>
+                      </div>
+                    ))}
+                </div>
+                {selectedTypes.length > 0 && (
+                  <p className="text-xs text-muted-foreground">
+                    {selectedTypes.length} type(s) selected
+                  </p>
+                )}
+              </div>
+
+              {/* Custom Setup Panel */}
+              {selectedTypes.length > 0 && (
+                <TypeConfigPanel
+                  selectedTypes={selectedTypes}
+                  totalCount={questionCount}
+                  onConfigChange={setTypeConfig}
+                />
+              )}
+
               {/* Question Count - hidden in custom mode */}
               {(!typeConfig || typeConfig.mode === "auto") && (
                 <div className="space-y-3">
@@ -362,43 +399,6 @@ const AIQuestions = () => {
                     step={1}
                   />
                 </div>
-              )}
-
-              {/* Question Types */}
-              <div className="space-y-3">
-                <Label>Question Types *</Label>
-                <div className="grid grid-cols-2 gap-2">
-                  {(Object.entries(questionTypeLabels) as [QuestionType, string][])
-                    .map(([type, label]) => (
-                      <div
-                        key={type}
-                        className={cn(
-                          "flex items-center gap-2 p-2 rounded-lg border cursor-pointer transition-all text-sm",
-                          selectedTypes.includes(type)
-                            ? "border-primary bg-primary/5"
-                            : "border-border hover:border-primary/30"
-                        )}
-                        onClick={() => handleTypeToggle(type)}
-                      >
-                        <Checkbox checked={selectedTypes.includes(type)} />
-                        <span className="truncate">{label}</span>
-                      </div>
-                    ))}
-                </div>
-                {selectedTypes.length > 0 && (
-                  <p className="text-xs text-muted-foreground">
-                    {selectedTypes.length} type(s) selected
-                  </p>
-                )}
-              </div>
-
-              {/* Custom Setup Panel */}
-              {selectedTypes.length > 0 && (
-                <TypeConfigPanel
-                  selectedTypes={selectedTypes}
-                  totalCount={typeConfig?.mode === 'custom' ? 0 : questionCount}
-                  onConfigChange={setTypeConfig}
-                />
               )}
 
               {/* Difficulty */}
@@ -429,19 +429,19 @@ const AIQuestions = () => {
                   <Brain className="h-4 w-4 text-primary" />
                   <Label>Cognitive Types *</Label>
                 </div>
-                <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 sm:gap-2">
                   {cognitiveTypes.map((cog) => (
                     <div
                       key={cog.id}
                       className={cn(
-                        "flex items-center gap-2 p-2 rounded-lg border cursor-pointer transition-all text-sm",
+                        "flex items-center gap-1.5 sm:gap-2 p-2 sm:p-2.5 rounded-lg sm:rounded-xl border cursor-pointer transition-all text-xs sm:text-sm min-h-[44px]",
                         selectedCognitiveTypes.includes(cog.id)
                           ? "border-primary bg-primary/5"
                           : "border-border hover:border-primary/30"
                       )}
                       onClick={() => handleCognitiveToggle(cog.id)}
                     >
-                      <Checkbox checked={selectedCognitiveTypes.includes(cog.id)} />
+                      <Checkbox checked={selectedCognitiveTypes.includes(cog.id)} className="shrink-0" />
                       <span>{cog.label}</span>
                     </div>
                   ))}
