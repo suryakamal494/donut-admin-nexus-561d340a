@@ -1,10 +1,11 @@
 import { useState } from "react";
-import { Sparkles, Wand2, ArrowLeft, Info } from "lucide-react";
+import { Sparkles, Wand2, ArrowLeft, Info, Brain } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
 import { PageHeader } from "@/components/ui/page-header";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -15,6 +16,19 @@ import { ContentSourceType } from "@/components/parameters/SourceTypeSelector";
 import { getActiveCurriculums, getPublishedCourses, getAllCourseChapters } from "@/data/masterData";
 import { getChaptersByClassAndSubject, getTopicsByChapter } from "@/data/cbseMasterData";
 import { classes, subjects } from "@/data/mockData";
+import { TypeConfigPanel, TypeConfig } from "@/components/questions/TypeConfigPanel";
+import { cn } from "@/lib/utils";
+
+const difficultyLevels = ["easy", "medium", "hard"];
+
+const cognitiveTypes = [
+  { id: "logical", label: "Logical" },
+  { id: "analytical", label: "Analytical" },
+  { id: "conceptual", label: "Conceptual" },
+  { id: "numerical", label: "Numerical" },
+  { id: "application", label: "Application" },
+  { id: "memory", label: "Memory" },
+];
 
 const AIQuestions = () => {
   const navigate = useNavigate();
@@ -31,9 +45,11 @@ const AIQuestions = () => {
   
   // Question generation state
   const [selectedTypes, setSelectedTypes] = useState<QuestionType[]>(["mcq_single"]);
-  const [difficulty, setDifficulty] = useState("mixed");
+  const [difficultyMix, setDifficultyMix] = useState<string[]>(["medium"]);
+  const [selectedCognitiveTypes, setSelectedCognitiveTypes] = useState<string[]>(["conceptual"]);
   const [questionCount, setQuestionCount] = useState("10");
   const [instructions, setInstructions] = useState("");
+  const [typeConfig, setTypeConfig] = useState<TypeConfig | null>(null);
 
   const activeCurriculums = getActiveCurriculums();
   const publishedCourses = getPublishedCourses();
@@ -76,6 +92,18 @@ const AIQuestions = () => {
     );
   };
 
+  const handleDifficultyToggle = (diff: string) => {
+    setDifficultyMix((prev) =>
+      prev.includes(diff) ? prev.filter((d) => d !== diff) : [...prev, diff]
+    );
+  };
+
+  const handleCognitiveToggle = (type: string) => {
+    setSelectedCognitiveTypes((prev) =>
+      prev.includes(type) ? prev.filter((t) => t !== type) : [...prev, type]
+    );
+  };
+
   const handleGenerate = () => {
     if (sourceType === 'curriculum' && (!selectedClassId || !selectedSubjectId)) {
       toast.error("Please select class and subject");
@@ -87,6 +115,14 @@ const AIQuestions = () => {
     }
     if (selectedTypes.length === 0) {
       toast.error("Please select at least one question type");
+      return;
+    }
+    if (difficultyMix.length === 0) {
+      toast.error("Please select at least one difficulty level");
+      return;
+    }
+    if (selectedCognitiveTypes.length === 0) {
+      toast.error("Please select at least one cognitive type");
       return;
     }
 
@@ -184,21 +220,67 @@ const AIQuestions = () => {
                 )}
               </div>
 
-              {/* Difficulty & Count Row */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Difficulty Level</Label>
-                  <Select value={difficulty} onValueChange={setDifficulty}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="easy">Mostly Easy</SelectItem>
-                      <SelectItem value="mixed">Mixed (Recommended)</SelectItem>
-                      <SelectItem value="hard">Mostly Hard</SelectItem>
-                    </SelectContent>
-                  </Select>
+              {/* Custom Setup Panel */}
+              {selectedTypes.length > 0 && (
+                <TypeConfigPanel
+                  selectedTypes={selectedTypes}
+                  totalCount={parseInt(questionCount) || 10}
+                  onConfigChange={setTypeConfig}
+                />
+              )}
+
+              {/* Difficulty Mix (multi-select badges) */}
+              <div className="space-y-2 sm:space-y-3">
+                <Label className="text-sm">Difficulty Mix <span className="text-destructive">*</span></Label>
+                <div className="flex gap-2">
+                  {difficultyLevels.map((diff) => (
+                    <Badge
+                      key={diff}
+                      variant={difficultyMix.includes(diff) ? "default" : "outline"}
+                      className={cn(
+                        "cursor-pointer capitalize flex-1 justify-center py-2 text-xs sm:text-sm",
+                        difficultyMix.includes(diff) && diff === "easy" && "bg-emerald-500 hover:bg-emerald-600",
+                        difficultyMix.includes(diff) && diff === "medium" && "bg-amber-500 hover:bg-amber-600",
+                        difficultyMix.includes(diff) && diff === "hard" && "bg-red-500 hover:bg-red-600"
+                      )}
+                      onClick={() => handleDifficultyToggle(diff)}
+                    >
+                      {diff}
+                    </Badge>
+                  ))}
                 </div>
+              </div>
+
+              {/* Cognitive Types */}
+              <div className="space-y-2 sm:space-y-3">
+                <div className="flex items-center gap-2">
+                  <Brain className="h-4 w-4 text-primary" />
+                  <Label className="text-sm">Cognitive Types <span className="text-destructive">*</span></Label>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 sm:gap-2">
+                  {cognitiveTypes.map((cog) => (
+                    <div
+                      key={cog.id}
+                      className={cn(
+                        "flex items-center gap-1.5 sm:gap-2 p-2 sm:p-2.5 rounded-lg sm:rounded-xl border cursor-pointer transition-all text-xs sm:text-sm",
+                        selectedCognitiveTypes.includes(cog.id)
+                          ? "border-primary bg-primary/5"
+                          : "border-border/50 hover:border-primary/20"
+                      )}
+                      onClick={() => handleCognitiveToggle(cog.id)}
+                    >
+                      <Checkbox
+                        checked={selectedCognitiveTypes.includes(cog.id)}
+                        className="h-3.5 w-3.5 sm:h-4 sm:w-4"
+                      />
+                      <span>{cog.label}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Number of Questions (only shown in auto mode) */}
+              {(!typeConfig || typeConfig.mode === "auto") && (
                 <div className="space-y-2">
                   <Label>Number of Questions</Label>
                   <Input
@@ -209,7 +291,7 @@ const AIQuestions = () => {
                     onChange={(e) => setQuestionCount(e.target.value)}
                   />
                 </div>
-              </div>
+              )}
 
               {/* Additional Instructions */}
               <div className="space-y-2">
