@@ -166,6 +166,44 @@ Consumers:
 
 ---
 
+## Downstream Impact Within SuperAdmin
+
+Master Data is consumed by 4 modules within the SuperAdmin panel itself. Understanding this downstream impact is critical for testing and maintenance.
+
+### 1. Institute Management
+
+- **Where**: Add Institute Wizard (Step 4), Assign Curriculum/Courses dialog from institute action menu
+- **What**: Curriculum checkboxes and Course checkboxes are populated from the active curriculums and published courses in master data
+- **Behavior**: Multi-select checkboxes, no cascade dependency between selections
+- **Impact**: Determines which academic content an institute can access
+
+### 2. Question Bank
+
+- **Where**: Create Question (classification panel), AI Question Generator (classification), PDF Upload (classification), Question listing page (filters)
+- **Creation Flow (Curriculum mode)**: Curriculum → Class → Subject → Chapter → Topic → Difficulty → Cognitive Type
+- **Creation Flow (Course mode)**: Course → Subject → Chapter → Topic → Difficulty → Cognitive Type
+- **Listing Filters**: Subject dropdown and Class dropdown on the question listing page are populated from master data
+- **Cascade Behavior**:
+  - Changing Class resets Subject, Chapter, and Topic selections
+  - Changing Subject resets Chapter and Topic selections
+  - Changing Chapter resets Topic selection
+
+### 3. Content Library
+
+- **Where**: Create Content (classification panel), AI Content Generator, Content listing page (filters)
+- **Creation Flow (Curriculum mode)**: Curriculum → Class → Subject → Chapter → Topic
+- **Creation Flow (Course mode)**: Course → Subject → Chapter → Topic
+- **Listing Filters**: Class, Subject, and Chapter dropdowns on the content listing page are populated from master data
+- **Key Difference**: Content Library does NOT include Difficulty or Cognitive Type fields (these are exclusive to Question Bank)
+
+### 4. Exams
+
+- **Where**: Create Grand Test Step 1 (Content Source selection)
+- **What**: Curriculum dropdown populated from active curriculums, Course dropdown populated from published courses
+- **Key Distinction**: PYP (Previous Year Paper) creation uses Exam Body selection (JEE Main, JEE Advanced, NEET) and does NOT use the curriculum/course dropdown directly
+
+---
+
 ## Cross-Login Connections
 
 | This Feature | Connects To | Direction | What Happens |

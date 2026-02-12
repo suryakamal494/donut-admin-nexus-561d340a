@@ -195,6 +195,48 @@ Consumers:
 
 ---
 
+## Downstream Impact Within SuperAdmin
+
+Courses are consumed differently from Curriculums in downstream modules. The key structural difference is that Course-mode classification skips the Class level entirely.
+
+### How Course-Mode Classification Works
+
+When a downstream module (Question Bank, Content Library, Exams) operates in Course mode, the selection path is:
+
+**Course → Subject → Chapter → Topic** (no Class level)
+
+The Chapter dropdown in Course mode combines two sources:
+- **Mapped chapters** (~80%): Chapters pulled from curriculum trees via course-chapter mappings
+- **Course-owned chapters** (~20%): Chapters created exclusively for this course, marked with a "Course Exclusive" label
+
+### 1. Question Bank (Course Mode)
+
+- **Where**: Create Question, AI Question Generator, PDF Upload — when Source Type is set to "Course"
+- **Flow**: Course → Subject → Chapter → Topic → Difficulty → Cognitive Type
+- **Chapter Source**: Combined mapped + course-owned chapters for the selected course and subject
+- **Distinct Marking**: Course-exclusive chapters are visually identifiable in the dropdown
+
+### 2. Content Library (Course Mode)
+
+- **Where**: Create Content, AI Content Generator — when Source Type is set to "Course"
+- **Flow**: Course → Subject → Chapter → Topic
+- **Chapter Source**: Same combined mapped + course-owned chapters
+- **Key Difference**: No Difficulty or Cognitive Type fields (exclusive to Question Bank)
+
+### 3. Exams (Course Mode)
+
+- **Where**: Grand Test creation Step 1 when Content Source is set to "Course"
+- **What**: Course dropdown populated from published courses only
+- **Note**: PYP creation does NOT use Course selection — it uses Exam Body (JEE/NEET)
+
+### 4. Institute Management
+
+- **Where**: Add Institute Wizard Step 4, Assign dialog
+- **What**: Course checkboxes populated from published courses
+- **Behavior**: Simple multi-select assignment, no cascade
+
+---
+
 ## Cross-Login Connections
 
 | This Feature | Connects To | Direction | What Happens |
