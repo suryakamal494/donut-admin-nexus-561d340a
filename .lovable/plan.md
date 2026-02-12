@@ -1,64 +1,101 @@
 
 
-# Reorder SuperAdmin Intra-Login Test Cases to Match Sidebar Flow
+# Restructure Intra-Login Tests: Workflow Format (Not Smoke Test Format)
 
-## Problem
+## The Problem
 
-The test case sections are scattered randomly and have duplicates (e.g., "Curriculum -> Question Bank" appears twice -- original SA-IL-004 to 006 AND extended SA-IL-027 to 041). The order does not follow the SuperAdmin sidebar navigation flow.
-
-## SuperAdmin Sidebar Order (from code)
-
-1. Dashboard
-2. Institutes (All Institutes, Tier Management)
-3. Users
-4. Master Data (Curriculum, Courses)
-5. Roles & Access
-6. Question Bank
-7. Exams
-8. Content Library
-
-## New Section Order (following sidebar flow)
-
-The sections will be reorganized by **source module** in sidebar order. Duplicate sections will be merged. Test IDs will be renumbered sequentially.
+Current test cases are written as atomic smoke-test checks:
 
 ```text
-Section Order (Source -> Target):
-
-1. Institutes -> Users (SA-IL-001 to 002)
-2. Institutes -> Curriculum (SA-IL-003 to 004)
-3. Roles -> Users (SA-IL-005 to 007)
-4. Master Data (Curriculum) -> Courses (SA-IL-008 to 010)
-5. Master Data (Curriculum) -> Question Bank [MERGED] (SA-IL-011 to 023)
-6. Master Data (Courses) -> Question Bank (SA-IL-024 to 028)
-7. Master Data (Curriculum) -> Content Library [MERGED] (SA-IL-029 to 035)
-8. Master Data (Courses) -> Content Library (SA-IL-036 to 037)
-9. Master Data (Curriculum/Courses) -> Exams (SA-IL-038 to 040)
-10. Master Data (Curriculum/Courses) -> AI Generators (SA-IL-041 to 046)
-11. Master Data Deletion/Edit Impact (SA-IL-047 to 051)
-12. Question Bank -> Exams (SA-IL-052 to 056)
-13. Content Library -> Exams (SA-IL-057)
-14. Content Library -> Institutes (SA-IL-058)
-15. Questions -> Institutes (SA-IL-059)
-16. Exams -> Institutes (SA-IL-060 to 061)
+SA-IL-011: Curriculum dropdown shows active curriculums
+SA-IL-012: Class dropdown populates after curriculum
+SA-IL-013: Subject dropdown populates after class
+SA-IL-014: Chapter dropdown populates after subject
+SA-IL-015: Topic dropdown populates after chapter
+... (13 rows for one section)
 ```
 
-## Key Changes
+This creates confusion for testers. They see 13 disconnected items instead of understanding one workflow. Intra-login tests are **workflow tests** -- they verify that data flows correctly between modules. The test case format should reflect that.
 
-- **Merged duplicates**: "Curriculum -> Question Bank" (old SA-IL-004 to 006) merged with "Curriculum -> Question Bank Extended" (old SA-IL-027 to 036) into one unified section
-- **Merged duplicates**: "Curriculum -> Content Library" (old SA-IL-001 to 003) merged with "Curriculum -> Content Library Extended" (old SA-IL-042 to 045) into one unified section
-- **Reordered**: Institutes and Roles sections moved to the top (they come first in sidebar)
-- **Reordered**: Master Data impact sections grouped together in the middle
-- **Reordered**: Question Bank -> Exams and Content Library -> Exams moved after all Master Data sections
-- **Renumbered**: All test IDs renumbered SA-IL-001 through SA-IL-061 sequentially
-- **Updated execution order**: Matches the new section flow
+## The Solution
+
+Rewrite each section as **workflow test cases** where one test case = one complete flow with embedded checkpoints.
+
+### Example: Before vs After
+
+**BEFORE (smoke-test style, 13 rows):**
+
+| Test ID | Test Case |
+|---------|-----------|
+| SA-IL-011 | Curriculum dropdown shows active curriculums |
+| SA-IL-012 | Class dropdown populates after curriculum |
+| SA-IL-013 | Subject dropdown populates after class |
+| SA-IL-014 | Chapter dropdown populates after subject |
+| SA-IL-015 | Topic dropdown populates after chapter |
+| SA-IL-016 | Cascade reset: changing class resets children |
+| SA-IL-017 | Cascade reset: changing subject resets children |
+| SA-IL-018 | New chapter appears in question creation |
+| SA-IL-019 | Subject filter on listing page |
+| SA-IL-020 | Class filter on listing page |
+| ... | ... |
+
+**AFTER (workflow style, ~4 tests):**
+
+| Test ID | Workflow | Precondition | Steps & Checkpoints | Expected Result |
+|---------|----------|--------------|---------------------|-----------------|
+| SA-IL-011 | Curriculum-mode cascade flow in Question Bank | Curriculum with full hierarchy exists | 1. Go to Question Bank, create question. 2. Select Curriculum mode. 3. Pick a curriculum -- verify only active curriculums shown. 4. Pick a class -- verify classes for that curriculum populate. 5. Pick a subject -- verify subjects for that class populate. 6. Pick a chapter -- verify chapters for that subject populate. 7. Pick a topic -- verify topics for that chapter populate. 8. Now change the class selection -- verify Subject, Chapter, Topic all reset to empty. 9. Make a full selection again, change subject -- verify Chapter, Topic reset. | Complete cascade works top-to-bottom; changing any parent resets all children below it |
+| SA-IL-012 | New master data reflects in Question Bank | Question creation page open | 1. Note current chapters for a subject. 2. Go to Master Data, add a new chapter under that subject. 3. Return to Question Bank, create question, navigate to same subject. 4. Verify new chapter appears in dropdown. 5. Add a topic under that chapter in Master Data. 6. Return, select the new chapter -- verify topic appears. | Newly created chapters and topics are immediately available in Question Bank dropdowns |
+| SA-IL-013 | Question Bank listing filters match master data | Questions exist with various classifications | 1. Go to Question Bank listing page. 2. Open Class filter dropdown -- verify it matches master data classes. 3. Open Subject filter dropdown -- verify it matches master data subjects. 4. Filter by a specific class -- verify only questions of that class shown. 5. Filter by a specific subject -- verify correct filtering. | Listing page filter dropdowns are populated from and stay in sync with master data |
+
+## New Structure for All Sections
+
+The table format changes from 5 columns to a workflow-oriented format:
+
+| Column | Purpose |
+|--------|---------|
+| Test ID | Unique identifier |
+| Workflow | Short name describing the complete flow being tested |
+| Precondition | What must exist before starting |
+| Steps & Checkpoints | Numbered steps with embedded verification points |
+| Expected Result | Overall expected outcome of the workflow |
+
+### Collapsed Test Count by Section
+
+| Section | Current Tests | New Workflow Tests | What changes |
+|---------|--------------|-------------------|--------------|
+| Institutes to Users | 2 | 2 | Minor -- already concise |
+| Institutes to Curriculum | 2 | 2 | Minor -- already concise |
+| Roles to Users | 3 | 2 | Merge role CRUD + permission change into workflows |
+| Master Data (Curriculum) to Courses | 3 | 2 | Merge mapping + rename + delete warning |
+| Master Data (Curriculum) to Question Bank | 13 | 4 | Major collapse: cascade flow, new data sync, listing filters, immediate refresh |
+| Master Data (Courses) to Question Bank | 5 | 2 | Course-mode cascade flow, course chapter types |
+| Master Data (Curriculum) to Content Library | 7 | 3 | Cascade flow, CRUD sync, listing filters |
+| Master Data (Courses) to Content Library | 2 | 1 | Single course-mode workflow |
+| Master Data to Exams | 3 | 2 | Grand Test flow, PYP distinction |
+| Master Data to AI Generators | 6 | 3 | AI Question Gen, AI Content Gen, PDF Upload |
+| Master Data Deletion/Edit Impact | 5 | 2 | Rename propagation flow, delete protection flow |
+| Question Bank to Exams | 5 | 2 | Selection + filtering flow, add/remove flow |
+| Content Library to Exams | 1 | 1 | Already concise |
+| Content Library to Institutes | 1 | 1 | Already concise |
+| Questions to Institutes | 1 | 1 | Already concise |
+| Exams to Institutes | 2 | 2 | Already concise |
+
+**Total: 61 tests collapse to ~30 workflow tests** (same coverage, better readability)
+
+### Renumbering
+
+All test IDs will be renumbered SA-IL-001 through SA-IL-030 (approximate) sequentially following sidebar order.
 
 ## File Modified
 
 | File | Action |
 |------|--------|
-| `docs/06-testing-scenarios/intra-login-tests/superadmin.md` | Complete rewrite with merged, reordered, and renumbered sections |
+| `docs/06-testing-scenarios/intra-login-tests/superadmin.md` | Rewrite all sections in workflow format with collapsed, numbered-step test cases |
 
-## Total Test Cases
+## What Does NOT Change
 
-61 test cases (same count, no tests removed or added -- only reordered, merged, and renumbered)
+- Section order (already correct -- follows sidebar flow)
+- Section groupings (Institutes, Roles, Master Data, QB, Exams, Content Library)
+- Coverage (every checkpoint from the 61 tests is preserved as a step within a workflow)
+- The overview description and document structure
 
