@@ -1,132 +1,223 @@
 
-# UI Audit: AI Question Generator — Complete Findings & Resolution
 
-## Audit Scope
-Audited both the SuperAdmin (`/superadmin/questions/ai`) and Institute (`/institute/questions/ai`) AI Question Generators, including the shared `TypeConfigPanel` component, across desktop and mobile viewports. Compared layout, responsiveness, consistency, and identified UI issues.
+# Master Data Intra-Login Testing: SuperAdmin Panel
 
----
+## Context
 
-## Summary Table
-
-| Issue | Severity | Panel | Status |
-|-------|----------|-------|--------|
-| 1. Label truncation ("MC...", "Para...") | Critical | Institute | ✅ Resolved |
-| 2. Negative value (-1) in distribution | Critical | Both | ✅ Resolved |
-| 3. Section ordering inconsistency | Medium | Institute | ✅ Resolved |
-| 4. Layout width difference (1/3 vs 2/3) | Info | Institute | ✅ By design — components adapted |
-| 5. Touch targets below 44px in TypeConfigPanel | Medium | Both | ✅ Resolved |
-| 6. Hidden "questions" label layout gap | Low | Both | ✅ Resolved |
-| 7. Missing responsive classes in Institute | Medium | Institute | ✅ Resolved |
-| 8. Stale distribution on mode toggle | Low | Both | ✅ Resolved |
+Master Data (Curriculum + Courses) is the foundation layer of the SuperAdmin panel. After creation in the Master Data module, this data is consumed by **4 downstream SuperAdmin modules**: Institute Management, Question Bank, Exams, and Content Library. The current documentation and test cases cover this partially but have significant gaps.
 
 ---
 
-## Issue 1: Label Truncation in Institute Panel — ✅ RESOLVED
+## Part 1: Documentation Gaps in SuperAdmin Docs
 
-**Problem:** Question type labels ("MC...", "Num...", "Ass...") were truncated in the Institute panel's narrow 1/3-width settings card.
+### What EXISTS and is documented well
 
-**Fix Applied:** Changed type grid from `grid-cols-2` to `grid-cols-1 sm:grid-cols-2`, removed `truncate` class, and added responsive text sizing (`text-xs sm:text-sm`). Labels now stack vertically in narrow containers and display fully at all widths.
+| Document | Coverage |
+|----------|----------|
+| `master-data-curriculum.md` | Creation hierarchy, bulk entry, data flow diagram listing consumers (Content Library, Question Bank, Exam Builder, Course Builder) |
+| `master-data-courses.md` | Course creation flow, 80/20 split, mapped vs exclusive chapters |
+| `institutes.md` | Step 4 of wizard (Assign Curriculum/Courses), Assign dialog from action menu |
+| `question-bank.md` | Classification flow for both Curriculum (7 tags) and Course (6 tags) modes |
+| `content-library.md` | Classification flow with Source Type toggle, visibility settings |
+| `exams.md` | Grand Test Step 1 has Content Source (Curriculum/Course) selection |
 
-**File:** `src/pages/institute/questions/AIQuestions.tsx`
+### What is MISSING or needs enhancement
 
----
+**1. `master-data-curriculum.md` -- Missing "Downstream Impact" section**
+- The "Data Flow" section lists consumers but does not detail HOW each consumer uses the data
+- Missing: which specific dropdowns/filters in Question Bank, Content Library, and Exams pull from curriculum data
+- Missing: cascade reset behavior (e.g., changing class resets subject, chapter, topic selections downstream)
 
-## Issue 2: Negative Default Value (-1) in Custom Setup — ✅ RESOLVED
+**2. `master-data-courses.md` -- Missing downstream consumption details**
+- Lists consumers but does not explain the Course-mode classification path (Course -> Subject -> Chapter -> Topic) used in Question Bank, Content Library, and Exams
+- Missing: how `getAllCourseChapters()` combines mapped + owned chapters for downstream dropdowns
 
-**Problem:** When enabling Custom Setup with complex types (Paragraph + Matrix Match + MCQ), the MCQ count could show a negative value because the distribution algorithm subtracted complex type counts before ensuring the remainder was non-negative.
+**3. `question-bank.md` -- Missing filter dependency on master data**
+- Documents classification in creation flows but does NOT mention the listing page filters (Subject, Class) that also depend on master data
+- Missing: how the Subject filter dropdown on `/superadmin/questions` is populated from master data subjects
 
-**Fix Applied:** Rewrote distribution logic to calculate complex types first, then distribute the remaining budget to simple types with a `Math.max(0, ...)` guard. Simple types now always get at least 0.
+**4. `content-library.md` -- Missing filter dependency on master data**
+- Documents classification but does NOT mention the listing page filters (Class, Subject, Chapter) that depend on master data
+- The `Content.tsx` page has `classFilter`, `subjectFilter` that match against `classId`, `subjectId` from master data
 
-**File:** `src/components/questions/TypeConfigPanel.tsx`
-
----
-
-## Issue 3: Section Ordering Inconsistency — ✅ RESOLVED
-
-**Problem:** In the Institute panel, "Number of Questions" appeared before "Question Types", while SuperAdmin placed it after — creating a confusing flow where users pick a count before seeing available types.
-
-**Fix Applied:** Moved "Number of Questions" slider to appear AFTER "Question Types" and "Custom Setup Panel" in the Institute panel, matching the SuperAdmin's logical ordering: Types → Custom Setup → Count → Difficulty → Cognitive.
-
-**File:** `src/pages/institute/questions/AIQuestions.tsx`
-
----
-
-## Issue 4: Layout Architecture Difference — ✅ ACKNOWLEDGED (By Design)
-
-**Context:** SuperAdmin uses a 2/3 + 1/3 layout (form gets 66% width), while Institute uses 1/3 + 2/3 (settings get 33%). This is intentional — Institute shows generated questions alongside the settings.
-
-**Resolution:** Instead of restructuring the layout, all form elements were adapted to work within the narrower width using responsive grid classes, smaller font sizes, and single-column stacking.
-
----
-
-## Issue 5: Touch Targets Below 44px — ✅ RESOLVED
-
-**Problem:** Sub-question type chips in TypeConfigPanel had `py-1.5` (~30px height), below the 44px mobile touch target minimum. Number inputs were `h-8` (32px).
-
-**Fix Applied:** Increased sub-question chips to `py-2 min-h-[44px]`, checkbox size to `h-3.5 w-3.5`, and number inputs to `h-8 sm:h-10`. Distribution rows now have `min-h-[44px]`.
-
-**File:** `src/components/questions/TypeConfigPanel.tsx`
+**5. `exams.md` -- Incomplete master data dependency**
+- Grand Test creation Step 1 mentions Content Source but does not detail that the curriculum/course selection populates from `getActiveCurriculums()` and `getPublishedCourses()`
+- Missing: PYP creation does NOT use master data directly (it uses exam body selection), which should be documented as a distinction
 
 ---
 
-## Issue 6: Hidden "questions" Label Layout Gap — ✅ RESOLVED
+## Part 2: Existing Intra-Login Test Coverage Analysis
 
-**Problem:** The "questions" text label next to number inputs was `hidden sm:inline` with a fixed `w-14`, causing reserved space on mobile even though the text was hidden.
+### Current tests in `superadmin.md` (intra-login)
 
-**Fix Applied:** Removed the `w-14` class from the hidden label span so it no longer reserves space when hidden on mobile.
+| Section | Test IDs | What it covers | Gap |
+|---------|----------|----------------|-----|
+| Curriculum -> Content Library | SA-IL-001 to 003 | Subject appears/removed/renamed in content classification | Missing: Class, Chapter, Topic cascade in content creation; Course-mode chapters in content |
+| Curriculum -> Question Bank | SA-IL-004 to 006 | Chapters/Topics available in question classification | Missing: Curriculum/Course toggle; Course-mode chapter listing; Filters on listing page |
+| Curriculum -> Courses | SA-IL-007 to 009 | Chapter mapping and renaming | Adequate for basic flow |
+| Content Library -> Exams | SA-IL-010 | Classification alignment | Very thin -- only 1 test |
+| Question Bank -> Exams | SA-IL-011 to 015 | Question selection and filtering | No master data specific tests |
+| Institutes -> Curriculum | SA-IL-021 to 022 | Assignment and removal | Missing: Step 4 wizard dropdown population; Custom course builder |
 
-**File:** `src/components/questions/TypeConfigPanel.tsx`
+### MISSING test sections entirely
 
----
-
-## Issue 7: Missing Responsive Classes in Institute Panel — ✅ RESOLVED
-
-**Problem:** Institute panel's type checkboxes and cognitive type chips used flat `gap-2 p-2 text-sm` without responsive scaling, unlike SuperAdmin's `gap-1.5 sm:gap-2 p-2 sm:p-2.5`.
-
-**Fix Applied:** Aligned both Question Types and Cognitive Types grids in the Institute panel with responsive classes: `gap-1.5 sm:gap-2`, `p-2 sm:p-2.5`, `rounded-lg sm:rounded-xl`, `text-xs sm:text-sm`, and `min-h-[44px]` for touch targets.
-
-**File:** `src/pages/institute/questions/AIQuestions.tsx`
-
----
-
-## Issue 8: Stale Distribution on Mode Toggle — ✅ RESOLVED
-
-**Problem:** When toggling Custom Setup OFF and back ON, the old per-type values (e.g., MCQ set to 8) persisted instead of recalculating fresh.
-
-**Fix Applied:** Added `typeDistribution: {}` reset when switching from custom back to auto mode. The `useEffect` that initializes distribution re-runs on next custom toggle, producing a fresh calculation.
-
-**File:** `src/components/questions/TypeConfigPanel.tsx`
+1. **Curriculum -> Exams (Grand Test creation)** -- No tests for Content Source selection populating from master data
+2. **Courses -> Question Bank** -- No tests for Course-mode classification (Course -> Subject -> Chapter -> Topic)
+3. **Courses -> Content Library** -- No tests for Course-mode content creation
+4. **Courses -> Exams** -- No tests for Course-mode Grand Test creation
+5. **Master Data -> Listing Page Filters** -- No tests verifying that Question Bank and Content Library filters reflect master data
+6. **Cascade Reset Tests** -- No tests verifying that changing a parent dropdown resets child selections
+7. **AI Generation Classification** -- No tests for master data in AI Question Generator or AI Content Generator
 
 ---
 
-## Verification Results
+## Part 3: Proposed Changes
 
-**Mobile (390px):**
-- ✅ All 10 question type labels fully visible (no truncation)
-- ✅ MCQ (Single) shows `1` with 3 types selected (not `-1`)
-- ✅ Section order: Types → Custom Setup → Count
-- ✅ Touch targets ≥ 44px on all interactive elements
-- ✅ Toggle ON/OFF/ON resets distribution values (8 → reset to 1)
-- ✅ Slider reappears when Custom Setup is toggled OFF
+### A. Documentation Updates (2 files)
 
-**Desktop (1920px):**
-- ✅ Labels fully visible in Institute's narrow 1/3 panel
-- ✅ Type Distribution panel renders correctly
-- ✅ All complex type configs (Paragraph, Matrix, Fill) functional
+**File: `docs/01-superadmin/master-data-curriculum.md`**
+Add a new section "## Downstream Impact Within SuperAdmin" after the existing "Data Flow" section:
+
+```text
+## Downstream Impact Within SuperAdmin
+
+Master Data is consumed by 4 modules within the SuperAdmin panel itself:
+
+### 1. Institute Management
+- WHERE: Add Institute Wizard Step 4, Assign Curriculum/Courses dialog
+- WHAT: Curriculum checkboxes and Course checkboxes populated from
+  getActiveCurriculums() and getPublishedCourses()
+- BEHAVIOR: Multi-select, no cascade
+
+### 2. Question Bank
+- WHERE: Create Question (classification panel), AI Generator (classification),
+  PDF Upload (classification), Question listing (filters)
+- CREATION FLOW (Curriculum mode):
+  Curriculum -> Class -> Subject -> Chapter -> Topic -> Difficulty -> Cognitive
+- CREATION FLOW (Course mode):
+  Course -> Subject -> Chapter -> Topic -> Difficulty -> Cognitive
+- LISTING FILTERS: Subject dropdown, Class dropdown populated from master data
+- CASCADE: Changing Class resets Subject, Chapter, Topic
+  Changing Subject resets Chapter, Topic
+  Changing Chapter resets Topic
+
+### 3. Content Library
+- WHERE: Create Content (classification panel), AI Content Generator,
+  Content listing (filters)
+- CREATION FLOW (Curriculum mode):
+  Curriculum -> Class -> Subject -> Chapter -> Topic
+- CREATION FLOW (Course mode):
+  Course -> Subject -> Chapter -> Topic
+- LISTING FILTERS: Class, Subject, Chapter dropdowns populated from master data
+- NOTE: No Difficulty or Cognitive Type (exclusive to Question Bank)
+
+### 4. Exams
+- WHERE: Create Grand Test Step 1 (Content Source selection)
+- WHAT: Curriculum dropdown from getActiveCurriculums(),
+  Course dropdown from getPublishedCourses()
+- NOTE: PYP creation uses Exam Body (JEE/NEET) not master data directly
+```
+
+**File: `docs/01-superadmin/master-data-courses.md`**
+Add a similar "## Downstream Impact Within SuperAdmin" section explaining how Course-mode classification works differently (no Class level, `getAllCourseChapters()` combines mapped + owned).
 
 ---
 
-## Files Modified
+### B. Intra-Login Test Cases (1 file)
 
-| File | Issues Fixed |
-|------|-------------|
-| `src/components/questions/TypeConfigPanel.tsx` | Issues 2, 5, 6, 8 |
-| `src/pages/institute/questions/AIQuestions.tsx` | Issues 1, 3, 7 |
+**File: `docs/06-testing-scenarios/intra-login-tests/superadmin.md`**
+Add the following new test sections:
 
-## Files NOT Modified
-- `src/pages/questions/AIQuestions.tsx` — SuperAdmin form was already well-structured
-- All other pages and components — untouched
+#### New Section: Curriculum -> Question Bank (Extended)
+
+| Test ID | Test Case | Steps | Expected |
+|---------|-----------|-------|----------|
+| SA-IL-027 | Curriculum dropdown shows active curriculums | Create question, select Curriculum mode | Only active curriculums in dropdown |
+| SA-IL-028 | Class dropdown populates after curriculum | Select curriculum | Classes for that curriculum shown |
+| SA-IL-029 | Subject dropdown populates after class | Select class | Subjects for that class shown |
+| SA-IL-030 | Chapter dropdown populates after subject | Select subject | Chapters for that subject shown |
+| SA-IL-031 | Topic dropdown populates after chapter | Select chapter | Topics for that chapter shown |
+| SA-IL-032 | Cascade reset: changing class resets subject/chapter/topic | Change class after full selection | Subject, Chapter, Topic reset to empty |
+| SA-IL-033 | Cascade reset: changing subject resets chapter/topic | Change subject | Chapter, Topic reset |
+| SA-IL-034 | New chapter appears in question creation | Add chapter in master data, go to create question | New chapter in dropdown |
+| SA-IL-035 | Subject filter on listing page uses master data | View question bank listing | Subject dropdown matches master data subjects |
+| SA-IL-036 | Class filter on listing page uses master data | View listing | Class dropdown matches master data classes |
+
+#### New Section: Courses -> Question Bank
+
+| Test ID | Test Case | Steps | Expected |
+|---------|-----------|-------|----------|
+| SA-IL-037 | Course dropdown shows published courses | Create question, select Course mode | Only published courses shown |
+| SA-IL-038 | Course chapters include mapped + owned | Select course | Both mapped and course-owned chapters listed |
+| SA-IL-039 | Course-owned chapter marked distinctly | View chapter dropdown | Course-exclusive chapters identifiable |
+| SA-IL-040 | No Class dropdown in Course mode | Select Course mode | Class field hidden |
+| SA-IL-041 | Topics load for course chapters | Select course chapter | Topics shown |
+
+#### New Section: Curriculum -> Content Library (Extended)
+
+| Test ID | Test Case | Steps | Expected |
+|---------|-----------|-------|----------|
+| SA-IL-042 | Full cascade in content creation (Curriculum) | Create content, Curriculum mode | Curriculum -> Class -> Subject -> Chapter -> Topic all cascade |
+| SA-IL-043 | No Difficulty/Cognitive in content | Create content | These fields absent |
+| SA-IL-044 | Class filter on listing uses master data | View content listing | Class dropdown matches master data |
+| SA-IL-045 | Subject filter on listing uses master data | View content listing | Subject dropdown matches master data |
+
+#### New Section: Courses -> Content Library
+
+| Test ID | Test Case | Steps | Expected |
+|---------|-----------|-------|----------|
+| SA-IL-046 | Course mode in content creation | Create content, Course mode | Course -> Subject -> Chapter -> Topic (no Class) |
+| SA-IL-047 | Course chapters available | Select course | Course chapters in dropdown |
+
+#### New Section: Curriculum/Courses -> Exams
+
+| Test ID | Test Case | Steps | Expected |
+|---------|-----------|-------|----------|
+| SA-IL-048 | Grand Test Step 1 Curriculum dropdown | Create Grand Test, select Curriculum | Active curriculums shown |
+| SA-IL-049 | Grand Test Step 1 Course dropdown | Create Grand Test, select Course | Published courses shown |
+| SA-IL-050 | PYP does NOT use curriculum dropdown | Create PYP | Uses Exam Body (JEE/NEET), not curriculum selection |
+
+#### New Section: Curriculum/Courses -> AI Generators
+
+| Test ID | Test Case | Steps | Expected |
+|---------|-----------|-------|----------|
+| SA-IL-051 | AI Question Generator uses curriculum cascade | Open AI generator, Curriculum mode | Full cascade: Curriculum -> Class -> Subject -> Chapter -> Topics (multi) |
+| SA-IL-052 | AI Question Generator uses course cascade | Open AI generator, Course mode | Course -> Subject -> Chapter -> Topics (multi) |
+| SA-IL-053 | AI Content Generator uses curriculum cascade | Open AI content generator | Full cascade works |
+| SA-IL-054 | AI Content Generator uses course cascade | Open AI content generator, Course mode | Course cascade works |
+| SA-IL-055 | PDF Upload uses curriculum cascade | Open PDF upload, Curriculum mode | Curriculum -> Class -> Subject shown (no chapter -- AI detects) |
+| SA-IL-056 | PDF Upload uses course cascade | Open PDF upload, Course mode | Course -> Subject shown |
+
+#### New Section: Master Data Deletion/Edit Impact
+
+| Test ID | Test Case | Steps | Expected |
+|---------|-----------|-------|----------|
+| SA-IL-057 | Renamed subject reflects in Question Bank filters | Rename subject in master data | Filter shows new name |
+| SA-IL-058 | Renamed chapter reflects in Content Library | Rename chapter | Content cards show new name |
+| SA-IL-059 | Deleted unused topic removed from creation | Delete unused topic | Not in dropdown |
+| SA-IL-060 | Delete blocked for chapter with questions | Try delete chapter used by questions | Warning/block |
+| SA-IL-061 | Delete blocked for chapter with content | Try delete chapter used by content | Warning/block |
+
+#### Updated Test Execution Order
+
+```text
+1. Master Data CRUD (curriculum + courses baseline)
+2. Master Data -> Question Bank classification (SA-IL-027 to 041)
+3. Master Data -> Content Library classification (SA-IL-042 to 047)
+4. Master Data -> Exams (SA-IL-048 to 050)
+5. Master Data -> AI Generators (SA-IL-051 to 056)
+6. Master Data -> Deletion/Edit impact (SA-IL-057 to 061)
+7. Master Data -> Institutes (SA-IL-021 to 022, existing)
+8. Question Bank -> Exams (SA-IL-011 to 015, existing)
+```
 
 ---
 
-*Audit completed and all fixes verified: February 2026*
+## Summary of Deliverables
+
+| Deliverable | File | Action |
+|-------------|------|--------|
+| Curriculum doc enhancement | `docs/01-superadmin/master-data-curriculum.md` | Add "Downstream Impact" section |
+| Courses doc enhancement | `docs/01-superadmin/master-data-courses.md` | Add "Downstream Impact" section |
+| Intra-login test expansion | `docs/06-testing-scenarios/intra-login-tests/superadmin.md` | Add 35 new test cases (SA-IL-027 to SA-IL-061) across 6 new sections |
+
