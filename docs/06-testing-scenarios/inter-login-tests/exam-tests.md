@@ -1,201 +1,300 @@
-# Exam Cross-Portal Tests
+# Exam Cross-Portal Workflow Tests
 
-> Tests for exam and question flow across SuperAdmin, Institute, Teacher, and Student portals.
+> End-to-end workflow tests for exam and question flow across SuperAdmin, Institute, Teacher, and Student portals.
 
 ---
 
 ## Overview
 
-These tests verify that exams and questions flow correctly between portals, from creation through to student attempts and results.
+These tests verify the complete exam lifecycle across portals -- from creation in SuperAdmin through institute assignment, student attempt, and result reporting. Each test is a workflow with numbered Steps and Checkpoints, not isolated smoke checks. The two primary flows are Previous Year Papers (PYP) and Grand Tests (GT).
 
 ---
 
-## Question Propagation Tests
+## PYP End-to-End Flow
 
-| Test ID | Test Case | Steps | Expected Result |
-|---------|-----------|-------|-----------------|
-| EX-001 | Global questions visible to institute | SA creates questions, Institute views | Questions visible with "Global" badge |
-| EX-002 | Global questions in teacher bank | SA creates, Teacher views | Questions visible (subject-scoped) |
-| EX-003 | Institute questions visible to teacher | Institute creates, Teacher views | Questions visible with "Institute" badge |
-| EX-004 | Teacher questions personal | Teacher creates | Only creator sees in bank |
-| EX-005 | AI-generated questions saved | Generate via AI, accept | Questions in bank |
-| EX-006 | PDF-extracted questions saved | Extract from PDF, accept | Questions in bank |
+### EX-001: PYP Creation to Institute Visibility
 
----
+| Field | Detail |
+|-------|--------|
+| **Logins** | SuperAdmin → Institute |
+| **Precondition** | PYP created and published in SuperAdmin |
 
-## Exam Creation Flow Tests
+**Steps and Checkpoints:**
 
-| Test ID | Test Case | Steps | Expected Result |
-|---------|-----------|-------|-----------------|
-| EX-007 | SA creates PYP | Create PYP with questions | PYP in exam list |
-| EX-008 | SA creates Grand Test | Create GT with questions | GT in exam list |
-| EX-009 | Institute creates pattern exam | Use pattern, add questions | Exam created |
-| EX-010 | Teacher creates assessment | Create quick test | Assessment saved |
-| EX-011 | All question sources usable | Use global + institute + own | All work in exam |
+**SuperAdmin:**
+1. Create PYP (JEE Main 2025).
+2. Upload PDF, review questions, publish.
+3. Click Audience, assign to Institute A and Institute B.
 
----
+**Institute A:**
+4. Login as Institute A admin.
+5. Go to Exams, Previous Year Papers tab.
+6. Verify the JEE Main 2025 PYP is visible.
+7. Verify year-wise accordion grouping matches SuperAdmin (2025, 2024, etc.).
+8. Verify PYP is read-only -- no edit or delete buttons.
 
-## Exam Assignment Tests
+**Institute B:**
+9. Login as Institute B admin.
+10. Verify the same PYP is visible.
 
-| Test ID | Test Case | Steps | Expected Result |
-|---------|-----------|-------|-----------------|
-| EX-012 | SA assigns to institute | Assign PYP/GT to institute | Institute sees exam |
-| EX-013 | Institute assigns to batch | Assign exam to batch | Students see in tests |
-| EX-014 | Teacher assigns assessment | Assign to batch | Students see in tests |
-| EX-015 | Multi-batch assignment | Assign to multiple batches | All batches see |
-| EX-016 | Unassigned exam hidden | Don't assign to batch | Students don't see |
+**Unassigned Institute C:**
+11. Login as Institute C admin.
+12. Verify the PYP is NOT visible.
+
+**Expected Result:** PYP is visible only to assigned institutes, read-only, with correct year grouping.
 
 ---
 
-## Student Exam Access Tests
+### EX-002: Institute PYP Preview and Content Consistency
 
-| Test ID | Test Case | Steps | Expected Result |
-|---------|-----------|-------|-----------------|
-| EX-017 | Test appears in list | Exam assigned to batch | Student sees in Tests |
-| EX-018 | Test details correct | Open test info | Title, duration, questions shown |
-| EX-019 | Test player opens | Click start | Player loads |
-| EX-020 | Questions display | Navigate questions | All questions render |
-| EX-021 | Timer works | Start timed test | Timer counts down |
-| EX-022 | Flag for review | Flag question | Flag indicator shown |
-| EX-023 | Submit exam | Click submit | Submission recorded |
+| Field | Detail |
+|-------|--------|
+| **Login** | Institute |
+| **Precondition** | PYP assigned to institute |
 
----
+**Steps and Checkpoints:**
 
-## Exam Results Flow Tests
+1. Go to Previous Year Papers.
+2. Click View on a PYP.
+3. Verify preview page loads with subject tabs (Physics, Chemistry, Mathematics for JEE Main).
+4. Navigate between subjects -- verify question counts match SuperAdmin's version.
+5. Verify section structure preserved (Section A MCQ, Section B Numerical).
+6. Verify marking scheme matches (+4/-1 MCQ, +4/0 Numerical).
+7. Verify math formulas (LaTeX) render correctly.
+8. Verify images display properly.
+9. Verify solutions are viewable.
+10. Check pagination works for navigating through questions.
 
-| Test ID | Test Case | Steps | Expected Result |
-|---------|-----------|-------|-----------------|
-| EX-024 | Results shown after submit | Submit exam | Results page opens |
-| EX-025 | Score calculated | View results | Correct score shown |
-| EX-026 | Teacher sees results | View exam results | Student scores listed |
-| EX-027 | Institute sees aggregate | View exam analytics | Batch performance shown |
-| EX-028 | Individual analysis | Student views analysis | Question-by-question breakdown |
+**Expected Result:** Institute preview shows identical content to SuperAdmin: same questions, sections, marking, and all rich content (math, images) renders correctly.
 
 ---
 
-## Draft vs Published Tests
+### EX-003: Institute Assigns PYP to Student Batches
 
-| Test ID | Test Case | Steps | Expected Result |
-|---------|-----------|-------|-----------------|
-| EX-029 | Draft exam hidden from students | Save as draft | Students don't see |
-| EX-030 | Published exam visible | Publish exam | Students see |
-| EX-031 | Published exam locked | Try to edit questions | Editing blocked |
-| EX-032 | Schedule editable after publish | Edit schedule | Schedule updates |
+| Field | Detail |
+|-------|--------|
+| **Logins** | Institute → Student |
+| **Precondition** | PYP visible in institute |
 
----
+**Steps and Checkpoints:**
 
-## Question Permission Tests
+**Institute:**
+1. Click Assign on the PYP.
+2. Verify batch selection dialog opens.
+3. Select Batch A and Batch B.
+4. Save.
 
-| Test ID | Test Case | Steps | Expected Result |
-|---------|-----------|-------|-----------------|
-| EX-033 | Global questions read-only | Institute tries to edit | No edit option |
-| EX-034 | Institute questions read-only to teacher | Teacher tries to edit | No edit option |
-| EX-035 | Own questions editable | Creator tries to edit | Edit available |
-| EX-036 | Used questions warn on edit | Edit used question | Warning shown |
+**Student in Batch A:**
+5. Login as student.
+6. Go to Tests page.
+7. Verify the PYP appears in the Grand Tests and PYPs tab.
+8. Verify exam pattern filter works (filter by JEE Main shows the PYP).
 
----
+**Student in Batch B:**
+9. Verify same PYP visible.
 
-## Pattern-Based Exam Tests
+**Student in Batch C (not assigned):**
+10. Verify PYP is NOT visible.
 
-| Test ID | Test Case | Steps | Expected Result |
-|---------|-----------|-------|-----------------|
-| EX-037 | Pattern constraints enforced | Add 21 MCQ to 20-limit section | Error shown |
-| EX-038 | Section types enforced | Add Integer to MCQ section | Question filtered out |
-| EX-039 | Progress tracker updates | Add questions | Progress reflects additions |
-| EX-040 | All sections required | Leave section empty | Cannot publish |
+**Expected Result:** PYP appears for students in assigned batches only, with correct pattern filtering.
 
 ---
 
-## Availability Window Tests
+### EX-004: Student Takes PYP Exam End-to-End
 
-| Test ID | Test Case | Steps | Expected Result |
-|---------|-----------|-------|-----------------|
-| EX-041 | Before window hidden | Set future start | Students don't see |
-| EX-042 | In window visible | Current time in window | Students see |
-| EX-043 | After window archived | Set past end | Students don't see |
-| EX-044 | Results available after | Complete before window ends | Results still visible |
+| Field | Detail |
+|-------|--------|
+| **Login** | Student |
+| **Precondition** | PYP assigned to student's batch |
 
----
+**Steps and Checkpoints:**
 
-## Performance Tests
+1. Go to Tests, find the PYP.
+2. Click Start -- verify instruction page displays with exam name, duration, total questions, marking scheme.
+3. Verify correct exam UI loads based on pattern: JEE Main loads NTA-style interface, JEE Advanced loads IIT-style interface, NEET loads NTA NEET interface.
+4. Verify subjects displayed in the player match the exam pattern (Physics, Chemistry, Mathematics for JEE; NEET adds Biology).
+5. Navigate to a question -- verify question text, options render correctly.
+6. Verify math formulas (LaTeX) render in the test player.
+7. Verify images load and display properly.
+8. Select an answer -- verify option highlights.
+9. Navigate to next question using Next button -- verify navigation works.
+10. Navigate to previous question -- verify back navigation works (if allowed by pattern).
+11. Switch between subjects using subject tabs -- verify smooth transition.
+12. Mark a question for review -- verify flag indicator appears on the question number in the palette.
+13. Open question palette -- verify all question statuses shown (answered, not answered, marked for review, not visited).
+14. Verify timer is running and displays correct remaining time.
+15. Clear a response -- verify answer deselected.
+16. Answer all questions, click Submit -- verify submission confirmation dialog shows summary (answered, unanswered, marked counts).
+17. Confirm submission -- verify exam submits successfully.
 
-| Test ID | Test Case | Steps | Expected Result |
-|---------|-----------|-------|-----------------|
-| EX-045 | Large question bank | 500+ questions | Loads within 3s |
-| EX-046 | Virtual scroll works | Scroll through 200 questions | Smooth 60fps |
-| EX-047 | Exam loads quickly | 100 question exam | Loads within 2s |
-| EX-048 | LaTeX renders | Questions with formulas | Formulas display |
-
----
-
-## Grand Test Assignment Flow Tests
-
-### Purpose
-
-These tests verify that Grand Tests created by SuperAdmin correctly propagate to institutes and subsequently to students through the assignment chain.
-
-| Test ID | Test Case | Steps | Expected Result |
-|---------|-----------|-------|-----------------|
-| EX-050 | GT not visible without audience | SA creates GT, does NOT assign any audience | Institute does NOT see GT in their Exams module |
-| EX-051 | GT visible after audience assigned | SA creates GT, assigns Institute A in Audience dialog | Institute A sees GT in their Exams module |
-| EX-052 | Unassigned institute doesn't see GT | SA assigns GT only to Institute A | Institute B does NOT see the GT |
-| EX-053 | Multiple institutes see GT | SA assigns GT to Institute A and Institute B | Both institutes see the GT in their Exams |
-| EX-054 | GT read-only at Institute | Institute opens assigned GT | View only mode, no edit/delete buttons available |
-| EX-055 | Institute assigns GT to batch | Institute clicks Assign on GT | Batch selection dialog opens, can select batches |
-| EX-056 | Unassigned batch doesn't see GT | GT assigned to Batch A only | Students in Batch B do not see the test |
-| EX-057 | Student sees assigned GT | Student is in assigned batch | Test appears in student's Tests list |
-| EX-058 | GT with no batch assignment | Institute doesn't assign GT to any batch | No students see the test |
+**Expected Result:** Complete exam-taking experience works: instructions, pattern-specific UI, question display (text, math, images), navigation, subject switching, mark for review, timer, and submission.
 
 ---
 
-## Schedule Propagation Tests
+### EX-005: PYP Results and Reporting Across Portals
 
-### Purpose
+| Field | Detail |
+|-------|--------|
+| **Logins** | Student → Teacher → Institute |
+| **Precondition** | Student has submitted PYP |
 
-These tests verify that schedule settings from SuperAdmin correctly propagate and control exam availability for institutes and students.
+**Steps and Checkpoints:**
 
-| Test ID | Test Case | Steps | Expected Result |
-|---------|-----------|-------|-----------------|
-| EX-059 | Schedule reflects at Institute | SA schedules GT for tomorrow 9:00 AM | Institute sees same schedule date/time on GT card |
-| EX-060 | Student can't start before schedule | GT scheduled for future time | "Available at [date/time]" shown, Start button disabled |
-| EX-061 | Student can start after schedule | Current time > scheduled time | "Start Test" button is active/enabled |
-| EX-062 | Schedule change propagates | SA changes schedule to different date/time | Institute and Student see updated schedule immediately |
-| EX-063 | Past schedule allows immediate start | GT scheduled for past time (already passed) | Student can start immediately |
-| EX-064 | Countdown displayed | GT scheduled for near future | Countdown timer shown to students |
+**Student:**
+1. After submission, verify results page opens.
+2. Verify score is calculated correctly based on marking scheme (+4/-1).
+3. Verify question-by-question breakdown available -- showing correct/incorrect/unanswered per question.
+
+**Teacher (subject-specific):**
+4. Login as a teacher assigned to Physics for the batch.
+5. Go to Exam Results.
+6. Verify only Physics results for this PYP are visible (not Chemistry or Mathematics).
+7. Verify student scores for Physics section listed.
+8. Verify score distribution chart and analytics available for Physics.
+
+**Institute:**
+9. Login as institute admin.
+10. Verify complete test report visible with all subjects.
+11. Verify batch-level performance analytics (average score, top performers).
+12. Verify individual student drill-down available.
+
+**Expected Result:** Results flow correctly to all stakeholders: student sees full results, teacher sees only their subject, institute sees complete aggregate analytics.
 
 ---
 
-## PYP Propagation Tests
+## Grand Test End-to-End Flow
 
-### Purpose
+### EX-006: Grand Test Creation to Institute Visibility
 
-These tests verify that Previous Year Papers created by SuperAdmin correctly propagate to institutes.
+| Field | Detail |
+|-------|--------|
+| **Logins** | SuperAdmin → Institute |
+| **Precondition** | None |
 
-| Test ID | Test Case | Steps | Expected Result |
-|---------|-----------|-------|-----------------|
-| EX-065 | PYP visible to Institute | SA creates PYP, assigns to institute | Institute sees PYP in their Previous Year Papers tab |
-| EX-066 | PYP year grouping at Institute | Institute views PYP tab | Same year-wise accordion grouping as SuperAdmin (2024, 2023, etc.) |
-| EX-067 | PYP preview works at Institute | Institute clicks View on PYP | Full question preview displays correctly |
-| EX-068 | PYP read-only at Institute | Institute views PYP | No edit/delete options available, view and assign only |
-| EX-069 | Institute assigns PYP to batch | Institute assigns PYP to specific batch | Students in batch see the PYP in their tests |
-| EX-070 | PYP questions render at Institute | Institute previews PYP questions | Math formulas, images render correctly |
+**Steps and Checkpoints:**
+
+**SuperAdmin:**
+1. Create Grand Test (JEE Main pattern).
+2. Add questions (AI or Question Bank).
+3. Configure schedule (date and time).
+4. Click Audience, assign to specific institutes.
+
+**Institute:**
+5. Login as assigned institute.
+6. Verify GT visible with correct schedule date/time.
+7. Verify GT is read-only (no edit/delete).
+
+**Unassigned Institute:**
+8. Verify GT not visible.
+
+**Expected Result:** GT visible only to assigned institutes, read-only, with schedule displayed.
+
+---
+
+### EX-007: Grand Test Schedule Controls Student Access
+
+| Field | Detail |
+|-------|--------|
+| **Logins** | SuperAdmin → Institute → Student |
+| **Precondition** | GT assigned to institute, institute assigned to batch |
+
+**Steps and Checkpoints:**
+
+**Future schedule:**
+1. SA sets GT schedule for tomorrow.
+2. Student logs in -- verify "Available at [date/time]" shown, Start button disabled.
+3. Verify countdown timer displayed.
+
+**Schedule arrives:**
+4. SA changes schedule to current time.
+5. Student refreshes -- verify Start button becomes active.
+
+**Past schedule:**
+6. GT with past schedule -- verify student can start immediately.
+
+**Expected Result:** Schedule controls exam access: disabled before time, enabled after, countdown shown for near-future.
+
+---
+
+### EX-008: Grand Test Student Attempt and Results
+
+| Field | Detail |
+|-------|--------|
+| **Logins** | Student → Teacher → Institute |
+| **Precondition** | GT available and schedule active |
+
+**Steps and Checkpoints:**
+
+Same as EX-004 flow but for Grand Test: student takes test, submits, results flow to student/teacher/institute with the same verification points as EX-005.
+
+**Expected Result:** Complete GT exam-taking and result-reporting works identically to PYP flow.
 
 ---
 
 ## Exam Content Consistency Tests
 
-### Purpose
+### EX-009: Question Count and Structure Consistency Across Portals
 
-These tests verify that exam content (questions, sections, marking) is consistent across all portals.
+| Field | Detail |
+|-------|--------|
+| **Logins** | SuperAdmin → Institute → Student |
+| **Precondition** | Published exam with sections |
 
-| Test ID | Test Case | Steps | Expected Result |
-|---------|-----------|-------|-----------------|
-| EX-071 | Question count matches | SA creates 75-question exam, Institute views | Institute sees exactly 75 questions |
-| EX-072 | Section structure preserved | SA creates 3-section exam | Institute sees same 3 sections with same question distribution |
-| EX-073 | Marking scheme preserved | SA sets +4/-1 for MCQ | Institute and student see same marking scheme |
-| EX-074 | Math renders at Student | SA creates exam with LaTeX questions | Student sees formulas rendered correctly in test player |
-| EX-075 | Images display at Student | SA creates exam with images | Student sees all images in test player |
+**Steps and Checkpoints:**
+
+1. SA creates exam with 75 questions across 3 subjects.
+2. Institute previews -- verify exactly 75 questions, same 3 sections.
+3. Student opens in test player -- verify same question count and section structure.
+4. Verify marking scheme consistent across all views (+4/-1).
+
+**Expected Result:** Question count, section structure, and marking are identical across all portals.
 
 ---
 
-*Last Updated: January 2025*
+### EX-010: Rich Content Rendering Across Portals
+
+| Field | Detail |
+|-------|--------|
+| **Logins** | SuperAdmin → Institute → Student |
+| **Precondition** | Exam with LaTeX and images |
+
+**Steps and Checkpoints:**
+
+1. SA creates exam with LaTeX formulas and image-based questions.
+2. Institute previews -- verify formulas and images render.
+3. Student opens in test player -- verify same rendering on both mobile and desktop.
+
+**Expected Result:** Math formulas and images display correctly across all portals and devices.
+
+---
+
+## Question Permission Tests
+
+### EX-011: Question Permission Boundaries Across Portals
+
+| Field | Detail |
+|-------|--------|
+| **Logins** | SuperAdmin → Institute → Teacher |
+| **Precondition** | Questions exist at different levels |
+
+**Steps and Checkpoints:**
+
+1. SA creates global questions -- verify Institute sees with "Global" badge (read-only).
+2. Institute creates questions -- verify Teacher sees with "Institute" badge (read-only).
+3. Teacher creates questions -- verify only that teacher sees them.
+4. Verify editing is blocked for non-owned questions at each level.
+
+**Expected Result:** Question visibility follows hierarchy: global is read-only downstream, institute is read-only for teachers, teacher questions are private.
+
+---
+
+## Test Execution Order
+
+1. PYP End-to-End Flow (EX-001 to 005)
+2. Grand Test End-to-End Flow (EX-006 to 008)
+3. Exam Content Consistency (EX-009 to 010)
+4. Question Permissions (EX-011)
+
+---
+
+*Last Updated: February 2026*
