@@ -140,11 +140,23 @@ These tests verify that modules within the SuperAdmin portal work correctly toge
 
 ---
 
+## Previous Year Paper — End-to-End Creation Workflow
+
+| Test ID | Workflow | Precondition | Steps & Checkpoints | Expected Result |
+|---------|----------|--------------|---------------------|-----------------|
+| SA-IL-031 | PYP creation and PDF extraction workflow | None | 1. Go to Exams, click "Create Previous Year Paper". 2. Select exam type (JEE Main) -- verify JEE Main, JEE Advanced, NEET options available. 3. Select year and session -- verify paper name auto-generates (e.g., "JEE Main 2025 - January Session"). 4. Customize the paper name if needed -- verify editable. 5. Proceed to Upload step. 6. Upload a PDF file -- verify only PDF accepted, max 50MB enforced. 7. Click "Upload and Create Test" -- verify upload completes and success confirmation shown. 8. Click "Review and Configure" -- verify redirected to Review page with questions extracted. 9. Verify questions are grouped by subjects (Physics, Chemistry, Mathematics for JEE Main). 10. Verify section structure matches exam pattern -- Section A (MCQ) and Section B (Numerical) for JEE Main. 11. Verify marking scheme is correct: +4/-1 for MCQ, +4/0 for Numerical. | Complete PYP creation flow works end-to-end: exam config, PDF upload, question extraction with correct pattern, sections, and marking |
+| SA-IL-032 | PYP review and question validation workflow | PYP created and in review state | 1. Open the PYP review page. 2. Navigate between subjects using subject tabs -- verify question counts shown per subject. 3. Use Quick Navigation panel -- verify all question numbers visible and clickable. 4. Click a question number -- verify jumps to correct page. 5. Open a question -- verify question text, options, correct answer marked (green), chapter and topic shown. 6. Click "Show Solution" -- verify solution text displayed. 7. Click "Edit" on a question -- verify edit dialog opens with pre-filled data. 8. Modify question text, save -- verify status changes to "Edited" (orange). 9. Click "Delete" on a question -- verify status changes to "Deleted" (red, greyed out). 10. Click "Mark Reviewed" on a pending question -- verify status changes to "Reviewed" (green). 11. Verify progress badge on subject tabs updates (reviewed/total count). | Complete question review workflow functions: navigation, solution viewing, editing, deleting, and marking reviewed all work with correct status tracking |
+| SA-IL-033 | PYP pattern verification across exam types | PYPs for JEE Main, JEE Advanced, and NEET created | 1. Open a JEE Main PYP -- verify 3 subjects (Physics, Chemistry, Mathematics), no sub-sections within subjects, Section A (20 MCQ, +4/-1) and Section B (10 Numerical, +4/0), total 90 questions, 300 marks. 2. Open a JEE Advanced PYP -- verify 3 subjects (Physics, Chemistry, Mathematics), each subject has multiple sections (Paper 1 and Paper 2 style), mix of single-choice, multi-choice, paragraph, and numerical, total 54 questions, 198 marks. 3. Open a NEET PYP -- verify 4 subjects (Physics, Chemistry, Botany, Zoology), Section A (35 MCQ) and Section B (15 MCQ, attempt any 10), total 180 questions (200 with Section B extras), 720 marks. | Each exam type follows its official pattern with correct subject splits, section structures, question types, and marking schemes |
+| SA-IL-034 | PYP publish and audience assignment workflow | PYP reviewed and ready to publish | 1. On the review page, click "Publish Test" -- verify publish confirmation dialog appears. 2. Confirm publish -- verify test status changes to "Published" and redirected to exam listing. 3. Verify the published PYP appears in the listing under the correct exam type and year accordion. 4. Verify Rank and Percentile config section is available for PYPs. 5. Click "Audience" on the published PYP -- verify audience selection dialog opens. 6. Select specific institutes -- verify selected institutes listed. 7. Select "All Institutes" -- verify all institutes selected. 8. Save audience -- verify audience count displayed on the PYP card. | PYP can be published, listed correctly by exam type and year, rank/percentile configured, and audience assigned to specific or all institutes |
+| SA-IL-035 | PYP edit and draft management | Published and draft PYPs exist | 1. Open a draft PYP -- verify edit and delete options available. 2. Open a published PYP -- verify view and audience options available but edit of questions is restricted. 3. View PYP stats (if completed) -- verify stats button works. 4. Verify draft PYPs are not visible to institutes. 5. Verify only published PYPs appear in institute view. | Draft PYPs are editable but hidden from institutes; published PYPs are view-only for questions but allow audience and schedule management |
+
+---
+
 ## Content Library → Exams
 
 | Test ID | Workflow | Precondition | Steps & Checkpoints | Expected Result |
 |---------|----------|--------------|---------------------|-----------------|
-| SA-IL-031 | Content classification aligns with exam sections | Content exists with subject classifications | 1. Create an exam with sections matching a subject. 2. Verify content classifications align with exam section structure. | Content and exam classifications use the same master data taxonomy |
+| SA-IL-036 | Content classification aligns with exam sections | Content exists with subject classifications | 1. Create an exam with sections matching a subject. 2. Verify content classifications align with exam section structure. | Content and exam classifications use the same master data taxonomy |
 
 ---
 
@@ -152,7 +164,7 @@ These tests verify that modules within the SuperAdmin portal work correctly toge
 
 | Test ID | Workflow | Precondition | Steps & Checkpoints | Expected Result |
 |---------|----------|--------------|---------------------|-----------------|
-| SA-IL-032 | Global content visible to institutes | Global content created by SuperAdmin exists | 1. Login as an institute admin. 2. Go to Content Library. 3. Verify global content is visible with a "Global" badge. | SuperAdmin's global content is accessible (read-only) to all institutes |
+| SA-IL-037 | Global content visible to institutes | Global content created by SuperAdmin exists | 1. Login as an institute admin. 2. Go to Content Library. 3. Verify global content is visible with a "Global" badge. | SuperAdmin's global content is accessible (read-only) to all institutes |
 
 ---
 
@@ -160,7 +172,7 @@ These tests verify that modules within the SuperAdmin portal work correctly toge
 
 | Test ID | Workflow | Precondition | Steps & Checkpoints | Expected Result |
 |---------|----------|--------------|---------------------|-----------------|
-| SA-IL-033 | Global questions available for institute exams | Global questions created by SuperAdmin exist | 1. Login as institute admin. 2. Create an exam, go to add questions. 3. Verify global questions are selectable alongside institute-specific questions. | Institutes can use SuperAdmin's global questions in their exams |
+| SA-IL-038 | Global questions available for institute exams | Global questions created by SuperAdmin exist | 1. Login as institute admin. 2. Create an exam, go to add questions. 3. Verify global questions are selectable alongside institute-specific questions. | Institutes can use SuperAdmin's global questions in their exams |
 
 ---
 
@@ -168,8 +180,8 @@ These tests verify that modules within the SuperAdmin portal work correctly toge
 
 | Test ID | Workflow | Precondition | Steps & Checkpoints | Expected Result |
 |---------|----------|--------------|---------------------|-----------------|
-| SA-IL-034 | Assigned exam visible to institute | PYP or Grand Test exists | 1. Assign the exam to a specific institute. 2. Login as that institute's admin. 3. Verify the exam is visible. | Assigned exams appear in the institute's exam list |
-| SA-IL-035 | Unassigned exam hidden from institute | Exam exists but not assigned to the institute | 1. Login as the institute admin. 2. Browse exams. 3. Verify unassigned exams are not visible. | Only assigned exams are accessible to institutes |
+| SA-IL-039 | Assigned exam visible to institute | PYP or Grand Test exists | 1. Assign the exam to a specific institute. 2. Login as that institute's admin. 3. Verify the exam is visible. | Assigned exams appear in the institute's exam list |
+| SA-IL-040 | Unassigned exam hidden from institute | Exam exists but not assigned to the institute | 1. Login as the institute admin. 2. Browse exams. 3. Verify unassigned exams are not visible. | Only assigned exams are accessible to institutes |
 
 ---
 
@@ -189,10 +201,11 @@ These tests verify that modules within the SuperAdmin portal work correctly toge
 12. Chapter Ordering Across Platform (SA-IL-024 to 025)
 13. Master Data Deletion/Edit Impact (SA-IL-026 to 028)
 14. Question Bank → Exams (SA-IL-029 to 030)
-15. Content Library → Exams (SA-IL-031)
-16. Content Library → Institutes (SA-IL-032)
-17. Questions → Institutes (SA-IL-033)
-18. Exams → Institutes (SA-IL-034 to 035)
+15. Previous Year Paper — End-to-End Creation (SA-IL-031 to 035)
+16. Content Library → Exams (SA-IL-036)
+17. Content Library → Institutes (SA-IL-037)
+18. Questions → Institutes (SA-IL-038)
+19. Exams → Institutes (SA-IL-039 to 040)
 
 ---
 
