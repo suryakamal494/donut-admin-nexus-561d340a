@@ -37,6 +37,10 @@ const patternColors: Record<ExamPattern | "all", { active: string; inactive: str
     active: "bg-emerald-500 text-white",
     inactive: "bg-emerald-50 text-emerald-600 hover:bg-emerald-100",
   },
+  cbse: {
+    active: "bg-orange-500 text-white",
+    inactive: "bg-orange-50 text-orange-600 hover:bg-orange-100",
+  },
   custom: {
     active: "bg-amber-500 text-white",
     inactive: "bg-amber-50 text-amber-600 hover:bg-amber-100",
