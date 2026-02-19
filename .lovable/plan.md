@@ -1,141 +1,80 @@
 
-# Enhanced Test Results / Reports Page
 
-## Current State
+# Test Reports Enhancement Plan
 
-The Test Results page (`/student/tests/:testId/results`) exists with four tabs: Overview, Sections, Time, and Review. However, it has key limitations:
+## Pain Points Identified
 
-1. **Hardcoded data**: Always shows the same `sampleTestResult` regardless of which test the student clicks "View Results" on
-2. **No option-level display**: The Question Review tab shows "Your Answer: B" and "Correct Answer: A" as plain text -- it does not render the actual options with green/red color coding
-3. **No "View Solution" button**: Students cannot see explanations for wrong/unattempted questions
-4. **No support for subject tests**: The results data generator only works with the grand test sample questions, not the 66+ teacher-assigned subject tests
+### Pain Point 1: "View Details" on Upcoming/Scheduled Tests Exposes Questions
+**You are absolutely right.** Currently, when a student clicks "View Details" on an upcoming test, it navigates to `/student/tests/:testId` -- the same route used for starting a live test. This means students can potentially see the question paper before the test begins, which defeats the purpose of a scheduled test.
 
-## What We Will Build
+**Fix:** Replace "View Details" with a disabled/informational button that shows when the test is scheduled (e.g., "Starts in 3 hours" or "Scheduled: Feb 22, 10:00 AM"). The button should NOT navigate anywhere. No question paper exposure before the test starts.
 
-### 1. Enhanced QuestionResult data model
+### Pain Point 2: Section-wise Analysis Tab is Redundant for Single-Subject Tests
+**Completely valid.** For a subject test (e.g., "Physics - Work & Energy Practice"), there is only one section. The "Sections" tab just shows a single card that, when clicked, takes you to the Review tab -- adding no value. The 4-tab layout (Overview, Sections, Time, Review) should be simplified for single-subject tests.
 
-Add `options` field to `QuestionResult` so we can render the actual option texts (not just IDs) in the review. Add a `solution` field for explanations.
+**Fix:** Detect whether the test has 1 section or multiple sections. For single-subject tests, reduce to 3 tabs: **Overview, Time, Review**. The Overview tab will show the score breakdown and performance comparison (without redundant section cards). For grand tests (multi-subject), keep all 4 tabs.
 
-```text
-QuestionResult (enhanced):
-  + options: { id, text, isCorrect }[]    -- actual option data
-  + solution?: string                      -- explanation text
-  + assertionText?: string                 -- for assertion-reasoning
-  + reasonText?: string                    -- for assertion-reasoning
-  + paragraphText?: string                 -- for paragraph-based
-```
+### Pain Point 3: Time Analysis Needs More Depth
+**Good call.** The current Time Analysis only shows basic distribution buckets and time-by-section bars. It does not answer the real questions students have:
+- How much time did I waste on wrong answers?
+- Which questions ate the most time and were they even correct?
+- For grand tests: which subject consumed disproportionate time?
 
-### 2. Test-aware result generation
-
-Create a `generateResultForTest(testId)` function that maps to the correct question bank based on testId:
-- Grand tests (JEE Main, JEE Advanced, NEET) use existing `allSampleQuestions`
-- CBSE Math uses `cbseMathQuestions`
-- CBSE Hindi uses `cbseHindiQuestions`
-- Subject-specific teacher tests generate results from their subject's questions
-
-This replaces the current single `sampleTestResult` export.
-
-### 3. Redesigned Question Review with Option-Level Display
-
-The expanded question card will show:
-
-```text
-+------------------------------------------+
-| [x] Q.3  MCQ Single  medium    -1/4     |
-|     A block of mass 5 kg is placed...    |
-+------------------------------------------+
-| Options:                                  |
-| (A) 5 m/s^2              [grey]          |
-| (B) 5.5 m/s^2            [GREEN border]  | <-- correct answer
-| (C) 6 m/s^2              [RED border]    | <-- student selected (wrong)
-| (D) 4.5 m/s^2            [grey]          |
-|                                           |
-| Time: 1m 24s  |  Marks: -1/4            |
-|                                           |
-| [View Solution v]                         |
-| +---------------------------------------+|
-| | The net horizontal force = 20 + 10... ||
-| | cos60 = 25N. a = F/m = 25/5 = 5 m/s^2||
-| +---------------------------------------+|
-+------------------------------------------+
-```
-
-Color coding rules:
-- **Student selected + correct** --> Green background, green border, check icon
-- **Student selected + wrong** --> Red background, red border, X icon
-- **Correct answer (not selected)** --> Green border (outline), check icon
-- **Not selected, not correct** --> Grey/default styling
-- **Unattempted question** --> Show correct answer highlighted in green, "Not Attempted" badge
-
-### 4. Support for all question types in review
-
-| Type | Review Display |
-|------|---------------|
-| MCQ Single | Options with A/B/C/D, color-coded |
-| MCQ Multiple | Options with checkboxes, multiple green/red |
-| Integer | Show entered value vs correct value |
-| Fill in Blank | Show entered text vs correct text |
-| Matrix Match | Show matching table with correct/wrong pairs |
-| Assertion-Reasoning | Show A/R statements + options |
-| Paragraph | Show passage + options |
-| Short Answer | Show typed answer + model answer |
-| Long Answer | Show typed answer + model answer |
-
-### 5. Results page updates
-
-- `TestResults.tsx` will call `generateResultForTest(testId)` to get test-specific data
-- The test name, pattern, and metadata will come from the matching test data
-- Back button navigates intelligently (to subject page if from subject, else to tests list)
-
-## Execution Plan
-
-### Step 1: Enhance data model in `testResults.ts`
-
-- Add `options`, `solution`, `assertionText`, `reasonText`, `paragraphText` to `QuestionResult`
-- Create `generateResultForTest(testId)` that maps testId to correct question bank and test metadata
-- Generate realistic mock solutions for each question
-- Keep existing `sampleTestResult` as fallback
-
-### Step 2: Redesign `QuestionReview.tsx` with option-level rendering
-
-- New `OptionDisplay` sub-component for MCQ options with green/red color coding
-- New `IntegerDisplay` for integer type comparison
-- New `SubjectiveDisplay` for short/long answer with model answer
-- "View Solution" expandable section with solution text
-- Question number palette at the top for quick jump (scrollable strip showing Q1-Q15 with green/red/grey dots)
-
-### Step 3: Update `TestResults.tsx`
-
-- Replace hardcoded `sampleTestResult` with `generateResultForTest(testId)`
-- Dynamic test name from matched test data
-- Smart back navigation
-
-### Step 4: Connect from SubjectTests page
-
-- Ensure "View Results" button on attempted tests navigates to `/student/tests/:testId/results`
-- This already works from the current code
+**Fix:** Enhance the Time Analysis with:
+1. **Time on Correct vs Wrong vs Skipped** -- a clear breakdown showing where time was productive vs wasted
+2. **Top Time-Consuming Questions** -- a ranked list of the 5 slowest questions with their correct/wrong status
+3. **For grand tests: Subject-wise time breakdown** with efficiency metrics (time per correct answer vs time per wrong answer)
+4. **Time Efficiency Score** -- a simple metric: "X% of your time was spent on questions you got right"
 
 ---
 
-## Technical Details
+## Technical Plan
 
-### Files Modified
+### Step 1: Fix "View Details" Button Behavior
 
-| File | Change |
-|------|--------|
-| `src/data/student/testResults.ts` | Add fields to QuestionResult, create generateResultForTest() |
-| `src/components/student/tests/results/QuestionReview.tsx` | Full redesign with option-level display, color coding, View Solution |
-| `src/pages/student/TestResults.tsx` | Use testId-aware result generation |
+**Files modified:**
+- `src/components/student/tests/TestCard.tsx` -- Change "upcoming" case from navigating to showing schedule info
+- `src/components/student/tests/GrandTestCard.tsx` -- Same change
+- `src/pages/student/SubjectTests.tsx` -- Same change for subject test items
 
-### Files Created
+Changes:
+- Remove navigation on "upcoming" click
+- Replace button text with schedule countdown (e.g., "Starts Feb 22, 10 AM")
+- Make button visually disabled/muted (not clickable)
+- Remove `onView` prop usage for upcoming tests entirely
 
-None -- all changes are enhancements to existing files.
+### Step 2: Simplify Tabs for Single-Subject Tests
 
-### Design Principles
+**File modified:**
+- `src/pages/student/TestResults.tsx`
 
-- Mobile-first: options stack vertically, touch-friendly 44px+ targets
-- Green = correct, Red = wrong, Grey = not selected/unattempted
-- View Solution is collapsed by default, expands on tap
-- Question jump strip at top of review tab for quick navigation
-- Smooth framer-motion animations on expand/collapse
-- Handles all 9 question types gracefully
+Changes:
+- Add logic: `const isMultiSection = result.sections.length > 1`
+- If single section: show only 3 tabs (Overview, Time, Review) -- hide "Sections" tab
+- In Overview tab for single-subject: skip the SectionAnalysis component, keep ScoreBreakdown and PerformanceComparison
+- For grand tests: keep all 4 tabs as-is
+
+### Step 3: Enhance Time Analysis
+
+**File modified:**
+- `src/components/student/tests/results/TimeAnalysis.tsx`
+
+New sections added to the Time Analysis card:
+
+1. **Time Efficiency Summary** (top of card)
+   - "X% of time spent on correct answers" with a visual ring/bar
+   - Total time on correct | wrong | skipped
+
+2. **Correct vs Wrong Time Comparison** (new section)
+   - Two horizontal bars: "Time on Correct" (green) vs "Time on Wrong" (red) vs "Time on Skipped" (grey)
+   - Average time per correct question vs average time per wrong question
+
+3. **Slowest Questions** (new section)
+   - Top 5 questions ranked by time spent
+   - Each shows: question number, time taken, correct/wrong badge, subject (for grand tests)
+   - Helps students identify where they spent the most time and whether it was worth it
+
+4. **Subject-wise Time Breakdown** (for grand tests only, replaces current section bars)
+   - Per subject: total time, time on correct, time on wrong
+   - Efficiency ratio per subject
+
