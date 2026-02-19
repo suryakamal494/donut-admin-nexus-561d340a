@@ -11,6 +11,7 @@ import {
   SectionAnalysis,
   TimeAnalysis,
   QuestionReview,
+  PerformanceComparison,
 } from "@/components/student/tests/results";
 import { generateResultForTest } from "@/data/student/testResultsGenerator";
 import { cn } from "@/lib/utils";
@@ -101,6 +102,7 @@ const StudentTestResults = () => {
                 skipped={result.skipped}
                 accuracy={result.accuracy}
               />
+              <PerformanceComparison sections={result.sections} />
               <SectionAnalysis 
                 sections={result.sections}
                 onSectionClick={(sectionId) => {
