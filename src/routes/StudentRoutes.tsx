@@ -15,6 +15,7 @@ import StudentChapterView from "@/pages/student/ChapterView";
 import StudentBundleDetail from "@/pages/student/BundleDetail";
 import StudentContentViewer from "@/pages/student/ContentViewer";
 import StudentTests from "@/pages/student/Tests";
+import StudentSubjectTests from "@/pages/student/SubjectTests";
 import StudentTestPlayer from "@/pages/student/TestPlayer";
 import StudentTestResults from "@/pages/student/TestResults";
 import StudentProgress from "@/pages/student/Progress";
@@ -40,6 +41,7 @@ export default function StudentRoutes() {
         <Route path="subjects/:subjectId/:chapterId" element={<StudentChapterView />} />
         <Route path="subjects/:subjectId/:chapterId/:bundleId" element={<StudentBundleDetail />} />
         <Route path="tests" element={<StudentTests />} />
+        <Route path="tests/subject/:subject" element={<StudentSubjectTests />} />
         <Route path="progress" element={<StudentProgress />} />
         <Route path="notifications" element={<StudentNotifications />} />
       </Route>
