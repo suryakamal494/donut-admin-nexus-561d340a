@@ -42,6 +42,7 @@ export const subjectColorMap: Record<string, string> = {
   zoology: "rose",
   english: "amber",
   cs: "cyan",
+  hindi: "orange",
 };
 
 // Teacher-assigned tests (single subject)
@@ -380,6 +381,20 @@ export const grandTests: StudentTest[] = [
     scheduledDate: "2026-02-19",
     scheduledTime: "10:00 AM",
   },
+  {
+    id: "cbse-hindi-demo",
+    name: "CBSE कक्षा 10 हिंदी (ब) — 2024",
+    type: "grand_test",
+    subjects: ["hindi"],
+    pattern: "cbse",
+    totalQuestions: 35,
+    totalMarks: 80,
+    duration: 180,
+    negativeMarking: false,
+    status: "live",
+    scheduledDate: "2026-02-19",
+    scheduledTime: "02:00 PM",
+  },
 ];
 
 // Previous Year Papers
@@ -581,6 +596,7 @@ export const getSubjectDisplayName = (subject: string): string => {
     biology: "Biology",
     english: "English",
     cs: "Computer Science",
+    hindi: "हिंदी",
   };
   return names[subject.toLowerCase()] || subject;
 };
