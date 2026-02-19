@@ -73,6 +73,14 @@ const sectionTabColors: Record<string, { active: string; inactive: string }> = {
     active: "bg-rose-600 text-white",
     inactive: "bg-rose-100 text-rose-700 hover:bg-rose-200",
   },
+  botany: {
+    active: "bg-green-600 text-white",
+    inactive: "bg-green-100 text-green-700 hover:bg-green-200",
+  },
+  zoology: {
+    active: "bg-pink-600 text-white",
+    inactive: "bg-pink-100 text-pink-700 hover:bg-pink-200",
+  },
   english: {
     active: "bg-amber-600 text-white",
     inactive: "bg-amber-100 text-amber-700 hover:bg-amber-200",
@@ -164,9 +172,10 @@ const PaletteGrid = memo(function PaletteGrid({
     );
   }
 
-  // Flat grid (no sub-sections)
+  // Flat grid (no sub-sections) — compact mode for 20+ questions
+  const isCompact = questions.length > 20;
   return (
-    <div className="flex flex-wrap gap-1.5 sm:gap-2">
+    <div className={cn("flex flex-wrap", isCompact ? "gap-1" : "gap-1.5 sm:gap-2")}>
       {questions.map((q) => {
         const globalIndex = allQuestions.findIndex((aq) => aq.id === q.id);
         return (
@@ -176,6 +185,7 @@ const PaletteGrid = memo(function PaletteGrid({
             globalIndex={globalIndex}
             isCurrent={globalIndex === currentQuestionIndex}
             onQuestionSelect={onQuestionSelect}
+            compact={isCompact}
           />
         );
       })}
@@ -189,11 +199,13 @@ const PaletteButton = memo(function PaletteButton({
   globalIndex,
   isCurrent,
   onQuestionSelect,
+  compact = false,
 }: {
   q: TestSessionQuestion;
   globalIndex: number;
   isCurrent: boolean;
   onQuestionSelect: (index: number) => void;
+  compact?: boolean;
 }) {
   const style = statusStyles[q.status];
   const isAnswered = q.status === "answered" || q.status === "answered_marked";
@@ -205,8 +217,11 @@ const PaletteButton = memo(function PaletteButton({
       initial={false}
       whileTap={{ scale: 0.9 }}
       className={cn(
-        "relative w-9 h-9 sm:w-10 sm:h-10 rounded-lg font-semibold text-xs sm:text-sm",
+        "relative rounded-lg font-semibold",
         "border-2 transition-all duration-200",
+        compact
+          ? "w-8 h-8 sm:w-9 sm:h-9 text-[10px] sm:text-xs"
+          : "w-9 h-9 sm:w-10 sm:h-10 text-xs sm:text-sm",
         style.bg,
         style.border,
         style.text,
@@ -220,9 +235,12 @@ const PaletteButton = memo(function PaletteButton({
         <motion.span
           initial={{ scale: 0 }}
           animate={{ scale: 1 }}
-          className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-emerald-600 flex items-center justify-center border border-white"
+          className={cn(
+            "absolute -top-1 -right-1 rounded-full bg-emerald-600 flex items-center justify-center border border-white",
+            compact ? "w-3 h-3" : "w-3.5 h-3.5"
+          )}
         >
-          <CheckCircle2 className="w-2.5 h-2.5 text-white" />
+          <CheckCircle2 className={cn(compact ? "w-2 h-2" : "w-2.5 h-2.5", "text-white")} />
         </motion.span>
       )}
       
@@ -231,7 +249,10 @@ const PaletteButton = memo(function PaletteButton({
         <motion.span
           initial={{ scale: 0 }}
           animate={{ scale: 1 }}
-          className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-purple-600 flex items-center justify-center border border-white"
+          className={cn(
+            "absolute -top-1 -right-1 rounded-full bg-purple-600 flex items-center justify-center border border-white",
+            compact ? "w-3 h-3" : "w-3.5 h-3.5"
+          )}
         >
           <Flag className="w-2 h-2 text-white" />
         </motion.span>
