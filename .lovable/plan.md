@@ -1,97 +1,219 @@
 
-# PYP Exam Testing: Intra-Login (SuperAdmin) + Inter-Login (Cross-Portal) Workflows
 
-## What We Are Doing
+# Building Real Exam UIs: JEE Advanced, NEET, CBSE Math, CBSE Hindi
 
-Creating two sets of comprehensive workflow test cases for the Previous Year Paper (PYP) exam flow:
+## What We Are Solving
 
-1. **Intra-login test** (added to SuperAdmin intra-login file): End-to-end PYP creation, editing, preview, and validation workflow within the SuperAdmin portal
-2. **Inter-login test** (rewrite the existing exam-tests.md file): Complete cross-portal PYP flow from SuperAdmin creation through Institute assignment to Student attempt and Teacher/Institute report viewing
+The Student Test Player currently has a single generic UI that works the same for all exam types. Real competitive exams have very different structures, and the current player is missing:
 
-Both will follow the workflow-based format (not smoke test format) with Steps and Checkpoints.
+- **Section-wise navigation within subjects** (critical for JEE Advanced where each subject has 4 sections: Single Correct, Multiple Correct, Numerical, Paragraph)
+- **Stress-tested UI for high question counts** (NEET has 160 questions, current test only has 23)
+- **Real exam content** with LaTeX math, chemistry diagrams, physics figures, and Hindi text
+- **Pattern-specific layouts** that match what students actually see in their real exams
 
----
+We need to build 4 complete exam papers with real content, ensuring the UI never breaks regardless of question count, content complexity, or device size.
 
-## Where These Tests Will Be Added
+## Design Principles (Carried Forward)
 
-| Test Type | File Location | Doc Browser Path |
-|-----------|--------------|------------------|
-| Intra-Login (SuperAdmin PYP) | `docs/06-testing-scenarios/intra-login-tests/superadmin.md` | `/docs/06-testing-scenarios/intra-login-tests/superadmin` |
-| Inter-Login (Exam Flow) | `docs/06-testing-scenarios/inter-login-tests/exam-tests.md` | `/docs/06-testing-scenarios/inter-login-tests/exam-tests` |
-
----
-
-## Part 1: SuperAdmin Intra-Login -- PYP Workflow Tests
-
-These will be added as a **new section** in `superadmin.md` between the existing "Question Bank -> Exams" section and "Content Library -> Exams" section. Test IDs will be renumbered accordingly.
-
-### New Section: "Previous Year Paper -- End-to-End Creation Workflow"
-
-| Test ID | Workflow | Precondition | Steps and Checkpoints | Expected Result |
-|---------|----------|--------------|---------------------|-----------------|
-| SA-IL-031 | PYP creation and PDF extraction workflow | None | 1. Go to Exams, click "Create Previous Year Paper". 2. Select exam type (JEE Main) -- verify JEE Main, JEE Advanced, NEET options available. 3. Select year and session -- verify paper name auto-generates (e.g., "JEE Main 2025 - January Session"). 4. Customize the paper name if needed -- verify editable. 5. Proceed to Upload step. 6. Upload a PDF file -- verify only PDF accepted, max 50MB enforced. 7. Click "Upload and Create Test" -- verify upload completes and success confirmation shown. 8. Click "Review and Configure" -- verify redirected to Review page with questions extracted. 9. Verify questions are grouped by subjects (Physics, Chemistry, Mathematics for JEE Main). 10. Verify section structure matches exam pattern -- Section A (MCQ) and Section B (Numerical) for JEE Main. 11. Verify marking scheme is correct: +4/-1 for MCQ, +4/0 for Numerical. | Complete PYP creation flow works end-to-end: exam config, PDF upload, question extraction with correct pattern, sections, and marking |
-| SA-IL-032 | PYP review and question validation workflow | PYP created and in review state | 1. Open the PYP review page. 2. Navigate between subjects using subject tabs -- verify question counts shown per subject. 3. Use Quick Navigation panel -- verify all question numbers visible and clickable. 4. Click a question number -- verify jumps to correct page. 5. Open a question -- verify question text, options, correct answer marked (green), chapter and topic shown. 6. Click "Show Solution" -- verify solution text displayed. 7. Click "Edit" on a question -- verify edit dialog opens with pre-filled data. 8. Modify question text, save -- verify status changes to "Edited" (orange). 9. Click "Delete" on a question -- verify status changes to "Deleted" (red, greyed out). 10. Click "Mark Reviewed" on a pending question -- verify status changes to "Reviewed" (green). 11. Verify progress badge on subject tabs updates (reviewed/total count). | Complete question review workflow functions: navigation, solution viewing, editing, deleting, and marking reviewed all work with correct status tracking |
-| SA-IL-033 | PYP pattern verification across exam types | PYPs for JEE Main, JEE Advanced, and NEET created | 1. Open a JEE Main PYP -- verify 3 subjects (Physics, Chemistry, Mathematics), no sub-sections within subjects, Section A (20 MCQ, +4/-1) and Section B (10 Numerical, +4/0), total 90 questions, 300 marks. 2. Open a JEE Advanced PYP -- verify 3 subjects (Physics, Chemistry, Mathematics), each subject has multiple sections (Paper 1 and Paper 2 style), mix of single-choice, multi-choice, paragraph, and numerical, total 54 questions, 198 marks. 3. Open a NEET PYP -- verify 4 subjects (Physics, Chemistry, Botany, Zoology), Section A (35 MCQ) and Section B (15 MCQ, attempt any 10), total 180 questions (200 with Section B extras), 720 marks. | Each exam type follows its official pattern with correct subject splits, section structures, question types, and marking schemes |
-| SA-IL-034 | PYP publish and audience assignment workflow | PYP reviewed and ready to publish | 1. On the review page, click "Publish Test" -- verify publish confirmation dialog appears. 2. Confirm publish -- verify test status changes to "Published" and redirected to exam listing. 3. Verify the published PYP appears in the listing under the correct exam type and year accordion. 4. Verify Rank and Percentile config section is available for PYPs. 5. Click "Audience" on the published PYP -- verify audience selection dialog opens. 6. Select specific institutes -- verify selected institutes listed. 7. Select "All Institutes" -- verify all institutes selected. 8. Save audience -- verify audience count displayed on the PYP card. | PYP can be published, listed correctly by exam type and year, rank/percentile configured, and audience assigned to specific or all institutes |
-| SA-IL-035 | PYP edit and draft management | Published and draft PYPs exist | 1. Open a draft PYP -- verify edit and delete options available. 2. Open a published PYP -- verify view and audience options available but edit of questions is restricted. 3. View PYP stats (if completed) -- verify stats button works. 4. Verify draft PYPs are not visible to institutes. 5. Verify only published PYPs appear in institute view. | Draft PYPs are editable but hidden from institutes; published PYPs are view-only for questions but allow audience and schedule management |
-
-### Renumbering Impact
-
-Current SA-IL-029 to SA-IL-035 will shift to SA-IL-036 to SA-IL-040. Total count goes from 35 to 40.
+- Mobile-first responsive (320px and up)
+- "Sophisticated Warmth" aesthetic with glassmorphism and smooth micro-interactions
+- 44px+ touch targets on all interactive elements
+- Plus Jakarta Sans typography with clear hierarchy
+- Subject color coding: Physics (purple), Chemistry (emerald), Math (blue), Biology (rose)
+- Bottom sheet patterns on mobile, sidebar on desktop
+- Framer Motion animations for state transitions
+- Session persistence via localStorage
 
 ---
 
-## Part 2: Inter-Login -- PYP Exam Flow (Rewrite exam-tests.md)
+## Phased Approach
 
-The existing `exam-tests.md` has scattered smoke-test-style rows. It will be **completely rewritten** in the workflow format with two major sections:
+### Phase 1: JEE Advanced Pattern (81 questions)
 
-1. **PYP End-to-End Flow** (cross-portal)
-2. **Grand Test End-to-End Flow** (cross-portal, already partially covered -- will be rewritten in workflow format)
+This is the most complex UI challenge and must be built first because it introduces the **section-within-subject navigation** pattern that other exams can inherit.
 
-### PYP Inter-Login Workflow Tests
+**New UI Elements to Build:**
 
-| Test ID | Workflow | Login | Precondition | Steps and Checkpoints | Expected Result |
-|---------|----------|-------|--------------|---------------------|-----------------|
-| EX-001 | PYP creation to institute visibility | SuperAdmin then Institute | PYP created and published in SuperAdmin | **SuperAdmin:** 1. Create PYP (JEE Main 2025). 2. Upload PDF, review questions, publish. 3. Click Audience, assign to Institute A and Institute B. **Institute A:** 4. Login as Institute A admin. 5. Go to Exams, Previous Year Papers tab. 6. Verify the JEE Main 2025 PYP is visible. 7. Verify year-wise accordion grouping matches SuperAdmin (2025, 2024, etc.). 8. Verify PYP is read-only -- no edit or delete buttons. **Institute B:** 9. Login as Institute B admin. 10. Verify the same PYP is visible. **Unassigned Institute C:** 11. Login as Institute C admin. 12. Verify the PYP is NOT visible. | PYP is visible only to assigned institutes, read-only, with correct year grouping |
-| EX-002 | Institute PYP preview and content consistency | Institute | PYP assigned to institute | 1. Go to Previous Year Papers. 2. Click View on a PYP. 3. Verify preview page loads with subject tabs (Physics, Chemistry, Mathematics for JEE Main). 4. Navigate between subjects -- verify question counts match SuperAdmin's version. 5. Verify section structure preserved (Section A MCQ, Section B Numerical). 6. Verify marking scheme matches (+4/-1 MCQ, +4/0 Numerical). 7. Verify math formulas (LaTeX) render correctly. 8. Verify images display properly. 9. Verify solutions are viewable. 10. Check pagination works for navigating through questions. | Institute preview shows identical content to SuperAdmin: same questions, sections, marking, and all rich content (math, images) renders correctly |
-| EX-003 | Institute assigns PYP to student batches | Institute then Student | PYP visible in institute | **Institute:** 1. Click Assign on the PYP. 2. Verify batch selection dialog opens. 3. Select Batch A and Batch B. 4. Save. **Student in Batch A:** 5. Login as student. 6. Go to Tests page. 7. Verify the PYP appears in the Grand Tests and PYPs tab. 8. Verify exam pattern filter works (filter by JEE Main shows the PYP). **Student in Batch B:** 9. Verify same PYP visible. **Student in Batch C (not assigned):** 10. Verify PYP is NOT visible. | PYP appears for students in assigned batches only, with correct pattern filtering |
-| EX-004 | Student takes PYP exam end-to-end | Student | PYP assigned to student's batch | 1. Go to Tests, find the PYP. 2. Click Start -- verify instruction page displays with exam name, duration, total questions, marking scheme. 3. Verify correct exam UI loads based on pattern: JEE Main loads NTA-style interface, JEE Advanced loads IIT-style interface, NEET loads NTA NEET interface. 4. Verify subjects displayed in the player match the exam pattern (Physics, Chemistry, Mathematics for JEE/NEET adds Biology). 5. Navigate to a question -- verify question text, options render correctly. 6. Verify math formulas (LaTeX) render in the test player. 7. Verify images load and display properly. 8. Select an answer -- verify option highlights. 9. Navigate to next question using Next button -- verify navigation works. 10. Navigate to previous question -- verify back navigation works (if allowed by pattern). 11. Switch between subjects using subject tabs -- verify smooth transition. 12. Mark a question for review -- verify flag indicator appears on the question number in the palette. 13. Open question palette -- verify all question statuses shown (answered, not answered, marked for review, not visited). 14. Verify timer is running and displays correct remaining time. 15. Clear a response -- verify answer deselected. 16. Answer all questions, click Submit -- verify submission confirmation dialog shows summary (answered, unanswered, marked counts). 17. Confirm submission -- verify exam submits successfully. | Complete exam-taking experience works: instructions, pattern-specific UI, question display (text, math, images), navigation, subject switching, mark for review, timer, and submission |
-| EX-005 | PYP results and reporting across portals | Student, Teacher, Institute | Student has submitted PYP | **Student:** 1. After submission, verify results page opens. 2. Verify score is calculated correctly based on marking scheme (+4/-1). 3. Verify question-by-question breakdown available -- showing correct/incorrect/unanswered per question. **Teacher (subject-specific):** 4. Login as a teacher assigned to Physics for the batch. 5. Go to Exam Results. 6. Verify only Physics results for this PYP are visible (not Chemistry or Mathematics). 7. Verify student scores for Physics section listed. 8. Verify score distribution chart and analytics available for Physics. **Institute:** 9. Login as institute admin. 10. Verify complete test report visible with all subjects. 11. Verify batch-level performance analytics (average score, top performers). 12. Verify individual student drill-down available. | Results flow correctly to all stakeholders: student sees full results, teacher sees only their subject, institute sees complete aggregate analytics |
+1. **Section Navigation Bar** -- Below the subject tabs, a secondary row showing sections within the selected subject (e.g., "Sec 1: Single Correct | Sec 2: Multi Correct | Sec 3: Numerical | Sec 4: Paragraph"). Horizontally scrollable on mobile, inline on desktop.
 
-### Grand Test Inter-Login Workflow Tests
+2. **Updated Question Palette** -- When palette is open, questions grouped by section with section headers. Each section shows its own answered/total count.
 
-| Test ID | Workflow | Login | Precondition | Steps and Checkpoints | Expected Result |
-|---------|----------|-------|--------------|---------------------|-----------------|
-| EX-006 | Grand Test creation to institute visibility | SuperAdmin then Institute | None | **SuperAdmin:** 1. Create Grand Test (JEE Main pattern). 2. Add questions (AI or Question Bank). 3. Configure schedule (date and time). 4. Click Audience, assign to specific institutes. **Institute:** 5. Login as assigned institute. 6. Verify GT visible with correct schedule date/time. 7. Verify GT is read-only (no edit/delete). **Unassigned Institute:** 8. Verify GT not visible. | GT visible only to assigned institutes, read-only, with schedule displayed |
-| EX-007 | Grand Test schedule controls student access | SuperAdmin, Institute, Student | GT assigned to institute, institute assigned to batch | **Future schedule:** 1. SA sets GT schedule for tomorrow. 2. Student logs in -- verify "Available at [date/time]" shown, Start button disabled. 3. Verify countdown timer displayed. **Schedule arrives:** 4. SA changes schedule to current time. 5. Student refreshes -- verify Start button becomes active. **Past schedule:** 6. GT with past schedule -- verify student can start immediately. | Schedule controls exam access: disabled before time, enabled after, countdown shown for near-future |
-| EX-008 | Grand Test student attempt and results | Student, Teacher, Institute | GT available and schedule active | Same as EX-004 flow but for Grand Test: student takes test, submits, results flow to student/teacher/institute with same verification points. | Complete GT exam-taking and result-reporting works identically to PYP flow |
+3. **Section Instructions** -- Brief instruction text at the top of each section (e.g., "This section contains 7 single-correct MCQs. +3 for correct, -1 for wrong.").
 
-### Exam Content Consistency Tests
+**Data Files:**
 
-| Test ID | Workflow | Login | Precondition | Steps and Checkpoints | Expected Result |
-|---------|----------|-------|--------------|---------------------|-----------------|
-| EX-009 | Question count and structure consistency across portals | SuperAdmin, Institute, Student | Published exam with sections | 1. SA creates exam with 75 questions across 3 subjects. 2. Institute previews -- verify exactly 75 questions, same 3 sections. 3. Student opens in test player -- verify same question count and section structure. 4. Verify marking scheme consistent across all views (+4/-1). | Question count, section structure, and marking are identical across all portals |
-| EX-010 | Rich content rendering across portals | SuperAdmin, Institute, Student | Exam with LaTeX and images | 1. SA creates exam with LaTeX formulas and image-based questions. 2. Institute previews -- verify formulas and images render. 3. Student opens in test player -- verify same rendering on both mobile and desktop. | Math formulas and images display correctly across all portals and devices |
+| File | Purpose |
+|------|---------|
+| `src/data/student/jeeAdvancedQuestions.ts` | 81 real JEE Advanced questions (27 per subject x 3 subjects) with LaTeX, images, and paragraph passages |
+| `src/data/student/jeeAdvancedSession.ts` | Session config with 12 sections (4 per subject), marking schemes per section |
 
-### Question Permission Tests
+**Question Distribution per Subject (27 questions):**
 
-| Test ID | Workflow | Login | Precondition | Steps and Checkpoints | Expected Result |
-|---------|----------|-------|--------------|---------------------|-----------------|
-| EX-011 | Question permission boundaries across portals | SuperAdmin, Institute, Teacher | Questions exist at different levels | 1. SA creates global questions -- verify Institute sees with "Global" badge (read-only). 2. Institute creates questions -- verify Teacher sees with "Institute" badge (read-only). 3. Teacher creates questions -- verify only that teacher sees them. 4. Verify editing is blocked for non-owned questions at each level. | Question visibility follows hierarchy: global is read-only downstream, institute is read-only for teachers, teacher questions are private |
+| Section | Type | Questions | Marks | Marking |
+|---------|------|-----------|-------|---------|
+| Section 1 | Single Correct MCQ | 7 | +3/-1 each | 21 marks |
+| Section 2 | Multiple Correct MCQ | 7 | +4/-2 partial | 28 marks |
+| Section 3 | Numerical Value | 7 | +4/0 each | 28 marks |
+| Section 4 | Paragraph Based (2 paragraphs, 3-4 Qs each) | 6 | +3/-1 each | 18 marks |
 
----
+**Real Content Research:** Questions will be sourced/modeled from actual JEE Advanced 2024 papers covering:
+- Physics: Mechanics, Electrodynamics (circuit diagrams), Optics (ray diagrams), Thermodynamics
+- Chemistry: Organic reaction mechanisms, Coordination compounds, Electrochemistry, P-block elements
+- Mathematics: Calculus (definite integrals), Matrices, Probability, Conic sections
 
-## Files Modified
+**Component Changes:**
+
+| Component | Change |
+|-----------|--------|
+| `TestPlayerHeader.tsx` | Add section sub-tabs below subject tabs when exam has sections within subjects |
+| `QuestionPalette.tsx` | Group questions by section with collapsible section headers |
+| `QuestionNavigation.tsx` | Show current section name alongside question number |
+| `TestPlayer.tsx` (page) | Route to JEE Advanced session data when test ID matches |
+
+**Files Created/Modified:**
 
 | File | Action |
 |------|--------|
-| `docs/06-testing-scenarios/intra-login-tests/superadmin.md` | Add new "Previous Year Paper" section (5 workflow tests), renumber SA-IL-031 to SA-IL-040 |
-| `docs/06-testing-scenarios/inter-login-tests/exam-tests.md` | Complete rewrite in workflow format with PYP flow, GT flow, consistency, and permissions (11 workflow tests replacing 75 smoke tests) |
+| `src/data/student/jeeAdvancedQuestions.ts` | Create -- 81 questions with real content |
+| `src/data/student/jeeAdvancedSession.ts` | Create -- session config with 12 sections |
+| `src/components/student/tests/player/SectionNavigation.tsx` | Create -- new section sub-navigation component |
+| `src/components/student/tests/player/TestPlayerHeader.tsx` | Modify -- integrate section tabs |
+| `src/components/student/tests/player/QuestionPalette.tsx` | Modify -- section-grouped grid |
+| `src/components/student/tests/player/QuestionNavigation.tsx` | Modify -- show section context |
+| `src/pages/student/TestPlayer.tsx` | Modify -- load correct session based on test ID |
+| `src/data/student/tests.ts` | Modify -- add JEE Advanced test entry |
+| `src/data/student/testQuestions.ts` | Modify -- add `sectionName` field to TestSection type |
+
+---
+
+### Phase 2: NEET Pattern (160 questions)
+
+NEET has no sections within subjects but tests the UI at scale (160 questions). The question palette must handle a large grid without breaking.
+
+**Key UI Challenge:** 40 questions per subject in the palette grid. Need to ensure the wrap grid stays usable on mobile (potentially 8 columns x 5 rows per subject).
+
+**Data Files:**
+
+| File | Purpose |
+|------|---------|
+| `src/data/student/neetQuestions.ts` | 160 real NEET questions (40 per subject x 4 subjects) |
+| `src/data/student/neetSession.ts` | Session config with 4 subject-level sections |
+
+**Question Distribution:**
+
+| Subject | Questions | Type | Marking |
+|---------|-----------|------|---------|
+| Physics | 40 | All MCQ Single Correct | +4/-1 |
+| Chemistry | 40 | All MCQ Single Correct | +4/-1 |
+| Botany | 40 | All MCQ Single Correct | +4/-1 |
+| Zoology | 40 | All MCQ Single Correct | +4/-1 |
+
+**Real Content:** Questions modeled from NEET 2024 covering:
+- Physics: Mechanics, Waves, Optics, Modern Physics
+- Chemistry: Organic, Inorganic, Physical Chemistry
+- Botany: Plant Physiology, Ecology, Cell Biology, Genetics
+- Zoology: Human Physiology, Animal Kingdom, Reproduction, Evolution
+
+**Component Changes:**
+
+| Component | Change |
+|-----------|--------|
+| `QuestionPalette.tsx` | Optimize grid for 40-question sections (compact mode for large counts) |
+| `TestPlayerHeader.tsx` | Add "Botany" and "Zoology" subject color definitions |
+
+**Files Created/Modified:**
+
+| File | Action |
+|------|--------|
+| `src/data/student/neetQuestions.ts` | Create -- 160 NEET questions |
+| `src/data/student/neetSession.ts` | Create -- session config |
+| `src/data/student/tests.ts` | Modify -- add NEET test entry |
+| `src/components/student/tests/player/TestPlayerHeader.tsx` | Modify -- add botany/zoology colors |
+| `src/components/student/tests/player/QuestionPalette.tsx` | Modify -- compact grid mode for 40+ questions |
+| `src/pages/student/TestPlayer.tsx` | Modify -- route to NEET session |
+
+---
+
+### Phase 3: CBSE Math Paper
+
+CBSE board exam format is different from competitive exams. Typically has sections (A, B, C, D, E) with different question types (1-mark, 2-mark, 3-mark, 5-mark). This tests the UI with long-answer and short-answer question types.
+
+**Data Files:**
+
+| File | Purpose |
+|------|---------|
+| `src/data/student/cbseMathQuestions.ts` | Full CBSE Class 10/12 Math paper (~38 questions) |
+| `src/data/student/cbseMathSession.ts` | Session config with CBSE sections |
+
+**CBSE Math Structure (Class 12, 2024 pattern):**
+
+| Section | Type | Questions | Marks |
+|---------|------|-----------|-------|
+| Section A | MCQ / Assertion-Reasoning | 20 | 1 mark each |
+| Section B | Very Short Answer | 5 | 2 marks each |
+| Section C | Short Answer | 6 | 3 marks each |
+| Section D | Long Answer | 4 | 5 marks each |
+| Section E | Case Study (Paragraph) | 3 | 4 marks each |
+
+**Real Content:** Modeled from CBSE Class 12 Math 2024:
+- Algebra: Matrices, Determinants
+- Calculus: Integration, Differential Equations
+- Geometry: 3D Geometry, Vectors
+- Probability and Linear Programming
+
+**Files Created/Modified:**
+
+| File | Action |
+|------|--------|
+| `src/data/student/cbseMathQuestions.ts` | Create -- ~38 CBSE Math questions |
+| `src/data/student/cbseMathSession.ts` | Create -- session config |
+| `src/data/student/tests.ts` | Modify -- add CBSE Math test entry, add `cbse` ExamPattern |
+| `src/pages/student/TestPlayer.tsx` | Modify -- route to CBSE session |
+
+---
+
+### Phase 4: CBSE Hindi Paper (Multilingual)
+
+This is the acid test for multilingual support. Hindi text (Devanagari script) must render correctly in questions, options, and the palette.
+
+**Data Files:**
+
+| File | Purpose |
+|------|---------|
+| `src/data/student/cbseHindiQuestions.ts` | Full CBSE Hindi paper (~40 questions) in Devanagari |
+| `src/data/student/cbseHindiSession.ts` | Session config |
+
+**CBSE Hindi Structure:**
+
+| Section | Type | Questions | Marks |
+|---------|------|-----------|-------|
+| Section A | Reading Comprehension (Apathit Gadyansh) | 10 | MCQ 1 mark each |
+| Section B | Grammar (Vyakaran) | 10 | MCQ/Fill 1 mark each |
+| Section C | Literature (Sahitya) | 10 | Short Answer 2-3 marks |
+| Section D | Writing (Lekhan) | 5 | Long Answer 5 marks |
+
+**Key Technical Challenge:** Ensuring Devanagari text renders with proper line height, word spacing, and font rendering. May need to add a Hindi-compatible font (Noto Sans Devanagari) for clean rendering.
+
+**Files Created/Modified:**
+
+| File | Action |
+|------|--------|
+| `src/data/student/cbseHindiQuestions.ts` | Create -- Hindi paper in Devanagari |
+| `src/data/student/cbseHindiSession.ts` | Create -- session config |
+| `src/data/student/tests.ts` | Modify -- add CBSE Hindi test entry |
+| `src/pages/student/TestPlayer.tsx` | Modify -- route to Hindi session |
+| `index.html` or `tailwind.config.ts` | Modify -- add Noto Sans Devanagari font if needed |
+
+---
 
 ## Summary
 
-| Area | Before | After |
-|------|--------|-------|
-| SuperAdmin intra-login total | 35 tests | 40 tests (+5 PYP workflows) |
-| Inter-login exam tests | 75 scattered smoke tests | 11 comprehensive workflow tests (same coverage, better readability) |
-| Format | Mixed smoke/atomic | Consistent workflow with Steps and Checkpoints |
+| Phase | Exam | Questions | Key UI Feature | New Files | Modified Files |
+|-------|------|-----------|---------------|-----------|----------------|
+| 1 | JEE Advanced | 81 | Section navigation within subjects | 3 | 6 |
+| 2 | NEET | 160 | Large-scale palette, 4 subjects | 2 | 4 |
+| 3 | CBSE Math | ~38 | CBSE section format, long answers | 2 | 2 |
+| 4 | CBSE Hindi | ~40 | Hindi/Devanagari multilingual | 2 | 3 |
+
+Each phase produces a fully working, mobile-responsive exam that students can take end-to-end. No phase depends on a later phase, and each phase gets full design attention.
+
