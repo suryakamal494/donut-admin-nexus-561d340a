@@ -1,145 +1,141 @@
 
+# Enhanced Test Results / Reports Page
 
-# Subject Tests Page: Replace Popup with Dedicated Full Page
+## Current State
 
-## Pain Point
+The Test Results page (`/student/tests/:testId/results`) exists with four tabs: Overview, Sections, Time, and Review. However, it has key limitations:
 
-When a student clicks on a subject (e.g., Physics) under "My Tests", a side sheet/popup opens showing the tests. This approach has serious limitations:
-
-- **Not scalable**: A popup cannot handle 15-20+ tests comfortably, especially on mobile
-- **Poor navigation**: Students can't bookmark or share subject test pages
-- **Limited space**: No room for date-wise grouping, detailed test cards, and proper filtering
-- **Inconsistent UX**: Every other drill-down in the student portal (subjects, chapters, bundles) uses a dedicated page -- tests should too
+1. **Hardcoded data**: Always shows the same `sampleTestResult` regardless of which test the student clicks "View Results" on
+2. **No option-level display**: The Question Review tab shows "Your Answer: B" and "Correct Answer: A" as plain text -- it does not render the actual options with green/red color coding
+3. **No "View Solution" button**: Students cannot see explanations for wrong/unattempted questions
+4. **No support for subject tests**: The results data generator only works with the grand test sample questions, not the 66+ teacher-assigned subject tests
 
 ## What We Will Build
 
-A new dedicated page at `/student/tests/:subject` (e.g., `/student/tests/physics`) that:
+### 1. Enhanced QuestionResult data model
 
-1. Shows a premium header with subject icon, color, test counts, and live indicator
-2. Has filter tabs (All, Live, Upcoming, Attempted, Missed) with counts
-3. Groups tests **date-wise** (Today, This Week, Earlier, Upcoming dates)
-4. Shows proper action buttons: "Start Test" (live), "View" (upcoming), "View Results" (attempted)
-5. Handles 15-20+ tests per subject with smooth scrolling
-6. Removes the old SubjectTestsSheet popup entirely
+Add `options` field to `QuestionResult` so we can render the actual option texts (not just IDs) in the review. Add a `solution` field for explanations.
 
-Additionally, we will expand the sample test data from 3 tests per subject to **15-20 tests per subject** across Physics, Chemistry, Mathematics, and Biology -- giving realistic topic names, varied statuses, dates, scores, and teacher names.
+```text
+QuestionResult (enhanced):
+  + options: { id, text, isCorrect }[]    -- actual option data
+  + solution?: string                      -- explanation text
+  + assertionText?: string                 -- for assertion-reasoning
+  + reasonText?: string                    -- for assertion-reasoning
+  + paragraphText?: string                 -- for paragraph-based
+```
+
+### 2. Test-aware result generation
+
+Create a `generateResultForTest(testId)` function that maps to the correct question bank based on testId:
+- Grand tests (JEE Main, JEE Advanced, NEET) use existing `allSampleQuestions`
+- CBSE Math uses `cbseMathQuestions`
+- CBSE Hindi uses `cbseHindiQuestions`
+- Subject-specific teacher tests generate results from their subject's questions
+
+This replaces the current single `sampleTestResult` export.
+
+### 3. Redesigned Question Review with Option-Level Display
+
+The expanded question card will show:
+
+```text
++------------------------------------------+
+| [x] Q.3  MCQ Single  medium    -1/4     |
+|     A block of mass 5 kg is placed...    |
++------------------------------------------+
+| Options:                                  |
+| (A) 5 m/s^2              [grey]          |
+| (B) 5.5 m/s^2            [GREEN border]  | <-- correct answer
+| (C) 6 m/s^2              [RED border]    | <-- student selected (wrong)
+| (D) 4.5 m/s^2            [grey]          |
+|                                           |
+| Time: 1m 24s  |  Marks: -1/4            |
+|                                           |
+| [View Solution v]                         |
+| +---------------------------------------+|
+| | The net horizontal force = 20 + 10... ||
+| | cos60 = 25N. a = F/m = 25/5 = 5 m/s^2||
+| +---------------------------------------+|
++------------------------------------------+
+```
+
+Color coding rules:
+- **Student selected + correct** --> Green background, green border, check icon
+- **Student selected + wrong** --> Red background, red border, X icon
+- **Correct answer (not selected)** --> Green border (outline), check icon
+- **Not selected, not correct** --> Grey/default styling
+- **Unattempted question** --> Show correct answer highlighted in green, "Not Attempted" badge
+
+### 4. Support for all question types in review
+
+| Type | Review Display |
+|------|---------------|
+| MCQ Single | Options with A/B/C/D, color-coded |
+| MCQ Multiple | Options with checkboxes, multiple green/red |
+| Integer | Show entered value vs correct value |
+| Fill in Blank | Show entered text vs correct text |
+| Matrix Match | Show matching table with correct/wrong pairs |
+| Assertion-Reasoning | Show A/R statements + options |
+| Paragraph | Show passage + options |
+| Short Answer | Show typed answer + model answer |
+| Long Answer | Show typed answer + model answer |
+
+### 5. Results page updates
+
+- `TestResults.tsx` will call `generateResultForTest(testId)` to get test-specific data
+- The test name, pattern, and metadata will come from the matching test data
+- Back button navigates intelligently (to subject page if from subject, else to tests list)
 
 ## Execution Plan
 
-### Step 1: Expand Test Data (15-20 tests per subject)
+### Step 1: Enhance data model in `testResults.ts`
 
-Update `src/data/student/tests.ts` to add realistic teacher-assigned tests:
+- Add `options`, `solution`, `assertionText`, `reasonText`, `paragraphText` to `QuestionResult`
+- Create `generateResultForTest(testId)` that maps testId to correct question bank and test metadata
+- Generate realistic mock solutions for each question
+- Keep existing `sampleTestResult` as fallback
 
-| Subject | Total Tests | Live | Upcoming | Attempted | Missed |
-|---------|-------------|------|----------|-----------|--------|
-| Physics | 18 | 2 | 4 | 9 | 3 |
-| Chemistry | 16 | 2 | 3 | 8 | 3 |
-| Mathematics | 17 | 1 | 5 | 8 | 3 |
-| Biology | 15 | 1 | 3 | 8 | 3 |
+### Step 2: Redesign `QuestionReview.tsx` with option-level rendering
 
-Tests will use real topic names (e.g., "Electromagnetic Induction Unit Test", "Coordination Compounds Quiz", "Definite Integrals Practice") with varied durations, question counts, teacher names, dates spanning Dec 2025 to Feb 2026, and realistic scores for attempted tests.
+- New `OptionDisplay` sub-component for MCQ options with green/red color coding
+- New `IntegerDisplay` for integer type comparison
+- New `SubjectiveDisplay` for short/long answer with model answer
+- "View Solution" expandable section with solution text
+- Question number palette at the top for quick jump (scrollable strip showing Q1-Q15 with green/red/grey dots)
 
-### Step 2: Create Subject Tests Page
+### Step 3: Update `TestResults.tsx`
 
-New file: `src/pages/student/SubjectTests.tsx`
+- Replace hardcoded `sampleTestResult` with `generateResultForTest(testId)`
+- Dynamic test name from matched test data
+- Smart back navigation
 
-**Layout (mobile-first):**
+### Step 4: Connect from SubjectTests page
 
-```text
-+----------------------------------+
-| <- Back    Physics Tests         |
-|    18 tests . 2 live now         |
-+----------------------------------+
-| [All 18] [Live 2] [Upcoming 4]  |
-| [Attempted 9] [Missed 3]        |
-+----------------------------------+
-|                                  |
-| TODAY                            |
-| +------------------------------+|
-| | * Laws of Motion Quiz   LIVE ||
-| |   Mr. Verma . 25Q . 45 min  ||
-| |          [Start Test ->]     ||
-| +------------------------------+|
-| | * Electromagnetic Induction  ||
-| |   Mr. Verma . 30Q . 60 min  ||
-| |          [Start Test ->]     ||
-| +------------------------------+|
-|                                  |
-| THIS WEEK                        |
-| +------------------------------+|
-| | o Thermodynamics Unit Test   ||
-| |   Mr. Verma . 30Q . 60 min  ||
-| |   Jan 12 . 10:00 AM  [View] ||
-| +------------------------------+|
-|                                  |
-| COMPLETED                        |
-| +------------------------------+|
-| | v Work & Energy Practice     ||
-| |   Mr. Verma . 20Q . 40 min  ||
-| |   Score: 90% [View Results]  ||
-| +------------------------------+|
-| | v Kinematics Quiz            ||
-| |   ...                        ||
-| +------------------------------+|
-| ...scrolls naturally...          |
-+----------------------------------+
-```
-
-**Features:**
-- Back button navigates to `/student/tests`
-- Subject icon + gradient header matching the subject color
-- Filter tabs with counts (horizontally scrollable on mobile)
-- Date-wise sections: "Live Now", "Upcoming (by date)", "Completed (newest first)", "Missed"
-- Each test card shows: status dot, test name, teacher, question count, duration, date
-- Action buttons: "Start Test" (live, gradient CTA), "View" (upcoming), "View Results" (attempted, green), "Expired" (missed, greyed out)
-- Score percentage badge for attempted tests
-- Smooth scroll, no virtualization needed for 15-20 items
-
-### Step 3: Add Route
-
-Update `src/routes/StudentRoutes.tsx` to add:
-```
-<Route path="tests/subject/:subject" element={<StudentSubjectTests />} />
-```
-
-### Step 4: Update SubjectTestCard Navigation
-
-Modify `src/components/student/tests/SubjectTestCard.tsx` to use `useNavigate` instead of `onOpenSheet` callback, navigating to `/student/tests/subject/${subject}`.
-
-### Step 5: Clean Up Tests Page
-
-Update `src/pages/student/Tests.tsx` to remove the `SubjectTestsSheet` usage (no more popup). The `selectedSubject` state and sheet handlers can be removed.
-
-### Step 6: Remove Sheet Import (Optional Cleanup)
-
-The `SubjectTestsSheet` component stays in the codebase but is no longer used from the main Tests page.
+- Ensure "View Results" button on attempted tests navigates to `/student/tests/:testId/results`
+- This already works from the current code
 
 ---
 
 ## Technical Details
 
-### Files Created
-
-| File | Purpose |
-|------|---------|
-| `src/pages/student/SubjectTests.tsx` | New dedicated subject tests page with filters, date grouping, and test cards |
-
 ### Files Modified
 
 | File | Change |
 |------|--------|
-| `src/data/student/tests.ts` | Expand teacherTests from 11 to ~66 entries (15-18 per subject) |
-| `src/routes/StudentRoutes.tsx` | Add `tests/subject/:subject` route inside StudentLayout |
-| `src/components/student/tests/SubjectTestCard.tsx` | Change onClick to navigate to new page instead of opening sheet |
-| `src/pages/student/Tests.tsx` | Remove SubjectTestsSheet usage and related state |
+| `src/data/student/testResults.ts` | Add fields to QuestionResult, create generateResultForTest() |
+| `src/components/student/tests/results/QuestionReview.tsx` | Full redesign with option-level display, color coding, View Solution |
+| `src/pages/student/TestResults.tsx` | Use testId-aware result generation |
 
-### Design Principles Applied
+### Files Created
 
-- Mobile-first layout (320px+)
-- 44px+ touch targets on all buttons and filter tabs
-- Glassmorphism cards (bg-white/70, backdrop-blur-xl, border-white/50)
-- Subject color-coded header with gradient icon
-- Plus Jakarta Sans typography
-- Framer Motion entrance animations for test cards
-- Natural scroll (no virtualization for 15-20 items -- keeps it simple and performant)
+None -- all changes are enhancements to existing files.
 
+### Design Principles
+
+- Mobile-first: options stack vertically, touch-friendly 44px+ targets
+- Green = correct, Red = wrong, Grey = not selected/unattempted
+- View Solution is collapsed by default, expands on tap
+- Question jump strip at top of review tab for quick navigation
+- Smooth framer-motion animations on expand/collapse
+- Handles all 9 question types gracefully
