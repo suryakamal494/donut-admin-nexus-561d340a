@@ -14,6 +14,10 @@ import type { SectionResult } from "@/data/student/testResults";
 import { formatDuration, getDifficultyColor, getSubjectColor } from "@/data/student/testResults";
 import { questionTypeLabels } from "@/data/student/testQuestions";
 import type { EnhancedQuestionResult } from "@/data/student/testResultsGenerator";
+import { OptionDisplay } from "./review/OptionDisplay";
+import { IntegerDisplay } from "./review/IntegerDisplay";
+import { FillBlankDisplay } from "./review/FillBlankDisplay";
+import { MatrixMatchDisplay } from "./review/MatrixMatchDisplay";
 
 interface QuestionReviewProps {
   questions: EnhancedQuestionResult[];
@@ -65,9 +69,7 @@ const QuestionReview = memo(function QuestionReview({
   }, []);
 
   const jumpToQuestion = useCallback((questionId: string) => {
-    // Ensure it's expanded
     setExpandedQuestions(prev => new Set(prev).add(questionId));
-    // Scroll to it
     setTimeout(() => {
       questionRefs.current[questionId]?.scrollIntoView({ behavior: "smooth", block: "center" });
     }, 100);
@@ -240,7 +242,6 @@ const QuestionReview = memo(function QuestionReview({
                         className="overflow-hidden"
                       >
                         <div className="px-3 pb-3 pt-0 border-t border-border/50 space-y-3">
-                          {/* Not Attempted Badge */}
                           {!question.isAttempted && (
                             <div className="mt-3">
                               <Badge variant="outline" className="text-amber-600 border-amber-300 bg-amber-50">
@@ -249,7 +250,6 @@ const QuestionReview = memo(function QuestionReview({
                             </div>
                           )}
 
-                          {/* Assertion & Reason */}
                           {question.assertionText && (
                             <div className="mt-3 space-y-2">
                               <div className="bg-blue-50 rounded-lg p-3">
@@ -263,7 +263,6 @@ const QuestionReview = memo(function QuestionReview({
                             </div>
                           )}
 
-                          {/* Paragraph */}
                           {question.paragraphText && (
                             <div className="mt-3 bg-slate-50 rounded-lg p-3 max-h-40 overflow-y-auto">
                               <p className="text-xs font-semibold text-slate-600 mb-1">Passage</p>
@@ -271,12 +270,10 @@ const QuestionReview = memo(function QuestionReview({
                             </div>
                           )}
 
-                          {/* Full Question Text */}
                           <div className="bg-muted/50 rounded-lg p-3 mt-3">
                             <p className="text-sm text-foreground leading-relaxed">{question.text}</p>
                           </div>
 
-                          {/* Option-Level Display for MCQ types */}
                           {question.options && question.options.length > 0 && (
                             <OptionDisplay
                               options={question.options}
@@ -286,7 +283,6 @@ const QuestionReview = memo(function QuestionReview({
                             />
                           )}
 
-                          {/* Integer/Numerical Display */}
                           {question.type === "integer" && (
                             <IntegerDisplay
                               userAnswer={question.userAnswer as number | undefined}
@@ -296,7 +292,6 @@ const QuestionReview = memo(function QuestionReview({
                             />
                           )}
 
-                          {/* Fill in Blank Display */}
                           {question.type === "fill_blank" && (
                             <FillBlankDisplay
                               userAnswer={question.userAnswer as Record<string, string> | undefined}
@@ -305,7 +300,6 @@ const QuestionReview = memo(function QuestionReview({
                             />
                           )}
 
-                          {/* Matrix Match Display */}
                           {question.type === "matrix_match" && (
                             <MatrixMatchDisplay
                               userAnswer={question.userAnswer as Record<string, string> | undefined}
@@ -314,7 +308,6 @@ const QuestionReview = memo(function QuestionReview({
                             />
                           )}
 
-                          {/* Meta Info */}
                           <div className="flex items-center justify-between text-xs text-muted-foreground pt-1">
                             <span className="flex items-center gap-1">
                               <Clock className="w-3 h-3" />
@@ -326,7 +319,6 @@ const QuestionReview = memo(function QuestionReview({
                             </span>
                           </div>
 
-                          {/* View Solution */}
                           {question.solution && (
                             <div>
                               <Button
@@ -372,189 +364,5 @@ const QuestionReview = memo(function QuestionReview({
     </div>
   );
 });
-
-// ============ Sub-components ============
-
-// MCQ Option Display with green/red color coding
-function OptionDisplay({
-  options,
-  userAnswer,
-  isAttempted,
-  isMultiple,
-}: {
-  options: { id: string; text: string; isCorrect: boolean }[];
-  userAnswer?: string | string[] | number | Record<string, string>;
-  isAttempted: boolean;
-  isMultiple: boolean;
-}) {
-  const isSelected = (optId: string) => {
-    if (!userAnswer) return false;
-    if (isMultiple && Array.isArray(userAnswer)) return userAnswer.includes(optId);
-    return userAnswer === optId;
-  };
-
-  const optionLabels = ["A", "B", "C", "D", "E", "F"];
-
-  return (
-    <div className="space-y-2">
-      {options.map((opt, idx) => {
-        const selected = isSelected(opt.id);
-        const correct = opt.isCorrect;
-
-        // Determine styling
-        let borderClass = "border-border bg-white";
-        let iconNode: React.ReactNode = null;
-
-        if (selected && correct) {
-          // Student selected + correct = green
-          borderClass = "border-emerald-500 bg-emerald-50";
-          iconNode = <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />;
-        } else if (selected && !correct) {
-          // Student selected + wrong = red
-          borderClass = "border-red-500 bg-red-50";
-          iconNode = <XCircle className="w-4 h-4 text-red-600 shrink-0" />;
-        } else if (!selected && correct) {
-          // Correct answer not selected = green outline
-          borderClass = "border-emerald-500 bg-emerald-50/30";
-          iconNode = <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />;
-        }
-
-        return (
-          <div
-            key={opt.id}
-            className={cn(
-              "flex items-start gap-3 p-3 rounded-lg border-2 transition-all",
-              borderClass
-            )}
-          >
-            <span className={cn(
-              "w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0",
-              selected && correct ? "bg-emerald-500 text-white" :
-              selected && !correct ? "bg-red-500 text-white" :
-              !selected && correct ? "bg-emerald-100 text-emerald-700 ring-2 ring-emerald-500" :
-              "bg-muted text-muted-foreground"
-            )}>
-              {optionLabels[idx]}
-            </span>
-            <p className="text-sm text-foreground flex-1 pt-1">{opt.text}</p>
-            {iconNode}
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
-// Integer/Numerical Display
-function IntegerDisplay({
-  userAnswer,
-  correctAnswer,
-  isAttempted,
-  isCorrect,
-}: {
-  userAnswer?: number;
-  correctAnswer: number;
-  isAttempted: boolean;
-  isCorrect: boolean;
-}) {
-  return (
-    <div className="grid grid-cols-2 gap-3">
-      <div className={cn(
-        "p-3 rounded-lg border-2",
-        isAttempted
-          ? isCorrect ? "bg-emerald-50 border-emerald-500" : "bg-red-50 border-red-500"
-          : "bg-slate-50 border-slate-200"
-      )}>
-        <p className="text-xs text-muted-foreground mb-1">Your Answer</p>
-        <p className={cn(
-          "font-bold text-lg",
-          isCorrect ? "text-emerald-600" : isAttempted ? "text-red-600" : "text-slate-400"
-        )}>
-          {isAttempted ? userAnswer : "—"}
-        </p>
-      </div>
-      <div className="p-3 rounded-lg bg-emerald-50 border-2 border-emerald-500">
-        <p className="text-xs text-muted-foreground mb-1">Correct Answer</p>
-        <p className="font-bold text-lg text-emerald-600">{correctAnswer}</p>
-      </div>
-    </div>
-  );
-}
-
-// Fill in Blank Display
-function FillBlankDisplay({
-  userAnswer,
-  correctAnswer,
-  isAttempted,
-}: {
-  userAnswer?: Record<string, string>;
-  correctAnswer: Record<string, string>;
-  isAttempted: boolean;
-}) {
-  return (
-    <div className="space-y-2">
-      {Object.entries(correctAnswer).map(([blankId, correct], idx) => {
-        const userVal = userAnswer?.[blankId];
-        const isRight = userVal?.toLowerCase() === correct.toLowerCase();
-        return (
-          <div key={blankId} className="flex items-center gap-3">
-            <span className="text-xs font-medium text-muted-foreground w-16">Blank {idx + 1}</span>
-            <div className={cn(
-              "flex-1 p-2 rounded border-2 text-sm",
-              isAttempted
-                ? isRight ? "bg-emerald-50 border-emerald-500 text-emerald-700" : "bg-red-50 border-red-500 text-red-700"
-                : "bg-slate-50 border-slate-200 text-slate-400"
-            )}>
-              {isAttempted ? userVal || "—" : "—"}
-            </div>
-            <div className="flex-1 p-2 rounded border-2 bg-emerald-50 border-emerald-500 text-sm text-emerald-700">
-              {correct}
-            </div>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
-// Matrix Match Display
-function MatrixMatchDisplay({
-  userAnswer,
-  correctAnswer,
-  isAttempted,
-}: {
-  userAnswer?: Record<string, string>;
-  correctAnswer: Record<string, string>;
-  isAttempted: boolean;
-}) {
-  return (
-    <div className="space-y-2">
-      {Object.entries(correctAnswer).map(([rowId, correctCol]) => {
-        const userCol = userAnswer?.[rowId];
-        const isRight = userCol === correctCol;
-        return (
-          <div key={rowId} className="flex items-center gap-2 text-sm">
-            <span className="font-medium text-foreground w-16">{rowId}</span>
-            <span className="text-muted-foreground">→</span>
-            <span className={cn(
-              "px-2 py-1 rounded border",
-              isAttempted
-                ? isRight ? "bg-emerald-50 border-emerald-500 text-emerald-700" : "bg-red-50 border-red-500 text-red-700"
-                : "bg-slate-50 border-slate-200 text-slate-400"
-            )}>
-              {isAttempted ? userCol || "—" : "—"}
-            </span>
-            {!isRight && (
-              <>
-                <span className="text-muted-foreground">✓</span>
-                <span className="px-2 py-1 rounded border bg-emerald-50 border-emerald-500 text-emerald-700">{correctCol}</span>
-              </>
-            )}
-          </div>
-        );
-      })}
-    </div>
-  );
-}
 
 export default QuestionReview;

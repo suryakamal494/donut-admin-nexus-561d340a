@@ -21,11 +21,7 @@ interface PerformanceComparisonProps {
   sections: SectionResult[];
 }
 
-// Generate mock class average (45-70 range)
-const generateClassAverage = () => Math.round(45 + Math.random() * 25);
-
-// Generate mock topper score (82-98 range)
-const generateTopperScore = () => Math.round(82 + Math.random() * 16);
+// Use classAverage and topperScore from section data, fallback to reasonable defaults
 
 const PerformanceComparison = memo(function PerformanceComparison({
   sections,
@@ -40,9 +36,9 @@ const PerformanceComparison = memo(function PerformanceComparison({
       return {
         name: section.name.length > 8 ? section.name.slice(0, 7) + "…" : section.name,
         fullName: section.name,
-        topper: generateTopperScore(),
+        topper: section.topperScore ?? 90,
         you: studentPercent,
-        classAvg: generateClassAverage(),
+        classAvg: section.classAverage ?? 55,
       };
     });
   }, [sections]);

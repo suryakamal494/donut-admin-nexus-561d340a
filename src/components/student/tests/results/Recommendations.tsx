@@ -1,13 +1,15 @@
 // Recommendations Component
 // Generates actionable study tips based on performance analysis
 
-import { useMemo } from "react";
+import { memo, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Lightbulb, AlertTriangle, Target, SkipForward, BookOpen, Brain } from "lucide-react";
 import { motion } from "framer-motion";
 import type { EnhancedQuestionResult } from "@/data/student/testResultsGenerator";
+import { COGNITIVE_TYPES } from "@/data/student/testResultsGenerator";
 import type { SectionResult } from "@/data/student/testResults";
+import { getQuestionStats } from "@/data/student/testResults";
 
 interface Recommendation {
   id: string;
@@ -28,15 +30,15 @@ const priorityStyles = {
   general: "border-l-4 border-l-blue-500 bg-blue-50/50 dark:bg-blue-950/20",
 };
 
-const Recommendations = ({ questions, sections }: RecommendationsProps) => {
+const Recommendations = memo(function Recommendations({ questions, sections }: RecommendationsProps) {
   const tips = useMemo(() => {
     const recs: Recommendation[] = [];
-    const attempted = questions.filter(q => q.isAttempted);
-    const totalQ = questions.length;
+    const { attempted, total: totalQ } = getQuestionStats(questions);
+    const attemptedQs = questions.filter(q => q.isAttempted);
 
     // Difficulty accuracy
     const byDiff = (d: string) => {
-      const qs = attempted.filter(q => q.difficulty === d);
+      const qs = attemptedQs.filter(q => q.difficulty === d);
       return qs.length > 0 ? Math.round(qs.filter(q => q.isCorrect).length / qs.length * 100) : null;
     };
     const easyAcc = byDiff("easy");
@@ -44,9 +46,8 @@ const Recommendations = ({ questions, sections }: RecommendationsProps) => {
 
     // Cognitive accuracy
     const cogAccuracies: { type: string; accuracy: number; count: number }[] = [];
-    const cogTypes = ["Logical", "Analytical", "Conceptual", "Numerical", "Application", "Memory"];
-    cogTypes.forEach(type => {
-      const qs = attempted.filter(q => q.cognitiveType === type);
+    COGNITIVE_TYPES.forEach(type => {
+      const qs = attemptedQs.filter(q => q.cognitiveType === type);
       if (qs.length >= 2) {
         cogAccuracies.push({
           type,
@@ -60,7 +61,7 @@ const Recommendations = ({ questions, sections }: RecommendationsProps) => {
       : null;
 
     // Skipped rate
-    const skippedRate = Math.round((totalQ - attempted.length) / totalQ * 100);
+    const skippedRate = Math.round((totalQ - attempted) / totalQ * 100);
 
     // Weakest subject (for grand tests)
     const isMultiSection = sections.length > 1;
@@ -167,6 +168,6 @@ const Recommendations = ({ questions, sections }: RecommendationsProps) => {
       </CardContent>
     </Card>
   );
-};
+});
 
 export default Recommendations;

@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import type { EnhancedQuestionResult } from "@/data/student/testResultsGenerator";
 import type { SectionResult } from "@/data/student/testResults";
-
+import { getAccuracyColor, getQuestionStats } from "@/data/student/testResults";
 interface DifficultyAnalysisProps {
   questions: EnhancedQuestionResult[];
   sections: SectionResult[];
@@ -21,13 +21,7 @@ const DIFFICULTY_CONFIG = {
 
 type DifficultyKey = keyof typeof DIFFICULTY_CONFIG;
 
-const getDifficultyStats = (qs: EnhancedQuestionResult[]) => {
-  const total = qs.length;
-  const attempted = qs.filter(q => q.isAttempted).length;
-  const correct = qs.filter(q => q.isCorrect).length;
-  const accuracy = attempted > 0 ? Math.round((correct / attempted) * 100) : 0;
-  return { total, attempted, correct, wrong: attempted - correct, skipped: total - attempted, accuracy };
-};
+const getDifficultyStats = (qs: EnhancedQuestionResult[]) => getQuestionStats(qs);
 
 const DifficultyAnalysis = memo(function DifficultyAnalysis({
   questions,
@@ -73,7 +67,7 @@ const DifficultyAnalysis = memo(function DifficultyAnalysis({
                 <span className="text-xs text-muted-foreground">({d.total} Qs)</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className={cn("text-sm font-bold", d.accuracy >= 70 ? "text-emerald-600" : d.accuracy >= 40 ? "text-amber-600" : "text-red-600")}>
+                <span className={cn("text-sm font-bold", getAccuracyColor(d.accuracy))}>
                   {d.accuracy}%
                 </span>
                 {isMultiSection && d.total > 0 && (
@@ -122,7 +116,7 @@ const DifficultyAnalysis = memo(function DifficultyAnalysis({
                       <span className="text-muted-foreground">{sub.subject}</span>
                       <div className="flex items-center gap-2.5">
                         <span className="text-foreground">{sub.correct}/{sub.total}</span>
-                        <span className={cn("font-semibold", sub.accuracy >= 70 ? "text-emerald-600" : sub.accuracy >= 40 ? "text-amber-600" : "text-red-600")}>
+                        <span className={cn("font-semibold", getAccuracyColor(sub.accuracy))}>
                           {sub.accuracy}%
                         </span>
                       </div>

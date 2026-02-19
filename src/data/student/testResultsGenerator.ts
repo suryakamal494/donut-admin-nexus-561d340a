@@ -6,6 +6,21 @@ import { allSampleQuestions, sampleTestSections, questionTypeLabels } from "./te
 import { teacherTests, grandTests } from "./tests";
 import type { QuestionResult, SectionResult, TestResultData } from "./testResults";
 
+// Input shape for test data passed to result generators
+export interface TestInput {
+  id: string;
+  name: string;
+  pattern?: string;
+  duration: number;
+  attemptedAt?: string;
+  rank?: number;
+  totalAttempts?: number;
+  percentile?: number;
+  subject?: string;
+  totalQuestions?: number;
+  totalMarks?: number;
+  status?: string;
+}
 // Cognitive types for question classification
 export type CognitiveType = "Logical" | "Analytical" | "Conceptual" | "Numerical" | "Application" | "Memory";
 
@@ -201,14 +216,14 @@ const generateSubjectQuestions = (
         text: topic.optionSets[i % topic.optionSets.length][idx],
         isCorrect: idx === correctIdx,
       })),
-    } as any);
+    } as unknown as TestQuestion);
   }
 
   return questions;
 };
 
 const getTopicsForSubject = (subject: string, testName: string) => {
-  const topicBank: Record<string, any[]> = {
+  const topicBank: Record<string, { chapter: string; topic: string; questions: string[]; optionSets: string[][] }[]> = {
     physics: [
       {
         chapter: "Laws of Motion",
@@ -366,7 +381,7 @@ export const generateResultForTest = (testId: string): TestResultData & { questi
   return generateDefaultResult(testId);
 };
 
-const generateGrandTestResult = (test: any): TestResultData & { questions: EnhancedQuestionResult[] } => {
+const generateGrandTestResult = (test: TestInput): TestResultData & { questions: EnhancedQuestionResult[] } => {
   const sections = sampleTestSections;
   let questionNumber = 1;
   const questions: EnhancedQuestionResult[] = [];
@@ -381,7 +396,7 @@ const generateGrandTestResult = (test: any): TestResultData & { questions: Enhan
   return buildTestResultData(test, sections, questions);
 };
 
-const generateTeacherTestResult = (test: any): TestResultData & { questions: EnhancedQuestionResult[] } => {
+const generateTeacherTestResult = (test: TestInput): TestResultData & { questions: EnhancedQuestionResult[] } => {
   const subject = test.subject || "physics";
   const generatedQs = generateSubjectQuestions(subject, test.totalQuestions, test.totalMarks, test.name);
 
@@ -413,6 +428,8 @@ const generateTeacherTestResult = (test: any): TestResultData & { questions: Enh
       : 0,
     averageTime: Math.round(questions.reduce((s, q) => s + q.timeSpent, 0) / questions.length),
     totalTime: questions.reduce((s, q) => s + q.timeSpent, 0),
+    classAverage: Math.round(45 + Math.random() * 25),
+    topperScore: Math.round(82 + Math.random() * 16),
   }];
 
   const totalMarks = questions.reduce((s, q) => s + q.maxMarks, 0);
@@ -446,8 +463,8 @@ const generateTeacherTestResult = (test: any): TestResultData & { questions: Enh
 };
 
 const buildTestResultData = (
-  test: any,
-  sections: any[],
+  test: TestInput,
+  sections: { id: string; name: string; subject: string; questionCount?: number }[],
   questions: EnhancedQuestionResult[]
 ): TestResultData & { questions: EnhancedQuestionResult[] } => {
   const sectionResults = sections.map(section => {
@@ -468,6 +485,8 @@ const buildTestResultData = (
       accuracy: attempted > 0 ? Math.round((correct / attempted) * 100) : 0,
       averageTime: sQs.length > 0 ? Math.round(sQs.reduce((s, q) => s + q.timeSpent, 0) / sQs.length) : 0,
       totalTime: sQs.reduce((s, q) => s + q.timeSpent, 0),
+      classAverage: Math.round(45 + Math.random() * 25),
+      topperScore: Math.round(82 + Math.random() * 16),
     };
   });
 
