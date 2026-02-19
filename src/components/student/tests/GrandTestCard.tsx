@@ -170,6 +170,8 @@ const GrandTestCard = memo(function GrandTestCard({
                 ? "JEE Advanced"
                 : pattern === "neet"
                 ? "NEET"
+                : pattern === "cbse"
+                ? "CBSE Board"
                 : "Custom"}
             </span>
             {test.type === "pyp" && test.year && (

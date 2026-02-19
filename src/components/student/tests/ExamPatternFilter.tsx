@@ -3,7 +3,7 @@
 // Mobile-first with touch-friendly interaction
 
 import { memo } from "react";
-import { Target, Zap, Heart, Settings } from "lucide-react";
+import { Target, Zap, Heart, Settings, GraduationCap } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { ExamPattern } from "@/data/student/tests";
 
@@ -18,6 +18,7 @@ const patterns: { id: ExamPattern | "all"; label: string; shortLabel: string; ic
   { id: "jee_main", label: "JEE Main", shortLabel: "Main", icon: Target },
   { id: "jee_advanced", label: "JEE Advanced", shortLabel: "Adv", icon: Zap },
   { id: "neet", label: "NEET", shortLabel: "NEET", icon: Heart },
+  { id: "cbse", label: "CBSE Board", shortLabel: "CBSE", icon: GraduationCap },
 ];
 
 const patternColors: Record<ExamPattern | "all", { active: string; inactive: string }> = {
