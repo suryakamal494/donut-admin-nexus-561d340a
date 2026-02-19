@@ -12,16 +12,17 @@ import {
   TimeAnalysis,
   QuestionReview,
 } from "@/components/student/tests/results";
-import { sampleTestResult } from "@/data/student/testResults";
+import { generateResultForTest } from "@/data/student/testResultsGenerator";
 import { cn } from "@/lib/utils";
+import { useMemo } from "react";
 
 const StudentTestResults = () => {
   const navigate = useNavigate();
   const { testId } = useParams<{ testId: string }>();
   const [activeTab, setActiveTab] = useState("overview");
 
-  // In real app, fetch results based on testId
-  const result = sampleTestResult;
+  // Generate results based on testId
+  const result = useMemo(() => generateResultForTest(testId || "gt-1"), [testId]);
 
   const handleBack = () => {
     navigate("/student/tests");
