@@ -12,7 +12,10 @@ import {
   TimeAnalysis,
   QuestionReview,
   PerformanceComparison,
+  DifficultyAnalysis,
+  CognitiveAnalysis,
 } from "@/components/student/tests/results";
+import type { EnhancedQuestionResult } from "@/data/student/testResultsGenerator";
 import { generateResultForTest } from "@/data/student/testResultsGenerator";
 import { cn } from "@/lib/utils";
 import { useMemo } from "react";
@@ -106,6 +109,14 @@ const StudentTestResults = () => {
                 accuracy={result.accuracy}
               />
               <PerformanceComparison sections={result.sections} />
+              <DifficultyAnalysis
+                questions={result.questions as EnhancedQuestionResult[]}
+                sections={result.sections}
+              />
+              <CognitiveAnalysis
+                questions={result.questions as EnhancedQuestionResult[]}
+                sections={result.sections}
+              />
               {isMultiSection && (
                 <SectionAnalysis 
                   sections={result.sections}

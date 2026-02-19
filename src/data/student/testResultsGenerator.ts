@@ -6,6 +6,11 @@ import { allSampleQuestions, sampleTestSections, questionTypeLabels } from "./te
 import { teacherTests, grandTests } from "./tests";
 import type { QuestionResult, SectionResult, TestResultData } from "./testResults";
 
+// Cognitive types for question classification
+export type CognitiveType = "Logical" | "Analytical" | "Conceptual" | "Numerical" | "Application" | "Memory";
+
+export const COGNITIVE_TYPES: CognitiveType[] = ["Logical", "Analytical", "Conceptual", "Numerical", "Application", "Memory"];
+
 // Enhanced QuestionResult with options and solution
 export interface EnhancedQuestionResult extends QuestionResult {
   options?: { id: string; text: string; isCorrect: boolean }[];
@@ -13,6 +18,7 @@ export interface EnhancedQuestionResult extends QuestionResult {
   assertionText?: string;
   reasonText?: string;
   paragraphText?: string;
+  cognitiveType: CognitiveType;
 }
 
 // Mock solutions for different subjects/topics
@@ -67,6 +73,18 @@ const extractOptions = (q: TestQuestion): { id: string; text: string; isCorrect:
   return undefined;
 };
 
+// Assign cognitive type based on question type and index
+const assignCognitiveType = (q: TestQuestion, questionNumber: number): CognitiveType => {
+  // Map question types to likely cognitive types, with some variation
+  if (q.type === "integer") return "Numerical";
+  if (q.type === "assertion_reasoning") return "Analytical";
+  if (q.type === "fill_blank") return "Memory";
+  if (q.type === "matrix_match") return "Logical";
+  if (q.type === "paragraph") return "Application";
+  // For MCQs, cycle through types based on question number
+  return COGNITIVE_TYPES[questionNumber % COGNITIVE_TYPES.length];
+};
+
 // Generate a single question result with enhanced data
 const generateEnhancedQuestionResult = (
   q: TestQuestion,
@@ -83,6 +101,9 @@ const generateEnhancedQuestionResult = (
   const options = extractOptions(q);
   const correctAnswer = getCorrectAnswer(q);
   const userAnswer = isAttempted ? getMockUserAnswer(q, isCorrect) : undefined;
+
+  // Assign cognitive type based on question characteristics
+  const cognitiveType = assignCognitiveType(q, questionNumber);
 
   return {
     id: q.id,
@@ -105,6 +126,7 @@ const generateEnhancedQuestionResult = (
     assertionText: "assertion" in q ? q.assertion : undefined,
     reasonText: "assertion" in q ? q.reason : undefined,
     paragraphText: "paragraphText" in q ? q.paragraphText : undefined,
+    cognitiveType,
   };
 };
 
