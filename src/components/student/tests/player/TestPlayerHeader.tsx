@@ -48,6 +48,16 @@ const sectionColors: Record<string, { active: string; inactive: string; ring: st
     inactive: "bg-rose-500/90 text-white border-rose-500/80",
     ring: "ring-rose-400",
   },
+  botany: {
+    active: "bg-green-600 text-white border-green-600 shadow-lg shadow-green-200/50",
+    inactive: "bg-green-500/90 text-white border-green-500/80",
+    ring: "ring-green-400",
+  },
+  zoology: {
+    active: "bg-pink-600 text-white border-pink-600 shadow-lg shadow-pink-200/50",
+    inactive: "bg-pink-500/90 text-white border-pink-500/80",
+    ring: "ring-pink-400",
+  },
   english: {
     active: "bg-amber-600 text-white border-amber-600 shadow-lg shadow-amber-200/50",
     inactive: "bg-amber-500/90 text-white border-amber-500/80",
