@@ -1,80 +1,131 @@
 
 
-# Test Reports Enhancement Plan
+# Comprehensive Reports Enhancement Plan
 
-## Pain Points Identified
+## Your Requirements (As I Understand Them)
 
-### Pain Point 1: "View Details" on Upcoming/Scheduled Tests Exposes Questions
-**You are absolutely right.** Currently, when a student clicks "View Details" on an upcoming test, it navigates to `/student/tests/:testId` -- the same route used for starting a live test. This means students can potentially see the question paper before the test begins, which defeats the purpose of a scheduled test.
+### 1. Add Topper Score to Performance Comparison
+Currently the "You vs Class Average" chart shows only 2 bars per section. You want **3 bars**: Topper Score, Your Score, and Class Average. This gives students a clear picture of where they stand -- not just against the average, but against the best performer.
 
-**Fix:** Replace "View Details" with a disabled/informational button that shows when the test is scheduled (e.g., "Starts in 3 hours" or "Scheduled: Feb 22, 10:00 AM"). The button should NOT navigate anywhere. No question paper exposure before the test starts.
+**My take:** Absolutely right. Knowing the class average alone doesn't tell a student how far they are from the top. Adding the topper score creates a "ceiling" to aim for and makes the comparison far more actionable.
 
-### Pain Point 2: Section-wise Analysis Tab is Redundant for Single-Subject Tests
-**Completely valid.** For a subject test (e.g., "Physics - Work & Energy Practice"), there is only one section. The "Sections" tab just shows a single card that, when clicked, takes you to the Review tab -- adding no value. The 4-tab layout (Overview, Sections, Time, Review) should be simplified for single-subject tests.
+### 2. Full Audit of Reports Logic
+You want me to verify that single-subject tests don't show redundant section analysis, that the correct tabs are shown based on test type, and that all edge cases are handled.
 
-**Fix:** Detect whether the test has 1 section or multiple sections. For single-subject tests, reduce to 3 tabs: **Overview, Time, Review**. The Overview tab will show the score breakdown and performance comparison (without redundant section cards). For grand tests (multi-subject), keep all 4 tabs.
+**Audit findings:**
+- The `isMultiSection` logic is already implemented correctly -- Sections tab is hidden for single-subject tests
+- `PerformanceComparison` still renders for single-subject tests, showing a single bar group, which looks a bit odd with just one section
+- For single-subject tests, the "You vs Class Average" chart could be simplified to a side-by-side comparison card instead of a bar chart with one group
 
-### Pain Point 3: Time Analysis Needs More Depth
-**Good call.** The current Time Analysis only shows basic distribution buckets and time-by-section bars. It does not answer the real questions students have:
-- How much time did I waste on wrong answers?
-- Which questions ate the most time and were they even correct?
-- For grand tests: which subject consumed disproportionate time?
+### 3. Difficulty-wise Analysis
+Break down performance by difficulty level (Easy / Medium / Hard). Show how many easy questions the student got right vs wrong, same for medium and hard. This tells students if they're losing marks on easy questions (carelessness) or struggling with hard ones (knowledge gaps).
 
-**Fix:** Enhance the Time Analysis with:
-1. **Time on Correct vs Wrong vs Skipped** -- a clear breakdown showing where time was productive vs wasted
-2. **Top Time-Consuming Questions** -- a ranked list of the 5 slowest questions with their correct/wrong status
-3. **For grand tests: Subject-wise time breakdown** with efficiency metrics (time per correct answer vs time per wrong answer)
-4. **Time Efficiency Score** -- a simple metric: "X% of your time was spent on questions you got right"
+**My take:** Essential for both grand tests AND single-subject tests. In a grand test, show it subject-wise. In a single-subject test, show the overall breakdown. A student who gets 90% of easy questions right but only 20% of hard questions has a very different problem than one who gets 50% across all levels.
+
+### 4. Cognitive Type Analysis
+Break down performance by cognitive tags: Logical, Analytical, Conceptual, Numerical, Application, Memory. This reveals thinking-style strengths and weaknesses.
+
+**My take on whether to include for both test types:**
+- **Grand Tests:** Yes, absolutely. Show a subject-wise cognitive breakdown. A student might be strong in "Memory" for Biology but weak in "Numerical" for Physics -- that's incredibly valuable.
+- **Single-subject tests:** Yes, but simplified. Even within a single subject, knowing "I'm great at Conceptual questions but struggle with Numerical" is actionable. The display will be a compact horizontal bar chart (no subject breakdown needed since there's only one subject).
+
+### 5. Other Enhancements I Recommend
+
+Based on my audit, here are additional improvements:
+
+a. **Accuracy by Difficulty table** in Overview -- a simple 3-row summary showing Easy/Medium/Hard accuracy rates
+
+b. **Single-subject PerformanceComparison** -- instead of showing a bar chart with one lonely bar group, show a clean comparison card with 3 values (Topper, You, Class Avg) as a horizontal gauge/meter
+
+c. **Add `cognitiveType` to the question result data model** -- currently `EnhancedQuestionResult` has `difficulty` but not `cognitiveType`. We need to add this field and populate it during result generation
 
 ---
 
 ## Technical Plan
 
-### Step 1: Fix "View Details" Button Behavior
+### Step 1: Enhance Data Model
 
-**Files modified:**
-- `src/components/student/tests/TestCard.tsx` -- Change "upcoming" case from navigating to showing schedule info
-- `src/components/student/tests/GrandTestCard.tsx` -- Same change
-- `src/pages/student/SubjectTests.tsx` -- Same change for subject test items
+**File: `src/data/student/testResultsGenerator.ts`**
 
-Changes:
-- Remove navigation on "upcoming" click
-- Replace button text with schedule countdown (e.g., "Starts Feb 22, 10 AM")
-- Make button visually disabled/muted (not clickable)
-- Remove `onView` prop usage for upcoming tests entirely
+- Add `cognitiveType` field to `EnhancedQuestionResult` interface
+- Assign cognitive types to generated questions (cycle through Logical, Analytical, Conceptual, Numerical, Application, Memory based on question index and subject)
+- Add `topperScore` mock generation logic (topper typically scores 85-100% per section)
 
-### Step 2: Simplify Tabs for Single-Subject Tests
+### Step 2: Enhance PerformanceComparison -- 3-Way Comparison
 
-**File modified:**
-- `src/pages/student/TestResults.tsx`
+**File: `src/components/student/tests/results/PerformanceComparison.tsx`**
 
-Changes:
-- Add logic: `const isMultiSection = result.sections.length > 1`
-- If single section: show only 3 tabs (Overview, Time, Review) -- hide "Sections" tab
-- In Overview tab for single-subject: skip the SectionAnalysis component, keep ScoreBreakdown and PerformanceComparison
-- For grand tests: keep all 4 tabs as-is
+For **multi-section** (grand tests):
+- Add a third bar "Topper" to the BarChart (gold/amber color)
+- Update chart data to include `topper` field per section
+- Update tooltip to show all 3 values
+- Update the legend (Your Score / Class Average / Topper)
+- Update the section-wise mobile list to show 3 columns instead of 2
+- Update the overall badge to show gap from topper
 
-### Step 3: Enhance Time Analysis
+For **single-section** (subject tests):
+- Instead of a bar chart with 1 group, render a horizontal gauge/meter card
+- Show 3 values in a clean layout: Topper (gold), You (primary), Class Avg (muted)
+- Show a position indicator on a linear scale (0-100%)
 
-**File modified:**
-- `src/components/student/tests/results/TimeAnalysis.tsx`
+### Step 3: Add Difficulty Analysis Component
 
-New sections added to the Time Analysis card:
+**New file: `src/components/student/tests/results/DifficultyAnalysis.tsx`**
 
-1. **Time Efficiency Summary** (top of card)
-   - "X% of time spent on correct answers" with a visual ring/bar
-   - Total time on correct | wrong | skipped
+A new card that shows:
+- 3 rows: Easy, Medium, Hard
+- Each row: total questions, attempted, correct, accuracy %, with a mini progress bar
+- Color coding: Green bar for easy, Amber for medium, Red for hard
+- For grand tests: add an expandable subject-wise breakdown within each difficulty level
 
-2. **Correct vs Wrong Time Comparison** (new section)
-   - Two horizontal bars: "Time on Correct" (green) vs "Time on Wrong" (red) vs "Time on Skipped" (grey)
-   - Average time per correct question vs average time per wrong question
+### Step 4: Add Cognitive Analysis Component
 
-3. **Slowest Questions** (new section)
-   - Top 5 questions ranked by time spent
-   - Each shows: question number, time taken, correct/wrong badge, subject (for grand tests)
-   - Helps students identify where they spent the most time and whether it was worth it
+**New file: `src/components/student/tests/results/CognitiveAnalysis.tsx`**
 
-4. **Subject-wise Time Breakdown** (for grand tests only, replaces current section bars)
-   - Per subject: total time, time on correct, time on wrong
-   - Efficiency ratio per subject
+A new card showing performance by cognitive type:
+- 6 horizontal bars (one per cognitive type): Logical, Analytical, Conceptual, Numerical, Application, Memory
+- Each bar shows: accuracy % with color coding, and count of questions
+- A "Strongest" and "Weakest" highlight badge
+- For grand tests: option to toggle subject-wise view (show how each cognitive type performed per subject)
+- For single-subject: just the 6-bar breakdown, compact and clean
+
+### Step 5: Integrate into TestResults Page
+
+**File: `src/pages/student/TestResults.tsx`**
+
+- Import `DifficultyAnalysis` and `CognitiveAnalysis`
+- Add both to the **Overview** tab, after ScoreBreakdown and PerformanceComparison
+- Layout order in Overview tab:
+  1. ScoreBreakdown (existing)
+  2. PerformanceComparison (enhanced with topper)
+  3. DifficultyAnalysis (new)
+  4. CognitiveAnalysis (new)
+  5. SectionAnalysis (only for grand tests, existing)
+
+### Step 6: Update barrel export
+
+**File: `src/components/student/tests/results/index.ts`**
+
+- Export `DifficultyAnalysis` and `CognitiveAnalysis`
+
+---
+
+## Files Summary
+
+| File | Action | Description |
+|------|--------|-------------|
+| `src/data/student/testResultsGenerator.ts` | Modified | Add `cognitiveType` to `EnhancedQuestionResult`, add topper score generation |
+| `src/components/student/tests/results/PerformanceComparison.tsx` | Modified | Add topper bar, handle single-section display differently |
+| `src/components/student/tests/results/DifficultyAnalysis.tsx` | New | Difficulty-wise performance breakdown |
+| `src/components/student/tests/results/CognitiveAnalysis.tsx` | New | Cognitive type performance breakdown |
+| `src/components/student/tests/results/index.ts` | Modified | Export new components |
+| `src/pages/student/TestResults.tsx` | Modified | Add new analysis components to Overview tab |
+
+## Design Principles
+
+- Mobile-first: all new cards are vertically stacked, touch-friendly
+- Consistent color language: Green = good/correct, Red = bad/wrong, Amber = medium, Gold = topper
+- Cognitive type badges use existing color-coded badge system from the platform
+- All charts use framer-motion for smooth entry animations
+- Grand test vs single-subject detection is automatic via `isMultiSection`
 
