@@ -188,7 +188,7 @@ const TestPlayerHeader = memo(function TestPlayerHeader({
         </div>
       </div>
 
-      {/* Subject Tabs - Horizontal Scroll with no visible scrollbar */}
+      {/* Subject Tabs - Show unique subjects (group sections by subject) */}
       {sections.length > 1 && (
         <div className="relative">
           {/* Fade gradients to indicate more content */}
@@ -196,36 +196,61 @@ const TestPlayerHeader = memo(function TestPlayerHeader({
           <div className="absolute right-0 top-0 bottom-0 w-4 bg-gradient-to-l from-white to-transparent z-10 pointer-events-none sm:hidden" />
           
           <div className="flex gap-1.5 sm:gap-2 px-2 sm:px-4 pb-2 overflow-x-auto scrollbar-hide scroll-smooth snap-x snap-mandatory sm:justify-center">
-            {sections.map((section) => {
-              const isActive = section.id === currentSectionId;
-              const stats = getSectionStats(sessionQuestions, section.id);
-              const colors = getColorClasses(section.subject, isActive);
+            {(() => {
+              // Deduplicate: show one tab per unique subject
+              const seenSubjects = new Set<string>();
+              const uniqueSubjectSections = sections.filter((section) => {
+                if (seenSubjects.has(section.subject)) return false;
+                seenSubjects.add(section.subject);
+                return true;
+              });
 
-              return (
-                <motion.button
-                  key={section.id}
-                  onClick={() => onSectionChange(section.id)}
-                  whileTap={{ scale: 0.95 }}
-                  className={cn(
-                    "flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 rounded-lg border text-xs sm:text-sm font-medium",
-                    "transition-all duration-200 shrink-0 snap-start",
-                    "min-h-[36px] min-w-[80px] justify-center",
-                    colors.base,
-                    isActive && `ring-2 ring-offset-1 ${colors.ring}`
-                  )}
-                >
-                  <span className="truncate max-w-[60px] sm:max-w-none">{section.name}</span>
-                  <span
+              return uniqueSubjectSections.map((section) => {
+                // Check if current section belongs to this subject
+                const currentSection = sections.find((s) => s.id === currentSectionId);
+                const isActive = currentSection?.subject === section.subject;
+                
+                // Stats: sum all sections for this subject
+                const subjectSections = sections.filter((s) => s.subject === section.subject);
+                const subjectQuestions = subjectSections.flatMap((s) =>
+                  sessionQuestions.filter((q) => q.sectionId === s.id)
+                );
+                const answered = subjectQuestions.filter(
+                  (q) => q.status === "answered" || q.status === "answered_marked"
+                ).length;
+                const total = subjectQuestions.length;
+
+                const colors = getColorClasses(section.subject, isActive);
+
+                // On click, jump to first section of this subject
+                const firstSectionOfSubject = subjectSections[0];
+
+                return (
+                  <motion.button
+                    key={section.subject}
+                    onClick={() => onSectionChange(firstSectionOfSubject.id)}
+                    whileTap={{ scale: 0.95 }}
                     className={cn(
-                      "px-1.5 py-0.5 rounded text-[10px] font-bold",
-                      isActive ? "bg-white/25" : "bg-white/20"
+                      "flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 rounded-lg border text-xs sm:text-sm font-medium",
+                      "transition-all duration-200 shrink-0 snap-start",
+                      "min-h-[36px] min-w-[80px] justify-center",
+                      colors.base,
+                      isActive && `ring-2 ring-offset-1 ${colors.ring}`
                     )}
                   >
-                    {stats.answered}/{stats.total}
-                  </span>
-                </motion.button>
-              );
-            })}
+                    <span className="truncate max-w-[60px] sm:max-w-none capitalize">{section.subject}</span>
+                    <span
+                      className={cn(
+                        "px-1.5 py-0.5 rounded text-[10px] font-bold",
+                        isActive ? "bg-white/25" : "bg-white/20"
+                      )}
+                    >
+                      {answered}/{total}
+                    </span>
+                  </motion.button>
+                );
+              });
+            })()}
           </div>
         </div>
       )}

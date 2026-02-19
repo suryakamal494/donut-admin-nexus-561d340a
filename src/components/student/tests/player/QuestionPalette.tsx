@@ -112,68 +112,131 @@ const LegendItem = memo(function LegendItem({
 });
 
 // Question Grid with wrap layout - no internal scroll
+// Supports section grouping when sections have sub-sections within a subject
 const PaletteGrid = memo(function PaletteGrid({
   questions,
   currentQuestionIndex,
   allQuestions,
   onQuestionSelect,
+  sections,
+  currentSectionId,
 }: {
   questions: TestSessionQuestion[];
   currentQuestionIndex: number;
   allQuestions: TestSessionQuestion[];
   onQuestionSelect: (index: number) => void;
+  sections?: TestSection[];
+  currentSectionId?: string;
 }) {
+  // Check if subject has sub-sections (multiple sections for same subject)
+  const currentSubject = sections?.find((s) => s.id === currentSectionId)?.subject;
+  const subjectSections = sections?.filter((s) => s.subject === currentSubject);
+  const hasSubSections = subjectSections && subjectSections.length > 1;
+
+  if (hasSubSections && subjectSections) {
+    // Grouped by section
+    return (
+      <div className="space-y-3">
+        {subjectSections.map((section) => {
+          const sectionQuestions = questions.filter((q) => q.sectionId === section.id);
+          if (sectionQuestions.length === 0) return null;
+
+          return (
+            <div key={section.id}>
+              <div className="text-[10px] sm:text-xs font-semibold text-muted-foreground mb-1.5 uppercase tracking-wide">
+                {section.name} ({sectionQuestions.filter((q) => q.status === "answered" || q.status === "answered_marked").length}/{sectionQuestions.length})
+              </div>
+              <div className="flex flex-wrap gap-1.5 sm:gap-2">
+                {sectionQuestions.map((q) => (
+                  <PaletteButton
+                    key={q.id}
+                    q={q}
+                    globalIndex={allQuestions.findIndex((aq) => aq.id === q.id)}
+                    isCurrent={allQuestions.findIndex((aq) => aq.id === q.id) === currentQuestionIndex}
+                    onQuestionSelect={onQuestionSelect}
+                  />
+                ))}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    );
+  }
+
+  // Flat grid (no sub-sections)
   return (
     <div className="flex flex-wrap gap-1.5 sm:gap-2">
       {questions.map((q) => {
         const globalIndex = allQuestions.findIndex((aq) => aq.id === q.id);
-        const isCurrent = globalIndex === currentQuestionIndex;
-        const style = statusStyles[q.status];
-        const isAnswered = q.status === "answered" || q.status === "answered_marked";
-        const isMarked = q.status === "marked_review" || q.status === "answered_marked";
-
         return (
-          <motion.button
+          <PaletteButton
             key={q.id}
-            onClick={() => onQuestionSelect(globalIndex)}
-            initial={false}
-            whileTap={{ scale: 0.9 }}
-            className={cn(
-              "relative w-9 h-9 sm:w-10 sm:h-10 rounded-lg font-semibold text-xs sm:text-sm",
-              "border-2 transition-all duration-200",
-              style.bg,
-              style.border,
-              style.text,
-              isCurrent && "ring-2 ring-primary ring-offset-1 scale-110 z-10 shadow-lg"
-            )}
-          >
-            {q.questionNumber}
-            
-            {/* Answered checkmark indicator */}
-            {isAnswered && (
-              <motion.span
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-emerald-600 flex items-center justify-center border border-white"
-              >
-                <CheckCircle2 className="w-2.5 h-2.5 text-white" />
-              </motion.span>
-            )}
-            
-            {/* Marked flag indicator */}
-            {isMarked && !isAnswered && (
-              <motion.span
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-purple-600 flex items-center justify-center border border-white"
-              >
-                <Flag className="w-2 h-2 text-white" />
-              </motion.span>
-            )}
-          </motion.button>
+            q={q}
+            globalIndex={globalIndex}
+            isCurrent={globalIndex === currentQuestionIndex}
+            onQuestionSelect={onQuestionSelect}
+          />
         );
       })}
     </div>
+  );
+});
+
+// Individual palette button
+const PaletteButton = memo(function PaletteButton({
+  q,
+  globalIndex,
+  isCurrent,
+  onQuestionSelect,
+}: {
+  q: TestSessionQuestion;
+  globalIndex: number;
+  isCurrent: boolean;
+  onQuestionSelect: (index: number) => void;
+}) {
+  const style = statusStyles[q.status];
+  const isAnswered = q.status === "answered" || q.status === "answered_marked";
+  const isMarked = q.status === "marked_review" || q.status === "answered_marked";
+
+  return (
+    <motion.button
+      onClick={() => onQuestionSelect(globalIndex)}
+      initial={false}
+      whileTap={{ scale: 0.9 }}
+      className={cn(
+        "relative w-9 h-9 sm:w-10 sm:h-10 rounded-lg font-semibold text-xs sm:text-sm",
+        "border-2 transition-all duration-200",
+        style.bg,
+        style.border,
+        style.text,
+        isCurrent && "ring-2 ring-primary ring-offset-1 scale-110 z-10 shadow-lg"
+      )}
+    >
+      {q.questionNumber}
+      
+      {/* Answered checkmark indicator */}
+      {isAnswered && (
+        <motion.span
+          initial={{ scale: 0 }}
+          animate={{ scale: 1 }}
+          className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-emerald-600 flex items-center justify-center border border-white"
+        >
+          <CheckCircle2 className="w-2.5 h-2.5 text-white" />
+        </motion.span>
+      )}
+      
+      {/* Marked flag indicator */}
+      {isMarked && !isAnswered && (
+        <motion.span
+          initial={{ scale: 0 }}
+          animate={{ scale: 1 }}
+          className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-purple-600 flex items-center justify-center border border-white"
+        >
+          <Flag className="w-2 h-2 text-white" />
+        </motion.span>
+      )}
+    </motion.button>
   );
 });
 
@@ -201,11 +264,22 @@ const QuestionPalette = memo(function QuestionPalette({
     };
   }, [sessionQuestions]);
 
-  // Get current section questions
-  const currentSectionQuestions = useMemo(
-    () => getQuestionsBySection(sessionQuestions, currentSectionId),
-    [sessionQuestions, currentSectionId]
-  );
+  // Get questions for the current subject (not just current section — show all for subject)
+  const currentSectionQuestions = useMemo(() => {
+    // Find the subject of the current section
+    const currentSection = sections.find((s) => s.id === currentSectionId);
+    if (!currentSection) return getQuestionsBySection(sessionQuestions, currentSectionId);
+    
+    // Get all sections for this subject
+    const subjectSections = sections.filter((s) => s.subject === currentSection.subject);
+    if (subjectSections.length <= 1) {
+      return getQuestionsBySection(sessionQuestions, currentSectionId);
+    }
+    
+    // Return all questions for all sections in this subject
+    const subjectSectionIds = new Set(subjectSections.map((s) => s.id));
+    return sessionQuestions.filter((q) => subjectSectionIds.has(q.sectionId));
+  }, [sessionQuestions, currentSectionId, sections]);
 
   const handleQuestionClick = (index: number) => {
     onQuestionSelect(index);
@@ -219,35 +293,56 @@ const QuestionPalette = memo(function QuestionPalette({
 
   const PaletteContent = (
     <div className="flex flex-col h-full">
-      {/* Section Pills - Colored with no scrollbar */}
+      {/* Subject Pills - Colored, grouped by unique subjects */}
       {sections.length > 1 && (
         <div className="flex flex-wrap gap-1.5 px-3 py-2 border-b border-border bg-muted/30">
-          {sections.map((section) => {
-            const isActive = section.id === currentSectionId;
-            const stats = getSectionStats(sessionQuestions, section.id);
+          {(() => {
+            const seenSubjects = new Set<string>();
+            const uniqueSubjectSections = sections.filter((s) => {
+              if (seenSubjects.has(s.subject)) return false;
+              seenSubjects.add(s.subject);
+              return true;
+            });
 
-            return (
-              <button
-                key={section.id}
-                onClick={() => onSectionChange(section.id)}
-                className={cn(
-                  "flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium",
-                  "transition-all duration-200",
-                  getSectionTabColors(section.subject, isActive)
-                )}
-              >
-                <span className="truncate max-w-[50px] sm:max-w-none">{section.name}</span>
-                <span
+            return uniqueSubjectSections.map((section) => {
+              const currentSection = sections.find((s) => s.id === currentSectionId);
+              const isActive = currentSection?.subject === section.subject;
+              
+              // Sum stats across all sections for this subject
+              const subjectSections = sections.filter((s) => s.subject === section.subject);
+              const subjectQuestions = subjectSections.flatMap((s) =>
+                sessionQuestions.filter((q) => q.sectionId === s.id)
+              );
+              const answered = subjectQuestions.filter(
+                (q) => q.status === "answered" || q.status === "answered_marked"
+              ).length;
+              const total = subjectQuestions.length;
+
+              const firstSectionOfSubject = subjectSections[0];
+
+              return (
+                <button
+                  key={section.subject}
+                  onClick={() => onSectionChange(firstSectionOfSubject.id)}
                   className={cn(
-                    "px-1 py-0.5 rounded text-[9px] font-bold",
-                    isActive ? "bg-white/25" : "bg-current/10"
+                    "flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium",
+                    "transition-all duration-200",
+                    getSectionTabColors(section.subject, isActive)
                   )}
                 >
-                  {stats.answered}/{stats.total}
-                </span>
-              </button>
-            );
-          })}
+                  <span className="truncate max-w-[50px] sm:max-w-none capitalize">{section.subject}</span>
+                  <span
+                    className={cn(
+                      "px-1 py-0.5 rounded text-[9px] font-bold",
+                      isActive ? "bg-white/25" : "bg-current/10"
+                    )}
+                  >
+                    {answered}/{total}
+                  </span>
+                </button>
+              );
+            });
+          })()}
         </div>
       )}
 
@@ -292,6 +387,8 @@ const QuestionPalette = memo(function QuestionPalette({
           currentQuestionIndex={currentQuestionIndex}
           allQuestions={sessionQuestions}
           onQuestionSelect={handleQuestionClick}
+          sections={sections}
+          currentSectionId={currentSectionId}
         />
       </div>
     </div>

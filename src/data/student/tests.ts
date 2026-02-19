@@ -221,6 +221,21 @@ export const teacherTests: StudentTest[] = [
 // Grand Tests (multi-subject, institute-level)
 export const grandTests: StudentTest[] = [
   {
+    id: "jee-advanced-demo",
+    name: "JEE Advanced 2024 — Paper 1",
+    type: "grand_test",
+    subjects: ["physics", "chemistry", "mathematics"],
+    pattern: "jee_advanced",
+    totalQuestions: 81,
+    totalMarks: 285,
+    duration: 180,
+    negativeMarking: true,
+    negativeMarks: 2,
+    status: "live",
+    scheduledDate: "2026-02-19",
+    scheduledTime: "09:00 AM",
+  },
+  {
     id: "gt-1",
     name: "Grand Test #18",
     type: "grand_test",

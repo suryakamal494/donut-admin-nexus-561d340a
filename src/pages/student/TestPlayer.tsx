@@ -13,6 +13,7 @@ import {
   QuestionPalette,
   TestSubmitDialog,
   TimerWarningOverlay,
+  SectionNavigation,
 } from "@/components/student/tests/player";
 import type { AnswerValue } from "@/components/student/tests/player/QuestionDisplay";
 import {
@@ -20,6 +21,7 @@ import {
   getQuestionsBySection,
   formatTimeDisplay,
 } from "@/data/student/testSession";
+import { jeeAdvancedSession } from "@/data/student/jeeAdvancedSession";
 import type { QuestionStatus } from "@/data/student/testQuestions";
 
 const StudentTestPlayer = () => {
@@ -32,7 +34,9 @@ const StudentTestPlayer = () => {
   const isInitialized = useRef(false);
 
   // Test session state
-  const [session, setSession] = useState(sampleTestSession);
+  // Select session based on test ID
+  const initialSession = testId === "jee-advanced-demo" ? jeeAdvancedSession : sampleTestSession;
+  const [session, setSession] = useState(initialSession);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [currentSectionId, setCurrentSectionId] = useState(
     session.sections[0]?.id || ""
@@ -403,15 +407,27 @@ const StudentTestPlayer = () => {
 
       {/* Main Content: Question + Palette (Desktop) */}
       <div className="flex-1 flex overflow-hidden">
-        {/* Question Display */}
-        <QuestionDisplay
-          question={currentQuestion}
-          questionNumber={currentSessionQuestion.questionNumber}
-          totalQuestions={session.sessionQuestions.length}
-          answer={answers[currentQuestion.id]}
-          onAnswerChange={handleAnswerChange}
-          className="flex-1"
-        />
+        {/* Question area with section nav */}
+        <div className="flex-1 flex flex-col overflow-hidden">
+          {/* Section Navigation (for multi-section subjects like JEE Advanced) */}
+          <SectionNavigation
+            sections={session.sections}
+            currentSectionId={currentSectionId}
+            sessionQuestions={session.sessionQuestions}
+            currentSubject={session.sections.find((s) => s.id === currentSectionId)?.subject || ""}
+            onSectionChange={handleSectionChange}
+          />
+
+          {/* Question Display */}
+          <QuestionDisplay
+            question={currentQuestion}
+            questionNumber={currentSessionQuestion.questionNumber}
+            totalQuestions={session.sessionQuestions.length}
+            answer={answers[currentQuestion.id]}
+            onAnswerChange={handleAnswerChange}
+            className="flex-1"
+          />
+        </div>
 
         {/* Desktop Palette (always visible) */}
         <QuestionPalette
