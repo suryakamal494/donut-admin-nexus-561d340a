@@ -23,6 +23,7 @@ import {
 } from "@/data/student/testSession";
 import { jeeAdvancedSession } from "@/data/student/jeeAdvancedSession";
 import { neetSession } from "@/data/student/neetSession";
+import { cbseMathSession } from "@/data/student/cbseMathSession";
 import type { QuestionStatus } from "@/data/student/testQuestions";
 
 const StudentTestPlayer = () => {
@@ -36,7 +37,7 @@ const StudentTestPlayer = () => {
 
   // Test session state
   // Select session based on test ID
-  const initialSession = testId === "jee-advanced-demo" ? jeeAdvancedSession : testId === "neet-demo" ? neetSession : sampleTestSession;
+  const initialSession = testId === "jee-advanced-demo" ? jeeAdvancedSession : testId === "neet-demo" ? neetSession : testId === "cbse-math-demo" ? cbseMathSession : sampleTestSession;
   const [session, setSession] = useState(initialSession);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [currentSectionId, setCurrentSectionId] = useState(

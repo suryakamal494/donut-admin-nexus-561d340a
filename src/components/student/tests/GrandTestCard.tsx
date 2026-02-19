@@ -55,6 +55,12 @@ const patternConfig: Record<
     gradient: "from-amber-500 to-orange-600",
     bgLight: "bg-amber-50",
   },
+  cbse: {
+    icon: Target,
+    color: "text-orange-600",
+    gradient: "from-orange-500 to-red-500",
+    bgLight: "bg-orange-50",
+  },
 };
 
 const GrandTestCard = memo(function GrandTestCard({

@@ -3,7 +3,7 @@
 
 export type TestType = "teacher" | "grand_test" | "pyp";
 export type TestStatus = "upcoming" | "live" | "attempted" | "missed";
-export type ExamPattern = "jee_main" | "jee_advanced" | "neet" | "custom";
+export type ExamPattern = "jee_main" | "jee_advanced" | "neet" | "cbse" | "custom";
 
 export interface StudentTest {
   id: string;
@@ -366,6 +366,20 @@ export const grandTests: StudentTest[] = [
     rank: 42,
     totalAttempts: 1320,
   },
+  {
+    id: "cbse-math-demo",
+    name: "CBSE Class 12 Mathematics — 2024",
+    type: "grand_test",
+    subjects: ["mathematics"],
+    pattern: "cbse",
+    totalQuestions: 38,
+    totalMarks: 80,
+    duration: 180,
+    negativeMarking: false,
+    status: "live",
+    scheduledDate: "2026-02-19",
+    scheduledTime: "10:00 AM",
+  },
 ];
 
 // Previous Year Papers
@@ -508,6 +522,12 @@ export const examPatternConfig: Record<
     shortLabel: "NEET",
     colorKey: "green",
     icon: "Heart",
+  },
+  cbse: {
+    label: "CBSE Board",
+    shortLabel: "CBSE",
+    colorKey: "orange",
+    icon: "GraduationCap",
   },
   custom: {
     label: "Custom",
