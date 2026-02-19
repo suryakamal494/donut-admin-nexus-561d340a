@@ -63,6 +63,11 @@ const sectionColors: Record<string, { active: string; inactive: string; ring: st
     inactive: "bg-amber-500/90 text-white border-amber-500/80",
     ring: "ring-amber-400",
   },
+  hindi: {
+    active: "bg-orange-600 text-white border-orange-600 shadow-lg shadow-orange-200/50",
+    inactive: "bg-orange-500/90 text-white border-orange-500/80",
+    ring: "ring-orange-400",
+  },
 };
 
 const TestPlayerHeader = memo(function TestPlayerHeader({
