@@ -14,6 +14,7 @@ import {
   PerformanceComparison,
   DifficultyAnalysis,
   CognitiveAnalysis,
+  Recommendations,
 } from "@/components/student/tests/results";
 import type { EnhancedQuestionResult } from "@/data/student/testResultsGenerator";
 import { generateResultForTest } from "@/data/student/testResultsGenerator";
@@ -125,6 +126,10 @@ const StudentTestResults = () => {
                   }}
                 />
               )}
+              <Recommendations
+                questions={result.questions as EnhancedQuestionResult[]}
+                sections={result.sections}
+              />
             </TabsContent>
 
             <TabsContent value="sections" className="mt-0">
