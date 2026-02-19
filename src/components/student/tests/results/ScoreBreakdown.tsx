@@ -5,6 +5,7 @@ import { memo } from "react";
 import { CheckCircle2, XCircle, MinusCircle, Target } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
+import { getAccuracyColor } from "@/data/student/testResults";
 
 interface ScoreBreakdownProps {
   totalQuestions: number;
@@ -113,7 +114,7 @@ const ScoreBreakdown = memo(function ScoreBreakdown({
           <p className="text-xs text-muted-foreground">Accuracy</p>
           <p className={cn(
             "font-bold",
-            accuracy >= 70 ? "text-emerald-600" : accuracy >= 50 ? "text-amber-600" : "text-red-600"
+            getAccuracyColor(accuracy)
           )}>
             {accuracy}%
           </p>

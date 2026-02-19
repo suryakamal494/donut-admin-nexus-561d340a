@@ -36,6 +36,8 @@ export interface SectionResult {
   accuracy: number; // percentage
   averageTime: number; // seconds per question
   totalTime: number; // seconds
+  classAverage?: number;
+  topperScore?: number;
 }
 
 export interface TestResultData {
@@ -246,6 +248,24 @@ export const getDifficultyColor = (difficulty: string) => {
     case "hard": return "text-red-600 bg-red-100";
     default: return "text-muted-foreground bg-muted";
   }
+};
+
+// Helper: Get accuracy color based on percentage
+export const getAccuracyColor = (accuracy: number): string => {
+  if (accuracy >= 70) return "text-emerald-600";
+  if (accuracy >= 40) return "text-amber-600";
+  return "text-red-600";
+};
+
+// Helper: Compute question stats from a question array
+export const getQuestionStats = (questions: QuestionResult[]) => {
+  const total = questions.length;
+  const attempted = questions.filter(q => q.isAttempted).length;
+  const correct = questions.filter(q => q.isCorrect).length;
+  const wrong = attempted - correct;
+  const skipped = total - attempted;
+  const accuracy = attempted > 0 ? Math.round((correct / attempted) * 100) : 0;
+  return { total, attempted, correct, wrong, skipped, accuracy };
 };
 
 // Helper: Get subject color

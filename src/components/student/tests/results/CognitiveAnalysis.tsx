@@ -6,7 +6,9 @@ import { Brain, ChevronDown, ChevronUp, TrendingUp, TrendingDown } from "lucide-
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import type { EnhancedQuestionResult, CognitiveType } from "@/data/student/testResultsGenerator";
+import { COGNITIVE_TYPES } from "@/data/student/testResultsGenerator";
 import type { SectionResult } from "@/data/student/testResults";
+import { getAccuracyColor } from "@/data/student/testResults";
 
 interface CognitiveAnalysisProps {
   questions: EnhancedQuestionResult[];
@@ -30,7 +32,7 @@ const CognitiveAnalysis = memo(function CognitiveAnalysis({
   const [showSubjects, setShowSubjects] = useState(false);
 
   const cognitiveData = useMemo(() => {
-    const types = Object.keys(COGNITIVE_COLORS) as CognitiveType[];
+    const types = COGNITIVE_TYPES;
     return types.map(type => {
       const qs = questions.filter(q => q.cognitiveType === type);
       const total = qs.length;
@@ -112,7 +114,7 @@ const CognitiveAnalysis = memo(function CognitiveAnalysis({
               </span>
               <span className={cn(
                 "text-xs font-bold",
-                d.accuracy >= 70 ? "text-emerald-600" : d.accuracy >= 40 ? "text-amber-600" : "text-red-600"
+                getAccuracyColor(d.accuracy)
               )}>
                 {d.accuracy}%
               </span>
@@ -142,7 +144,7 @@ const CognitiveAnalysis = memo(function CognitiveAnalysis({
                         <span className="text-muted-foreground">{sub.subject}</span>
                         <span className={cn(
                           "font-semibold",
-                          sub.accuracy >= 70 ? "text-emerald-600" : sub.accuracy >= 40 ? "text-amber-600" : "text-red-600"
+                          getAccuracyColor(sub.accuracy)
                         )}>
                           {sub.correct}/{sub.total} ({sub.accuracy}%)
                         </span>
