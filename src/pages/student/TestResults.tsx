@@ -24,6 +24,7 @@ const StudentTestResults = () => {
 
   // Generate results based on testId
   const result = useMemo(() => generateResultForTest(testId || "gt-1"), [testId]);
+  const isMultiSection = result.sections.length > 1;
 
   const handleBack = () => {
     navigate("/student/tests");
@@ -68,13 +69,15 @@ const StudentTestResults = () => {
               <Target className="w-4 h-4" />
               <span className="hidden sm:inline">Overview</span>
             </TabsTrigger>
-            <TabsTrigger 
-              value="sections" 
-              className="flex-1 min-w-[80px] gap-1.5 text-xs sm:text-sm data-[state=active]:bg-white"
-            >
-              <BarChart3 className="w-4 h-4" />
-              <span className="hidden sm:inline">Sections</span>
-            </TabsTrigger>
+            {isMultiSection && (
+              <TabsTrigger 
+                value="sections" 
+                className="flex-1 min-w-[80px] gap-1.5 text-xs sm:text-sm data-[state=active]:bg-white"
+              >
+                <BarChart3 className="w-4 h-4" />
+                <span className="hidden sm:inline">Sections</span>
+              </TabsTrigger>
+            )}
             <TabsTrigger 
               value="time" 
               className="flex-1 min-w-[80px] gap-1.5 text-xs sm:text-sm data-[state=active]:bg-white"
@@ -103,12 +106,14 @@ const StudentTestResults = () => {
                 accuracy={result.accuracy}
               />
               <PerformanceComparison sections={result.sections} />
-              <SectionAnalysis 
-                sections={result.sections}
-                onSectionClick={(sectionId) => {
-                  setActiveTab("review");
-                }}
-              />
+              {isMultiSection && (
+                <SectionAnalysis 
+                  sections={result.sections}
+                  onSectionClick={(sectionId) => {
+                    setActiveTab("review");
+                  }}
+                />
+              )}
             </TabsContent>
 
             <TabsContent value="sections" className="mt-0">

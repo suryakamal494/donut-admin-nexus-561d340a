@@ -58,10 +58,12 @@ const TestCard = memo(function TestCard({
           <Button
             size="sm"
             variant="outline"
-            className="text-xs"
-            onClick={handleAction}
+            className="text-xs opacity-60 cursor-not-allowed"
+            disabled
           >
-            View Details
+            {test.scheduledDate
+              ? `Starts ${new Date(test.scheduledDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })}${test.scheduledTime ? `, ${test.scheduledTime}` : ""}`
+              : "Scheduled"}
           </Button>
         );
       case "attempted":

@@ -164,8 +164,6 @@ function SubjectTestItem({
       navigate(`/student/tests/${test.id}`);
     } else if (test.status === "attempted") {
       navigate(`/student/tests/${test.id}/results`);
-    } else if (test.status === "upcoming") {
-      navigate(`/student/tests/${test.id}`);
     }
   }, [navigate, test.id, test.status]);
 
@@ -261,13 +259,12 @@ function SubjectTestItem({
               </button>
             )}
             {test.status === "upcoming" && (
-              <button
-                onClick={handleAction}
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-medium text-muted-foreground bg-white/80 border border-white/50 shadow-sm hover:bg-white transition-colors"
-              >
-                <Eye className="w-3.5 h-3.5" />
-                View Details
-              </button>
+              <span className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-medium text-muted-foreground/60 bg-white/50 border border-white/40 cursor-not-allowed">
+                <Clock className="w-3.5 h-3.5" />
+                {test.scheduledDate
+                  ? `Starts ${format(parseISO(test.scheduledDate), "MMM d")}${test.scheduledTime ? `, ${test.scheduledTime}` : ""}`
+                  : "Scheduled"}
+              </span>
             )}
             {test.status === "attempted" && (
               <button
