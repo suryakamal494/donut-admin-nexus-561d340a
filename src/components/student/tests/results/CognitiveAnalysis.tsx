@@ -71,17 +71,9 @@ const CognitiveAnalysis = memo(function CognitiveAnalysis({
   const maxAccuracy = Math.max(...cognitiveData.map(d => d.accuracy), 1);
 
   return (
-    <motion.div
-      initial={{ y: 20, opacity: 0 }}
-      animate={{ y: 0, opacity: 1 }}
-      transition={{ delay: 0.4 }}
-      className="bg-white rounded-xl border border-border p-4 sm:p-6"
-    >
+    <div>
       <div className="flex items-center justify-between mb-4">
-        <h3 className="font-semibold text-foreground flex items-center gap-2">
-          <Brain className="w-5 h-5 text-primary" />
-          Cognitive Analysis
-        </h3>
+        <span />
         {isMultiSection && (
           <button
             onClick={() => setShowSubjects(prev => !prev)}
@@ -94,15 +86,15 @@ const CognitiveAnalysis = memo(function CognitiveAnalysis({
       </div>
 
       {/* Strongest / Weakest badges */}
-      {strongest && weakest && strongest.type !== weakest.type && (
+      {strongest && weakest && strongest.type !== weakest.type && strongest.total >= 3 && weakest.total >= 3 && (
         <div className="flex flex-wrap gap-2 mb-4">
           <span className="inline-flex items-center gap-1 text-xs font-medium bg-emerald-50 text-emerald-700 px-2.5 py-1 rounded-full border border-emerald-200">
             <TrendingUp className="w-3 h-3" />
-            Strongest: {strongest.type} ({strongest.accuracy}%)
+            Strongest: {strongest.type} ({strongest.accuracy}% on {strongest.total} Qs)
           </span>
           <span className="inline-flex items-center gap-1 text-xs font-medium bg-red-50 text-red-700 px-2.5 py-1 rounded-full border border-red-200">
             <TrendingDown className="w-3 h-3" />
-            Weakest: {weakest.type} ({weakest.accuracy}%)
+            Weakest: {weakest.type} ({weakest.accuracy}% on {weakest.total} Qs)
           </span>
         </div>
       )}
@@ -163,7 +155,7 @@ const CognitiveAnalysis = memo(function CognitiveAnalysis({
           </div>
         ))}
       </div>
-    </motion.div>
+    </div>
   );
 });
 

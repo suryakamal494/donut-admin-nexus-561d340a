@@ -2,7 +2,7 @@
 // Shows performance breakdown by Easy / Medium / Hard difficulty levels
 
 import { memo, useMemo, useState } from "react";
-import { Layers, ChevronDown, ChevronUp } from "lucide-react";
+import { ChevronDown, ChevronUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import type { EnhancedQuestionResult } from "@/data/student/testResultsGenerator";
@@ -40,7 +40,6 @@ const DifficultyAnalysis = memo(function DifficultyAnalysis({
     return (["easy", "medium", "hard"] as DifficultyKey[]).map(level => {
       const qs = questions.filter(q => q.difficulty === level);
       const stats = getDifficultyStats(qs);
-      // Subject-wise breakdown for grand tests
       const subjectBreakdown = isMultiSection
         ? sections.map(sec => {
             const secQs = qs.filter(q => q.sectionId === sec.id);
@@ -51,108 +50,91 @@ const DifficultyAnalysis = memo(function DifficultyAnalysis({
     });
   }, [questions, sections, isMultiSection]);
 
-  const maxTotal = Math.max(...difficultyData.map(d => d.total), 1);
-
   return (
-    <motion.div
-      initial={{ y: 20, opacity: 0 }}
-      animate={{ y: 0, opacity: 1 }}
-      transition={{ delay: 0.35 }}
-      className="bg-white rounded-xl border border-border p-4 sm:p-6"
-    >
-      <h3 className="font-semibold text-foreground flex items-center gap-2 mb-4">
-        <Layers className="w-5 h-5 text-primary" />
-        Difficulty Analysis
-      </h3>
-
-      <div className="space-y-3">
-        {difficultyData.map((d) => (
-          <div key={d.level}>
-            <div
-              className={cn(
-                "p-3 rounded-lg border transition-colors",
-                d.config.lightBg, d.config.border,
-                isMultiSection && d.total > 0 && "cursor-pointer"
-              )}
-              onClick={() => {
-                if (isMultiSection && d.total > 0) {
-                  setExpandedDifficulty(prev => prev === d.level ? null : d.level);
-                }
-              }}
-            >
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2">
-                  <span className={cn("w-2.5 h-2.5 rounded-full", d.config.color)} />
-                  <span className={cn("text-sm font-semibold", d.config.text)}>{d.config.label}</span>
-                  <span className="text-xs text-muted-foreground">({d.total} Qs)</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className={cn("text-sm font-bold", d.accuracy >= 70 ? "text-emerald-600" : d.accuracy >= 40 ? "text-amber-600" : "text-red-600")}>
-                    {d.accuracy}%
-                  </span>
-                  {isMultiSection && d.total > 0 && (
-                    expandedDifficulty === d.level ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />
-                  )}
-                </div>
+    <div className="space-y-3">
+      {difficultyData.map((d) => (
+        <div key={d.level}>
+          <div
+            className={cn(
+              "p-3 rounded-lg border transition-colors",
+              d.config.lightBg, d.config.border,
+              isMultiSection && d.total > 0 && "cursor-pointer"
+            )}
+            onClick={() => {
+              if (isMultiSection && d.total > 0) {
+                setExpandedDifficulty(prev => prev === d.level ? null : d.level);
+              }
+            }}
+          >
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <span className={cn("w-2.5 h-2.5 rounded-full", d.config.color)} />
+                <span className={cn("text-sm font-semibold", d.config.text)}>{d.config.label}</span>
+                <span className="text-xs text-muted-foreground">({d.total} Qs)</span>
               </div>
-
-              {/* Progress bar */}
-              <div className="h-2 bg-white/60 rounded-full overflow-hidden mb-2">
-                <motion.div
-                  initial={{ width: 0 }}
-                  animate={{ width: d.total > 0 ? `${(d.correct / d.total) * 100}%` : "0%" }}
-                  transition={{ duration: 0.6 }}
-                  className={cn("h-full rounded-full", d.config.color)}
-                />
-              </div>
-
-              {/* Mini stats */}
-              <div className="flex items-center gap-3 text-[10px] text-muted-foreground">
-                <span className="flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full" />
-                  Correct: {d.correct}
+              <div className="flex items-center gap-2">
+                <span className={cn("text-sm font-bold", d.accuracy >= 70 ? "text-emerald-600" : d.accuracy >= 40 ? "text-amber-600" : "text-red-600")}>
+                  {d.accuracy}%
                 </span>
-                <span className="flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 bg-red-500 rounded-full" />
-                  Wrong: {d.wrong}
-                </span>
-                <span className="flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 bg-slate-300 rounded-full" />
-                  Skipped: {d.skipped}
-                </span>
+                {isMultiSection && d.total > 0 && (
+                  expandedDifficulty === d.level ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                )}
               </div>
             </div>
 
-            {/* Subject-wise expandable breakdown */}
-            <AnimatePresence>
-              {isMultiSection && expandedDifficulty === d.level && d.subjectBreakdown.length > 0 && (
-                <motion.div
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: "auto", opacity: 1 }}
-                  exit={{ height: 0, opacity: 0 }}
-                  transition={{ duration: 0.25 }}
-                  className="overflow-hidden"
-                >
-                  <div className="ml-4 mt-2 space-y-1.5 border-l-2 border-border pl-3">
-                    {d.subjectBreakdown.map(sub => (
-                      <div key={sub.subject} className="flex items-center justify-between text-xs py-1">
-                        <span className="text-muted-foreground">{sub.subject}</span>
-                        <div className="flex items-center gap-2.5">
-                          <span className="text-foreground">{sub.correct}/{sub.total}</span>
-                          <span className={cn("font-semibold", sub.accuracy >= 70 ? "text-emerald-600" : sub.accuracy >= 40 ? "text-amber-600" : "text-red-600")}>
-                            {sub.accuracy}%
-                          </span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
+            <div className="h-2 bg-white/60 rounded-full overflow-hidden mb-2">
+              <motion.div
+                initial={{ width: 0 }}
+                animate={{ width: d.total > 0 ? `${(d.correct / d.total) * 100}%` : "0%" }}
+                transition={{ duration: 0.6 }}
+                className={cn("h-full rounded-full", d.config.color)}
+              />
+            </div>
+
+            <div className="flex items-center gap-3 text-[10px] text-muted-foreground">
+              <span className="flex items-center gap-1">
+                <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full" />
+                Correct: {d.correct}
+              </span>
+              <span className="flex items-center gap-1">
+                <span className="w-1.5 h-1.5 bg-red-500 rounded-full" />
+                Wrong: {d.wrong}
+              </span>
+              <span className="flex items-center gap-1">
+                <span className="w-1.5 h-1.5 bg-slate-300 rounded-full" />
+                Skipped: {d.skipped}
+              </span>
+            </div>
           </div>
-        ))}
-      </div>
-    </motion.div>
+
+          <AnimatePresence>
+            {isMultiSection && expandedDifficulty === d.level && d.subjectBreakdown.length > 0 && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: "auto", opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.25 }}
+                className="overflow-hidden"
+              >
+                <div className="ml-4 mt-2 space-y-1.5 border-l-2 border-border pl-3">
+                  {d.subjectBreakdown.map(sub => (
+                    <div key={sub.subject} className="flex items-center justify-between text-xs py-1">
+                      <span className="text-muted-foreground">{sub.subject}</span>
+                      <div className="flex items-center gap-2.5">
+                        <span className="text-foreground">{sub.correct}/{sub.total}</span>
+                        <span className={cn("font-semibold", sub.accuracy >= 70 ? "text-emerald-600" : sub.accuracy >= 40 ? "text-amber-600" : "text-red-600")}>
+                          {sub.accuracy}%
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      ))}
+    </div>
   );
 });
 
