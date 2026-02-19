@@ -18,6 +18,7 @@ interface ResultsHeaderProps {
   totalParticipants?: number;
   percentile?: number;
   timeTaken: number;
+  ranksPublished?: boolean;
   onBack: () => void;
   onShare?: () => void;
 }
@@ -32,6 +33,7 @@ const ResultsHeader = memo(function ResultsHeader({
   totalParticipants,
   percentile,
   timeTaken,
+  ranksPublished = true,
   onBack,
   onShare,
 }: ResultsHeaderProps) {
@@ -101,7 +103,7 @@ const ResultsHeader = memo(function ResultsHeader({
       </div>
       
       {/* Score Display */}
-      <div className="px-4 py-6 sm:py-8">
+      <div className="px-4 py-4 sm:py-6">
         <div className="max-w-lg mx-auto text-center">
           {/* Animated Score Circle */}
           <motion.div
@@ -109,7 +111,7 @@ const ResultsHeader = memo(function ResultsHeader({
             animate={{ scale: 1, opacity: 1 }}
             transition={{ type: "spring", stiffness: 200, damping: 20 }}
             className={cn(
-              "w-32 h-32 sm:w-40 sm:h-40 mx-auto rounded-full",
+              "w-24 h-24 sm:w-36 sm:h-36 mx-auto rounded-full",
               "bg-gradient-to-br shadow-2xl",
               getScoreColor(),
               "flex flex-col items-center justify-center text-white"
@@ -117,11 +119,11 @@ const ResultsHeader = memo(function ResultsHeader({
           >
             <motion.span
               key={displayScore}
-              className="text-4xl sm:text-5xl font-bold"
+              className="text-3xl sm:text-5xl font-bold"
             >
               {displayScore}
             </motion.span>
-            <span className="text-sm sm:text-base opacity-90">/ {totalMarks}</span>
+            <span className="text-xs sm:text-base opacity-90">/ {totalMarks}</span>
           </motion.div>
           
           {/* Percentage */}
@@ -129,7 +131,7 @@ const ResultsHeader = memo(function ResultsHeader({
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.3 }}
-            className="mt-4 text-2xl sm:text-3xl font-bold text-foreground"
+            className="mt-3 text-xl sm:text-3xl font-bold text-foreground"
           >
             {percentage}%
           </motion.p>
@@ -147,15 +149,19 @@ const ResultsHeader = memo(function ResultsHeader({
                 <Trophy className="w-4 h-4 sm:w-5 sm:h-5 text-amber-500" />
                 <div className="text-left">
                   <p className="text-xs text-muted-foreground">Rank</p>
-                  <p className="font-bold text-foreground text-sm sm:text-base">
-                    {rank} <span className="text-muted-foreground font-normal">/ {totalParticipants}</span>
-                  </p>
+                  {ranksPublished ? (
+                    <p className="font-bold text-foreground text-sm sm:text-base">
+                      {rank} <span className="text-muted-foreground font-normal">/ {totalParticipants}</span>
+                    </p>
+                  ) : (
+                    <p className="text-xs font-medium text-amber-600 italic">Awaiting Publication</p>
+                  )}
                 </div>
               </div>
             )}
             
             {/* Percentile */}
-            {percentile && (
+            {percentile && ranksPublished && (
               <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-emerald-50">
                 <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-500" />
                 <div className="text-left">

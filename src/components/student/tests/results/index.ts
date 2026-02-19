@@ -9,3 +9,4 @@ export { default as PerformanceComparison } from "./PerformanceComparison";
 export { default as DifficultyAnalysis } from "./DifficultyAnalysis";
 export { default as CognitiveAnalysis } from "./CognitiveAnalysis";
 export { default as Recommendations } from "./Recommendations";
+export { default as CollapsibleCard } from "./CollapsibleCard";
