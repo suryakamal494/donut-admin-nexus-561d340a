@@ -2,8 +2,10 @@
   <defs>
     <linearGradient id="donut-fav" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" stop-color="hsl(12, 85%, 65%)" />
-      <stop offset="100%" stop-color="hsl(25, 90%, 58%)" />
+      <stop offset="100%" stop-color="hsl(350, 70%, 60%)" />
     </linearGradient>
   </defs>
-  <circle cx="50" cy="50" r="35" stroke="url(#donut-fav)" stroke-width="16" fill="none" stroke-linecap="round" stroke-dasharray="188 32" transform="rotate(-60 50 50)" />
+  <circle cx="50" cy="50" r="42" stroke="url(#donut-fav)" stroke-width="8" fill="none" />
+  <circle cx="50" cy="50" r="24" stroke="url(#donut-fav)" stroke-width="6" fill="none" />
+  <circle cx="50" cy="50" r="8" fill="url(#donut-fav)" />
 </svg>
