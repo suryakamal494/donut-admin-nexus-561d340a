@@ -3,13 +3,12 @@
 
 import { memo } from "react";
 import { useNavigate } from "react-router-dom";
+import { getSubjectDisplayName } from "@/data/student/tests";
 import {
-  Calculator,
-  Atom,
-  FlaskConical,
-  Leaf,
-  BookOpen,
-  Code,
+  Calculator, Atom, FlaskConical, Leaf, BookOpen, Code,
+  Languages, ScrollText, Globe, Landmark, Mountain, Scale,
+  TrendingUp, Microscope, Bug, Sprout, TreePine, Palette,
+  Dumbbell, Receipt, Briefcase, BrainCircuit, Database, Home,
   ChevronRight,
   type LucideIcon,
 } from "lucide-react";
@@ -20,8 +19,17 @@ import { getLiveTestsCount } from "@/data/student/tests";
 // Icon mapping
 const iconMap: Record<string, LucideIcon> = {
   Calculator, Atom, FlaskConical, Leaf, BookOpen, Code,
+  Languages, ScrollText, Globe, Landmark, Mountain, Scale,
+  TrendingUp, Microscope, Bug, Sprout, TreePine, Palette,
+  Dumbbell, Receipt, Briefcase, BrainCircuit, Database, Home,
   mathematics: Calculator, math: Calculator, physics: Atom,
   chemistry: FlaskConical, biology: Leaf, english: BookOpen, cs: Code,
+  hindi: Languages, sanskrit: ScrollText, "social-science": Globe,
+  history: Landmark, geography: Mountain, civics: Scale,
+  economics: TrendingUp, science: Microscope, zoology: Bug,
+  botany: Sprout, evs: TreePine, art: Palette, pe: Dumbbell,
+  accountancy: Receipt, business: Briefcase, ai: BrainCircuit,
+  informatics: Database, "home-science": Home,
 };
 
 // Color configurations matching SubjectCard
@@ -32,11 +40,31 @@ const colorConfig: Record<string, { gradient: string; shadow: string; bg: string
   red: { gradient: "from-rose-400 to-red-500", shadow: "shadow-rose-400/30", bg: "bg-rose-50", text: "text-rose-600" },
   amber: { gradient: "from-amber-400 to-orange-500", shadow: "shadow-amber-400/30", bg: "bg-amber-50", text: "text-amber-600" },
   cyan: { gradient: "from-cyan-400 to-teal-500", shadow: "shadow-cyan-400/30", bg: "bg-cyan-50", text: "text-cyan-600" },
+  orange: { gradient: "from-orange-400 to-orange-600", shadow: "shadow-orange-400/30", bg: "bg-orange-50", text: "text-orange-600" },
+  indigo: { gradient: "from-indigo-400 to-indigo-600", shadow: "shadow-indigo-400/30", bg: "bg-indigo-50", text: "text-indigo-600" },
+  slate: { gradient: "from-slate-400 to-slate-600", shadow: "shadow-slate-400/30", bg: "bg-slate-50", text: "text-slate-600" },
+  brown: { gradient: "from-yellow-600 to-amber-700", shadow: "shadow-yellow-600/30", bg: "bg-yellow-50", text: "text-yellow-700" },
+  sky: { gradient: "from-sky-400 to-sky-600", shadow: "shadow-sky-400/30", bg: "bg-sky-50", text: "text-sky-600" },
+  lime: { gradient: "from-lime-400 to-lime-600", shadow: "shadow-lime-400/30", bg: "bg-lime-50", text: "text-lime-600" },
+  pink: { gradient: "from-pink-400 to-pink-600", shadow: "shadow-pink-400/30", bg: "bg-pink-50", text: "text-pink-600" },
+  fuchsia: { gradient: "from-fuchsia-400 to-fuchsia-600", shadow: "shadow-fuchsia-400/30", bg: "bg-fuchsia-50", text: "text-fuchsia-600" },
+  stone: { gradient: "from-stone-400 to-stone-600", shadow: "shadow-stone-400/30", bg: "bg-stone-50", text: "text-stone-600" },
+  zinc: { gradient: "from-zinc-400 to-zinc-600", shadow: "shadow-zinc-400/30", bg: "bg-zinc-50", text: "text-zinc-600" },
+  emerald: { gradient: "from-emerald-400 to-emerald-600", shadow: "shadow-emerald-400/30", bg: "bg-emerald-50", text: "text-emerald-600" },
+  rose: { gradient: "from-rose-400 to-rose-600", shadow: "shadow-rose-400/30", bg: "bg-rose-50", text: "text-rose-600" },
+  violet: { gradient: "from-violet-400 to-violet-600", shadow: "shadow-violet-400/30", bg: "bg-violet-50", text: "text-violet-600" },
+  teal: { gradient: "from-teal-400 to-teal-600", shadow: "shadow-teal-400/30", bg: "bg-teal-50", text: "text-teal-600" },
 };
 
 const subjectColorMap: Record<string, string> = {
   physics: "purple", chemistry: "green", mathematics: "blue",
   math: "blue", biology: "red", english: "amber", cs: "cyan",
+  hindi: "orange", sanskrit: "indigo", "social-science": "slate",
+  history: "brown", geography: "teal", civics: "sky",
+  economics: "emerald", science: "lime", zoology: "pink",
+  botany: "emerald", evs: "teal", art: "fuchsia", pe: "orange",
+  accountancy: "stone", business: "zinc", ai: "violet",
+  informatics: "sky", "home-science": "rose",
 };
 
 interface SubjectTestCardProps {
@@ -47,7 +75,7 @@ interface SubjectTestCardProps {
 const SubjectTestCard = memo(function SubjectTestCard({ subject, tests }: SubjectTestCardProps) {
   const navigate = useNavigate();
   const colorKey = subjectColorMap[subject.toLowerCase()] || "blue";
-  const colors = colorConfig[colorKey];
+  const colors = colorConfig[colorKey] || colorConfig.blue;
   const Icon = iconMap[subject.toLowerCase()] || BookOpen;
 
   const liveCount = getLiveTestsCount(tests);
@@ -55,7 +83,7 @@ const SubjectTestCard = memo(function SubjectTestCard({ subject, tests }: Subjec
   const attemptedCount = tests.filter(t => t.status === "attempted").length;
   const totalCount = tests.length;
 
-  const displayName = subject.charAt(0).toUpperCase() + subject.slice(1);
+  const displayName = getSubjectDisplayName(subject);
 
   return (
     <button

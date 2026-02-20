@@ -89,12 +89,12 @@ const StudentTests = () => {
 
   return (
     <div className="w-full pb-20">
-      {/* Page Header */}
+      {/* Page Header + Search */}
       <div className="flex items-center gap-3 mb-4">
         <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-lg shadow-amber-400/25">
           <Trophy className="w-5 h-5 text-white" />
         </div>
-        <div>
+        <div className="flex-1">
           <h1 className="text-xl font-bold text-foreground">Tests & Practice</h1>
           <p className="text-xs text-muted-foreground">
             {liveTeacherTests + liveGrandTests > 0
@@ -102,15 +102,25 @@ const StudentTests = () => {
               : "All caught up!"}
           </p>
         </div>
+        {/* Desktop inline search */}
+        <div className="hidden lg:block w-72">
+          <TestSearchBar
+            value={searchQuery}
+            onChange={setSearchQuery}
+            placeholder="Search tests..."
+          />
+        </div>
       </div>
 
-      {/* Search Bar */}
-      <TestSearchBar
-        value={searchQuery}
-        onChange={setSearchQuery}
-        placeholder="Search tests by name, subject, or teacher..."
-        className="mb-4"
-      />
+      {/* Mobile search bar */}
+      <div className="lg:hidden">
+        <TestSearchBar
+          value={searchQuery}
+          onChange={setSearchQuery}
+          placeholder="Search tests by name, subject, or teacher..."
+          className="mb-4"
+        />
+      </div>
 
       {/* Search Results or Normal View */}
       {isSearching ? (
@@ -151,6 +161,9 @@ const StudentTests = () => {
           {/* My Tests Tab */}
           <TabsContent value="my-tests" className="mt-0">
             <LiveTestsSection tests={teacherTests} />
+            {subjectOrder.length > 0 && (
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">By Subject</p>
+            )}
             {subjectOrder.length > 0 ? (
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 {subjectOrder.map((subject) => (
