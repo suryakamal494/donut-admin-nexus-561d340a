@@ -10,10 +10,10 @@ import {
   Bell,
   ChevronLeft,
   ChevronRight,
-  Sparkles,
   type LucideIcon
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import DonutLogo from "@/components/shared/DonutLogo";
 import { studentProfile } from "@/data/student/profile";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
@@ -77,12 +77,10 @@ const StudentSidebar = ({ collapsed, onToggle }: StudentSidebarProps) => {
         "flex items-center gap-3 px-4 h-16 border-b border-orange-100/50",
         collapsed && "justify-center"
       )}>
-        <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-donut-coral to-donut-orange shadow-lg shadow-donut-coral/25">
-          <Sparkles className="w-5 h-5 text-white" />
-        </div>
+        <DonutLogo size={40} />
         {!collapsed && (
           <div className="flex flex-col">
-            <span className="font-bold text-lg gradient-text">Donut AI</span>
+            <span className="font-bold text-lg gradient-text">theDonutAI</span>
             <span className="text-[10px] text-muted-foreground -mt-0.5">Learning made fun</span>
           </div>
         )}

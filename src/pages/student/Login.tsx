@@ -4,7 +4,8 @@
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, Eye, EyeOff, ArrowRight, Sparkles } from "lucide-react";
+import { ArrowLeft, Eye, EyeOff, ArrowRight } from "lucide-react";
+import DonutLogo from "@/components/shared/DonutLogo";
 import { useState } from "react";
 import { motion } from "framer-motion";
 import aiCompanionIllustration from "@/assets/student/ai-companion-illustration.png";
@@ -227,10 +228,8 @@ const StudentLogin = () => {
               className="flex items-center gap-2 mb-5 md:mb-6"
               variants={itemVariants}
             >
-              <div className="w-8 h-8 md:w-9 md:h-9 rounded-xl bg-gradient-to-br from-donut-coral to-donut-pink flex items-center justify-center shadow-lg shadow-donut-coral/20">
-                <Sparkles className="w-4 h-4 md:w-4.5 md:h-4.5 text-white" />
-              </div>
-              <span className="text-sm md:text-base font-bold bg-gradient-to-r from-donut-coral to-donut-pink bg-clip-text text-transparent">Donut AI</span>
+              <DonutLogo size={36} />
+              <span className="text-sm md:text-base font-bold bg-gradient-to-r from-donut-coral to-donut-pink bg-clip-text text-transparent">theDonutAI</span>
             </motion.div>
 
             {/* Heading - clear and simple */}
