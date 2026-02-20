@@ -1,103 +1,159 @@
 
 
-# Refactoring Plan for Student Report Components
+# Phased Implementation Plan: Tests Page UI Improvements + Full Subject Coverage
 
-## What Changes and Why
+## Overview
 
-This plan addresses 7 specific code quality issues found during the audit of the newly built report features. No visual or behavioral changes -- purely internal cleanup for maintainability and consistency.
+Three distinct phases addressing: (1) Desktop layout polish for the Tests page, (2) Adding a "Subject Tests" section divider, and (3) Expanding the subject system to cover all CBSE/ICSE K-12 subjects with proper icons, colors, patterns, and mock test data.
 
 ---
 
-## Refactoring Items
+## Phase 1: Desktop Tests Page Layout Refinements
 
-### 1. Extract Shared Accuracy Color Utility
+### 1A. Move Search Bar Inline with Header (Desktop Only)
 
-The same ternary expression for coloring accuracy percentages appears in 4+ components. Extract to a single helper.
+**File:** `src/pages/student/Tests.tsx`
 
-**File:** `src/data/student/testResults.ts`
-- Add: `getAccuracyColor(accuracy: number): string` that returns the appropriate Tailwind text color class
+On desktop (lg+), place the search icon/bar to the right of the "Tests & Practice" header, removing the separate full-width search bar row. On mobile, keep the search bar below the header as-is.
 
-**Files updated:** `DifficultyAnalysis.tsx`, `CognitiveAnalysis.tsx`, `PerformanceComparison.tsx`, `ScoreBreakdown.tsx` -- replace inline ternaries with the shared function
+- Wrap the header in a `flex justify-between items-center` container
+- On `lg:`, render a compact search icon button that expands into the search bar on click (or render the search bar inline at ~300px width)
+- On mobile (`lg:hidden`), keep the current full-width `TestSearchBar` below the header
 
-### 2. Extract Shared Stats Calculator
+### 1B. Add "Subject Tests" Label Between Live Now and Subject Cards
 
-Create a reusable `getQuestionStats()` function that computes total, attempted, correct, wrong, skipped, and accuracy from a question array. Currently duplicated across `DifficultyAnalysis`, `CognitiveAnalysis`, and `Recommendations`.
+**File:** `src/pages/student/Tests.tsx`
 
-**File:** `src/data/student/testResults.ts`
-- Add: `getQuestionStats(questions: QuestionResult[]): { total, attempted, correct, wrong, skipped, accuracy }`
+After `LiveTestsSection` and before the subject cards grid, add a small, subtle section label:
 
-**Files updated:** `DifficultyAnalysis.tsx`, `CognitiveAnalysis.tsx`, `Recommendations.tsx` -- import and use the shared function
+```
+<p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">
+  By Subject
+</p>
+```
 
-### 3. Move Random Data Generation to Data Layer
+This creates clear visual separation between the Live Now carousel and the static subject cards, without a heavy header.
 
-`PerformanceComparison.tsx` generates `classAvg` and `topper` scores using `Math.random()` inside the component. Move this to `testResultsGenerator.ts` so values are generated once and stay stable across re-renders.
+---
 
-**File:** `src/data/student/testResultsGenerator.ts`
-- Add `classAverage` and `topperScore` fields to each `SectionResult` during generation
+## Phase 2: Expand Subject System for All CBSE/ICSE Subjects
 
-**File:** `src/data/student/testResults.ts`
-- Add `classAverage` and `topperScore` to `SectionResult` interface
+### Subjects to Add
 
-**File:** `src/components/student/tests/results/PerformanceComparison.tsx`
-- Remove `generateClassAverage()` and `generateTopperScore()` functions
-- Read values from `sections[i].classAverage` and `sections[i].topperScore`
+Based on CBSE and ICSE curricula (Classes 1-12), the following subjects are missing from the current 6 (Mathematics, Physics, Chemistry, Biology, English, Computer Science):
 
-### 4. Extract QuestionReview Sub-Components
+| Subject | Color Key | Lucide Icon | Pattern Style |
+|---------|-----------|-------------|---------------|
+| Hindi | orange | Languages | Text/Devanagari-inspired lines |
+| Sanskrit | indigo | ScrollText | Ancient script motifs |
+| Social Science | slate | Globe | Map contour lines |
+| History | brown | Landmark | Pillars/timeline |
+| Geography | teal | Mountain | Terrain contours |
+| Political Science / Civics | sky | Scale | Balance scales |
+| Economics | emerald | TrendingUp | Charts/graphs |
+| Science (combined, Classes 6-10) | lime | Microscope | Microscope + beaker |
+| Zoology (NEET) | pink | Bug | Animal cell outlines |
+| Botany (NEET) | green (reuse) | Sprout | Plant cell outlines |
+| Environmental Studies (EVS) | teal | TreePine | Trees/nature |
+| Art / Fine Arts | fuchsia | Palette | Paint strokes |
+| Physical Education | orange | Dumbbell | Sports elements |
+| Accountancy | stone | Receipt | Ledger lines |
+| Business Studies | zinc | Briefcase | Org chart |
+| Artificial Intelligence | violet | BrainCircuit | Neural network nodes |
+| Informatics Practices | sky | Database | Data flow |
+| Home Science | rose | Home | Kitchen/home elements |
 
-`QuestionReview.tsx` is 560 lines with 4 inline sub-components. Extract them into a `review/` subfolder.
+### 2A. Add New Color Schemes
 
-**New files:**
-- `src/components/student/tests/results/review/OptionDisplay.tsx`
-- `src/components/student/tests/results/review/IntegerDisplay.tsx`
-- `src/components/student/tests/results/review/FillBlankDisplay.tsx`
-- `src/components/student/tests/results/review/MatrixMatchDisplay.tsx`
+**File:** `src/components/student/shared/subjectColors.ts`
 
-**File updated:** `QuestionReview.tsx` -- import from the new files, reducing it to ~380 lines
+- Expand `SubjectColorKey` type to include: `"orange"`, `"indigo"`, `"slate"`, `"brown"`, `"sky"`, `"lime"`, `"pink"`, `"fuchsia"`, `"stone"`, `"zinc"`
+- Expand `SubjectPattern` type to include all new subject patterns
+- Add corresponding entries to `subjectColorSchemes` following the exact same structure (gradient, headerGradient, iconBg, numberBg, progressBg, progressFill, progressBar, textAccent, patternColor, border, pattern)
+- Expand `subjectIconMap` with all new Lucide icons
+- Expand `subjectPatternMap` with all new subject ID mappings
 
-### 5. Replace `any` Types in Generator
+### 2B. Add New Background Patterns
 
-**File:** `src/data/student/testResultsGenerator.ts`
-- Define a `TestInput` interface: `{ id: string; name: string; pattern?: string; duration: number; attemptedAt?: string; rank?: number; totalAttempts?: number; percentile?: number; subject?: string; totalQuestions?: number; totalMarks?: number }`
-- Replace all `any` parameter types in `buildTestResultData`, `generateGrandTestResult`, `generateTeacherTestResult`, and `generateDefaultResult`
+**File:** `src/components/student/subjects/SubjectBackgroundPattern.tsx`
 
-### 6. Wrap Recommendations in React.memo
+Add new SVG pattern components for each new subject, following the exact same structure as existing ones (decorative, low-opacity, positioned top-right):
 
-**File:** `src/components/student/tests/results/Recommendations.tsx`
-- Change `const Recommendations = ({ ... })` to `const Recommendations = memo(function Recommendations({ ... })`
-- Add `memo` to the import from React
+- `HindiPattern`: Devanagari-inspired script lines
+- `SanskritPattern`: Ancient scroll motifs
+- `SocialSciencePattern`: Map contour lines with compass
+- `HistoryPattern`: Pillars and timeline dots
+- `GeographyPattern`: Mountain contours and compass rose
+- `CivicsPattern`: Balance scale outline
+- `EconomicsPattern`: Rising chart line with bar graph
+- `SciencePattern`: Microscope silhouette with beaker
+- `ZoologyPattern`: Animal cell with organelles
+- `BotanyPattern`: Plant cell with chloroplast shapes
+- `EVSPattern`: Trees and nature elements
+- `ArtPattern`: Paint palette and brush strokes
+- `PEPattern`: Running figure or sports elements
+- `AccountancyPattern`: Ledger lines with currency
+- `BusinessPattern`: Organization chart nodes
+- `AIPattern`: Neural network nodes and connections
+- `InformaticsPattern`: Database cylinders and data flow
+- `HomeSciencePattern`: Home silhouette elements
 
-### 7. Use Single Source for Cognitive Types
+### 2C. Add New Subjects to Student Data
 
-**File:** `src/data/student/testResultsGenerator.ts` already exports `COGNITIVE_TYPES`
+**File:** `src/data/student/subjects.ts`
 
-**Files updated:**
-- `Recommendations.tsx` -- import `COGNITIVE_TYPES` instead of hardcoding `["Logical", "Analytical", ...]`
-- `CognitiveAnalysis.tsx` -- import `COGNITIVE_TYPES` instead of deriving from `COGNITIVE_COLORS` keys
+Add all new subjects to `studentSubjects[]` array with appropriate:
+- `id`, `name`, `icon` (matching the new Lucide icon name)
+- `progress` (varied mock values)
+- `status` (varied statuses)
+- `color` (matching the new color key)
+- `chaptersTotal` / `chaptersCompleted` (realistic numbers)
+
+### 2D. Update Color Maps in Test Components
+
+**Files:**
+- `src/components/student/tests/SubjectTestCard.tsx` -- expand `subjectColorMap` and `iconMap` and `colorConfig`
+- `src/components/student/tests/LiveTestsSection.tsx` -- expand `subjectColorMap`, `iconMap`, and `colorConfig`
+- `src/data/student/tests.ts` -- expand `subjectColorMap`
+
+All three files have local copies of subject-to-color and subject-to-icon mappings. Each needs the new subjects added.
+
+---
+
+## Phase 3: Add Mock Test Data for New Subjects
+
+**File:** `src/data/student/tests.ts`
+
+Add teacher test entries for each new subject (at least 3-5 tests per subject with varied statuses: live, upcoming, attempted, missed) so the UI renders subject cards for them. This ensures developers see a complete picture of how every subject card looks.
+
+Example for Hindi:
+```typescript
+{ id: "tt-h1", name: "Hindi Grammar Quiz", type: "teacher", subject: "hindi", totalQuestions: 20, totalMarks: 80, duration: 40, negativeMarking: false, status: "live", teacherName: "Mrs. Joshi", batchName: "Class 10-A" },
+{ id: "tt-h2", name: "Hindi Literature Test", type: "teacher", subject: "hindi", totalQuestions: 25, totalMarks: 100, duration: 50, negativeMarking: false, status: "upcoming", scheduledDate: "2026-02-25", scheduledTime: "10:00 AM", teacherName: "Mrs. Joshi", batchName: "Class 10-A" },
+// ... etc
+```
+
+Repeat for all new subjects (Hindi, Sanskrit, Social Science, History, Geography, Civics, Economics, Science, Zoology, Botany, EVS, Art, Physical Education, Accountancy, Business Studies, AI, Informatics Practices, Home Science).
 
 ---
 
 ## Files Summary
 
-| File | Action | Change |
-|------|--------|--------|
-| `src/data/student/testResults.ts` | Modify | Add `getAccuracyColor()`, `getQuestionStats()`, update `SectionResult` interface |
-| `src/data/student/testResultsGenerator.ts` | Modify | Add `TestInput` interface, generate `classAverage`/`topperScore`, remove `any` |
-| `src/components/student/tests/results/DifficultyAnalysis.tsx` | Modify | Use shared utils |
-| `src/components/student/tests/results/CognitiveAnalysis.tsx` | Modify | Use shared utils, import `COGNITIVE_TYPES` |
-| `src/components/student/tests/results/PerformanceComparison.tsx` | Modify | Remove random generators, read from data |
-| `src/components/student/tests/results/ScoreBreakdown.tsx` | Modify | Use `getAccuracyColor()` |
-| `src/components/student/tests/results/Recommendations.tsx` | Modify | Add `memo`, use shared utils, import `COGNITIVE_TYPES` |
-| `src/components/student/tests/results/review/OptionDisplay.tsx` | New | Extracted from QuestionReview |
-| `src/components/student/tests/results/review/IntegerDisplay.tsx` | New | Extracted from QuestionReview |
-| `src/components/student/tests/results/review/FillBlankDisplay.tsx` | New | Extracted from QuestionReview |
-| `src/components/student/tests/results/review/MatrixMatchDisplay.tsx` | New | Extracted from QuestionReview |
-| `src/components/student/tests/results/QuestionReview.tsx` | Modify | Import extracted sub-components |
+| File | Phase | Action | Change |
+|------|-------|--------|--------|
+| `src/pages/student/Tests.tsx` | 1 | Modify | Inline search on desktop, add "By Subject" divider |
+| `src/components/student/shared/subjectColors.ts` | 2 | Modify | Add ~12 new color schemes, icons, patterns |
+| `src/components/student/subjects/SubjectBackgroundPattern.tsx` | 2 | Modify | Add ~18 new SVG pattern components |
+| `src/data/student/subjects.ts` | 2 | Modify | Add ~18 new subject entries |
+| `src/components/student/tests/SubjectTestCard.tsx` | 2 | Modify | Expand color/icon maps |
+| `src/components/student/tests/LiveTestsSection.tsx` | 2 | Modify | Expand color/icon maps |
+| `src/data/student/tests.ts` | 3 | Modify | Add ~60-90 mock test entries for new subjects |
 
-## Impact
+## Design Rules Followed
 
-- Zero visual or behavioral changes
-- Removes ~120 lines of duplicated code
-- Stabilizes random mock data across re-renders
-- Reduces QuestionReview from 560 to ~380 lines
-- Eliminates all `any` types in the data layer
-- Single source of truth for cognitive types and accuracy colors
+- All new color schemes follow the exact `SubjectColorScheme` interface (gradient, headerGradient, iconBg, etc.)
+- All new SVG patterns follow the same opacity levels (0.2-0.4), positioning (top-right 2/3 width), and style
+- All Lucide icons are from the existing `lucide-react` package (no new dependencies)
+- No existing subject cards or colors are modified
+- New cards will render identically to existing ones -- same `SubjectTestCard`, `SubjectCard`, `SubjectHeader` components
+
