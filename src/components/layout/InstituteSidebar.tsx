@@ -14,7 +14,6 @@ import {
   ChevronLeft,
   ChevronRight,
   ChevronDown,
-  Sparkles,
   Database,
   Wrench,
   Eye,
@@ -26,6 +25,7 @@ import {
   Clock,
 } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import DonutLogo from "@/components/shared/DonutLogo";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 interface InstituteSidebarProps {
@@ -295,12 +295,10 @@ const InstituteSidebar = ({ collapsed, onToggle, isMobile, onMobileClose }: Inst
             collapsed && "justify-center"
           )}
         >
-          <div className="w-9 h-9 md:w-10 md:h-10 rounded-xl gradient-button flex items-center justify-center shadow-lg flex-shrink-0">
-            <Sparkles className="w-4 h-4 md:w-5 md:h-5 text-white" />
-          </div>
+          <DonutLogo size={36} />
           {!collapsed && (
             <div className="overflow-hidden">
-              <h1 className="text-lg md:text-xl font-bold gradient-text whitespace-nowrap">DonutAI</h1>
+              <h1 className="text-lg md:text-xl font-bold gradient-text whitespace-nowrap">theDonutAI</h1>
               <p className="text-[10px] text-muted-foreground -mt-0.5">Institute Panel</p>
             </div>
           )}

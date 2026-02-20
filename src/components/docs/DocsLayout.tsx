@@ -92,7 +92,7 @@ export function DocsLayout() {
             </Link>
             <ChevronRight className="h-4 w-4 text-muted-foreground" />
             <Link to="/docs" className="font-semibold gradient-text text-lg">
-              📚 DonutAI Docs
+              📚 theDonutAI Docs
             </Link>
           </div>
 

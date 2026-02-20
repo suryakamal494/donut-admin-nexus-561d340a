@@ -12,7 +12,6 @@ import {
   ChevronDown,
   ChevronRight,
   Crown,
-  Sparkles,
   PanelLeftClose,
   PanelLeft,
   GraduationCap,
@@ -20,6 +19,7 @@ import {
   X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import DonutLogo from "@/components/shared/DonutLogo";
 import { Button } from "@/components/ui/button";
 import {
   Collapsible,
@@ -128,10 +128,8 @@ const Sidebar = ({ collapsed, onToggle, isMobile, onMobileClose }: SidebarProps)
       <div className="h-16 flex items-center justify-between px-4 border-b" style={{ borderColor: "hsl(30 25% 88%)" }}>
         {!isCollapsed && (
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl gradient-button flex items-center justify-center shadow-glow">
-              <Sparkles className="w-5 h-5 text-white" />
-            </div>
-            <span className="font-bold text-lg text-primary">DonutAI</span>
+            <DonutLogo size={36} />
+            <span className="font-bold text-lg text-primary">theDonutAI</span>
           </div>
         )}
         {isMobile ? (

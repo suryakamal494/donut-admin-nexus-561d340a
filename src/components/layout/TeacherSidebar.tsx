@@ -10,11 +10,11 @@ import {
   Database,
   ChevronLeft,
   ChevronRight,
-  Sparkles,
   X,
   TrendingUp,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import DonutLogo from "@/components/shared/DonutLogo";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
@@ -113,20 +113,16 @@ const TeacherSidebar = ({ collapsed, onToggle, isMobile, onMobileClose }: Teache
       )}>
         {!collapsed && (
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl gradient-button flex items-center justify-center">
-              <Sparkles className="w-5 h-5 text-white" />
-            </div>
+            <DonutLogo size={40} />
             <div>
-              <h1 className="font-bold text-lg gradient-text">DonutAI</h1>
+              <h1 className="font-bold text-lg gradient-text">theDonutAI</h1>
               <p className="text-xs text-muted-foreground">Teacher Portal</p>
             </div>
           </div>
         )}
         
         {collapsed && !isMobile && (
-          <div className="w-10 h-10 rounded-xl gradient-button flex items-center justify-center">
-            <Sparkles className="w-5 h-5 text-white" />
-          </div>
+          <DonutLogo size={40} />
         )}
 
         {isMobile ? (

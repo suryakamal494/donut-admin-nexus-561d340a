@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Eye, EyeOff, Lock, User, Sparkles } from "lucide-react";
+import { Eye, EyeOff, Lock, User } from "lucide-react";
+import DonutLogo from "@/components/shared/DonutLogo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -51,10 +52,8 @@ const Login = () => {
         <div className="glass-card rounded-3xl p-8 shadow-2xl border border-white/30 bg-white/90 backdrop-blur-2xl">
           {/* Logo Section */}
           <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl gradient-button mb-4 shadow-glow">
-              <Sparkles className="w-10 h-10 text-white" />
-            </div>
-            <h1 className="text-3xl font-bold gradient-text mb-2">DonutAI</h1>
+            <DonutLogo size={72} className="mb-4" />
+            <h1 className="text-3xl font-bold gradient-text mb-2">theDonutAI</h1>
             <p className="text-muted-foreground">Super Admin Portal</p>
           </div>
 
@@ -130,7 +129,7 @@ const Login = () => {
           {/* Footer */}
           <div className="mt-8 pt-6 border-t border-border/50 text-center">
             <p className="text-sm text-muted-foreground">
-              Powered by <span className="gradient-text font-semibold">DonutAI</span>
+              Powered by <span className="gradient-text font-semibold">theDonutAI</span>
             </p>
           </div>
         </div>
