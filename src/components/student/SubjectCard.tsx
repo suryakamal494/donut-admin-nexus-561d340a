@@ -1,69 +1,12 @@
 // Student Subject Card - Glassmorphic design with progress
-// Completely separate from other portal components
+// Uses shared subject color/icon system for all 24 subjects
 
 import { memo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-  Calculator, 
-  Atom, 
-  FlaskConical, 
-  Leaf, 
-  BookOpen, 
-  Code,
-  type LucideIcon 
-} from "lucide-react";
+import { BookOpen } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { getSubjectColors, getSubjectIcon } from "@/components/student/shared/subjectColors";
 import type { StudentSubject } from "@/data/student/subjects";
-
-// Icon mapping
-const iconMap: Record<string, LucideIcon> = {
-  Calculator,
-  Atom,
-  FlaskConical,
-  Leaf,
-  BookOpen,
-  Code,
-};
-
-// Color configurations for each subject
-const colorConfig: Record<string, { gradient: string; shadow: string; bg: string; text: string }> = {
-  blue: {
-    gradient: "from-blue-400 to-blue-600",
-    shadow: "shadow-blue-400/30",
-    bg: "bg-blue-50",
-    text: "text-blue-600",
-  },
-  purple: {
-    gradient: "from-violet-400 to-purple-600",
-    shadow: "shadow-violet-400/30",
-    bg: "bg-violet-50",
-    text: "text-violet-600",
-  },
-  green: {
-    gradient: "from-emerald-400 to-green-600",
-    shadow: "shadow-emerald-400/30",
-    bg: "bg-emerald-50",
-    text: "text-emerald-600",
-  },
-  red: {
-    gradient: "from-rose-400 to-red-500",
-    shadow: "shadow-rose-400/30",
-    bg: "bg-rose-50",
-    text: "text-rose-600",
-  },
-  amber: {
-    gradient: "from-amber-400 to-orange-500",
-    shadow: "shadow-amber-400/30",
-    bg: "bg-amber-50",
-    text: "text-amber-600",
-  },
-  cyan: {
-    gradient: "from-cyan-400 to-teal-500",
-    shadow: "shadow-cyan-400/30",
-    bg: "bg-cyan-50",
-    text: "text-cyan-600",
-  },
-};
 
 // Status labels
 const statusLabels: Record<string, { label: string; emoji: string }> = {
@@ -82,8 +25,8 @@ interface SubjectCardProps {
 
 const StudentSubjectCard = memo(function StudentSubjectCard({ subject, compact = false }: SubjectCardProps) {
   const navigate = useNavigate();
-  const Icon = iconMap[subject.icon] || BookOpen;
-  const colors = colorConfig[subject.color] || colorConfig.blue;
+  const Icon = getSubjectIcon(subject.icon);
+  const colors = getSubjectColors(subject.color);
   const status = statusLabels[subject.status] || statusLabels["in-progress"];
 
   const handleClick = useCallback(() => {
@@ -97,9 +40,8 @@ const StudentSubjectCard = memo(function StudentSubjectCard({ subject, compact =
         className="flex items-center gap-3 p-3 bg-white/70 backdrop-blur-xl rounded-2xl border border-white/50 shadow-sm hover:shadow-md transition-all duration-300 hover:scale-[1.02] w-full text-left"
       >
         <div className={cn(
-          "w-10 h-10 rounded-xl bg-gradient-to-br flex items-center justify-center shadow-lg",
-          colors.gradient,
-          colors.shadow
+          "w-10 h-10 rounded-xl flex items-center justify-center shadow-lg",
+          colors.iconBg
         )}>
           <Icon className="w-5 h-5 text-white" />
         </div>
@@ -114,19 +56,22 @@ const StudentSubjectCard = memo(function StudentSubjectCard({ subject, compact =
   return (
     <button
       onClick={handleClick}
-      className="relative overflow-hidden bg-white/70 backdrop-blur-xl rounded-3xl border border-white/50 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02] p-4 text-left group"
+      className={cn(
+        "relative overflow-hidden bg-white/70 backdrop-blur-xl rounded-3xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02] p-4 text-left group",
+        colors.border
+      )}
+      style={{ borderWidth: '1px' }}
     >
       {/* Background glow */}
       <div className={cn(
         "absolute top-0 right-0 w-24 h-24 rounded-full blur-2xl opacity-20 group-hover:opacity-30 transition-opacity",
-        colors.bg
+        colors.progressBg
       )} />
 
       {/* Icon */}
       <div className={cn(
-        "w-12 h-12 rounded-2xl bg-gradient-to-br flex items-center justify-center shadow-lg mb-3",
-        colors.gradient,
-        colors.shadow
+        "w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg mb-3",
+        colors.iconBg
       )}>
         <Icon className="w-6 h-6 text-white" />
       </div>
