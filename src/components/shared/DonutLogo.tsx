@@ -9,6 +9,9 @@ interface DonutLogoProps {
 const DonutLogo = ({ size = 40, className, variant = "gradient" }: DonutLogoProps) => {
   const gradientId = `donut-grad-${variant}`;
   
+  const strokeColor = variant === "white" ? "white" : `url(#${gradientId})`;
+  const fillColor = variant === "white" ? "white" : `url(#${gradientId})`;
+
   return (
     <svg
       width={size}
@@ -18,29 +21,38 @@ const DonutLogo = ({ size = 40, className, variant = "gradient" }: DonutLogoProp
       xmlns="http://www.w3.org/2000/svg"
       className={cn("flex-shrink-0", className)}
     >
-      <defs>
-        {variant === "gradient" ? (
+      {variant === "gradient" && (
+        <defs>
           <linearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="100%">
             <stop offset="0%" stopColor="hsl(12, 85%, 65%)" />
-            <stop offset="100%" stopColor="hsl(25, 90%, 58%)" />
+            <stop offset="100%" stopColor="hsl(350, 70%, 60%)" />
           </linearGradient>
-        ) : (
-          <linearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="white" />
-            <stop offset="100%" stopColor="white" />
-          </linearGradient>
-        )}
-      </defs>
+        </defs>
+      )}
+      {/* Outer ring — diagnostic layer */}
       <circle
         cx="50"
         cy="50"
-        r="35"
-        stroke={`url(#${gradientId})`}
-        strokeWidth="16"
+        r="42"
+        stroke={strokeColor}
+        strokeWidth="8"
         fill="none"
-        strokeLinecap="round"
-        strokeDasharray="188 32"
-        transform="rotate(-60 50 50)"
+      />
+      {/* Inner ring — assessment layer */}
+      <circle
+        cx="50"
+        cy="50"
+        r="24"
+        stroke={strokeColor}
+        strokeWidth="6"
+        fill="none"
+      />
+      {/* Center dot — the student */}
+      <circle
+        cx="50"
+        cy="50"
+        r="8"
+        fill={fillColor}
       />
     </svg>
   );
