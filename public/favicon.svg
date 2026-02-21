@@ -1,12 +1,30 @@
 <svg width="32" height="32" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
   <defs>
-    <linearGradient id="donut-fav" x1="0%" y1="0%" x2="100%" y2="100%">
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" stop-color="hsl(12, 85%, 65%)" />
       <stop offset="100%" stop-color="hsl(350, 70%, 60%)" />
     </linearGradient>
+    <linearGradient id="hl" x1="50%" y1="0%" x2="50%" y2="100%">
+      <stop offset="0%" stop-color="white" stop-opacity="0.35" />
+      <stop offset="100%" stop-color="white" stop-opacity="0" />
+    </linearGradient>
+    <radialGradient id="sh" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#000" stop-opacity="0.18" />
+      <stop offset="100%" stop-color="#000" stop-opacity="0" />
+    </radialGradient>
   </defs>
-  <circle cx="50" cy="50" r="38" stroke="url(#donut-fav)" stroke-width="10" fill="none" />
-  <circle cx="38" cy="42" r="4" fill="url(#donut-fav)" />
-  <circle cx="62" cy="42" r="4" fill="url(#donut-fav)" />
-  <path d="M 36 58 Q 50 68 64 58" stroke="url(#donut-fav)" stroke-width="3" stroke-linecap="round" fill="none" opacity="0.6" />
+  <ellipse cx="50" cy="93" rx="26" ry="5" fill="url(#sh)" />
+  <rect x="45" y="8" width="10" height="10" rx="4" fill="url(#bg)" />
+  <circle cx="50" cy="7" r="3" fill="url(#bg)" />
+  <rect x="12" y="18" width="76" height="66" rx="20" ry="20" fill="url(#bg)" />
+  <ellipse cx="38" cy="32" rx="22" ry="14" fill="url(#hl)" />
+  <circle cx="36" cy="46" r="8" fill="white" opacity="0.95" />
+  <circle cx="37" cy="47" r="4" fill="hsl(12, 60%, 35%)" />
+  <circle cx="34" cy="44" r="2" fill="white" opacity="0.9" />
+  <circle cx="64" cy="46" r="8" fill="white" opacity="0.95" />
+  <circle cx="65" cy="47" r="4" fill="hsl(12, 60%, 35%)" />
+  <circle cx="62" cy="44" r="2" fill="white" opacity="0.9" />
+  <path d="M 38 62 Q 50 72 62 62" stroke="white" stroke-width="3" stroke-linecap="round" fill="none" opacity="0.8" />
+  <circle cx="26" cy="58" r="4" fill="hsl(350, 80%, 70%)" opacity="0.35" />
+  <circle cx="74" cy="58" r="4" fill="hsl(350, 80%, 70%)" opacity="0.35" />
 </svg>
