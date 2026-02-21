@@ -7,9 +7,10 @@ interface DonutLogoProps {
 }
 
 const DonutLogo = ({ size = 40, className, variant = "gradient" }: DonutLogoProps) => {
-  const gradientId = `donut-bot-grad-${Math.random().toString(36).slice(2, 8)}`;
-  const highlightId = `donut-bot-highlight-${gradientId}`;
-  const shadowId = `donut-bot-shadow-${gradientId}`;
+  const gradientId = `donut-grad-${Math.random().toString(36).slice(2, 8)}`;
+  const highlightId = `donut-hl-${gradientId}`;
+  const shadowId = `donut-sh-${gradientId}`;
+  const holeGradId = `donut-hole-${gradientId}`;
 
   const isWhite = variant === "white";
 
@@ -28,92 +29,97 @@ const DonutLogo = ({ size = 40, className, variant = "gradient" }: DonutLogoProp
             <stop offset="0%" stopColor="hsl(12, 85%, 65%)" />
             <stop offset="100%" stopColor="hsl(350, 70%, 60%)" />
           </linearGradient>
-          <linearGradient id={highlightId} x1="50%" y1="0%" x2="50%" y2="100%">
-            <stop offset="0%" stopColor="white" stopOpacity="0.35" />
+          <linearGradient id={highlightId} x1="30%" y1="0%" x2="70%" y2="100%">
+            <stop offset="0%" stopColor="white" stopOpacity="0.30" />
             <stop offset="100%" stopColor="white" stopOpacity="0" />
           </linearGradient>
           <radialGradient id={shadowId} cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stopColor="#000" stopOpacity="0.18" />
+            <stop offset="0%" stopColor="#000" stopOpacity="0.15" />
             <stop offset="100%" stopColor="#000" stopOpacity="0" />
+          </radialGradient>
+          <radialGradient id={holeGradId} cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stopColor="hsl(12, 30%, 85%)" stopOpacity="0.6" />
+            <stop offset="100%" stopColor="hsl(12, 40%, 80%)" stopOpacity="0.3" />
           </radialGradient>
         </defs>
       )}
 
-      {/* Drop shadow — floating 3D effect */}
+      {/* Drop shadow */}
       {!isWhite && (
-        <ellipse cx="50" cy="93" rx="26" ry="5" fill={`url(#${shadowId})`} />
+        <ellipse cx="50" cy="93" rx="28" ry="5" fill={`url(#${shadowId})`} />
       )}
 
       {/* Antenna nub */}
       <rect
-        x="45"
-        y="8"
-        width="10"
-        height="10"
-        rx="4"
+        x="46"
+        y="6"
+        width="8"
+        height="8"
+        rx="3"
         fill={isWhite ? "white" : `url(#${gradientId})`}
       />
-      {/* Antenna connector dot */}
       <circle
         cx="50"
-        cy="7"
-        r="3"
+        cy="5"
+        r="2.5"
         fill={isWhite ? "white" : `url(#${gradientId})`}
       />
 
-      {/* Main body — rounded square */}
-      <rect
-        x="12"
-        y="18"
-        width="76"
-        height="66"
-        rx="20"
-        ry="20"
-        fill={isWhite ? "none" : `url(#${gradientId})`}
-        stroke={isWhite ? "white" : "none"}
-        strokeWidth={isWhite ? 3 : 0}
+      {/* Main donut ring — thick stroked circle */}
+      <circle
+        cx="50"
+        cy="50"
+        r="32"
+        strokeWidth="22"
+        stroke={isWhite ? "white" : `url(#${gradientId})`}
+        fill="none"
       />
 
-      {/* 3D highlight/gloss overlay */}
+      {/* Inner hole depth shading */}
+      {!isWhite && (
+        <circle cx="50" cy="50" r="20" fill={`url(#${holeGradId})`} />
+      )}
+
+      {/* 3D gloss highlight on upper-left ring */}
       {!isWhite && (
         <ellipse
-          cx="38"
+          cx="36"
           cy="32"
-          rx="22"
-          ry="14"
+          rx="16"
+          ry="10"
           fill={`url(#${highlightId})`}
         />
       )}
 
       {/* Left eye — white base */}
-      <circle cx="36" cy="46" r="8" fill={isWhite ? "white" : "white"} opacity={isWhite ? 1 : 0.95} />
-      {/* Left pupil */}
-      <circle cx="37" cy="47" r="4" fill={isWhite ? "rgba(0,0,0,0.3)" : "hsl(12, 60%, 35%)"} />
+      <circle cx="34" cy="38" r="7" fill="white" opacity={isWhite ? 1 : 0.95} />
+      {/* Left pupil — looking slightly up-right */}
+      <circle cx="35.5" cy="37" r="3.5" fill={isWhite ? "rgba(0,0,0,0.3)" : "hsl(12, 60%, 35%)"} />
       {/* Left eye sparkle */}
-      <circle cx="34" cy="44" r="2" fill="white" opacity="0.9" />
+      <circle cx="33" cy="35" r="1.8" fill="white" opacity="0.95" />
 
       {/* Right eye — white base */}
-      <circle cx="64" cy="46" r="8" fill={isWhite ? "white" : "white"} opacity={isWhite ? 1 : 0.95} />
-      {/* Right pupil */}
-      <circle cx="65" cy="47" r="4" fill={isWhite ? "rgba(0,0,0,0.3)" : "hsl(12, 60%, 35%)"} />
+      <circle cx="66" cy="38" r="7" fill="white" opacity={isWhite ? 1 : 0.95} />
+      {/* Right pupil — looking slightly up-right */}
+      <circle cx="67.5" cy="37" r="3.5" fill={isWhite ? "rgba(0,0,0,0.3)" : "hsl(12, 60%, 35%)"} />
       {/* Right eye sparkle */}
-      <circle cx="62" cy="44" r="2" fill="white" opacity="0.9" />
+      <circle cx="65" cy="35" r="1.8" fill="white" opacity="0.95" />
 
-      {/* Smile */}
+      {/* Smile — wider, gentler on lower ring */}
       <path
-        d="M 38 62 Q 50 72 62 62"
+        d="M 36 62 Q 50 73 64 62"
         stroke="white"
-        strokeWidth="3"
+        strokeWidth="2.5"
         strokeLinecap="round"
         fill="none"
-        opacity={isWhite ? 0.9 : 0.8}
+        opacity={isWhite ? 0.85 : 0.7}
       />
 
       {/* Blush marks */}
       {!isWhite && (
         <>
-          <circle cx="26" cy="58" r="4" fill="hsl(350, 80%, 70%)" opacity="0.35" />
-          <circle cx="74" cy="58" r="4" fill="hsl(350, 80%, 70%)" opacity="0.35" />
+          <circle cx="24" cy="54" r="4" fill="hsl(350, 80%, 70%)" opacity="0.3" />
+          <circle cx="76" cy="54" r="4" fill="hsl(350, 80%, 70%)" opacity="0.3" />
         </>
       )}
     </svg>

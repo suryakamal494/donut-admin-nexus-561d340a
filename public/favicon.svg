@@ -4,27 +4,32 @@
       <stop offset="0%" stop-color="hsl(12, 85%, 65%)" />
       <stop offset="100%" stop-color="hsl(350, 70%, 60%)" />
     </linearGradient>
-    <linearGradient id="hl" x1="50%" y1="0%" x2="50%" y2="100%">
-      <stop offset="0%" stop-color="white" stop-opacity="0.35" />
+    <linearGradient id="hl" x1="30%" y1="0%" x2="70%" y2="100%">
+      <stop offset="0%" stop-color="white" stop-opacity="0.30" />
       <stop offset="100%" stop-color="white" stop-opacity="0" />
     </linearGradient>
     <radialGradient id="sh" cx="50%" cy="50%" r="50%">
-      <stop offset="0%" stop-color="#000" stop-opacity="0.18" />
+      <stop offset="0%" stop-color="#000" stop-opacity="0.15" />
       <stop offset="100%" stop-color="#000" stop-opacity="0" />
     </radialGradient>
+    <radialGradient id="ho" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="hsl(12, 30%, 85%)" stop-opacity="0.6" />
+      <stop offset="100%" stop-color="hsl(12, 40%, 80%)" stop-opacity="0.3" />
+    </radialGradient>
   </defs>
-  <ellipse cx="50" cy="93" rx="26" ry="5" fill="url(#sh)" />
-  <rect x="45" y="8" width="10" height="10" rx="4" fill="url(#bg)" />
-  <circle cx="50" cy="7" r="3" fill="url(#bg)" />
-  <rect x="12" y="18" width="76" height="66" rx="20" ry="20" fill="url(#bg)" />
-  <ellipse cx="38" cy="32" rx="22" ry="14" fill="url(#hl)" />
-  <circle cx="36" cy="46" r="8" fill="white" opacity="0.95" />
-  <circle cx="37" cy="47" r="4" fill="hsl(12, 60%, 35%)" />
-  <circle cx="34" cy="44" r="2" fill="white" opacity="0.9" />
-  <circle cx="64" cy="46" r="8" fill="white" opacity="0.95" />
-  <circle cx="65" cy="47" r="4" fill="hsl(12, 60%, 35%)" />
-  <circle cx="62" cy="44" r="2" fill="white" opacity="0.9" />
-  <path d="M 38 62 Q 50 72 62 62" stroke="white" stroke-width="3" stroke-linecap="round" fill="none" opacity="0.8" />
-  <circle cx="26" cy="58" r="4" fill="hsl(350, 80%, 70%)" opacity="0.35" />
-  <circle cx="74" cy="58" r="4" fill="hsl(350, 80%, 70%)" opacity="0.35" />
+  <ellipse cx="50" cy="93" rx="28" ry="5" fill="url(#sh)" />
+  <rect x="46" y="6" width="8" height="8" rx="3" fill="url(#bg)" />
+  <circle cx="50" cy="5" r="2.5" fill="url(#bg)" />
+  <circle cx="50" cy="50" r="32" stroke-width="22" stroke="url(#bg)" fill="none" />
+  <circle cx="50" cy="50" r="20" fill="url(#ho)" />
+  <ellipse cx="36" cy="32" rx="16" ry="10" fill="url(#hl)" />
+  <circle cx="34" cy="38" r="7" fill="white" opacity="0.95" />
+  <circle cx="35.5" cy="37" r="3.5" fill="hsl(12, 60%, 35%)" />
+  <circle cx="33" cy="35" r="1.8" fill="white" opacity="0.95" />
+  <circle cx="66" cy="38" r="7" fill="white" opacity="0.95" />
+  <circle cx="67.5" cy="37" r="3.5" fill="hsl(12, 60%, 35%)" />
+  <circle cx="65" cy="35" r="1.8" fill="white" opacity="0.95" />
+  <path d="M 36 62 Q 50 73 64 62" stroke="white" stroke-width="2.5" stroke-linecap="round" fill="none" opacity="0.7" />
+  <circle cx="24" cy="54" r="4" fill="hsl(350, 80%, 70%)" opacity="0.3" />
+  <circle cx="76" cy="54" r="4" fill="hsl(350, 80%, 70%)" opacity="0.3" />
 </svg>
