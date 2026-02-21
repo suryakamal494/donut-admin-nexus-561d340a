@@ -7,11 +7,7 @@ interface DonutLogoProps {
 }
 
 const DonutLogo = ({ size = 40, className, variant = "gradient" }: DonutLogoProps) => {
-  const gradientId = `donut-grad-${Math.random().toString(36).slice(2, 8)}`;
-  const highlightId = `donut-hl-${gradientId}`;
-  const shadowId = `donut-sh-${gradientId}`;
-  const holeGradId = `donut-hole-${gradientId}`;
-
+  const uid = Math.random().toString(36).slice(2, 8);
   const isWhite = variant === "white";
 
   return (
@@ -25,111 +21,119 @@ const DonutLogo = ({ size = 40, className, variant = "gradient" }: DonutLogoProp
     >
       {!isWhite && (
         <defs>
-          <linearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="hsl(12, 85%, 65%)" />
-            <stop offset="100%" stopColor="hsl(350, 70%, 60%)" />
+          {/* Main ring gradient — lighter coral top-left to deeper coral-red bottom-right */}
+          <linearGradient id={`ring-${uid}`} x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="hsl(15, 90%, 72%)" />
+            <stop offset="100%" stopColor="hsl(348, 72%, 55%)" />
           </linearGradient>
-          <linearGradient id={highlightId} x1="25%" y1="0%" x2="75%" y2="100%">
-            <stop offset="0%" stopColor="white" stopOpacity="0.35" />
+
+          {/* Frosting highlight — semi-transparent arc on upper ring */}
+          <linearGradient id={`frost-${uid}`} x1="30%" y1="0%" x2="70%" y2="60%">
+            <stop offset="0%" stopColor="white" stopOpacity="0.22" />
             <stop offset="100%" stopColor="white" stopOpacity="0" />
           </linearGradient>
-          <radialGradient id={shadowId} cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stopColor="#000" stopOpacity="0.15" />
-            <stop offset="100%" stopColor="#000" stopOpacity="0" />
+
+          {/* Inner hole — warm cream center with darker edge */}
+          <radialGradient id={`hole-${uid}`} cx="50%" cy="45%" r="50%">
+            <stop offset="0%" stopColor="hsl(30, 35%, 93%)" stopOpacity="0.6" />
+            <stop offset="70%" stopColor="hsl(20, 30%, 85%)" stopOpacity="0.45" />
+            <stop offset="100%" stopColor="hsl(12, 35%, 72%)" stopOpacity="0.35" />
           </radialGradient>
-          <radialGradient id={holeGradId} cx="45%" cy="45%" r="55%">
-            <stop offset="0%" stopColor="hsl(12, 25%, 88%)" stopOpacity="0.5" />
-            <stop offset="100%" stopColor="hsl(12, 35%, 78%)" stopOpacity="0.35" />
+
+          {/* Drop shadow — warm coral instead of pure black */}
+          <radialGradient id={`sh-${uid}`} cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stopColor="hsl(12, 30%, 40%)" stopOpacity="0.18" />
+            <stop offset="100%" stopColor="hsl(12, 30%, 40%)" stopOpacity="0" />
+          </radialGradient>
+
+          {/* Pupil glow — subtle warm radial */}
+          <radialGradient id={`pglow-${uid}`} cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stopColor="hsl(12, 60%, 55%)" stopOpacity="0.15" />
+            <stop offset="100%" stopColor="hsl(12, 60%, 55%)" stopOpacity="0" />
+          </radialGradient>
+
+          {/* Thinking spark — white center fading out */}
+          <radialGradient id={`spark-${uid}`} cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stopColor="white" stopOpacity="0.7" />
+            <stop offset="60%" stopColor="white" stopOpacity="0.2" />
+            <stop offset="100%" stopColor="white" stopOpacity="0" />
           </radialGradient>
         </defs>
       )}
 
-      {/* Drop shadow */}
+      {/* Drop shadow — warmer, tighter */}
       {!isWhite && (
-        <ellipse cx="50" cy="94" rx="26" ry="4.5" fill={`url(#${shadowId})`} />
+        <ellipse cx="50" cy="94" rx="22" ry="4" fill={`url(#sh-${uid})`} />
       )}
 
       {/* Antenna nub */}
       <rect
-        x="46"
-        y="5"
-        width="8"
-        height="9"
-        rx="3.5"
-        fill={isWhite ? "white" : `url(#${gradientId})`}
+        x="46" y="5" width="8" height="9" rx="3.5"
+        fill={isWhite ? "white" : `url(#ring-${uid})`}
       />
-      <circle
-        cx="50"
-        cy="4"
-        r="3"
-        fill={isWhite ? "white" : `url(#${gradientId})`}
-      />
+      <circle cx="50" cy="4" r="3" fill={isWhite ? "white" : `url(#ring-${uid})`} />
+
+      {/* Thinking spark — soft glow above antenna */}
+      {!isWhite && (
+        <circle cx="50" cy="0" r="4" fill={`url(#spark-${uid})`} />
+      )}
 
       {/* Main donut ring */}
       <circle
-        cx="50"
-        cy="50"
-        r="30"
-        strokeWidth="24"
-        stroke={isWhite ? "white" : `url(#${gradientId})`}
+        cx="50" cy="50" r="30" strokeWidth="24"
+        stroke={isWhite ? "white" : `url(#ring-${uid})`}
         fill="none"
       />
 
-      {/* Inner hole depth shading */}
+      {/* Inner hole — warm cream with concentric shadow edge */}
       {!isWhite && (
-        <circle cx="50" cy="50" r="17" fill={`url(#${holeGradId})`} />
+        <circle cx="50" cy="50" r="17" fill={`url(#hole-${uid})`} />
       )}
 
-      {/* 3D gloss highlight on upper-left ring */}
+      {/* Frosting highlight on upper-left ring */}
       {!isWhite && (
-        <ellipse
-          cx="35"
-          cy="30"
-          rx="18"
-          ry="11"
-          fill={`url(#${highlightId})`}
-        />
+        <ellipse cx="36" cy="32" rx="16" ry="10" fill={`url(#frost-${uid})`} />
       )}
 
-      {/* === EYES — bigger, rounder, looking slightly up-right === */}
+      {/* === LEFT EYE === */}
+      {/* Pupil glow aura */}
+      {!isWhite && <circle cx="37" cy="40" r="9" fill={`url(#pglow-${uid})`} />}
+      {/* White base */}
+      <circle cx="36" cy="41" r="6.5" fill="white" opacity={isWhite ? 1 : 0.97} />
+      {/* Pupil */}
+      <circle cx="37.5" cy="39.5" r="3.5" fill={isWhite ? "rgba(0,0,0,0.35)" : "hsl(12, 50%, 28%)"} />
+      {/* Inner pupil core */}
+      {!isWhite && <circle cx="38" cy="39" r="2" fill="hsl(12, 40%, 18%)" />}
+      {/* Single crisp sparkle */}
+      <circle cx="34" cy="38" r="1.8" fill="white" />
 
-      {/* Left eye — white base */}
-      <circle cx="35" cy="40" r="8" fill="white" opacity={isWhite ? 1 : 0.97} />
-      {/* Left pupil — large, looking up-right for curiosity */}
-      <circle cx="37" cy="38" r="4.5" fill={isWhite ? "rgba(0,0,0,0.35)" : "hsl(12, 55%, 30%)"} />
-      {/* Left inner pupil — darker core */}
-      {!isWhite && <circle cx="37.5" cy="37.5" r="2.5" fill="hsl(12, 40%, 20%)" />}
-      {/* Left eye sparkle — primary */}
-      <circle cx="34" cy="36" r="2.2" fill="white" opacity="1" />
-      {/* Left eye sparkle — secondary smaller */}
-      <circle cx="39" cy="40" r="1" fill="white" opacity="0.7" />
+      {/* === RIGHT EYE === */}
+      {/* Pupil glow aura */}
+      {!isWhite && <circle cx="65" cy="39" r="9" fill={`url(#pglow-${uid})`} />}
+      {/* White base */}
+      <circle cx="64" cy="40" r="6.5" fill="white" opacity={isWhite ? 1 : 0.97} />
+      {/* Pupil */}
+      <circle cx="65.5" cy="38.5" r="3.5" fill={isWhite ? "rgba(0,0,0,0.35)" : "hsl(12, 50%, 28%)"} />
+      {/* Inner pupil core */}
+      {!isWhite && <circle cx="66" cy="38" r="2" fill="hsl(12, 40%, 18%)" />}
+      {/* Single crisp sparkle */}
+      <circle cx="62" cy="37" r="1.8" fill="white" />
 
-      {/* Right eye — white base */}
-      <circle cx="65" cy="40" r="8" fill="white" opacity={isWhite ? 1 : 0.97} />
-      {/* Right pupil — large, looking up-right */}
-      <circle cx="67" cy="38" r="4.5" fill={isWhite ? "rgba(0,0,0,0.35)" : "hsl(12, 55%, 30%)"} />
-      {/* Right inner pupil — darker core */}
-      {!isWhite && <circle cx="67.5" cy="37.5" r="2.5" fill="hsl(12, 40%, 20%)" />}
-      {/* Right eye sparkle — primary */}
-      <circle cx="64" cy="36" r="2.2" fill="white" opacity="1" />
-      {/* Right eye sparkle — secondary smaller */}
-      <circle cx="69" cy="40" r="1" fill="white" opacity="0.7" />
-
-      {/* === SMILE — wider, warmer curve === */}
+      {/* === SMILE — confident, not grinning === */}
       <path
-        d="M 34 63 Q 50 76 66 63"
+        d="M 39 61 Q 50 69 61 61"
         stroke="white"
-        strokeWidth="2.8"
+        strokeWidth="2.2"
         strokeLinecap="round"
         fill="none"
-        opacity={isWhite ? 0.9 : 0.75}
+        opacity={isWhite ? 0.9 : 0.85}
       />
 
-      {/* === BLUSH — warmer, slightly larger === */}
+      {/* === BLUSH — warmer peach, subtler === */}
       {!isWhite && (
         <>
-          <ellipse cx="23" cy="55" rx="5" ry="3.5" fill="hsl(350, 80%, 72%)" opacity="0.35" />
-          <ellipse cx="77" cy="55" rx="5" ry="3.5" fill="hsl(350, 80%, 72%)" opacity="0.35" />
+          <ellipse cx="24" cy="52" rx="4.5" ry="3" fill="hsl(15, 70%, 75%)" opacity="0.25" />
+          <ellipse cx="76" cy="52" rx="4.5" ry="3" fill="hsl(15, 70%, 75%)" opacity="0.25" />
         </>
       )}
     </svg>
