@@ -6,27 +6,20 @@ import { useParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   ArrowLeft,
-  Calculator,
-  Atom,
-  FlaskConical,
-  Leaf,
-  BookOpen,
-  Code,
   Clock,
   FileText,
   Play,
-  Eye,
   BarChart3,
   AlertCircle,
-  type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   teacherTests,
   getSubjectDisplayName,
   formatDuration,
-  getLiveTestsCount,
+  subjectColorMap,
 } from "@/data/student/tests";
+import { getSubjectColors, getSubjectIcon } from "@/components/student/shared/subjectColors";
 import type { StudentTest, TestStatus } from "@/data/student/tests";
 import {
   isToday,
@@ -38,35 +31,18 @@ import {
   startOfToday,
 } from "date-fns";
 
-// ── Icon & Color mappings ──
-const iconMap: Record<string, LucideIcon> = {
-  physics: Atom,
-  chemistry: FlaskConical,
-  mathematics: Calculator,
-  math: Calculator,
-  biology: Leaf,
-  english: BookOpen,
-  cs: Code,
-};
-
-const colorConfig: Record<string, { gradient: string; shadow: string; bg: string; bgSoft: string; text: string; border: string }> = {
-  purple: { gradient: "from-violet-400 to-purple-600", shadow: "shadow-violet-400/30", bg: "bg-violet-500", bgSoft: "bg-violet-50", text: "text-violet-600", border: "border-violet-200" },
-  green: { gradient: "from-emerald-400 to-green-600", shadow: "shadow-emerald-400/30", bg: "bg-emerald-500", bgSoft: "bg-emerald-50", text: "text-emerald-600", border: "border-emerald-200" },
-  blue: { gradient: "from-blue-400 to-blue-600", shadow: "shadow-blue-400/30", bg: "bg-blue-500", bgSoft: "bg-blue-50", text: "text-blue-600", border: "border-blue-200" },
-  red: { gradient: "from-rose-400 to-red-500", shadow: "shadow-rose-400/30", bg: "bg-rose-500", bgSoft: "bg-rose-50", text: "text-rose-600", border: "border-rose-200" },
-  amber: { gradient: "from-amber-400 to-orange-500", shadow: "shadow-amber-400/30", bg: "bg-amber-500", bgSoft: "bg-amber-50", text: "text-amber-600", border: "border-amber-200" },
-  cyan: { gradient: "from-cyan-400 to-teal-500", shadow: "shadow-cyan-400/30", bg: "bg-cyan-500", bgSoft: "bg-cyan-50", text: "text-cyan-600", border: "border-cyan-200" },
-};
-
-const subjectColorKey: Record<string, string> = {
-  physics: "purple",
-  chemistry: "green",
-  mathematics: "blue",
-  math: "blue",
-  biology: "red",
-  english: "amber",
-  cs: "cyan",
-};
+// Colors adapter: maps shared SubjectColorScheme to the shape used by this page's components
+function getPageColors(subjectKey: string) {
+  const colorKey = subjectColorMap[subjectKey] || "blue";
+  const scheme = getSubjectColors(colorKey);
+  return {
+    gradient: scheme.headerGradient,
+    shadow: `shadow-lg`,
+    bgSoft: scheme.progressBg,
+    text: scheme.textAccent,
+    border: scheme.border,
+  };
+}
 
 // ── Filter types ──
 type FilterTab = "all" | "live" | "upcoming" | "attempted" | "missed";
@@ -150,7 +126,7 @@ function SubjectTestItem({
   index,
 }: {
   test: StudentTest;
-  colors: (typeof colorConfig)[string];
+  colors: ReturnType<typeof getPageColors>;
   index: number;
 }) {
   const navigate = useNavigate();
@@ -296,9 +272,8 @@ export default function SubjectTests() {
 
   const subjectKey = subject?.toLowerCase() || "";
   const displayName = getSubjectDisplayName(subjectKey);
-  const cKey = subjectColorKey[subjectKey] || "blue";
-  const colors = colorConfig[cKey];
-  const Icon = iconMap[subjectKey] || BookOpen;
+  const colors = getPageColors(subjectKey);
+  const Icon = getSubjectIcon(subjectKey);
 
   // Get tests for this subject
   const subjectTests = useMemo(
