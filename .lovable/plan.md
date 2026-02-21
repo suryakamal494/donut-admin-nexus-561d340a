@@ -1,67 +1,55 @@
 
 
-# Redesign: theDonutAI Logo — Target/Bullseye Concept
+# Build "The Donut Companion" Logo
 
-## Problem
+## The Concept
 
-The current "bite" logo (broken circle) looks like a horseshoe. It has no visual meaning — users cannot understand that a gap in a circle represents "filling learning gaps." It fails to communicate the product's purpose.
-
-## New Concept: Target/Bullseye Donut
-
-Inspired by the reference image, the logo becomes **concentric circles with a center dot** — a target/bullseye shape that is still a donut (ring shape) but now conveys meaning:
-
-- **Outer ring**: The learning ecosystem / diagnostic layer
-- **Inner ring**: The assessment / validation layer  
-- **Center dot**: The student at the center of everything
-- **Overall shape**: A target = precision, focus, aiming toward learning goals
+Transform the "O" from "Donut" into a friendly, premium companion character. The logo is a donut ring (hollow circle) with two simple dot eyes placed inside, plus a subtle inner arc that adds depth and personality -- like a slight smile or inner glow. This creates a face-like character that feels warm, approachable, and unmistakably unique to theDonutAI.
 
 ```text
-    ╭──────────╮
-   │  ╭──────╮  │
-   │ │  ╭──╮  │ │
-   │ │ │ ** │ │ │    ** = center dot (student)
-   │ │  ╰──╯  │ │    inner ring = assessment
-   │  ╰──────╯  │    outer ring = diagnostic
-    ╰──────────╯
+     ╭─────────────╮
+    │               │
+    │    ●     ●    │    ● = dot eyes
+    │               │
+    │    ╰─────╯    │    subtle inner arc (smile/depth)
+    │               │
+     ╰─────────────╯
 ```
 
-Uses the brand coral-to-pink gradient (`hsl(12, 85%, 65%)` to `hsl(350, 70%, 60%)`).
+## Design Specifications
 
-## What Changes
+- **Outer ring**: Thick stroked circle (r=38, stroke-width=10) -- the "donut body"
+- **Two dot eyes**: Small filled circles (r=4) positioned symmetrically inside the upper half, slightly above center
+- **Inner arc**: A subtle curved line below the eyes (like a gentle smile), using a thinner stroke and lower opacity for depth
+- **Gradient**: Coral `hsl(12, 85%, 65%)` to Pink `hsl(350, 70%, 60%)` at 135 degrees
+- **White variant**: All elements render in white for use on colored backgrounds
 
-### 1. Redesign `src/components/shared/DonutLogo.tsx`
+## Why This Works
 
-Replace the current single broken circle with three concentric elements:
+- **Trademark-safe**: A donut ring with eyes and an inner arc is a unique combination not used by Duolingo (owl), ChatGPT (abstract flower), or Hugging Face (emoji face)
+- **Premium**: Clean geometry, gradient coloring, no cartoonish details -- just pure minimal shapes
+- **Cute and approachable**: The two dots trigger pareidolia (humans see faces), making the logo feel like a companion
+- **Scalable**: Works from 16px favicon to 200px+ hero placement
+- **Meaningful**: It is literally a donut with a personality -- the AI companion
 
-- **Outer ring**: `circle` with `r="42"`, `stroke-width="8"`, no fill
-- **Inner ring**: `circle` with `r="24"`, `stroke-width="6"`, no fill  
-- **Center dot**: `circle` with `r="8"`, filled solid
-
-All three use the same coral-to-pink linear gradient. The component keeps the same props (`size`, `className`, `variant` with "gradient" and "white" options).
-
-### 2. Update `public/favicon.svg`
-
-Same concentric circle design exported as standalone SVG favicon.
-
-### 3. No Other Files Change
-
-The logo is already integrated across all sidebars and login screens from the previous implementation. Since we're only changing the SVG internals of `DonutLogo.tsx`, every location that uses `<DonutLogo />` will automatically get the new design.
-
-## Files Modified
+## Files to Modify
 
 | File | Change |
 |------|--------|
-| `src/components/shared/DonutLogo.tsx` | Redesign SVG from broken circle to concentric target/bullseye |
-| `public/favicon.svg` | Match new concentric design |
+| `src/components/shared/DonutLogo.tsx` | Replace concentric circles with companion design (ring + eyes + inner arc) |
+| `public/favicon.svg` | Match the new companion design |
 
-No other files need changes — the component is already used everywhere.
+No other files need changes -- the component is already integrated across all sidebars, login screens, and documentation layouts.
 
-## Design Details
+## Technical Details
 
-- Gradient: coral `hsl(12, 85%, 65%)` to pink `hsl(350, 70%, 60%)` at 135 degrees
-- Outer ring stroke-width is thicker than inner ring for visual hierarchy
-- Center dot is solid filled (not stroked) for emphasis
-- All elements use rounded edges
-- Scales cleanly from 16px (favicon) to 200px+
-- White variant for use on colored backgrounds (sidebar icon containers)
+The SVG structure inside `DonutLogo.tsx` will be:
+
+1. Gradient definition (coral-to-pink, same as current)
+2. Outer ring circle (the donut body)
+3. Left eye -- small filled circle at roughly (38, 42)
+4. Right eye -- small filled circle at roughly (62, 42)
+5. Inner smile arc -- a path element drawing a subtle curve below the eyes, with reduced opacity (0.5-0.6) and thinner stroke
+
+The component keeps the same props interface: `size`, `className`, and `variant` ("gradient" or "white").
 
