@@ -5,7 +5,8 @@
       <stop offset="100%" stop-color="hsl(350, 70%, 60%)" />
     </linearGradient>
   </defs>
-  <circle cx="50" cy="50" r="42" stroke="url(#donut-fav)" stroke-width="8" fill="none" />
-  <circle cx="50" cy="50" r="24" stroke="url(#donut-fav)" stroke-width="6" fill="none" />
-  <circle cx="50" cy="50" r="8" fill="url(#donut-fav)" />
+  <circle cx="50" cy="50" r="38" stroke="url(#donut-fav)" stroke-width="10" fill="none" />
+  <circle cx="38" cy="42" r="4" fill="url(#donut-fav)" />
+  <circle cx="62" cy="42" r="4" fill="url(#donut-fav)" />
+  <path d="M 36 58 Q 50 68 64 58" stroke="url(#donut-fav)" stroke-width="3" stroke-linecap="round" fill="none" opacity="0.6" />
 </svg>

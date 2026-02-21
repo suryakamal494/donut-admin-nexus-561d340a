@@ -29,30 +29,27 @@ const DonutLogo = ({ size = 40, className, variant = "gradient" }: DonutLogoProp
           </linearGradient>
         </defs>
       )}
-      {/* Outer ring — diagnostic layer */}
+      {/* Outer ring — the donut body */}
       <circle
         cx="50"
         cy="50"
-        r="42"
+        r="38"
         stroke={strokeColor}
-        strokeWidth="8"
+        strokeWidth="10"
         fill="none"
       />
-      {/* Inner ring — assessment layer */}
-      <circle
-        cx="50"
-        cy="50"
-        r="24"
+      {/* Left eye */}
+      <circle cx="38" cy="42" r="4" fill={fillColor} />
+      {/* Right eye */}
+      <circle cx="62" cy="42" r="4" fill={fillColor} />
+      {/* Inner smile arc */}
+      <path
+        d="M 36 58 Q 50 68 64 58"
         stroke={strokeColor}
-        strokeWidth="6"
+        strokeWidth="3"
+        strokeLinecap="round"
         fill="none"
-      />
-      {/* Center dot — the student */}
-      <circle
-        cx="50"
-        cy="50"
-        r="8"
-        fill={fillColor}
+        opacity="0.6"
       />
     </svg>
   );
