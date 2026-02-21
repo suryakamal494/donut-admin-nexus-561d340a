@@ -1,39 +1,64 @@
 <svg width="32" height="32" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
   <defs>
-    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="hsl(12, 85%, 65%)" />
-      <stop offset="100%" stop-color="hsl(350, 70%, 60%)" />
+    <linearGradient id="ring" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="hsl(15, 90%, 72%)" />
+      <stop offset="100%" stop-color="hsl(348, 72%, 55%)" />
     </linearGradient>
-    <linearGradient id="hl" x1="25%" y1="0%" x2="75%" y2="100%">
-      <stop offset="0%" stop-color="white" stop-opacity="0.35" />
+    <linearGradient id="frost" x1="30%" y1="0%" x2="70%" y2="60%">
+      <stop offset="0%" stop-color="white" stop-opacity="0.22" />
       <stop offset="100%" stop-color="white" stop-opacity="0" />
     </linearGradient>
-    <radialGradient id="sh" cx="50%" cy="50%" r="50%">
-      <stop offset="0%" stop-color="#000" stop-opacity="0.15" />
-      <stop offset="100%" stop-color="#000" stop-opacity="0" />
+    <radialGradient id="hole" cx="50%" cy="45%" r="50%">
+      <stop offset="0%" stop-color="hsl(30, 35%, 93%)" stop-opacity="0.6" />
+      <stop offset="70%" stop-color="hsl(20, 30%, 85%)" stop-opacity="0.45" />
+      <stop offset="100%" stop-color="hsl(12, 35%, 72%)" stop-opacity="0.35" />
     </radialGradient>
-    <radialGradient id="ho" cx="45%" cy="45%" r="55%">
-      <stop offset="0%" stop-color="hsl(12, 25%, 88%)" stop-opacity="0.5" />
-      <stop offset="100%" stop-color="hsl(12, 35%, 78%)" stop-opacity="0.35" />
+    <radialGradient id="sh" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="hsl(12, 30%, 40%)" stop-opacity="0.18" />
+      <stop offset="100%" stop-color="hsl(12, 30%, 40%)" stop-opacity="0" />
+    </radialGradient>
+    <radialGradient id="spark" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="white" stop-opacity="0.7" />
+      <stop offset="60%" stop-color="white" stop-opacity="0.2" />
+      <stop offset="100%" stop-color="white" stop-opacity="0" />
     </radialGradient>
   </defs>
-  <ellipse cx="50" cy="94" rx="26" ry="4.5" fill="url(#sh)" />
-  <rect x="46" y="5" width="8" height="9" rx="3.5" fill="url(#bg)" />
-  <circle cx="50" cy="4" r="3" fill="url(#bg)" />
-  <circle cx="50" cy="50" r="30" stroke-width="24" stroke="url(#bg)" fill="none" />
-  <circle cx="50" cy="50" r="17" fill="url(#ho)" />
-  <ellipse cx="35" cy="30" rx="18" ry="11" fill="url(#hl)" />
-  <circle cx="35" cy="40" r="8" fill="white" opacity="0.97" />
-  <circle cx="37" cy="38" r="4.5" fill="hsl(12, 55%, 30%)" />
-  <circle cx="37.5" cy="37.5" r="2.5" fill="hsl(12, 40%, 20%)" />
-  <circle cx="34" cy="36" r="2.2" fill="white" />
-  <circle cx="39" cy="40" r="1" fill="white" opacity="0.7" />
-  <circle cx="65" cy="40" r="8" fill="white" opacity="0.97" />
-  <circle cx="67" cy="38" r="4.5" fill="hsl(12, 55%, 30%)" />
-  <circle cx="67.5" cy="37.5" r="2.5" fill="hsl(12, 40%, 20%)" />
-  <circle cx="64" cy="36" r="2.2" fill="white" />
-  <circle cx="69" cy="40" r="1" fill="white" opacity="0.7" />
-  <path d="M 34 63 Q 50 76 66 63" stroke="white" stroke-width="2.8" stroke-linecap="round" fill="none" opacity="0.75" />
-  <ellipse cx="23" cy="55" rx="5" ry="3.5" fill="hsl(350, 80%, 72%)" opacity="0.35" />
-  <ellipse cx="77" cy="55" rx="5" ry="3.5" fill="hsl(350, 80%, 72%)" opacity="0.35" />
+
+  <!-- Drop shadow -->
+  <ellipse cx="50" cy="94" rx="22" ry="4" fill="url(#sh)" />
+
+  <!-- Antenna -->
+  <rect x="46" y="5" width="8" height="9" rx="3.5" fill="url(#ring)" />
+  <circle cx="50" cy="4" r="3" fill="url(#ring)" />
+
+  <!-- Thinking spark -->
+  <circle cx="50" cy="0" r="4" fill="url(#spark)" />
+
+  <!-- Main ring -->
+  <circle cx="50" cy="50" r="30" stroke-width="24" stroke="url(#ring)" fill="none" />
+
+  <!-- Inner hole -->
+  <circle cx="50" cy="50" r="17" fill="url(#hole)" />
+
+  <!-- Frosting highlight -->
+  <ellipse cx="36" cy="32" rx="16" ry="10" fill="url(#frost)" />
+
+  <!-- Left eye -->
+  <circle cx="36" cy="41" r="6.5" fill="white" opacity="0.97" />
+  <circle cx="37.5" cy="39.5" r="3.5" fill="hsl(12, 50%, 28%)" />
+  <circle cx="38" cy="39" r="2" fill="hsl(12, 40%, 18%)" />
+  <circle cx="34" cy="38" r="1.8" fill="white" />
+
+  <!-- Right eye -->
+  <circle cx="64" cy="40" r="6.5" fill="white" opacity="0.97" />
+  <circle cx="65.5" cy="38.5" r="3.5" fill="hsl(12, 50%, 28%)" />
+  <circle cx="66" cy="38" r="2" fill="hsl(12, 40%, 18%)" />
+  <circle cx="62" cy="37" r="1.8" fill="white" />
+
+  <!-- Smile -->
+  <path d="M 39 61 Q 50 69 61 61" stroke="white" stroke-width="2.2" stroke-linecap="round" fill="none" opacity="0.85" />
+
+  <!-- Blush -->
+  <ellipse cx="24" cy="52" rx="4.5" ry="3" fill="hsl(15, 70%, 75%)" opacity="0.25" />
+  <ellipse cx="76" cy="52" rx="4.5" ry="3" fill="hsl(15, 70%, 75%)" opacity="0.25" />
 </svg>
