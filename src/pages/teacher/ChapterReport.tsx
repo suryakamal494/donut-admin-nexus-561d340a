@@ -11,6 +11,7 @@ import { getChapterDetail } from "@/data/teacher/reportsData";
 import type { ChapterStudentBucket, ChapterStudentEntry } from "@/data/teacher/reportsData";
 import type { SecondaryTag } from "@/lib/performanceIndex";
 import { cn } from "@/lib/utils";
+import { getStatusColor } from "@/lib/reportColors";
 import { motion, AnimatePresence } from "framer-motion";
 import { format } from "date-fns";
 import { AIHomeworkGeneratorDialog } from "@/components/teacher/AIHomeworkGeneratorDialog";
@@ -24,7 +25,7 @@ import {
 // Band visual styles
 const bandStyles: Record<string, { dot: string; border: string; bg: string; badge: string }> = {
   mastery: { dot: "bg-emerald-500", border: "border-l-emerald-500", bg: "bg-emerald-50 dark:bg-emerald-950/30", badge: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300" },
-  stable: { dot: "bg-blue-500", border: "border-l-blue-500", bg: "bg-blue-50 dark:bg-blue-950/30", badge: "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300" },
+  stable: { dot: "bg-teal-500", border: "border-l-teal-500", bg: "bg-teal-50 dark:bg-teal-950/30", badge: "bg-teal-100 text-teal-700 dark:bg-teal-900/40 dark:text-teal-300" },
   reinforcement: { dot: "bg-amber-500", border: "border-l-amber-500", bg: "bg-amber-50 dark:bg-amber-950/30", badge: "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300" },
   risk: { dot: "bg-red-500", border: "border-l-red-500", bg: "bg-red-50 dark:bg-red-950/30", badge: "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300" },
 };
@@ -124,8 +125,9 @@ const ChapterReport = () => {
         transition={{ duration: 0.4 }}
         className={cn(
           "rounded-xl p-4 sm:p-5 text-white shadow-lg",
-          chapter.overallSuccessRate >= 65 ? "bg-gradient-to-r from-emerald-500 to-teal-500" :
-          chapter.overallSuccessRate >= 40 ? "bg-gradient-to-r from-amber-500 to-orange-500" :
+          chapter.overallSuccessRate >= 75 ? "bg-gradient-to-r from-emerald-500 to-teal-500" :
+          chapter.overallSuccessRate >= 50 ? "bg-gradient-to-r from-teal-500 to-cyan-500" :
+          chapter.overallSuccessRate >= 35 ? "bg-gradient-to-r from-amber-500 to-orange-500" :
           "bg-gradient-to-r from-red-500 to-rose-500"
         )}
       >
@@ -151,16 +153,9 @@ const ChapterReport = () => {
         <CardContent>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
             {chapter.topics.map((topic, i) => {
-              const bgColor = topic.status === "strong"
-                ? "bg-emerald-50 border-emerald-200 dark:bg-emerald-950/30 dark:border-emerald-800"
-                : topic.status === "moderate"
-                ? "bg-amber-50 border-amber-200 dark:bg-amber-950/30 dark:border-amber-800"
-                : "bg-red-50 border-red-200 dark:bg-red-950/30 dark:border-red-800";
-              const textColor = topic.status === "strong"
-                ? "text-emerald-700 dark:text-emerald-300"
-                : topic.status === "moderate"
-                ? "text-amber-700 dark:text-amber-300"
-                : "text-red-700 dark:text-red-300";
+              const statusColors = getStatusColor(topic.status);
+              const bgColor = `${statusColors.light} ${statusColors.border.replace('border-l-', 'border-')}`;
+              const textColor = statusColors.text;
               const StatusIcon = topic.status === "strong" ? CheckCircle :
                 topic.status === "moderate" ? AlertTriangle : XCircle;
 

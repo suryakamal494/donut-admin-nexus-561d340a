@@ -19,7 +19,7 @@ import { getBatchChapters, getBatchExamHistory, getBatchInstituteTests } from "@
 import { getBatchStudentRoster, type StudentRosterEntry } from "@/data/teacher/studentReportData";
 import { currentTeacher } from "@/data/teacher/profile";
 import { cn } from "@/lib/utils";
-import { getPerformanceColor } from "@/lib/reportColors";
+import { getPerformanceColor, getStatusColor } from "@/lib/reportColors";
 import { motion } from "framer-motion";
 import { format, subDays, isAfter } from "date-fns";
 import { InfoTooltip } from "@/components/timetable/InfoTooltip";
@@ -82,12 +82,8 @@ const BatchReport = () => {
   }
 
   const statusBadge = (status: "strong" | "moderate" | "weak") => {
-    const styles = {
-      strong: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
-      moderate: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
-      weak: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
-    };
-    return <Badge variant="secondary" className={cn("text-[10px] px-1.5 py-0.5 font-medium", styles[status])}>{status}</Badge>;
+    const colors = getStatusColor(status);
+    return <Badge variant="secondary" className={cn("text-[10px] px-1.5 py-0.5 font-medium", colors.badge)}>{status}</Badge>;
   };
 
   return (
@@ -436,7 +432,7 @@ const BatchReport = () => {
             .map((student, i) => {
               const bucketStyles: Record<string, { badge: string; label: string }> = {
                 mastery: { badge: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400", label: "Mastery" },
-                stable: { badge: "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400", label: "Stable" },
+                stable: { badge: "bg-teal-100 text-teal-700 dark:bg-teal-900/40 dark:text-teal-400", label: "Stable" },
                 reinforcement: { badge: "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400", label: "Reinforce" },
                 risk: { badge: "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400", label: "At Risk" },
               };
