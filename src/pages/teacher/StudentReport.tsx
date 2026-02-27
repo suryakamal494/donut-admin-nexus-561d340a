@@ -11,6 +11,7 @@ import { PageHeader } from "@/components/ui/page-header";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { InfoTooltip } from "@/components/timetable/InfoTooltip";
 import { cn } from "@/lib/utils";
+import { getPerformanceColor, getStatusColor } from "@/lib/reportColors";
 import { motion } from "framer-motion";
 import { format } from "date-fns";
 import { batchInfoMap } from "@/data/teacher/examResults";
@@ -22,16 +23,12 @@ import { currentTeacher } from "@/data/teacher/profile";
 
 // ── Helpers ──
 
+const EXAM_HISTORY_INITIAL = 10;
+
 const TrendIcon = ({ trend }: { trend: "up" | "down" | "flat" }) => {
   if (trend === "up") return <TrendingUp className="w-4 h-4 text-emerald-500" />;
   if (trend === "down") return <TrendingDown className="w-4 h-4 text-red-500" />;
   return <Minus className="w-4 h-4 text-muted-foreground" />;
-};
-
-const statusColor = (status: "strong" | "moderate" | "weak") => {
-  if (status === "strong") return { bg: "bg-emerald-500", text: "text-emerald-700 dark:text-emerald-400", light: "bg-emerald-50 dark:bg-emerald-950/30", badge: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400" };
-  if (status === "moderate") return { bg: "bg-amber-500", text: "text-amber-700 dark:text-amber-400", light: "bg-amber-50 dark:bg-amber-950/30", badge: "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400" };
-  return { bg: "bg-red-500", text: "text-red-700 dark:text-red-400", light: "bg-red-50 dark:bg-red-950/30", badge: "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400" };
 };
 
 const tagLabels: Record<string, string> = {
@@ -49,6 +46,7 @@ const StudentReport = () => {
   const [showDifficulty, setShowDifficulty] = useState(false);
   const [expandedChapter, setExpandedChapter] = useState<string | null>(null);
   const [showAIGenerator, setShowAIGenerator] = useState(false);
+  const [showAllExams, setShowAllExams] = useState(false);
 
   const batchInfo = batchId ? batchInfoMap[batchId] : null;
 
@@ -186,37 +184,47 @@ const StudentReport = () => {
             {profile.examHistory.length === 0 ? (
               <p className="text-sm text-muted-foreground text-center py-4">No exam history available.</p>
             ) : (
-              profile.examHistory.map((exam, i) => {
-                const pctColor = exam.percentage >= 65 ? "text-emerald-600 dark:text-emerald-400"
-                  : exam.percentage >= 40 ? "text-amber-600 dark:text-amber-400"
-                  : "text-red-600 dark:text-red-400";
-                return (
-                  <motion.div
-                    key={exam.examId}
-                    initial={{ opacity: 0, x: -8 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: i * 0.03 }}
-                    className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-muted/50 cursor-pointer transition-colors"
-                    onClick={() => navigate(`/teacher/reports/${batchId}/exams/${exam.examId}`)}
-                  >
-                    <div className="shrink-0 w-10 h-10 rounded-lg bg-muted flex flex-col items-center justify-center">
-                      <span className={cn("text-sm font-bold", pctColor)}>{exam.percentage}%</span>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-foreground truncate">{exam.examName}</p>
-                      <p className="text-[11px] text-muted-foreground">
-                        {format(new Date(exam.date), "dd MMM yyyy")} · {exam.score}/{exam.maxScore}
-                      </p>
-                    </div>
-                    <div className="text-right shrink-0">
-                      <div className="flex items-center gap-1 text-[11px] text-muted-foreground">
-                        <Award className="w-3 h-3" />
-                        Rank {exam.rank}/{exam.totalStudents}
+              <>
+                {(showAllExams ? profile.examHistory : profile.examHistory.slice(0, EXAM_HISTORY_INITIAL)).map((exam, i) => {
+                  const pctColors = getPerformanceColor(exam.percentage);
+                  return (
+                    <motion.div
+                      key={exam.examId}
+                      initial={{ opacity: 0, x: -8 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: i * 0.03 }}
+                      className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-muted/50 cursor-pointer transition-colors"
+                      onClick={() => navigate(`/teacher/reports/${batchId}/exams/${exam.examId}`)}
+                    >
+                      <div className="shrink-0 w-10 h-10 rounded-lg bg-muted flex flex-col items-center justify-center">
+                        <span className={cn("text-sm font-bold", pctColors.text)}>{exam.percentage}%</span>
                       </div>
-                    </div>
-                  </motion.div>
-                );
-              })
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-foreground truncate">{exam.examName}</p>
+                        <p className="text-[11px] text-muted-foreground">
+                          {format(new Date(exam.date), "dd MMM yyyy")} · {exam.score}/{exam.maxScore}
+                        </p>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <div className="flex items-center gap-1 text-[11px] text-muted-foreground">
+                          <Award className="w-3 h-3" />
+                          Rank {exam.rank}/{exam.totalStudents}
+                        </div>
+                      </div>
+                    </motion.div>
+                  );
+                })}
+                {profile.examHistory.length > EXAM_HISTORY_INITIAL && !showAllExams && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowAllExams(true)}
+                    className="w-full text-xs text-muted-foreground mt-1"
+                  >
+                    View all {profile.examHistory.length} exams
+                  </Button>
+                )}
+              </>
             )}
           </CardContent>
         </Card>
@@ -296,7 +304,7 @@ function ChapterMasteryCard({ chapter, isExpanded, onToggle }: {
   isExpanded: boolean;
   onToggle: () => void;
 }) {
-  const colors = statusColor(chapter.status);
+  const colors = getStatusColor(chapter.status);
 
   return (
     <Collapsible open={isExpanded} onOpenChange={onToggle}>
@@ -326,7 +334,7 @@ function ChapterMasteryCard({ chapter, isExpanded, onToggle }: {
       <CollapsibleContent>
         <div className="pl-14 pr-3 pb-2 space-y-1 mt-1">
           {chapter.topics.map(topic => {
-            const tc = statusColor(topic.status);
+            const tc = getStatusColor(topic.status);
             return (
               <div key={topic.topicName} className="flex items-center justify-between py-1.5 px-2 rounded-lg hover:bg-muted/30">
                 <span className="text-xs text-foreground">{topic.topicName}</span>
