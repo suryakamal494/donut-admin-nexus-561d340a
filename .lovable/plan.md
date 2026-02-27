@@ -1,47 +1,49 @@
 
 
-## Pain Points Identified
+## Phase 3: Chapter Insights Page — Enrichment Plan
 
-1. **No batch pre-selection**: Clicking an exam from ChapterReport or BatchReport Exams tab navigates to `/teacher/exams/:examId/results` without passing the batch context. The ExamResults page defaults to the first batch, not the one the teacher was viewing.
+### What exists today
+The `ChapterReport.tsx` page (at `/teacher/reports/:batchId/chapters/:chapterId`) currently shows:
+1. A color-coded overview banner (success rate, strong/moderate/weak topic counts)
+2. Topic-wise progress bars with status icons
+3. Exam-wise breakdown (list of exams covering this chapter)
 
-2. **Exams tab is plain black & white**: The BatchReport Exams tab cards use `bg-muted/50` grey boxes with no color coding. No visual distinction between high-performing vs low-performing exams. Contrast this with the Chapters tab which uses emerald/amber/red color-coded circles.
-
-3. **No scalability controls on Exams tab**: No date filter, no pagination. After 6 months with 30-40 exams per batch, this becomes an endless scroll.
-
-4. **Thin mock data**: Only 3-5 completed exams per batch. Not enough to test pagination or date filtering.
+### What Phase 3 adds
+Three new sections to the ChapterReport page, turning it from a passive display into an actionable insights page:
 
 ---
 
-## Implementation Plan
+### 1. Topic Heatmap Grid
+A visual grid replacing or supplementing the current linear topic list. Each topic is a colored cell (emerald/amber/red) sized or shaded by success rate. This gives an instant "at a glance" view of which topics are strong vs weak across the chapter. Mobile: 2-column grid of colored cards. Desktop: 3-4 columns.
 
-### 1. Batch pre-selection via URL query param
+### 2. Student Performance Buckets (aggregated across all exams for this chapter)
+Reuse the same 4-band model from `examResults.ts` (`computePerformanceBands`): Mastery Ready, Stable Progress, Reinforcement Needed, Foundational Risk. But instead of single-exam scores, aggregate student scores across all exams covering this chapter.
 
-- **ExamResults.tsx**: Read `?batch=batch-10a` from URL search params. If present, use it as the default `selectedBatchId` instead of `exam.batchIds[0]`.
-- **ChapterReport.tsx**: Update exam breakdown links to navigate with `?batch={batchId}`.
-- **BatchReport.tsx**: Update Exams tab card links to navigate with `?batch={batchId}`.
+**Data changes needed in `reportsData.ts`:**
+- `ChapterDetailReport` gains a new field: `studentBuckets: ChapterStudentBucket[]` containing aggregated student performance for that chapter+batch.
+- New type `ChapterStudentBucket` with `bandKey`, `label`, `students[]` (name, avgPercentage, examsAttempted).
+- Generate mock data: pull student names from `examResults.ts` pools, assign random aggregated percentages.
 
-### 2. Enrich Exams tab UI with color theming
+**UI:** Collapsible band cards identical to `PerformanceBands.tsx` pattern (left-colored border, expand to see student list), but with a "Generate Practice" button on each band header.
 
-Replace the plain grey stat boxes with color-coded design matching the teacher teal-cyan theme:
-- Add a left-side **pass rate indicator** (emerald/amber/red colored bar or badge) on each exam card.
-- Use subtle gradient backgrounds on stat cells: emerald tint for high pass rate, amber for moderate, red for low.
-- Add a small trend indicator or icon for visual richness.
-- Keep the same card structure but add the teal accent color to headers/icons.
+### 3. "Generate Practice" Button per Bucket
+Each performance band card gets a teal "Generate Practice" button. On tap, it opens the existing `AIHomeworkGeneratorDialog` pre-filled with context:
+- Chapter name, batch, weak topics for that band
+- The dialog handles the rest (AI generation flow already exists)
 
-### 3. Add date filter and pagination to Exams tab
+This is a UI wiring task — no new AI backend needed. The button passes context to the dialog.
 
-- **Date filter row**: Add a horizontal filter strip at the top of the Exams tab with options like "All Time", "Last 30 days", "Last 3 months", "Last 6 months". Compact pills, same style as batch selector.
-- **Pagination**: Show 10 exams per page with simple Previous/Next pagination at the bottom. Use the existing `Pagination` component.
-
-### 4. Expand mock data for scale testing
-
-- Add 15-20 more completed exams spread across batches in `exams.ts` with varied dates spanning 6 months.
-- Update `reportsData.ts` to generate exam history from the expanded dataset.
+---
 
 ### Files to modify
-- `src/pages/teacher/ExamResults.tsx` — read `?batch=` query param for initial batch selection
-- `src/pages/teacher/BatchReport.tsx` — enrich Exams tab UI, add date filter + pagination, pass batch in navigation
-- `src/pages/teacher/ChapterReport.tsx` — pass batch in exam breakdown navigation links
-- `src/data/teacher/exams.ts` — add 15-20 more completed exams with varied dates
-- `src/data/teacher/reportsData.ts` — no structural changes needed (already reads from teacherExams)
+
+| File | Change |
+|------|--------|
+| `src/data/teacher/reportsData.ts` | Add `ChapterStudentBucket` type, add `studentBuckets` field to `ChapterDetailReport`, generate mock aggregated student data per band |
+| `src/pages/teacher/ChapterReport.tsx` | Add topic heatmap grid section, add student bucket cards with expand/collapse and "Generate Practice" button, wire `AIHomeworkGeneratorDialog` |
+
+### Files unchanged
+- `PerformanceBands.tsx` — reuse pattern but build chapter-specific version inline (it needs "Generate Practice" button which the exam version does not have)
+- `AIHomeworkGeneratorDialog.tsx` — used as-is, just opened with pre-filled context
+- No new routes needed
 
