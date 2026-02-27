@@ -33,7 +33,7 @@ const TrendIcon = ({ trend }: { trend: "up" | "down" | "flat" }) => {
 
 interface StudentBucketsProps {
   buckets: ChapterStudentBucket[];
-  onGeneratePractice: (bucket: ChapterStudentBucket, e: React.MouseEvent) => void;
+  onGeneratePractice: () => void;
 }
 
 export const StudentBuckets = ({ buckets, onGeneratePractice }: StudentBucketsProps) => {
@@ -43,11 +43,25 @@ export const StudentBuckets = ({ buckets, onGeneratePractice }: StudentBucketsPr
   return (
     <Card className="card-premium">
       <CardHeader className="pb-2">
-        <CardTitle className="text-base font-semibold flex items-center gap-2">
-          <Users className="w-4 h-4 text-primary" />
-          Student Performance Buckets
-          <InfoTooltip content="Students are grouped into bands based on a composite performance score across all exams for this chapter, factoring in accuracy, consistency, time efficiency, and attempt rate." />
-        </CardTitle>
+        <div className="flex items-center justify-between w-full">
+          <CardTitle className="text-base font-semibold flex items-center gap-2">
+            <Users className="w-4 h-4 text-primary" />
+            Student Performance Buckets
+            <InfoTooltip content="Students are grouped into bands based on a composite performance score across all exams for this chapter, factoring in accuracy, consistency, time efficiency, and attempt rate." />
+          </CardTitle>
+          <Tooltip delayDuration={200}>
+            <TooltipTrigger asChild>
+              <Button size="icon" className="h-8 w-8 gradient-button sm:hidden" onClick={onGeneratePractice}>
+                <Sparkles className="w-3.5 h-3.5" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="top">Generate Practice</TooltipContent>
+          </Tooltip>
+          <Button size="sm" className="hidden sm:inline-flex h-8 text-xs gap-1.5 gradient-button" onClick={onGeneratePractice}>
+            <Sparkles className="w-3.5 h-3.5" />
+            Generate Practice
+          </Button>
+        </div>
       </CardHeader>
       <CardContent className="space-y-3">
         {buckets.map((bucket) => {
@@ -67,22 +81,6 @@ export const StudentBuckets = ({ buckets, onGeneratePractice }: StudentBucketsPr
                   <span className={cn("text-xs font-medium rounded-full px-2 py-0.5 shrink-0", style.badge)}>{bucket.count}</span>
                 </div>
                 <div className="flex items-center gap-1.5 shrink-0">
-                  {!isEmpty && (
-                    <>
-                      <Tooltip delayDuration={200}>
-                        <TooltipTrigger asChild>
-                          <Button size="icon" variant="outline" className="h-8 w-8 sm:hidden border-teal-300 text-teal-700 hover:bg-teal-50 dark:border-teal-700 dark:text-teal-300 dark:hover:bg-teal-950/40" onClick={(e) => onGeneratePractice(bucket, e)}>
-                            <Sparkles className="w-3.5 h-3.5" />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent side="top">Generate Practice</TooltipContent>
-                      </Tooltip>
-                      <Button size="sm" variant="outline" className="hidden sm:inline-flex h-8 text-xs gap-1.5 border-teal-300 text-teal-700 hover:bg-teal-50 dark:border-teal-700 dark:text-teal-300 dark:hover:bg-teal-950/40" onClick={(e) => onGeneratePractice(bucket, e)}>
-                        <Sparkles className="w-3.5 h-3.5" />
-                        Generate Practice
-                      </Button>
-                    </>
-                  )}
                   {!isEmpty && (isOpen ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />)}
                 </div>
               </button>

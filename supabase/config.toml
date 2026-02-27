@@ -11,3 +11,6 @@ verify_jwt = false
 
 [functions.analyze-exam-results]
 verify_jwt = false
+
+[functions.generate-chapter-practice]
+verify_jwt = false
