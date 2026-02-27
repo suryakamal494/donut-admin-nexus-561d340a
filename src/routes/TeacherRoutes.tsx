@@ -29,6 +29,9 @@ const EditTeacherExam = lazy(() => import("@/pages/teacher/EditExam"));
 const TeacherCreateContent = lazy(() => import("@/pages/teacher/content/CreateContent"));
 const TeacherAIContentGenerator = lazy(() => import("@/pages/teacher/content/AIContentGenerator"));
 const TeacherEditContent = lazy(() => import("@/pages/teacher/content/EditContent"));
+const TeacherReports = lazy(() => import("@/pages/teacher/Reports"));
+const TeacherBatchReport = lazy(() => import("@/pages/teacher/BatchReport"));
+const TeacherChapterReport = lazy(() => import("@/pages/teacher/ChapterReport"));
 
 // Suspense wrapper for lazy-loaded pages
 function LazyPage({ children }: { children: React.ReactNode }) {
@@ -57,6 +60,9 @@ export default function TeacherRoutes() {
         <Route path="exams/:examId/edit" element={<LazyPage><EditTeacherExam /></LazyPage>} />
         <Route path="exams/:examId/results" element={<LazyPage><TeacherExamResults /></LazyPage>} />
         <Route path="homework" element={<TeacherHomework />} />
+        <Route path="reports" element={<LazyPage><TeacherReports /></LazyPage>} />
+        <Route path="reports/:batchId" element={<LazyPage><TeacherBatchReport /></LazyPage>} />
+        <Route path="reports/:batchId/chapters/:chapterId" element={<LazyPage><TeacherChapterReport /></LazyPage>} />
         <Route path="content" element={<TeacherContent />} />
         <Route path="content/create" element={<LazyPage><TeacherCreateContent /></LazyPage>} />
         <Route path="content/ai-generate" element={<LazyPage><TeacherAIContentGenerator /></LazyPage>} />

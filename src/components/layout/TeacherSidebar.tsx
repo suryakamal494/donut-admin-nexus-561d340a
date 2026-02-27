@@ -12,6 +12,7 @@ import {
   ChevronRight,
   X,
   TrendingUp,
+  BarChart3,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import DonutLogo from "@/components/shared/DonutLogo";
@@ -38,6 +39,7 @@ const navItems: NavItem[] = [
   { icon: BookOpen, label: "Lesson Plans", path: "/teacher/lesson-plans" },
   { icon: TrendingUp, label: "Syllabus Progress", path: "/teacher/academic-progress" },
   { icon: ClipboardCheck, label: "Exams", path: "/teacher/exams" },
+  { icon: BarChart3, label: "Reports", path: "/teacher/reports" },
   { icon: FileText, label: "Homework", path: "/teacher/homework" },
   { icon: Library, label: "Content Library", path: "/teacher/content" },
   { icon: Database, label: "Chapter Details", path: "/teacher/reference" },
