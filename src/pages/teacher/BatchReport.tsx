@@ -343,7 +343,10 @@ const BatchReport = () => {
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.25, delay: i * 0.04 }}
                     >
-                      <Card className="card-premium border-l-4 border-l-violet-500">
+                      <Card
+                        className="card-premium border-l-4 border-l-violet-500 cursor-pointer hover:shadow-md transition-shadow active:scale-[0.99]"
+                        onClick={() => navigate(`/teacher/reports/${batchId}/institute-test/${test.examId}`)}
+                      >
                         <CardContent className="p-3.5 sm:p-4">
                           <div className="flex items-start justify-between mb-2">
                             <div className="min-w-0 flex-1">
