@@ -69,7 +69,12 @@ const difficulties: InstituteQuestionAnalysis["difficulty"][] = ["easy", "medium
 
 // ── Generator ──
 
+const instituteTestDetailCache = new Map<string, InstituteTestDetailData | null>();
+
 export const getInstituteTestDetail = (examId: string, subject: string): InstituteTestDetailData | null => {
+  const key = `${examId}__${subject}`;
+  if (instituteTestDetailCache.has(key)) return instituteTestDetailCache.get(key)!;
+
   const gt = mockGrandTests.find(g => g.id === examId && g.status === "completed" && g.subjects.includes(subject));
   if (!gt) return null;
 
@@ -128,7 +133,7 @@ export const getInstituteTestDetail = (examId: string, subject: string): Institu
   const subjectAvg = Math.round(subjectMax * (0.35 + Math.random() * 0.35));
   const subjectHighest = Math.round(subjectMax * (0.78 + Math.random() * 0.18));
 
-  return {
+  const result: InstituteTestDetailData = {
     examId,
     examName: gt.name,
     pattern: gt.pattern,
@@ -144,4 +149,6 @@ export const getInstituteTestDetail = (examId: string, subject: string): Institu
     chapterSummary,
     difficultySummary,
   };
+  instituteTestDetailCache.set(key, result);
+  return result;
 };

@@ -306,22 +306,43 @@ const generateInstituteTests = (_batchId: string, teacherSubject: string): Insti
   });
 };
 
+// ── Caches ──
+
+const chapterReportsCache = new Map<string, ChapterReportCard[]>();
+const batchExamsCache = new Map<string, BatchExamEntry[]>();
+const chapterDetailCache = new Map<string, ChapterDetailReport>();
+const instituteTestsCache = new Map<string, InstituteTestEntry[]>();
+
 // ── Exports ──
 
 export const batchReports = generateBatchReports();
 
 export const getBatchChapters = (batchId: string): ChapterReportCard[] => {
-  return generateChapterReports(batchId);
+  if (!chapterReportsCache.has(batchId)) {
+    chapterReportsCache.set(batchId, generateChapterReports(batchId));
+  }
+  return chapterReportsCache.get(batchId)!;
 };
 
 export const getBatchExamHistory = (batchId: string): BatchExamEntry[] => {
-  return generateBatchExams(batchId);
+  if (!batchExamsCache.has(batchId)) {
+    batchExamsCache.set(batchId, generateBatchExams(batchId));
+  }
+  return batchExamsCache.get(batchId)!;
 };
 
 export const getChapterDetail = (chapterId: string, batchId: string): ChapterDetailReport => {
-  return generateChapterDetail(chapterId, batchId);
+  const key = `${chapterId}__${batchId}`;
+  if (!chapterDetailCache.has(key)) {
+    chapterDetailCache.set(key, generateChapterDetail(chapterId, batchId));
+  }
+  return chapterDetailCache.get(key)!;
 };
 
 export const getBatchInstituteTests = (batchId: string, teacherSubject: string): InstituteTestEntry[] => {
-  return generateInstituteTests(batchId, teacherSubject);
+  const key = `${batchId}__${teacherSubject}`;
+  if (!instituteTestsCache.has(key)) {
+    instituteTestsCache.set(key, generateInstituteTests(batchId, teacherSubject));
+  }
+  return instituteTestsCache.get(key)!;
 };
