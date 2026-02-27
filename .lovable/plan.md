@@ -1,44 +1,77 @@
 
 
-# Fix: Subject Icon & Color Mismatch on Test Detail Pages
+## Phase 1: Redesign ExamResults.tsx -- Insight-First Test Report
 
-## The Problem
+### What changes
 
-When you tap a subject card on the Tests listing page (e.g., Artificial Intelligence with its BrainCircuit icon), the detail page shows a wrong icon (BookOpen) and possibly wrong colors. This affects most subjects beyond the original 6 (Physics, Chemistry, Math, Biology, English, CS).
+The current `ExamResults.tsx` leads with stat cards and charts. We are flipping it to an **insight-first** layout where the teacher immediately sees a verdict, student performance bands, and topic flags -- charts become secondary.
 
-**Root cause**: The file `src/pages/student/SubjectTests.tsx` has its own **local icon and color mappings** that only cover 6 subjects. Everything else falls back to the generic `BookOpen` icon and blue color. Meanwhile, the listing cards use the shared system from `subjectColors.ts` which correctly maps all 24 subjects.
+### Data layer updates
 
-## The Fix
+**File: `src/data/teacher/examResults.ts`**
+- Expand `generateExamAnalytics` to produce richer mock data:
+  - Generate 25 full `StudentResult` entries (not just top 5) with realistic score distribution
+  - Add `questionAnalysis` data for dynamically generated exams (currently returns empty array)
+  - Add a helper `computePerformanceBands()` that buckets students into 4 bands based on percentage: **Mastery Ready** (>=75%), **Stable Progress** (50-74%), **Reinforcement Needed** (35-49%), **Foundational Risk** (<35%)
+  - Add a helper `computeTopicFlags()` that identifies topics with class success rate <50% as "Needs Attention" flags
+  - Add a helper `generateVerdictSummary()` that produces a plain-language string like "Class average 70%. 4 students below passing. Interference and Diffraction need reteaching."
 
-Replace the local mappings in `SubjectTests.tsx` with imports from the shared `subjectColors.ts` system -- the single source of truth that already handles all 24 subjects correctly.
+### New components (all in `src/components/teacher/exams/results/`)
 
-### Changes to `src/pages/student/SubjectTests.tsx`
+1. **`VerdictBanner.tsx`** -- Gradient banner (teal-cyan matching teacher theme) at the top
+   - Shows exam name, date, batch
+   - Large verdict text: "Class average 70% | 20 of 24 passed"
+   - 2-3 compact insight pills: "4 at risk", "2 weak topics", "Top: Aarav 95%"
+   - Uses `bg-gradient-to-r from-teal-500 to-cyan-500` with white text
 
-**Remove** (lines 42-69):
-- Local `iconMap` (only 6 subjects)
-- Local `colorConfig` (only 6 color schemes)
-- Local `subjectColorKey` (only 6 mappings)
+2. **`PerformanceBands.tsx`** -- Collapsible student groups
+   - 4 colored band cards stacked vertically (mobile-first):
+     - Mastery Ready (green accent) -- collapsed by default, shows count
+     - Stable Progress (blue accent) -- collapsed
+     - Reinforcement Needed (amber accent) -- **expanded by default** (this is what teachers care about)
+     - Foundational Risk (red accent) -- expanded by default
+   - Each band header: color dot + band name + student count badge
+   - Expanded state: list of students with name, score, percentage as compact rows
+   - Uses Radix Collapsible for expand/collapse
 
-**Replace with** imports from the shared system:
-- `getSubjectIcon(subject)` -- returns the correct Lucide icon for any of the 24 subjects
-- `getSubjectColors(colorKey)` -- returns the full color scheme for any subject
-- Use the `subjectColorMap` from `data/student/tests.ts` (which already maps all 24 subjects to their color keys)
+3. **`TopicFlags.tsx`** -- Compact topic health indicators
+   - Horizontal scrollable pills on mobile, wrapping grid on desktop
+   - Each topic: name + success rate badge
+   - Color coded: green (>70%), amber (40-70%), red (<40%)
+   - Topics below 40% get a small "Needs Attention" label
 
-**Update usage** at line 299-301:
-- Instead of `iconMap[subjectKey] || BookOpen`, use `getSubjectIcon(subjectKey)`
-- Instead of local color lookups, use `getSubjectColors(subjectColorMap[subjectKey] || "blue")`
+4. **`InsightCards.tsx`** -- 2-3 small actionable insight cards
+   - "Hardest Question: Q7 Interference (24% success)"
+   - "Most Skipped: Q5 Optical Instruments (5 unattempted)"
+   - Compact card design matching `card-premium` style
 
-**Adapt color property names**: The shared `SubjectColorScheme` uses property names like `headerGradient` and `iconBg` while the local config used `gradient` and `bg`. The filter tabs and test items will be updated to use the correct shared property names.
+### Page restructure (`ExamResults.tsx`)
 
-### Subjects Affected
+**New tab structure:**
+- Tab 1: **"Insights"** (default) -- VerdictBanner + PerformanceBands + TopicFlags + InsightCards
+- Tab 2: **"Analytics"** -- Score distribution chart + Attempt pie chart (existing charts moved here)
+- Tab 3: **"Questions"** -- Existing question analysis (kept as-is)
+- Tab 4: **"Students"** -- Full student list with search (existing, enhanced)
 
-These 18 subjects currently show the wrong icon (BookOpen) on their detail pages:
-Hindi, Sanskrit, Social Science, History, Geography, Political Science, Economics, Science, Zoology, Botany, Environmental Studies, Fine Arts, Physical Education, Accountancy, Business Studies, **Artificial Intelligence**, Informatics Practices, Home Science
+Remove the 4 stat cards from the top (their data is now in the verdict banner).
+Remove the quick actions bar (Export/Share) and move them to PageHeader actions slot.
 
-### No Other Files Need Changes
+### Design specifications
 
-The listing page (`SubjectTestCard.tsx`) and the group component (`SubjectTestGroup.tsx`) already use the shared system or their own complete local maps. Only the detail page is broken.
+- Mobile-first: verdict banner full-width, bands stack vertically, topic pills scroll horizontally
+- Premium teal/cyan gradient on verdict banner matching teacher panel theme (`from-teal-500 to-cyan-500`)
+- Band cards use `card-premium` class with left color accent border
+- 44px+ touch targets on all interactive elements
+- `pb-20` for bottom navigation clearance
+- Tabs use compact 4-column grid on mobile (`grid-cols-4 text-xs`)
 
-## Summary
+### Implementation phases (within this task)
 
-One file changed. Local duplicate mappings removed. Shared single-source-of-truth system used instead. All 24 subjects will display correct icons and colors on their test detail pages.
+1. Update `examResults.ts` with band computation helpers, verdict generator, and richer mock data
+2. Create `VerdictBanner.tsx` component
+3. Create `PerformanceBands.tsx` with collapsible student groups
+4. Create `TopicFlags.tsx` for topic health pills
+5. Create `InsightCards.tsx` for actionable highlights
+6. Restructure `ExamResults.tsx` with new Insights tab as default, move charts to Analytics tab
+7. Update `index.ts` exports
+
