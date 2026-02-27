@@ -184,7 +184,7 @@ const generateChapterDetail = (chapterId: string, batchId: string): ChapterDetai
   const batchExams = teacherExams.filter(
     (e) => e.batchIds.includes(batchId) && e.status === "completed"
   );
-  const examBreakdown: ChapterExamBreakdown[] = batchExams.slice(0, 3).map((exam) => ({
+  const examBreakdown: ChapterExamBreakdown[] = batchExams.map((exam) => ({
     examId: exam.id,
     examName: exam.name,
     date: exam.updatedAt,

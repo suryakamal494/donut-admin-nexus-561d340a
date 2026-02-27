@@ -1,10 +1,11 @@
 import { useMemo, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { ArrowLeft, BookOpen, CheckCircle, AlertTriangle, XCircle, BarChart3, FileText, Calendar, ChevronDown, ChevronUp, Sparkles, Users, TrendingUp, TrendingDown, Minus } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { PageHeader } from "@/components/ui/page-header";
+import { InfoTooltip } from "@/components/timetable/InfoTooltip";
 import { batchInfoMap } from "@/data/teacher/examResults";
 import { getChapterDetail } from "@/data/teacher/reportsData";
 import type { ChapterStudentBucket, ChapterStudentEntry } from "@/data/teacher/reportsData";
@@ -14,6 +15,11 @@ import { motion, AnimatePresence } from "framer-motion";
 import { format } from "date-fns";
 import { AIHomeworkGeneratorDialog } from "@/components/teacher/AIHomeworkGeneratorDialog";
 import type { AIHomeworkPrefill } from "@/components/teacher/AIHomeworkGeneratorDialog";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 // Band visual styles
 const bandStyles: Record<string, { dot: string; border: string; bg: string; badge: string }> = {
@@ -42,7 +48,9 @@ const TrendIcon = ({ trend }: { trend: "up" | "down" | "flat" }) => {
 const ChapterReport = () => {
   const { batchId, chapterId } = useParams<{ batchId: string; chapterId: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const [expanded, setExpanded] = useState<Record<string, boolean>>({ reinforcement: true, risk: true });
+  const [showAllExams, setShowAllExams] = useState(false);
   const [showAIGenerator, setShowAIGenerator] = useState(false);
   const [aiPrefill, setAiPrefill] = useState<AIHomeworkPrefill | undefined>();
 
@@ -64,11 +72,37 @@ const ChapterReport = () => {
     );
   }
 
-  const strong = chapter.topics.filter((t) => t.status === "strong");
-  const moderate = chapter.topics.filter((t) => t.status === "moderate");
-  const weak = chapter.topics.filter((t) => t.status === "weak");
-
   const toggle = (key: string) => setExpanded((prev) => ({ ...prev, [key]: !prev[key] }));
+
+  const handleGeneratePractice = (bucket: ChapterStudentBucket, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const isUpperBand = bucket.key === "mastery" || bucket.key === "stable";
+    const focusTopics = isUpperBand
+      ? chapter.topics.filter(t => t.status === "strong").map(t => t.topicName)
+      : [...chapter.topics.filter(t => t.status === "weak").map(t => t.topicName), ...chapter.topics.filter(t => t.status === "moderate").map(t => t.topicName)];
+    const instructions = isUpperBand
+      ? (bucket.key === "mastery"
+        ? `Generate advanced/challenge-level practice for top performers on ${chapter.chapterName}. Topics: ${focusTopics.join(", ") || chapter.chapterName}.`
+        : `Generate reinforcement practice to solidify understanding on ${chapter.chapterName}. Topics: ${focusTopics.join(", ") || chapter.chapterName}.`)
+      : (focusTopics.length > 0
+        ? `Focus on weak topics: ${focusTopics.join(", ")}. Generate practice for students in the "${bucket.label}" band.`
+        : `Generate practice for "${bucket.label}" band — ${chapter.chapterName}.`);
+    setAiPrefill({
+      title: `${chapter.chapterName} Practice — ${bucket.label}`,
+      subject: chapter.subject,
+      batchId: batchId || "batch-10a",
+      instructions,
+      contextBanner: `Pre-filled from: ${chapter.chapterName} · ${bucket.label} · ${focusTopics.length} focus topic${focusTopics.length !== 1 ? "s" : ""}`,
+    });
+    setShowAIGenerator(true);
+  };
+
+  // Current path for returnTo param
+  const currentPath = location.pathname;
+
+  // Exam breakdown: show first 3 unless expanded
+  const visibleExams = showAllExams ? chapter.examBreakdown : chapter.examBreakdown.slice(0, 3);
+  const hasMoreExams = chapter.examBreakdown.length > 3;
 
   return (
     <div className="space-y-4 sm:space-y-5 max-w-7xl mx-auto pb-20 md:pb-6">
@@ -83,7 +117,7 @@ const ChapterReport = () => {
         ]}
       />
 
-      {/* Overview Banner */}
+      {/* Overview Banner — Simplified: no Strong/Moderate/Weak grid */}
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
@@ -103,21 +137,6 @@ const ChapterReport = () => {
         </div>
         <h2 className="text-2xl sm:text-3xl font-bold mb-1">{chapter.overallSuccessRate}%</h2>
         <p className="text-xs text-white/70">Overall success rate · {chapter.totalQuestionsAsked} questions asked</p>
-
-        <div className="grid grid-cols-3 gap-2 mt-3">
-          <div className="bg-white/15 rounded-lg p-2 text-center">
-            <p className="text-lg font-bold">{strong.length}</p>
-            <p className="text-[10px] text-white/70">Strong</p>
-          </div>
-          <div className="bg-white/15 rounded-lg p-2 text-center">
-            <p className="text-lg font-bold">{moderate.length}</p>
-            <p className="text-[10px] text-white/70">Moderate</p>
-          </div>
-          <div className="bg-white/15 rounded-lg p-2 text-center">
-            <p className="text-lg font-bold">{weak.length}</p>
-            <p className="text-[10px] text-white/70">Weak</p>
-          </div>
-        </div>
       </motion.div>
 
       {/* ── Topic Heatmap Grid ── */}
@@ -126,6 +145,7 @@ const ChapterReport = () => {
           <CardTitle className="text-base font-semibold flex items-center gap-2">
             <BarChart3 className="w-4 h-4 text-primary" />
             Topic Heatmap
+            <InfoTooltip content="Each percentage shows the average success rate — the % of students who answered questions on this topic correctly across all exams." />
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -169,46 +189,87 @@ const ChapterReport = () => {
           <CardTitle className="text-base font-semibold flex items-center gap-2">
             <Users className="w-4 h-4 text-primary" />
             Student Performance Buckets
+            <InfoTooltip content="Students are grouped into bands based on a composite performance score across all exams for this chapter, factoring in accuracy, consistency, time efficiency, and attempt rate." />
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
           {chapter.studentBuckets.map((bucket) => {
-            if (bucket.count === 0) return null;
             const style = bandStyles[bucket.key];
             const isOpen = !!expanded[bucket.key];
+            const isEmpty = bucket.count === 0;
 
             return (
               <div
                 key={bucket.key}
                 className={cn(
                   "rounded-xl border border-border bg-card overflow-hidden border-l-4",
-                  style.border
+                  style.border,
+                  isEmpty && "opacity-60"
                 )}
               >
                 {/* Header */}
                 <button
-                  onClick={() => toggle(bucket.key)}
-                  className="flex items-center justify-between w-full p-3.5 sm:p-4 min-h-[48px] text-left"
+                  onClick={() => !isEmpty && toggle(bucket.key)}
+                  className={cn(
+                    "flex items-center justify-between w-full p-3.5 sm:p-4 min-h-[48px] text-left",
+                    isEmpty && "cursor-default"
+                  )}
                 >
                   <div className="flex items-center gap-2.5 flex-1 min-w-0">
                     <span className={cn("w-2.5 h-2.5 rounded-full shrink-0", style.dot)} />
-                    <span className="text-sm font-semibold text-foreground">{bucket.label}</span>
-                    <span className={cn("text-xs font-medium rounded-full px-2 py-0.5", style.badge)}>
+                    <span className="text-sm font-semibold text-foreground truncate">{bucket.label}</span>
+                    <span className={cn("text-xs font-medium rounded-full px-2 py-0.5 shrink-0", style.badge)}>
                       {bucket.count}
                     </span>
                   </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    {isOpen ? (
-                      <ChevronUp className="w-4 h-4 text-muted-foreground" />
-                    ) : (
-                      <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    {/* Generate Practice — icon-only on mobile, full on desktop */}
+                    {!isEmpty && (
+                      <>
+                        <Tooltip delayDuration={200}>
+                          <TooltipTrigger asChild>
+                            <Button
+                              size="icon"
+                              variant="outline"
+                              className="h-8 w-8 sm:hidden border-teal-300 text-teal-700 hover:bg-teal-50 dark:border-teal-700 dark:text-teal-300 dark:hover:bg-teal-950/40"
+                              onClick={(e) => handleGeneratePractice(bucket, e)}
+                            >
+                              <Sparkles className="w-3.5 h-3.5" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent side="top">Generate Practice</TooltipContent>
+                        </Tooltip>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="hidden sm:inline-flex h-8 text-xs gap-1.5 border-teal-300 text-teal-700 hover:bg-teal-50 dark:border-teal-700 dark:text-teal-300 dark:hover:bg-teal-950/40"
+                          onClick={(e) => handleGeneratePractice(bucket, e)}
+                        >
+                          <Sparkles className="w-3.5 h-3.5" />
+                          Generate Practice
+                        </Button>
+                      </>
+                    )}
+                    {!isEmpty && (
+                      isOpen ? (
+                        <ChevronUp className="w-4 h-4 text-muted-foreground" />
+                      ) : (
+                        <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                      )
                     )}
                   </div>
                 </button>
 
+                {/* Empty state */}
+                {isEmpty && (
+                  <div className="px-3.5 pb-3.5 sm:px-4 sm:pb-4">
+                    <p className="text-xs text-muted-foreground italic">No students in this band</p>
+                  </div>
+                )}
+
                 {/* Student List */}
                 <AnimatePresence initial={false}>
-                  {isOpen && (
+                  {isOpen && !isEmpty && (
                     <motion.div
                       key="content"
                       initial={{ height: 0, opacity: 0 }}
@@ -218,39 +279,6 @@ const ChapterReport = () => {
                       className="overflow-hidden"
                     >
                       <div className="px-3.5 pb-3.5 sm:px-4 sm:pb-4 space-y-1">
-                        {/* Generate Practice button - inside expanded area */}
-                        <div className="pb-2">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="h-8 text-xs gap-1.5 w-full sm:w-auto border-teal-300 text-teal-700 hover:bg-teal-50 dark:border-teal-700 dark:text-teal-300 dark:hover:bg-teal-950/40"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              const isUpperBand = bucket.key === "mastery" || bucket.key === "stable";
-                              const focusTopics = isUpperBand
-                                ? chapter.topics.filter(t => t.status === "strong").map(t => t.topicName)
-                                : [...chapter.topics.filter(t => t.status === "weak").map(t => t.topicName), ...chapter.topics.filter(t => t.status === "moderate").map(t => t.topicName)];
-                              const instructions = isUpperBand
-                                ? (bucket.key === "mastery"
-                                  ? `Generate advanced/challenge-level practice for top performers on ${chapter.chapterName}. Topics: ${focusTopics.join(", ") || chapter.chapterName}.`
-                                  : `Generate reinforcement practice to solidify understanding on ${chapter.chapterName}. Topics: ${focusTopics.join(", ") || chapter.chapterName}.`)
-                                : (focusTopics.length > 0
-                                  ? `Focus on weak topics: ${focusTopics.join(", ")}. Generate practice for students in the "${bucket.label}" band.`
-                                  : `Generate practice for "${bucket.label}" band — ${chapter.chapterName}.`);
-                              setAiPrefill({
-                                title: `${chapter.chapterName} Practice — ${bucket.label}`,
-                                subject: chapter.subject,
-                                batchId: batchId || "batch-10a",
-                                instructions,
-                                contextBanner: `Pre-filled from: ${chapter.chapterName} · ${bucket.label} · ${focusTopics.length} focus topic${focusTopics.length !== 1 ? "s" : ""}`,
-                              });
-                              setShowAIGenerator(true);
-                            }}
-                          >
-                            <Sparkles className="w-3.5 h-3.5" />
-                            Generate Practice
-                          </Button>
-                        </div>
                         {bucket.students.map((s) => (
                           <div
                             key={s.id}
@@ -281,8 +309,8 @@ const ChapterReport = () => {
                                 </div>
                               </div>
                               <div className="text-right shrink-0 ml-3">
-                                <p className="font-semibold text-foreground">PI: {s.performanceIndex}</p>
-                                <p className="text-[10px] text-muted-foreground">{s.avgPercentage}% avg · {s.examsAttempted} exam{s.examsAttempted > 1 ? "s" : ""}</p>
+                                <p className="font-semibold text-foreground">{s.avgPercentage}%</p>
+                                <p className="text-[10px] text-muted-foreground">{s.examsAttempted} exam{s.examsAttempted > 1 ? "s" : ""}</p>
                               </div>
                             </div>
                           </div>
@@ -303,14 +331,15 @@ const ChapterReport = () => {
           <CardTitle className="text-base font-semibold flex items-center gap-2">
             <FileText className="w-4 h-4 text-primary" />
             Exam-wise Breakdown
+            <InfoTooltip content="Shows how this chapter was tested across different exams. Click any exam to view its full results." />
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-2">
-          {chapter.examBreakdown.map((exam) => (
+          {visibleExams.map((exam) => (
             <div
               key={exam.examId}
               className="flex items-center justify-between p-3 rounded-lg bg-muted/40 cursor-pointer hover:bg-muted/70 transition-colors"
-              onClick={() => navigate(`/teacher/exams/${exam.examId}/results?batch=${batchId}`)}
+              onClick={() => navigate(`/teacher/exams/${exam.examId}/results?batch=${batchId}&returnTo=${encodeURIComponent(currentPath)}`)}
             >
               <div className="min-w-0 flex-1">
                 <p className="text-xs font-medium text-foreground truncate">{exam.examName}</p>
@@ -331,6 +360,28 @@ const ChapterReport = () => {
               </div>
             </div>
           ))}
+
+          {/* View all / Show less toggle */}
+          {hasMoreExams && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="w-full text-xs text-muted-foreground hover:text-foreground"
+              onClick={() => setShowAllExams(!showAllExams)}
+            >
+              {showAllExams ? (
+                <>
+                  <ChevronUp className="w-3.5 h-3.5 mr-1" />
+                  Show less
+                </>
+              ) : (
+                <>
+                  <ChevronDown className="w-3.5 h-3.5 mr-1" />
+                  View all {chapter.examBreakdown.length} exams
+                </>
+              )}
+            </Button>
+          )}
 
           {chapter.examBreakdown.length === 0 && (
             <p className="text-sm text-muted-foreground text-center py-4">No exam data for this chapter yet.</p>
