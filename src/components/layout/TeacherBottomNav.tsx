@@ -4,7 +4,7 @@ import {
   Calendar, 
   BookOpen, 
   ClipboardCheck, 
-  User 
+  BarChart3
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -19,7 +19,7 @@ const navItems: NavItem[] = [
   { icon: Calendar, label: "Schedule", path: "/teacher/schedule" },
   { icon: BookOpen, label: "Plans", path: "/teacher/lesson-plans" },
   { icon: ClipboardCheck, label: "Exams", path: "/teacher/exams" },
-  { icon: User, label: "Profile", path: "/teacher/profile" },
+  { icon: BarChart3, label: "Reports", path: "/teacher/reports" },
 ];
 
 const TeacherBottomNav = () => {
