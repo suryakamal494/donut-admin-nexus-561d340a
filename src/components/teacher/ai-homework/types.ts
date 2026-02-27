@@ -70,6 +70,14 @@ export interface AIHomeworkFormData {
   dueDate: string;
 }
 
+export interface AIHomeworkPrefill {
+  title?: string;
+  subject?: string;
+  batchId?: string;
+  instructions?: string;
+  contextBanner?: string;
+}
+
 export interface ContextSourceData {
   contextSource: ContextSourceType;
   uploadedFile: File | null;
