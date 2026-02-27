@@ -3,6 +3,7 @@
 
 import { batchInfoMap } from "./examResults";
 import { teacherExams } from "./exams";
+import { mockGrandTests } from "@/data/examsData";
 
 // ── Types ──
 
@@ -229,6 +230,50 @@ const generateChapterDetail = (chapterId: string, batchId: string): ChapterDetai
   };
 };
 
+// ── Institute Test Types ──
+
+export interface InstituteTestEntry {
+  examId: string;
+  examName: string;
+  date: string;
+  pattern: "jee_main" | "jee_advanced" | "neet";
+  source: "grand_test";
+  totalMarks: number;
+  subjectMaxMarks: number;
+  subjectAvgScore: number;
+  subjectHighest: number;
+  passPercentage: number;
+  participantCount: number;
+}
+
+// ── Institute Test Generator ──
+
+const generateInstituteTests = (_batchId: string, teacherSubject: string): InstituteTestEntry[] => {
+  const completed = mockGrandTests.filter(
+    (gt) => gt.status === "completed" && gt.subjects.includes(teacherSubject)
+  );
+
+  return completed.map((gt) => {
+    const subjectCount = gt.subjects.length;
+    const subjectMax = Math.round(gt.totalMarks / subjectCount);
+    const subjectAvg = Math.round(subjectMax * (0.35 + Math.random() * 0.35));
+    const subjectHighest = Math.round(subjectMax * (0.75 + Math.random() * 0.2));
+    return {
+      examId: gt.id,
+      examName: gt.name,
+      date: gt.completedDate || gt.scheduledDate || gt.createdAt,
+      pattern: gt.pattern,
+      source: "grand_test" as const,
+      totalMarks: gt.totalMarks,
+      subjectMaxMarks: subjectMax,
+      subjectAvgScore: subjectAvg,
+      subjectHighest: Math.min(subjectHighest, subjectMax),
+      passPercentage: 45 + Math.floor(Math.random() * 40),
+      participantCount: gt.participantCount || 0,
+    };
+  });
+};
+
 // ── Exports ──
 
 export const batchReports = generateBatchReports();
@@ -243,4 +288,8 @@ export const getBatchExamHistory = (batchId: string): BatchExamEntry[] => {
 
 export const getChapterDetail = (chapterId: string, batchId: string): ChapterDetailReport => {
   return generateChapterDetail(chapterId, batchId);
+};
+
+export const getBatchInstituteTests = (batchId: string, teacherSubject: string): InstituteTestEntry[] => {
+  return generateInstituteTests(batchId, teacherSubject);
 };
