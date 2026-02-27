@@ -1,13 +1,14 @@
 import { useMemo, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, BookOpen, CheckCircle, AlertTriangle, XCircle, BarChart3, FileText, Calendar, ChevronDown, ChevronUp, Sparkles, Users } from "lucide-react";
+import { ArrowLeft, BookOpen, CheckCircle, AlertTriangle, XCircle, BarChart3, FileText, Calendar, ChevronDown, ChevronUp, Sparkles, Users, TrendingUp, TrendingDown, Minus } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { PageHeader } from "@/components/ui/page-header";
 import { batchInfoMap } from "@/data/teacher/examResults";
 import { getChapterDetail } from "@/data/teacher/reportsData";
-import type { ChapterStudentBucket } from "@/data/teacher/reportsData";
+import type { ChapterStudentBucket, ChapterStudentEntry } from "@/data/teacher/reportsData";
+import type { SecondaryTag } from "@/lib/performanceIndex";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { format } from "date-fns";
@@ -20,6 +21,22 @@ const bandStyles: Record<string, { dot: string; border: string; bg: string; badg
   stable: { dot: "bg-blue-500", border: "border-l-blue-500", bg: "bg-blue-50 dark:bg-blue-950/30", badge: "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300" },
   reinforcement: { dot: "bg-amber-500", border: "border-l-amber-500", bg: "bg-amber-50 dark:bg-amber-950/30", badge: "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300" },
   risk: { dot: "bg-red-500", border: "border-l-red-500", bg: "bg-red-50 dark:bg-red-950/30", badge: "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300" },
+};
+
+// Secondary tag styles
+const tagStyles: Record<SecondaryTag, { label: string; className: string }> = {
+  improving: { label: "Improving", className: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300" },
+  declining: { label: "Declining", className: "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300" },
+  plateaued: { label: "Plateaued", className: "bg-gray-100 text-gray-600 dark:bg-gray-800/40 dark:text-gray-400" },
+  inconsistent: { label: "Inconsistent", className: "bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300" },
+  "speed-issue": { label: "Speed Issue", className: "bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300" },
+  "low-attempt": { label: "Low Attempt", className: "bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300" },
+};
+
+const TrendIcon = ({ trend }: { trend: "up" | "down" | "flat" }) => {
+  if (trend === "up") return <TrendingUp className="w-3.5 h-3.5 text-emerald-500" />;
+  if (trend === "down") return <TrendingDown className="w-3.5 h-3.5 text-red-500" />;
+  return <Minus className="w-3.5 h-3.5 text-muted-foreground" />;
 };
 
 const ChapterReport = () => {
@@ -235,17 +252,35 @@ const ChapterReport = () => {
                           <div
                             key={s.id}
                             className={cn(
-                              "flex items-center justify-between rounded-lg px-3 py-2.5 text-sm",
+                              "rounded-lg px-3 py-2.5 text-sm",
                               style.bg
                             )}
                           >
-                            <div className="min-w-0">
-                              <p className="font-medium truncate text-foreground">{s.studentName}</p>
-                              <p className="text-xs text-muted-foreground">{s.rollNumber}</p>
-                            </div>
-                            <div className="text-right shrink-0 ml-3">
-                              <p className="font-semibold text-foreground">{s.avgPercentage}%</p>
-                              <p className="text-xs text-muted-foreground">{s.examsAttempted} exam{s.examsAttempted > 1 ? "s" : ""}</p>
+                            <div className="flex items-center justify-between">
+                              <div className="min-w-0 flex-1">
+                                <div className="flex items-center gap-1.5">
+                                  <p className="font-medium truncate text-foreground">{s.studentName}</p>
+                                  <TrendIcon trend={s.trend} />
+                                </div>
+                                <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                                  <span className="text-xs text-muted-foreground">{s.rollNumber}</span>
+                                  {s.secondaryTags.map((tag) => (
+                                    <span
+                                      key={tag}
+                                      className={cn(
+                                        "text-[10px] font-medium rounded-full px-1.5 py-0.5",
+                                        tagStyles[tag].className
+                                      )}
+                                    >
+                                      {tagStyles[tag].label}
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
+                              <div className="text-right shrink-0 ml-3">
+                                <p className="font-semibold text-foreground">PI: {s.performanceIndex}</p>
+                                <p className="text-[10px] text-muted-foreground">{s.avgPercentage}% avg · {s.examsAttempted} exam{s.examsAttempted > 1 ? "s" : ""}</p>
+                              </div>
                             </div>
                           </div>
                         ))}

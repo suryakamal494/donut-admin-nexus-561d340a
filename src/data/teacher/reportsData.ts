@@ -4,6 +4,7 @@
 import { batchInfoMap } from "./examResults";
 import { teacherExams } from "./exams";
 import { mockGrandTests } from "@/data/examsData";
+import { computeStudentPI, type ExamHistoryEntry, type SecondaryTag, type Trend } from "@/lib/performanceIndex";
 
 // ── Types ──
 
@@ -56,6 +57,13 @@ export interface ChapterStudentEntry {
   rollNumber: string;
   avgPercentage: number;
   examsAttempted: number;
+  performanceIndex: number;
+  consistency: number;
+  timeEfficiency: number;
+  attemptRate: number;
+  trend: Trend;
+  secondaryTags: SecondaryTag[];
+  examHistory: ExamHistoryEntry[];
 }
 
 export interface ChapterStudentBucket {
@@ -195,18 +203,42 @@ const generateChapterDetail = (chapterId: string, batchId: string): ChapterDetai
     "Amit Tiwari", "Simran Kaur", "Nikhil Saxena", "Tanvi Kulkarni", "Deepak Yadav",
   ];
 
-  const allStudents: ChapterStudentEntry[] = studentNames.slice(0, 20 + Math.floor(Math.random() * 5)).map((name, i) => ({
-    id: `${chapterId}-s${i}`,
-    studentName: name,
-    rollNumber: `R${String(101 + i)}`,
-    avgPercentage: Math.round(10 + Math.random() * 85),
-    examsAttempted: 1 + Math.floor(Math.random() * examBreakdown.length + 1),
-  }));
+  const allStudents: ChapterStudentEntry[] = studentNames.slice(0, 20 + Math.floor(Math.random() * 5)).map((name, i) => {
+    const numExams = 1 + Math.floor(Math.random() * examBreakdown.length + 1);
+    
+    // Generate mock exam history
+    const examHistory: ExamHistoryEntry[] = Array.from({ length: numExams }, (_, j) => ({
+      examId: examBreakdown[j % examBreakdown.length]?.examId || `mock-exam-${j}`,
+      percentage: Math.round(10 + Math.random() * 85),
+      date: examBreakdown[j % examBreakdown.length]?.date || `2025-0${j + 1}-15`,
+      timeEfficiency: Math.round(25 + Math.random() * 70),
+      attemptRate: Math.round(40 + Math.random() * 60),
+    }));
 
-  const mastery = allStudents.filter(s => s.avgPercentage >= 75);
-  const stable = allStudents.filter(s => s.avgPercentage >= 50 && s.avgPercentage < 75);
-  const reinforcement = allStudents.filter(s => s.avgPercentage >= 35 && s.avgPercentage < 50);
-  const risk = allStudents.filter(s => s.avgPercentage < 35);
+    const piResult = computeStudentPI(examHistory);
+    const avgPercentage = piResult.accuracy;
+
+    return {
+      id: `${chapterId}-s${i}`,
+      studentName: name,
+      rollNumber: `R${String(101 + i)}`,
+      avgPercentage,
+      examsAttempted: numExams,
+      performanceIndex: piResult.performanceIndex,
+      consistency: piResult.consistency,
+      timeEfficiency: piResult.timeEfficiency,
+      attemptRate: piResult.attemptRate,
+      trend: piResult.trend,
+      secondaryTags: piResult.secondaryTags,
+      examHistory: piResult.examHistory,
+    };
+  });
+
+  // Bucket by Performance Index instead of raw percentage
+  const mastery = allStudents.filter(s => s.performanceIndex >= 75);
+  const stable = allStudents.filter(s => s.performanceIndex >= 50 && s.performanceIndex < 75);
+  const reinforcement = allStudents.filter(s => s.performanceIndex >= 35 && s.performanceIndex < 50);
+  const risk = allStudents.filter(s => s.performanceIndex < 35);
 
   const studentBuckets: ChapterStudentBucket[] = [
     { key: "mastery", label: "Mastery Ready", count: mastery.length, students: mastery },
