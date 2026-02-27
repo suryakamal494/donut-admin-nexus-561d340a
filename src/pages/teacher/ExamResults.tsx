@@ -139,6 +139,9 @@ const ExamResults = () => {
 
         {/* ── Analytics Tab ── */}
         <TabsContent value="analytics" className="space-y-4">
+          {/* AI Analysis — First priority */}
+          <AIAnalysisCard analytics={analytics} examName={exam.name} />
+
           <div className="grid gap-4 lg:grid-cols-2">
             {/* Score Distribution — kept */}
             <Card className="card-premium">
@@ -183,8 +186,6 @@ const ExamResults = () => {
           {/* Cognitive Type Performance — NEW */}
           <CognitiveChart questions={analytics.questionAnalysis} />
 
-          {/* AI Analysis — NEW */}
-          <AIAnalysisCard analytics={analytics} examName={exam.name} />
         </TabsContent>
 
         {/* ── Questions Tab — Grouped Accordion ── */}

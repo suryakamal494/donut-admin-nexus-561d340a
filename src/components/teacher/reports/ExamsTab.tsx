@@ -122,11 +122,11 @@ export const ExamsTab = ({ allExamHistory, instituteTests, batchId }: ExamsTabPr
                         </Badge>
                       </div>
                       <div className="grid grid-cols-3 gap-2 mt-2">
-                        <div className={cn("rounded-lg p-2 text-center", colors.bg)}>
+                        <div className={cn("rounded-lg p-2 text-center", colors.light)}>
                           <p className={cn("text-sm font-bold", colors.text)}>{exam.classAverage}/{exam.totalMarks}</p>
                           <p className="text-[10px] text-muted-foreground">Avg Score</p>
                         </div>
-                        <div className={cn("rounded-lg p-2 text-center", colors.bg)}>
+                        <div className={cn("rounded-lg p-2 text-center", colors.light)}>
                           <p className={cn("text-sm font-bold", colors.text)}>{exam.highestScore}/{exam.totalMarks}</p>
                           <p className="text-[10px] text-muted-foreground">Highest</p>
                         </div>

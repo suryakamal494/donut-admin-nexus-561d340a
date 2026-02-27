@@ -161,7 +161,7 @@ const generateBatchExams = (batchId: string): BatchExamEntry[] => {
     classAverage: Math.round(exam.totalMarks * (0.4 + Math.random() * 0.35)),
     highestScore: Math.round(exam.totalMarks * (0.75 + Math.random() * 0.2)),
     totalStudents: 20 + Math.floor(Math.random() * 10),
-    passPercentage: 50 + Math.floor(Math.random() * 40),
+    passPercentage: 30 + Math.floor(Math.random() * 60),
   }));
 };
 
@@ -300,7 +300,7 @@ const generateInstituteTests = (_batchId: string, teacherSubject: string): Insti
       subjectMaxMarks: subjectMax,
       subjectAvgScore: subjectAvg,
       subjectHighest: Math.min(subjectHighest, subjectMax),
-      passPercentage: 45 + Math.floor(Math.random() * 40),
+      passPercentage: 30 + Math.floor(Math.random() * 60),
       participantCount: gt.participantCount || 0,
     };
   });
