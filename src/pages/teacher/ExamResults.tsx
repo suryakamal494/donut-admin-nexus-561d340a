@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
-import { ArrowLeft, BarChart3, Download, Share2 } from "lucide-react";
+import { ArrowLeft, BarChart3, Download, Share2, Sparkles } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -29,6 +29,7 @@ import { CognitiveChart } from "@/components/teacher/exams/results/CognitiveChar
 import { AIAnalysisCard } from "@/components/teacher/exams/results/AIAnalysisCard";
 import { QuestionGroupAccordion } from "@/components/teacher/exams/results/QuestionGroupAccordion";
 import { InfoTooltip } from "@/components/timetable/InfoTooltip";
+import { CreateHomeworkDialog } from "@/components/teacher/CreateHomeworkDialog";
 
 const PIE_COLORS = ["#22c55e", "#f59e0b", "#ef4444", "#6b7280"];
 
@@ -44,6 +45,7 @@ const ExamResults = () => {
   const [selectedBatchId, setSelectedBatchId] = useState<string>(
     (batchFromUrl && exam?.batchIds.includes(batchFromUrl) ? batchFromUrl : exam?.batchIds[0]) || ""
   );
+  const [homeworkDialogOpen, setHomeworkDialogOpen] = useState(false);
 
   const analytics: ExamAnalytics | null = useMemo(() => {
     if (!exam) return null;
@@ -103,6 +105,14 @@ const ExamResults = () => {
         ]}
         actions={
           <div className="flex gap-2">
+            <Button
+              size="sm"
+              className="h-9 gradient-button"
+              onClick={() => setHomeworkDialogOpen(true)}
+            >
+              <Sparkles className="w-4 h-4 mr-1.5" />
+              <span className="hidden sm:inline">Generate Homework</span>
+            </Button>
             <Button variant="outline" size="sm" className="h-9">
               <Download className="w-4 h-4 mr-1.5" />
               <span className="hidden sm:inline">Export</span>
@@ -209,6 +219,18 @@ const ExamResults = () => {
           </Card>
         </TabsContent>
       </Tabs>
+
+      <CreateHomeworkDialog
+        open={homeworkDialogOpen}
+        onOpenChange={setHomeworkDialogOpen}
+        context={{
+          subject: exam.subjects?.[0],
+          batchId: selectedBatchId,
+          batchName: selectedBatchName,
+          chapter: exam.name,
+          topic: topicFlags.filter(f => f.status === 'weak').map(f => f.topic).join(', ') || undefined,
+        }}
+      />
     </div>
   );
 };
