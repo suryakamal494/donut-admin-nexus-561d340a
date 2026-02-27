@@ -1,68 +1,81 @@
 
 
-## Understanding Your Requirement
+## Plan: Full-Page Practice Generator + Practice History (Teacher UI Only)
 
-You want to replace the current per-band "Generate Practice" buttons with a **single "Generate Practice" button** at the Student Performance Buckets card header level. When clicked, it should NOT open the generic homework dialog. Instead, it opens a **custom multi-band practice generation flow**:
+No database, no student-side changes, no real submission tracking. Pure teacher-side UI with mock data.
 
-1. **Input Step** — Teacher optionally adds instructions (common or per-band)
-2. **Generation** — AI generates up to 10 questions per band (4 bands = up to 40 questions), using chapter context (weak topics, student issues) as automatic prompt context
-3. **Review Step** — Teacher reviews generated questions organized by band tabs/sections. They can accept or skip individual bands
-4. **Assign** — Creates up to 4 separate practice assignments, one per band, sent only to students in that band
+---
 
-## My Reasoning
+### What Changes
 
-**Your approach is correct.** Here's why:
+| Action | File | Description |
+|--------|------|-------------|
+| **Create** | `src/pages/teacher/ChapterPracticeReview.tsx` | Full-page 3-step flow replacing the popup dialog |
+| **Create** | `src/components/teacher/reports/ChapterPracticeHistory.tsx` | Card showing chronological list of past practice sessions with mock completion/accuracy stats |
+| **Create** | `src/data/teacher/practiceHistoryData.ts` | Mock data: 2-3 past practice sessions per chapter with per-band completion rates, accuracy, dates |
+| **Modify** | `src/routes/TeacherRoutes.tsx` | Add route: `reports/:batchId/chapters/:chapterId/practice` |
+| **Modify** | `src/pages/teacher/ChapterReport.tsx` | Replace dialog open with `navigate(...)` to practice page. Add `ChapterPracticeHistory` section below StudentBuckets |
+| **Delete** | `src/components/teacher/reports/ChapterPracticeGenerator.tsx` | Replaced by the full page |
 
-- **Per-band buttons are redundant.** The teacher has to click 4 times, fill 4 forms, review 4 times. That's 12+ interactions for what should be 1 flow.
-- **Single button, multi-band output is the right pattern.** The AI already knows the chapter context, weak topics, and which students are in which band. One click should produce all 4 practice sets.
-- **NOT reusing the generic homework dialog is correct.** The homework dialog is designed for general-purpose homework creation. This flow is context-aware — it automatically pulls chapter data, topic weaknesses, and student groupings. Different purpose, different UI.
-- **10-question limit per band is practical.** Practice should be focused, not exhaustive. 10 questions per band keeps it digestible for students.
-- **Optional per-band instructions are important.** A teacher might want "focus on numerical problems" for the risk band but "include challenging derivations" for mastery. But making instructions optional (with smart defaults from the AI) keeps it low-friction.
+---
 
-## Implementation Plan
+### New Page: `ChapterPracticeReview.tsx`
 
-### New Component: `ChapterPracticeGenerator`
-A multi-step dialog/drawer component with 3 steps:
+Route: `/teacher/reports/:batchId/chapters/:chapterId/practice`
 
-**Step 1 — Configure (compact form)**
-- Shows which bands have students (skip empty bands)
-- Common instructions textarea (applies to all bands)
-- Expandable per-band instruction overrides (optional)
+**Step 1 — Configure** (full-width, not a popup)
+- PageHeader with breadcrumbs back to chapter report
+- Band summary chips (color-coded, showing student count per band)
 - Question count selector (5 or 10 per band)
-- "Generate Practice" button
+- Common instructions textarea
+- Expandable per-band instruction overrides
+- "Generate" button
 
-**Step 2 — Review (tabbed by band)**
-- Tab for each non-empty band (color-coded)
-- Each tab shows the generated questions (question text, options, difficulty)
-- Teacher can remove individual questions
-- "Regenerate" button per band if unsatisfied
-- "Assign All" or per-band "Assign" buttons
+**Step 2 — Review** (the key improvement over the popup)
+- Full-width tabbed layout, one tab per band (color-coded)
+- Each tab shows question cards with: question text, 4 options (correct highlighted), difficulty badge, topic badge
+- Remove/restore per question
+- Per-band "Assign" button + "Assign All" button
+- Proper spacing — no cramped popup, questions are readable
 
 **Step 3 — Confirmation**
-- Summary: "4 practice sets created, assigned to X students"
-- Toast notification
+- Summary: X practice sets, Y questions, Z students
+- "Back to Chapter Report" button → navigates back
 
-### Files to Create/Modify
+Reuses the existing edge function `generate-chapter-practice` for AI generation. Same logic as the current `ChapterPracticeGenerator.tsx`, just rendered as a page.
 
-| File | Change |
-|---|---|
-| `src/components/teacher/reports/ChapterPracticeGenerator.tsx` | **New** — Multi-step dialog with configure → review → assign flow |
-| `src/components/teacher/reports/StudentBuckets.tsx` | Remove per-band Generate Practice buttons. Add single "Generate Practice" button in CardHeader. Accept `onGeneratePractice` as a simple `() => void` callback (no bucket param) |
-| `src/pages/teacher/ChapterReport.tsx` | Remove `handleGeneratePractice` per-bucket logic. Replace `AIHomeworkGeneratorDialog` with `ChapterPracticeGenerator`. Pass chapter context (topics, buckets, subject) to the new component |
-| `supabase/functions/generate-chapter-practice/index.ts` | **New** — Edge function that calls Lovable AI to generate band-specific practice questions. Accepts chapter context + per-band instructions, returns structured questions per band |
+---
 
-### Edge Function Design
-The edge function receives:
-```json
-{
-  "chapter": "Kinematics",
-  "subject": "Physics",
-  "bands": [
-    { "key": "mastery", "label": "Mastery Ready", "studentCount": 5, "instructions": "...", "questionCount": 10, "context": "Strong in all topics, challenge them" },
-    { "key": "risk", "label": "Foundational Risk", "studentCount": 3, "instructions": "...", "questionCount": 10, "context": "Weak in: Projectile Motion, Relative Motion" }
-  ],
-  "topics": [{ "name": "Projectile Motion", "status": "weak", "avgSuccessRate": 38 }, ...]
+### Practice History Section on Chapter Report
+
+Added between `StudentBuckets` and `ChapterExamBreakdown`.
+
+Shows a card titled "Practice History" with a chronological list of past sessions:
+- Each row: date, total questions, bands included (color dots), mock completion % per band, mock avg accuracy
+- Click row → navigates to a read-only view of that practice session (same review page, pre-populated with mock data, no assign buttons)
+- "No practice sessions yet" empty state
+
+All data is mock — generated deterministically per chapter using the same Map-based caching pattern used elsewhere in `reportsData.ts`.
+
+---
+
+### Mock Data Shape
+
+```typescript
+interface PracticeSession {
+  id: string;
+  createdAt: string; // date string
+  chapterId: string;
+  bands: {
+    key: string;
+    label: string;
+    questionCount: number;
+    studentsAssigned: number;
+    completedCount: number; // mock
+    avgAccuracy: number;    // mock
+  }[];
 }
 ```
-Returns structured questions per band using tool calling for reliable JSON output.
+
+2-3 sessions per chapter, spaced 1-2 weeks apart, with realistic mock stats.
 
