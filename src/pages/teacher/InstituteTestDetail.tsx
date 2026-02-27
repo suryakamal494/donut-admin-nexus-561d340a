@@ -10,6 +10,7 @@ import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { format } from "date-fns";
+import { InfoTooltip } from "@/components/timetable/InfoTooltip";
 import { currentTeacher } from "@/data/teacher/profile";
 import { batchInfoMap } from "@/data/teacher/examResults";
 import { getInstituteTestDetail } from "@/data/teacher/instituteTestDetailData";
@@ -103,6 +104,10 @@ const InstituteTestDetail = () => {
       />
 
       {/* Summary Cards */}
+      <div className="flex items-center gap-2 mb-1">
+        <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Summary</h3>
+        <InfoTooltip content="Key metrics for your subject in this institute test — average score, highest score, total questions, and participant count." />
+      </div>
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <Card className="border-l-4 border-l-violet-500">
           <CardContent className="p-3 text-center">
@@ -144,14 +149,17 @@ const InstituteTestDetail = () => {
           <TabsTrigger value="questions" className="text-xs sm:text-sm gap-1.5">
             <Target className="w-3.5 h-3.5" />
             Questions
+            <InfoTooltip content="Per-question analysis — correct %, attempt %, average time, and difficulty for every question in your subject." />
           </TabsTrigger>
           <TabsTrigger value="chapters" className="text-xs sm:text-sm gap-1.5">
             <BookOpen className="w-3.5 h-3.5" />
             Chapters
+            <InfoTooltip content="Chapter-wise breakdown — average correct rate and performance status for each chapter covered in this test." />
           </TabsTrigger>
           <TabsTrigger value="difficulty" className="text-xs sm:text-sm gap-1.5">
             <BarChart3 className="w-3.5 h-3.5" />
             Difficulty
+            <InfoTooltip content="Performance split by difficulty level — see how students performed on easy, medium, and hard questions." />
           </TabsTrigger>
         </TabsList>
 
