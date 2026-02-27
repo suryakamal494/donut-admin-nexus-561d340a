@@ -266,6 +266,7 @@ export const AIHomeworkGeneratorDialog = ({
       {generatedHomework ? (
         <AIHomeworkPreview
           generatedHomework={generatedHomework}
+          onHomeworkChange={setGeneratedHomework}
           title={formData.title}
           batchId={formData.batchId}
           subject={formData.subject}
