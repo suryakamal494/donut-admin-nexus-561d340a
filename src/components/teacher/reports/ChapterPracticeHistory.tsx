@@ -62,6 +62,7 @@ export const ChapterPracticeHistory = ({ chapterId, batchId }: Props) => {
 };
 
 const SessionRow = ({ session }: { session: PracticeSession }) => {
+  const navigate = useNavigate();
   const totalStudents = session.bands.reduce((s, b) => s + b.studentsAssigned, 0);
   const totalCompleted = session.bands.reduce((s, b) => s + b.completedCount, 0);
   const completionPct = totalStudents > 0 ? Math.round((totalCompleted / totalStudents) * 100) : 0;
@@ -70,6 +71,7 @@ const SessionRow = ({ session }: { session: PracticeSession }) => {
   return (
     <div
       className="flex items-center gap-3 rounded-lg border p-3 hover:bg-muted/40 transition-colors cursor-pointer group"
+      onClick={() => navigate(`/teacher/reports/${session.batchId}/chapters/${session.chapterId}/practice/${session.id}`)}
     >
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 flex-wrap">
