@@ -1,81 +1,59 @@
 
 
-## Plan: Full-Page Practice Generator + Practice History (Teacher UI Only)
+## What You're Asking
 
-No database, no student-side changes, no real submission tracking. Pure teacher-side UI with mock data.
+The Practice History rows are clickable but don't navigate anywhere. You want each practice session to open a **dedicated detail page** showing comprehensive performance analysis — similar to how exam results pages work, but tailored to practice assignments with per-band breakdowns.
 
----
+After assigning practice, the teacher needs to know:
+- Per band: completion rate, accuracy, which students completed/pending
+- Overall trends across bands
+- Question-level performance (which questions were hard/easy)
+- Comparison across bands to see if the practice achieved its goal
 
-### What Changes
+## Reasoning
+
+This is the right approach. The practice history currently is a dead-end — data with no drill-down. The exam results page already establishes the pattern: overview banner → performance breakdown → question analysis → student list. The practice detail page should follow the same structure but organized by **band** since that's the unique dimension of practice assignments.
+
+## Implementation Plan
 
 | Action | File | Description |
 |--------|------|-------------|
-| **Create** | `src/pages/teacher/ChapterPracticeReview.tsx` | Full-page 3-step flow replacing the popup dialog |
-| **Create** | `src/components/teacher/reports/ChapterPracticeHistory.tsx` | Card showing chronological list of past practice sessions with mock completion/accuracy stats |
-| **Create** | `src/data/teacher/practiceHistoryData.ts` | Mock data: 2-3 past practice sessions per chapter with per-band completion rates, accuracy, dates |
-| **Modify** | `src/routes/TeacherRoutes.tsx` | Add route: `reports/:batchId/chapters/:chapterId/practice` |
-| **Modify** | `src/pages/teacher/ChapterReport.tsx` | Replace dialog open with `navigate(...)` to practice page. Add `ChapterPracticeHistory` section below StudentBuckets |
-| **Delete** | `src/components/teacher/reports/ChapterPracticeGenerator.tsx` | Replaced by the full page |
+| **Create** | `src/pages/teacher/PracticeSessionDetail.tsx` | Full detail page for a single practice session |
+| **Create** | `src/data/teacher/practiceSessionDetailData.ts` | Mock data generator: per-band student results, per-question accuracy, completion stats |
+| **Modify** | `src/components/teacher/reports/ChapterPracticeHistory.tsx` | Add `onClick` → navigate to `/teacher/reports/:batchId/chapters/:chapterId/practice/:sessionId` |
+| **Modify** | `src/routes/TeacherRoutes.tsx` | Add route for `practice/:sessionId` |
 
----
+### Page Structure: `PracticeSessionDetail.tsx`
 
-### New Page: `ChapterPracticeReview.tsx`
+**PageHeader** — breadcrumbs back to chapter report, date, chapter name
 
-Route: `/teacher/reports/:batchId/chapters/:chapterId/practice`
+**Overview Banner** — total questions, overall completion %, overall accuracy, bands count
 
-**Step 1 — Configure** (full-width, not a popup)
-- PageHeader with breadcrumbs back to chapter report
-- Band summary chips (color-coded, showing student count per band)
-- Question count selector (5 or 10 per band)
-- Common instructions textarea
-- Expandable per-band instruction overrides
-- "Generate" button
+**Band Performance Cards (grid)** — one card per band (color-coded emerald/teal/amber/red):
+- Band label, student count, completion rate (X/Y completed)
+- Avg accuracy with color indicator
+- Question count
+- Mini progress bar for completion
 
-**Step 2 — Review** (the key improvement over the popup)
-- Full-width tabbed layout, one tab per band (color-coded)
-- Each tab shows question cards with: question text, 4 options (correct highlighted), difficulty badge, topic badge
-- Remove/restore per question
-- Per-band "Assign" button + "Assign All" button
-- Proper spacing — no cramped popup, questions are readable
-
-**Step 3 — Confirmation**
-- Summary: X practice sets, Y questions, Z students
-- "Back to Chapter Report" button → navigates back
-
-Reuses the existing edge function `generate-chapter-practice` for AI generation. Same logic as the current `ChapterPracticeGenerator.tsx`, just rendered as a page.
-
----
-
-### Practice History Section on Chapter Report
-
-Added between `StudentBuckets` and `ChapterExamBreakdown`.
-
-Shows a card titled "Practice History" with a chronological list of past sessions:
-- Each row: date, total questions, bands included (color dots), mock completion % per band, mock avg accuracy
-- Click row → navigates to a read-only view of that practice session (same review page, pre-populated with mock data, no assign buttons)
-- "No practice sessions yet" empty state
-
-All data is mock — generated deterministically per chapter using the same Map-based caching pattern used elsewhere in `reportsData.ts`.
-
----
+**Tabbed Detail Section:**
+- **Band-wise tab** (default) — expandable accordion per band showing:
+  - Student list with completion status, score, accuracy per student
+  - Pending vs completed count
+- **Questions tab** — grouped by band, showing per-question success rate (reuse the accuracy band pattern from exam results)
 
 ### Mock Data Shape
 
 ```typescript
-interface PracticeSession {
-  id: string;
-  createdAt: string; // date string
-  chapterId: string;
-  bands: {
+interface PracticeSessionDetail {
+  session: PracticeSession; // existing
+  bandDetails: {
     key: string;
     label: string;
-    questionCount: number;
-    studentsAssigned: number;
-    completedCount: number; // mock
-    avgAccuracy: number;    // mock
+    students: { id: string; name: string; completed: boolean; accuracy: number; score: number; maxScore: number }[];
+    questions: { id: string; text: string; topic: string; difficulty: string; successRate: number }[];
   }[];
 }
 ```
 
-2-3 sessions per chapter, spaced 1-2 weeks apart, with realistic mock stats.
+Deterministic mock generation using the session ID as seed, cached via Map.
 
