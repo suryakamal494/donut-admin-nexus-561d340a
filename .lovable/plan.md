@@ -1,77 +1,71 @@
 
 
-## Phase 1: Redesign ExamResults.tsx -- Insight-First Test Report
+## Your Pain Points
 
-### What changes
+**Problem 1 — Multi-batch exams:** An exam like "Optics Chapter Quiz" can be assigned to `batchIds: ["batch-10a", "batch-10b"]`. Currently, clicking "View Results" navigates to `/teacher/exams/exam-3/results` and shows a single mixed pool of 25 students. There is no way to know which students belong to which batch. The reports of batch 10A and 10B are jumbled together.
 
-The current `ExamResults.tsx` leads with stat cards and charts. We are flipping it to an **insight-first** layout where the teacher immediately sees a verdict, student performance bands, and topic flags -- charts become secondary.
+**Problem 2 — Scale over time:** After 3-4 months, a teacher may have 40-60 completed exams across 3-7 batches. The Exams page (`/teacher/exams`) has no batch filter. The teacher cannot say "show me all tests I conducted for batch 10A" — she has to scroll through everything.
 
-### Data layer updates
+---
 
-**File: `src/data/teacher/examResults.ts`**
-- Expand `generateExamAnalytics` to produce richer mock data:
-  - Generate 25 full `StudentResult` entries (not just top 5) with realistic score distribution
-  - Add `questionAnalysis` data for dynamically generated exams (currently returns empty array)
-  - Add a helper `computePerformanceBands()` that buckets students into 4 bands based on percentage: **Mastery Ready** (>=75%), **Stable Progress** (50-74%), **Reinforcement Needed** (35-49%), **Foundational Risk** (<35%)
-  - Add a helper `computeTopicFlags()` that identifies topics with class success rate <50% as "Needs Attention" flags
-  - Add a helper `generateVerdictSummary()` that produces a plain-language string like "Class average 70%. 4 students below passing. Interference and Diffraction need reteaching."
+## My Reasoning
 
-### New components (all in `src/components/teacher/exams/results/`)
+The results page needs a **batch selector** as a first-class element. When an exam has multiple batches, the teacher must pick which batch's report to view. Each batch gets its own isolated analytics (students, verdict, bands, topics). This is not optional — it is foundational.
 
-1. **`VerdictBanner.tsx`** -- Gradient banner (teal-cyan matching teacher theme) at the top
-   - Shows exam name, date, batch
-   - Large verdict text: "Class average 70% | 20 of 24 passed"
-   - 2-3 compact insight pills: "4 at risk", "2 weak topics", "Top: Aarav 95%"
-   - Uses `bg-gradient-to-r from-teal-500 to-cyan-500` with white text
+For the Exams listing page, we need a **batch filter** added to the existing status filter bar. This solves the 3-month scale problem without adding a separate Reports tab yet (that comes in Phase 2).
 
-2. **`PerformanceBands.tsx`** -- Collapsible student groups
-   - 4 colored band cards stacked vertically (mobile-first):
-     - Mastery Ready (green accent) -- collapsed by default, shows count
-     - Stable Progress (blue accent) -- collapsed
-     - Reinforcement Needed (amber accent) -- **expanded by default** (this is what teachers care about)
-     - Foundational Risk (red accent) -- expanded by default
-   - Each band header: color dot + band name + student count badge
-   - Expanded state: list of students with name, score, percentage as compact rows
-   - Uses Radix Collapsible for expand/collapse
+---
 
-3. **`TopicFlags.tsx`** -- Compact topic health indicators
-   - Horizontal scrollable pills on mobile, wrapping grid on desktop
-   - Each topic: name + success rate badge
-   - Color coded: green (>70%), amber (40-70%), red (<40%)
-   - Topics below 40% get a small "Needs Attention" label
+## Implementation Plan
 
-4. **`InsightCards.tsx`** -- 2-3 small actionable insight cards
-   - "Hardest Question: Q7 Interference (24% success)"
-   - "Most Skipped: Q5 Optical Instruments (5 unattempted)"
-   - Compact card design matching `card-premium` style
+### 1. Add batch selector to ExamResults page
 
-### Page restructure (`ExamResults.tsx`)
+**Route stays the same:** `/teacher/exams/:examId/results`
 
-**New tab structure:**
-- Tab 1: **"Insights"** (default) -- VerdictBanner + PerformanceBands + TopicFlags + InsightCards
-- Tab 2: **"Analytics"** -- Score distribution chart + Attempt pie chart (existing charts moved here)
-- Tab 3: **"Questions"** -- Existing question analysis (kept as-is)
-- Tab 4: **"Students"** -- Full student list with search (existing, enhanced)
+**New flow when exam has multiple batches:**
+- Below the PageHeader and above the Tabs, show a horizontal **batch selector strip** — compact pills like `10A - Physics Morning` / `10B - Physics Evening`
+- Default to the first batch
+- When a batch is selected, all data below (verdict, bands, topics, charts, students) filters to that batch only
+- If exam has only 1 batch, the selector is hidden — no extra UI clutter
 
-Remove the 4 stat cards from the top (their data is now in the verdict banner).
-Remove the quick actions bar (Export/Share) and move them to PageHeader actions slot.
+**Data layer changes (`examResults.ts`):**
+- Expand `ExamAnalytics` to include a `batchId` field on each `StudentResult`
+- Add a `generateExamAnalyticsForBatch()` helper that generates separate student pools per batch
+- The `examAnalyticsData` for multi-batch exams stores results keyed by `examId-batchId`
 
-### Design specifications
+**VerdictBanner update:** Show the selected batch name as a subtitle under the exam name
 
-- Mobile-first: verdict banner full-width, bands stack vertically, topic pills scroll horizontally
-- Premium teal/cyan gradient on verdict banner matching teacher panel theme (`from-teal-500 to-cyan-500`)
-- Band cards use `card-premium` class with left color accent border
-- 44px+ touch targets on all interactive elements
-- `pb-20` for bottom navigation clearance
-- Tabs use compact 4-column grid on mobile (`grid-cols-4 text-xs`)
+### 2. Add batch filter to Exams listing page
 
-### Implementation phases (within this task)
+**On the Exams page (`Exams.tsx`):**
+- Add a second filter row (below the status filters) with batch pills: `All` / `10A` / `10B` / `11A`
+- This filters exams where `batchIds` includes the selected batch
+- Compact horizontal scroll on mobile, same design as the status filter pills
+- This solves the "after 3 months, too many exams" problem
 
-1. Update `examResults.ts` with band computation helpers, verdict generator, and richer mock data
-2. Create `VerdictBanner.tsx` component
-3. Create `PerformanceBands.tsx` with collapsible student groups
-4. Create `TopicFlags.tsx` for topic health pills
-5. Create `InsightCards.tsx` for actionable highlights
-6. Restructure `ExamResults.tsx` with new Insights tab as default, move charts to Analytics tab
-7. Update `index.ts` exports
+### 3. Update mock data
+
+- Make `exam-3` (Optics) assigned to `["batch-10a", "batch-10b"]` so we can test multi-batch
+- Generate separate student pools for each batch (25 students per batch, different names/scores)
+- Add 2-3 more completed exams across different batches to simulate realistic volume
+
+### 4. Update exam card
+
+- The "Results" button on multi-batch exams navigates to the results page with the batch selector visible
+- No change to navigation pattern — just the results page handles multi-batch internally
+
+---
+
+### Design specs
+- Batch selector pills use the same compact style as status filter pills (teal accent for active, muted for inactive)
+- On mobile: horizontal scroll, 32px height, 44px+ touch targets
+- Batch filter on Exams page: sits between status filters and search bar, same visual language
+- Single-batch exams: no selector shown, zero UI overhead
+
+### Files to modify
+- `src/data/teacher/exams.ts` — update batchIds for exam-3, add more completed exams
+- `src/data/teacher/examResults.ts` — batch-aware analytics generation
+- `src/pages/teacher/ExamResults.tsx` — add batch selector, filter analytics by batch
+- `src/components/teacher/exams/results/VerdictBanner.tsx` — show batch name
+- `src/pages/teacher/Exams.tsx` — add batch filter row
 
