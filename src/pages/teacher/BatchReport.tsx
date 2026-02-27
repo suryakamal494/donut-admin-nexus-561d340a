@@ -19,6 +19,7 @@ import { getBatchChapters, getBatchExamHistory, getBatchInstituteTests } from "@
 import { getBatchStudentRoster, type StudentRosterEntry } from "@/data/teacher/studentReportData";
 import { currentTeacher } from "@/data/teacher/profile";
 import { cn } from "@/lib/utils";
+import { getPerformanceColor } from "@/lib/reportColors";
 import { motion } from "framer-motion";
 import { format, subDays, isAfter } from "date-fns";
 import { InfoTooltip } from "@/components/timetable/InfoTooltip";
@@ -31,12 +32,6 @@ const dateFilters = [
   { label: "3 months", days: 90 },
   { label: "6 months", days: 180 },
 ] as const;
-
-const getPassRateColor = (rate: number) => {
-  if (rate >= 75) return { bg: "bg-emerald-50 dark:bg-emerald-950/30", border: "border-l-emerald-500", text: "text-emerald-700 dark:text-emerald-400", badge: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400" };
-  if (rate >= 50) return { bg: "bg-amber-50 dark:bg-amber-950/30", border: "border-l-amber-500", text: "text-amber-700 dark:text-amber-400", badge: "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400" };
-  return { bg: "bg-red-50 dark:bg-red-950/30", border: "border-l-red-500", text: "text-red-700 dark:text-red-400", badge: "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400" };
-};
 
 const BatchReport = () => {
   const { batchId } = useParams<{ batchId: string }>();
@@ -238,7 +233,7 @@ const BatchReport = () => {
               {/* Exam cards */}
               <div className="space-y-3">
                 {paginatedExams.map((exam, i) => {
-                  const colors = getPassRateColor(exam.passPercentage);
+                  const colors = getPerformanceColor(exam.passPercentage);
                   return (
                     <motion.div
                       key={exam.examId}
@@ -345,7 +340,7 @@ const BatchReport = () => {
                     neet: { label: "NEET", bg: "bg-green-100 dark:bg-green-900/30", text: "text-green-700 dark:text-green-400" },
                   };
                   const ps = patternStyles[test.pattern] || patternStyles.jee_main;
-                  const passColors = getPassRateColor(test.passPercentage);
+                  const passColors = getPerformanceColor(test.passPercentage);
 
                   return (
                     <motion.div
@@ -463,8 +458,7 @@ const BatchReport = () => {
                     <CardContent className="p-3.5 sm:p-4 flex items-center gap-3">
                       <div className={cn(
                         "shrink-0 w-11 h-11 rounded-xl flex items-center justify-center text-white font-bold text-sm",
-                        student.avgPercentage >= 65 ? "bg-emerald-500" :
-                        student.avgPercentage >= 40 ? "bg-amber-500" : "bg-red-500"
+                        getPerformanceColor(student.avgPercentage).bg
                       )}>
                         {student.avgPercentage}%
                       </div>
