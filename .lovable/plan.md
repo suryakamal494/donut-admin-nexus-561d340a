@@ -1,30 +1,68 @@
 
 
-## Reasoning: Where to Place "Generate Homework"
+## Understanding Your Requirement
 
-Your instinct is correct — placing it at the **top level near the batch selector** is better than per-performance-band. Here's why:
+You want to replace the current per-band "Generate Practice" buttons with a **single "Generate Practice" button** at the Student Performance Buckets card header level. When clicked, it should NOT open the generic homework dialog. Instead, it opens a **custom multi-band practice generation flow**:
 
-1. **Per-band buttons are redundant.** The AI homework generator already accepts context (exam data, weak topics). A single entry point that passes the full exam context is more powerful than 4 separate buttons that each only target one band.
+1. **Input Step** — Teacher optionally adds instructions (common or per-band)
+2. **Generation** — AI generates up to 10 questions per band (4 bands = up to 40 questions), using chapter context (weak topics, student issues) as automatic prompt context
+3. **Review Step** — Teacher reviews generated questions organized by band tabs/sections. They can accept or skip individual bands
+4. **Assign** — Creates up to 4 separate practice assignments, one per band, sent only to students in that band
 
-2. **Teacher intent is exam-level, not band-level.** When a teacher thinks "I want homework based on this test," they're thinking about the whole test — the AI can internally prioritize weak areas without forcing the teacher to pick a band first.
+## My Reasoning
 
-3. **Top-level placement keeps the page clean.** Performance bands are data displays. Mixing action buttons into every band creates visual clutter, especially on mobile with 4 bands.
+**Your approach is correct.** Here's why:
 
-**Proposed placement:** Add a "Generate Homework" button in the `PageHeader` actions row, next to Export and Share. This is the standard action placement across the app. On mobile it shows just the icon (Sparkles), on desktop it shows the full label.
-
-**What it does when clicked:** Opens the existing `CreateHomeworkDialog` (AI mode) pre-filled with:
-- Subject & chapter from the exam
-- Context type = "exam_results" with the exam analytics summary (weak topics, difficulty gaps)
-- This way the AI generates homework that specifically targets what students struggled with
-
----
+- **Per-band buttons are redundant.** The teacher has to click 4 times, fill 4 forms, review 4 times. That's 12+ interactions for what should be 1 flow.
+- **Single button, multi-band output is the right pattern.** The AI already knows the chapter context, weak topics, and which students are in which band. One click should produce all 4 practice sets.
+- **NOT reusing the generic homework dialog is correct.** The homework dialog is designed for general-purpose homework creation. This flow is context-aware — it automatically pulls chapter data, topic weaknesses, and student groupings. Different purpose, different UI.
+- **10-question limit per band is practical.** Practice should be focused, not exhaustive. 10 questions per band keeps it digestible for students.
+- **Optional per-band instructions are important.** A teacher might want "focus on numerical problems" for the risk band but "include challenging derivations" for mastery. But making instructions optional (with smart defaults from the AI) keeps it low-friction.
 
 ## Implementation Plan
 
+### New Component: `ChapterPracticeGenerator`
+A multi-step dialog/drawer component with 3 steps:
+
+**Step 1 — Configure (compact form)**
+- Shows which bands have students (skip empty bands)
+- Common instructions textarea (applies to all bands)
+- Expandable per-band instruction overrides (optional)
+- Question count selector (5 or 10 per band)
+- "Generate Practice" button
+
+**Step 2 — Review (tabbed by band)**
+- Tab for each non-empty band (color-coded)
+- Each tab shows the generated questions (question text, options, difficulty)
+- Teacher can remove individual questions
+- "Regenerate" button per band if unsatisfied
+- "Assign All" or per-band "Assign" buttons
+
+**Step 3 — Confirmation**
+- Summary: "4 practice sets created, assigned to X students"
+- Toast notification
+
+### Files to Create/Modify
+
 | File | Change |
 |---|---|
-| `src/pages/teacher/ExamResults.tsx` | Add Sparkles icon import, add "Generate Homework" button in PageHeader actions (beside Export/Share). Add state for dialog open. Import and render `CreateHomeworkDialog` with exam context pre-filled. |
-| No new components needed | Reuses existing `CreateHomeworkDialog` which already supports context-based AI generation |
+| `src/components/teacher/reports/ChapterPracticeGenerator.tsx` | **New** — Multi-step dialog with configure → review → assign flow |
+| `src/components/teacher/reports/StudentBuckets.tsx` | Remove per-band Generate Practice buttons. Add single "Generate Practice" button in CardHeader. Accept `onGeneratePractice` as a simple `() => void` callback (no bucket param) |
+| `src/pages/teacher/ChapterReport.tsx` | Remove `handleGeneratePractice` per-bucket logic. Replace `AIHomeworkGeneratorDialog` with `ChapterPracticeGenerator`. Pass chapter context (topics, buckets, subject) to the new component |
+| `supabase/functions/generate-chapter-practice/index.ts` | **New** — Edge function that calls Lovable AI to generate band-specific practice questions. Accepts chapter context + per-band instructions, returns structured questions per band |
 
-The button will pass context like: `contextType: "exam_results"`, `contextContent: "Exam: {name}, Weak topics: {topics}, Difficulty gaps: {gaps}"` — leveraging the existing `assessment-ai` edge function's context support.
+### Edge Function Design
+The edge function receives:
+```json
+{
+  "chapter": "Kinematics",
+  "subject": "Physics",
+  "bands": [
+    { "key": "mastery", "label": "Mastery Ready", "studentCount": 5, "instructions": "...", "questionCount": 10, "context": "Strong in all topics, challenge them" },
+    { "key": "risk", "label": "Foundational Risk", "studentCount": 3, "instructions": "...", "questionCount": 10, "context": "Weak in: Projectile Motion, Relative Motion" }
+  ],
+  "topics": [{ "name": "Projectile Motion", "status": "weak", "avgSuccessRate": 38 }, ...]
+}
+```
+Returns structured questions per band using tool calling for reliable JSON output.
 
