@@ -45,6 +45,7 @@ const ExamResults = () => {
 
   // Batch selector state — read ?batch= query param for pre-selection
   const batchFromUrl = searchParams.get("batch");
+  const returnTo = searchParams.get("returnTo");
   const [selectedBatchId, setSelectedBatchId] = useState<string>(
     (batchFromUrl && exam?.batchIds.includes(batchFromUrl) ? batchFromUrl : exam?.batchIds[0]) || ""
   );
@@ -114,11 +115,20 @@ const ExamResults = () => {
       <PageHeader
         title="Exam Results"
         description={exam.name}
-        breadcrumbs={[
-          { label: "Teacher", href: "/teacher" },
-          { label: "Exams", href: "/teacher/exams" },
-          { label: "Results" },
-        ]}
+        breadcrumbs={
+          returnTo
+            ? [
+                { label: "Teacher", href: "/teacher" },
+                { label: "Reports", href: "/teacher/reports" },
+                { label: "Back to Chapter", href: returnTo },
+                { label: "Results" },
+              ]
+            : [
+                { label: "Teacher", href: "/teacher" },
+                { label: "Exams", href: "/teacher/exams" },
+                { label: "Results" },
+              ]
+        }
         actions={
           <div className="flex gap-2">
             <Button variant="outline" size="sm" className="h-9">
