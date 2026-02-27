@@ -187,7 +187,7 @@ const InstituteTestDetail = () => {
                         <span>+{q.marks}/−{q.negativeMarks}</span>
                       </div>
                       {/* Metrics bar */}
-                      <div className="grid grid-cols-3 gap-2 mt-2">
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-2">
                         <div>
                           <div className="flex items-center justify-between text-[10px] mb-0.5">
                             <span className="text-muted-foreground">Correct</span>
@@ -202,7 +202,7 @@ const InstituteTestDetail = () => {
                           </div>
                           <Progress value={q.attemptPercentage} className="h-1.5" />
                         </div>
-                        <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                        <div className="flex items-center gap-1 text-[10px] text-muted-foreground col-span-2 sm:col-span-1 mt-1 sm:mt-0">
                           <Clock className="w-3 h-3" />
                           <span className="font-medium">{Math.round(q.avgTimeSpent / 60)}m {q.avgTimeSpent % 60}s</span>
                         </div>

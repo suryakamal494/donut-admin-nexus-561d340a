@@ -198,36 +198,6 @@ const ChapterReport = () => {
                     </span>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="h-7 text-xs gap-1 border-teal-300 text-teal-700 hover:bg-teal-50 dark:border-teal-700 dark:text-teal-300 dark:hover:bg-teal-950/40"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          const isUpperBand = bucket.key === "mastery" || bucket.key === "stable";
-                          const focusTopics = isUpperBand
-                            ? chapter.topics.filter(t => t.status === "strong").map(t => t.topicName)
-                            : [...chapter.topics.filter(t => t.status === "weak").map(t => t.topicName), ...chapter.topics.filter(t => t.status === "moderate").map(t => t.topicName)];
-                          const instructions = isUpperBand
-                            ? (bucket.key === "mastery"
-                              ? `Generate advanced/challenge-level practice for top performers on ${chapter.chapterName}. Topics: ${focusTopics.join(", ") || chapter.chapterName}.`
-                              : `Generate reinforcement practice to solidify understanding on ${chapter.chapterName}. Topics: ${focusTopics.join(", ") || chapter.chapterName}.`)
-                            : (focusTopics.length > 0
-                              ? `Focus on weak topics: ${focusTopics.join(", ")}. Generate practice for students in the "${bucket.label}" band.`
-                              : `Generate practice for "${bucket.label}" band — ${chapter.chapterName}.`);
-                          setAiPrefill({
-                            title: `${chapter.chapterName} Practice — ${bucket.label}`,
-                            subject: chapter.subject,
-                            batchId: batchId || "batch-10a",
-                            instructions,
-                            contextBanner: `Pre-filled from: ${chapter.chapterName} · ${bucket.label} · ${focusTopics.length} focus topic${focusTopics.length !== 1 ? "s" : ""}`,
-                          });
-                          setShowAIGenerator(true);
-                        }}
-                      >
-                        <Sparkles className="w-3 h-3" />
-                        Generate Practice
-                      </Button>
                     {isOpen ? (
                       <ChevronUp className="w-4 h-4 text-muted-foreground" />
                     ) : (
@@ -248,6 +218,39 @@ const ChapterReport = () => {
                       className="overflow-hidden"
                     >
                       <div className="px-3.5 pb-3.5 sm:px-4 sm:pb-4 space-y-1">
+                        {/* Generate Practice button - inside expanded area */}
+                        <div className="pb-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-8 text-xs gap-1.5 w-full sm:w-auto border-teal-300 text-teal-700 hover:bg-teal-50 dark:border-teal-700 dark:text-teal-300 dark:hover:bg-teal-950/40"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              const isUpperBand = bucket.key === "mastery" || bucket.key === "stable";
+                              const focusTopics = isUpperBand
+                                ? chapter.topics.filter(t => t.status === "strong").map(t => t.topicName)
+                                : [...chapter.topics.filter(t => t.status === "weak").map(t => t.topicName), ...chapter.topics.filter(t => t.status === "moderate").map(t => t.topicName)];
+                              const instructions = isUpperBand
+                                ? (bucket.key === "mastery"
+                                  ? `Generate advanced/challenge-level practice for top performers on ${chapter.chapterName}. Topics: ${focusTopics.join(", ") || chapter.chapterName}.`
+                                  : `Generate reinforcement practice to solidify understanding on ${chapter.chapterName}. Topics: ${focusTopics.join(", ") || chapter.chapterName}.`)
+                                : (focusTopics.length > 0
+                                  ? `Focus on weak topics: ${focusTopics.join(", ")}. Generate practice for students in the "${bucket.label}" band.`
+                                  : `Generate practice for "${bucket.label}" band — ${chapter.chapterName}.`);
+                              setAiPrefill({
+                                title: `${chapter.chapterName} Practice — ${bucket.label}`,
+                                subject: chapter.subject,
+                                batchId: batchId || "batch-10a",
+                                instructions,
+                                contextBanner: `Pre-filled from: ${chapter.chapterName} · ${bucket.label} · ${focusTopics.length} focus topic${focusTopics.length !== 1 ? "s" : ""}`,
+                              });
+                              setShowAIGenerator(true);
+                            }}
+                          >
+                            <Sparkles className="w-3.5 h-3.5" />
+                            Generate Practice
+                          </Button>
+                        </div>
                         {bucket.students.map((s) => (
                           <div
                             key={s.id}
