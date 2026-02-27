@@ -1,7 +1,7 @@
-import { CheckCircle, AlertTriangle, XCircle, BarChart3 } from "lucide-react";
+import { CheckCircle, AlertTriangle, XCircle, BarChart3, AlertCircle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import { getStatusColor } from "@/lib/reportColors";
+import { getPerformanceColor } from "@/lib/reportColors";
 import { motion } from "framer-motion";
 import { InfoTooltip } from "@/components/timetable/InfoTooltip";
 import type { ChapterTopicAnalysis } from "@/data/teacher/reportsData";
@@ -22,11 +22,10 @@ export const TopicHeatmapGrid = ({ topics }: TopicHeatmapGridProps) => (
     <CardContent>
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
         {topics.map((topic, i) => {
-          const statusColors = getStatusColor(topic.status);
-          const bgColor = `${statusColors.light} ${statusColors.border.replace('border-l-', 'border-')}`;
-          const textColor = statusColors.text;
-          const StatusIcon = topic.status === "strong" ? CheckCircle :
-            topic.status === "moderate" ? AlertTriangle : XCircle;
+          const colors = getPerformanceColor(topic.avgSuccessRate);
+          const StatusIcon = topic.avgSuccessRate >= 75 ? CheckCircle :
+            topic.avgSuccessRate >= 50 ? AlertCircle :
+            topic.avgSuccessRate >= 35 ? AlertTriangle : XCircle;
 
           return (
             <motion.div
@@ -34,11 +33,11 @@ export const TopicHeatmapGrid = ({ topics }: TopicHeatmapGridProps) => (
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.2, delay: i * 0.03 }}
-              className={cn("rounded-xl border p-3 flex flex-col items-center text-center gap-1.5", bgColor)}
+              className={cn("rounded-xl border p-3 flex flex-col items-center text-center gap-1.5", colors.light, colors.border.replace('border-l-', 'border-'))}
             >
-              <StatusIcon className={cn("w-5 h-5", textColor)} />
-              <p className={cn("text-xs font-semibold leading-tight", textColor)}>{topic.topicName}</p>
-              <p className={cn("text-lg font-bold", textColor)}>{topic.avgSuccessRate}%</p>
+              <StatusIcon className={cn("w-5 h-5", colors.text)} />
+              <p className={cn("text-xs font-semibold leading-tight", colors.text)}>{topic.topicName}</p>
+              <p className={cn("text-lg font-bold", colors.text)}>{topic.avgSuccessRate}%</p>
               <p className="text-[10px] text-muted-foreground">{topic.questionsAsked} Qs · {topic.examsAppeared} exam{topic.examsAppeared > 1 ? "s" : ""}</p>
             </motion.div>
           );

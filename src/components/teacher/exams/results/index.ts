@@ -5,3 +5,7 @@ export { VerdictBanner } from './VerdictBanner';
 export { PerformanceBands } from './PerformanceBands';
 export { TopicFlags } from './TopicFlags';
 export { InsightCards } from './InsightCards';
+export { DifficultyChart } from './DifficultyChart';
+export { CognitiveChart } from './CognitiveChart';
+export { AIAnalysisCard } from './AIAnalysisCard';
+export { QuestionGroupAccordion } from './QuestionGroupAccordion';

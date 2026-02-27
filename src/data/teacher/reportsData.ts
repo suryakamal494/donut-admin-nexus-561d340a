@@ -144,7 +144,7 @@ const generateChapterReports = (batchId: string): ChapterReportCard[] => {
       avgSuccessRate: avgSuccess,
       topicCount: ch.topics.length,
       weakTopicCount: weakCount,
-      status: avgSuccess >= 65 ? "strong" : avgSuccess >= 40 ? "moderate" : "weak",
+      status: avgSuccess >= 75 ? "strong" : avgSuccess >= 50 ? "moderate" : "weak",
     };
   });
 };

@@ -1,19 +1,11 @@
 import { useState, useMemo } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
-import { 
-  ArrowLeft,
-  BarChart3,
-  Download,
-  Share2,
-} from "lucide-react";
+import { ArrowLeft, BarChart3, Download, Share2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PageHeader } from "@/components/ui/page-header";
-import { 
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  PieChart, Pie, Cell, AreaChart, Area,
-} from "recharts";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from "recharts";
 import { teacherExams } from "@/data/teacher/exams";
 import {
   getExamAnalyticsForBatch,
@@ -29,10 +21,13 @@ import {
   PerformanceBands,
   TopicFlags,
   InsightCards,
-  QuestionAnalysisCard,
   StudentResultRow,
 } from "@/components/teacher/exams/results";
 import { BatchSelector } from "@/components/teacher/exams/results/BatchSelector";
+import { DifficultyChart } from "@/components/teacher/exams/results/DifficultyChart";
+import { CognitiveChart } from "@/components/teacher/exams/results/CognitiveChart";
+import { AIAnalysisCard } from "@/components/teacher/exams/results/AIAnalysisCard";
+import { QuestionGroupAccordion } from "@/components/teacher/exams/results/QuestionGroupAccordion";
 import { InfoTooltip } from "@/components/timetable/InfoTooltip";
 
 const PIE_COLORS = ["#22c55e", "#f59e0b", "#ef4444", "#6b7280"];
@@ -50,7 +45,6 @@ const ExamResults = () => {
     (batchFromUrl && exam?.batchIds.includes(batchFromUrl) ? batchFromUrl : exam?.batchIds[0]) || ""
   );
 
-  // Get analytics for the selected batch
   const analytics: ExamAnalytics | null = useMemo(() => {
     if (!exam) return null;
     const batchId = selectedBatchId || exam.batchIds[0];
@@ -59,7 +53,6 @@ const ExamResults = () => {
     return generateExamAnalyticsForBatch(exam.id, exam.name, exam.totalMarks, batchId);
   }, [exam, selectedBatchId]);
 
-  // Derived insight data
   const bands = useMemo(
     () => (analytics ? computePerformanceBands(analytics.allStudents) : []),
     [analytics]
@@ -91,24 +84,10 @@ const ExamResults = () => {
     ? `${batchInfoMap[selectedBatchId].className} - ${batchInfoMap[selectedBatchId].name}`
     : undefined;
 
-  // Chart data
   const scoreDistributionData = analytics.scoreDistribution.map((d, i) => ({
     ...d,
     fill: PIE_COLORS[i % PIE_COLORS.length],
   }));
-
-  const questionSuccessData = analytics.questionAnalysis.map(q => ({
-    name: `Q${q.questionNumber}`,
-    successRate: q.successRate,
-    avgTime: q.averageTime,
-    difficulty: q.difficulty,
-  }));
-
-  const attemptDistribution = [
-    { name: "Correct", value: analytics.questionAnalysis.reduce((s, q) => s + q.correctAttempts, 0), color: "#22c55e" },
-    { name: "Incorrect", value: analytics.questionAnalysis.reduce((s, q) => s + q.incorrectAttempts, 0), color: "#ef4444" },
-    { name: "Unattempted", value: analytics.questionAnalysis.reduce((s, q) => s + q.unattempted, 0), color: "#6b7280" },
-  ];
 
   return (
     <div className="space-y-4 sm:space-y-5 max-w-7xl mx-auto pb-20 md:pb-6">
@@ -136,14 +115,12 @@ const ExamResults = () => {
         }
       />
 
-      {/* Batch Selector — only shown for multi-batch exams */}
       <BatchSelector
         batchIds={exam.batchIds}
         selectedBatchId={selectedBatchId}
         onSelect={setSelectedBatchId}
       />
 
-      {/* Tabs */}
       <Tabs defaultValue="insights" className="space-y-4">
         <TabsList className="w-full sm:w-auto h-auto p-1 grid grid-cols-4 sm:flex">
           <TabsTrigger value="insights" className="text-xs sm:text-sm">Insights</TabsTrigger>
@@ -152,7 +129,7 @@ const ExamResults = () => {
           <TabsTrigger value="students" className="text-xs sm:text-sm">Students</TabsTrigger>
         </TabsList>
 
-        {/* ── Insights Tab (default) ── */}
+        {/* ── Insights Tab ── */}
         <TabsContent value="insights" className="space-y-5">
           <VerdictBanner examName={exam.name} verdict={verdict} batchName={selectedBatchName} />
           <PerformanceBands bands={bands} />
@@ -163,6 +140,7 @@ const ExamResults = () => {
         {/* ── Analytics Tab ── */}
         <TabsContent value="analytics" className="space-y-4">
           <div className="grid gap-4 lg:grid-cols-2">
+            {/* Score Distribution — kept */}
             <Card className="card-premium">
               <CardHeader className="pb-2">
                 <CardTitle className="text-base font-semibold flex items-center gap-2">
@@ -198,71 +176,20 @@ const ExamResults = () => {
               </CardContent>
             </Card>
 
-            <Card className="card-premium">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-base font-semibold flex items-center gap-2">
-                  <BarChart3 className="w-4 h-4 text-primary" />
-                  Overall Attempt Analysis
-                  <InfoTooltip content="Breakdown of all attempts across all questions — correct, incorrect, and unattempted." />
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="h-[250px] sm:h-[300px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie data={attemptDistribution} cx="50%" cy="50%" innerRadius={60} outerRadius={90} paddingAngle={3} dataKey="value">
-                        {attemptDistribution.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.color} />
-                        ))}
-                      </Pie>
-                      <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px', fontSize: '12px' }} />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
-                <div className="flex justify-center gap-6 mt-2">
-                  {attemptDistribution.map((d, i) => (
-                    <div key={i} className="flex items-center gap-2">
-                      <div className="w-3 h-3 rounded-full" style={{ backgroundColor: d.color }} />
-                      <span className="text-xs text-muted-foreground">{d.name}</span>
-                      <span className="text-xs font-medium">{d.value}</span>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+            {/* Difficulty-wise Performance — NEW */}
+            <DifficultyChart questions={analytics.questionAnalysis} />
           </div>
+
+          {/* Cognitive Type Performance — NEW */}
+          <CognitiveChart questions={analytics.questionAnalysis} />
+
+          {/* AI Analysis — NEW */}
+          <AIAnalysisCard analytics={analytics} examName={exam.name} />
         </TabsContent>
 
-        {/* ── Questions Tab ── */}
+        {/* ── Questions Tab — Grouped Accordion ── */}
         <TabsContent value="questions" className="space-y-4">
-          <Card className="card-premium">
-            <CardHeader className="pb-2">
-                <CardTitle className="text-base font-semibold flex items-center gap-2">
-                <BarChart3 className="w-4 h-4 text-primary" />
-                Question-wise Success Rate
-                <InfoTooltip content="Success rate for each question — the percentage of students who answered correctly. Dips indicate commonly missed questions." />
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[300px] sm:h-[350px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={questionSuccessData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" className="stroke-muted/30" />
-                    <XAxis dataKey="name" tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
-                    <YAxis tick={{ fontSize: 11 }} tickLine={false} axisLine={false} domain={[0, 100]} />
-                    <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px', fontSize: '12px' }} formatter={(value: number) => [`${value}%`, 'Success Rate']} />
-                    <Area type="monotone" dataKey="successRate" stroke="hsl(var(--primary))" fill="hsl(var(--primary) / 0.2)" strokeWidth={2} />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </div>
-            </CardContent>
-          </Card>
-
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {analytics.questionAnalysis.map((q) => (
-              <QuestionAnalysisCard key={q.questionId} question={q} />
-            ))}
-          </div>
+          <QuestionGroupAccordion questions={analytics.questionAnalysis} />
         </TabsContent>
 
         {/* ── Students Tab ── */}

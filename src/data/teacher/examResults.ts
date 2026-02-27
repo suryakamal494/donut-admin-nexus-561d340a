@@ -47,6 +47,8 @@ export interface ScoreRange {
   percentage: number;
 }
 
+export type CognitiveType = 'Logical' | 'Analytical' | 'Conceptual' | 'Numerical' | 'Application' | 'Memory';
+
 export interface QuestionAnalysis {
   questionId: string;
   questionNumber: number;
@@ -58,6 +60,9 @@ export interface QuestionAnalysis {
   averageTime: number;
   successRate: number;
   difficulty: 'easy' | 'medium' | 'hard';
+  questionText: string;
+  options?: { id: string; text: string; isCorrect: boolean }[];
+  cognitiveType: CognitiveType;
 }
 
 export interface BatchStats {
@@ -124,7 +129,7 @@ export function computeTopicFlags(questions: QuestionAnalysis[]): TopicFlag[] {
   return questions.map(q => ({
     topic: q.topic,
     successRate: q.successRate,
-    status: q.successRate >= 70 ? 'strong' : q.successRate >= 40 ? 'moderate' : 'weak',
+    status: q.successRate >= 75 ? 'strong' : q.successRate >= 50 ? 'moderate' : 'weak',
   }));
 }
 
@@ -219,6 +224,38 @@ const batch11ANames = [
   "Uday Mathur", "Vani Krishnan", "Wasim Ahmed", "Xena Fernandes", "Yogesh Shetty",
 ];
 
+const cognitiveTypes: CognitiveType[] = ['Logical', 'Analytical', 'Conceptual', 'Numerical', 'Application', 'Memory'];
+
+const fallbackQuestionTexts: string[] = [
+  "A body of mass 5 kg is moving with a velocity of 20 m/s. A force of 100 N is applied on it for 2 seconds in the direction of motion. The final velocity of the body is:",
+  "A particle moves from position r₁ = 3î + 2ĵ - 6k̂ to position r₂ = 14î + 13ĵ + 9k̂ under the action of a force F = 4î + ĵ + 3k̂ N. The work done by this force is:",
+  "The moment of inertia of a uniform circular disc of radius R and mass M about an axis touching the disc at its diameter and normal to the disc is:",
+  "The escape velocity of a body from the surface of earth is 11.2 km/s. If a body is projected with a velocity twice the escape velocity, its velocity at infinity will be:",
+  "An ideal gas undergoes a cyclic process ABCDA as shown. The work done by the gas in the cycle is:",
+  "A string of length L, fixed at both ends, vibrates in its fundamental mode. The wavelength of the wave in the string is:",
+  "Two point charges +q and -q are placed at a distance d apart. The electric field at a point midway between them is:",
+  "A wire of resistance R is cut into n equal parts. These parts are then connected in parallel. The equivalent resistance of the combination is:",
+  "A charged particle moves in a uniform magnetic field. The particle will describe a circular path if:",
+  "A coil of area A and N turns is placed perpendicular to a magnetic field B. If the field changes from B to 0 in time t, the average EMF induced is:",
+  "A ray of light passes from a denser medium to a rarer medium. The critical angle for total internal reflection is 45°. The refractive index of the denser medium is:",
+  "The threshold wavelength for photoelectric effect from a metal surface is 5000 Å. The work function of the metal is:",
+  "A ball is thrown vertically upward with velocity 40 m/s. Taking g = 10 m/s², the time taken to reach maximum height is ______ seconds.",
+  "In a p-n junction diode, the depletion region is formed due to:",
+  "A parallel plate capacitor has capacitance C. If the distance between plates is doubled and a dielectric of constant K=4 is inserted, the new capacitance is:",
+  "A projectile is thrown with speed u at angle θ to the horizontal. Its range on the horizontal plane is R. For the same speed and maximum height, the projectile should be thrown at angle:",
+  "Water flows through a horizontal pipe of varying cross-section. The pressure is 30000 Pa where velocity is 2 m/s. What is the pressure where velocity is 4 m/s?",
+  "A particle executes SHM with amplitude A. At what displacement from mean position is the kinetic energy equal to potential energy?",
+  "In amplitude modulation, the modulation index is 0.5. The ratio of the sideband power to the carrier power is:",
+  "In a series LCR circuit at resonance, the voltage across inductance is 100 V and across capacitance is 100 V. The voltage across resistance is 20 V. The applied voltage is:",
+];
+
+const fallbackOptions = [
+  [{ id: "a", text: "40 m/s", isCorrect: false }, { id: "b", text: "60 m/s", isCorrect: true }, { id: "c", text: "80 m/s", isCorrect: false }, { id: "d", text: "100 m/s", isCorrect: false }],
+  [{ id: "a", text: "100 J", isCorrect: true }, { id: "b", text: "50 J", isCorrect: false }, { id: "c", text: "200 J", isCorrect: false }, { id: "d", text: "75 J", isCorrect: false }],
+  [{ id: "a", text: "MR²/2", isCorrect: false }, { id: "b", text: "MR²", isCorrect: false }, { id: "c", text: "3MR²/2", isCorrect: true }, { id: "d", text: "2MR²", isCorrect: false }],
+  [{ id: "a", text: "11.2 km/s", isCorrect: false }, { id: "b", text: "11.2√3 km/s", isCorrect: true }, { id: "c", text: "22.4 km/s", isCorrect: false }, { id: "d", text: "0", isCorrect: false }],
+];
+
 // Generate question analysis
 const generateQuestionAnalysis = (totalStudents: number, topics?: { topic: string; subject: string }[]): QuestionAnalysis[] => {
   const defaultTopics = [
@@ -249,6 +286,9 @@ const generateQuestionAnalysis = (totalStudents: number, topics?: { topic: strin
       averageTime: Math.floor(Math.random() * 80) + 30,
       successRate,
       difficulty: successRate > 65 ? 'easy' as const : successRate > 40 ? 'medium' as const : 'hard' as const,
+      questionText: fallbackQuestionTexts[i % fallbackQuestionTexts.length],
+      options: fallbackOptions[i % fallbackOptions.length],
+      cognitiveType: cognitiveTypes[i % cognitiveTypes.length],
     };
   });
 };
