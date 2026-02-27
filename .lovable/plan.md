@@ -1,71 +1,47 @@
 
 
-## Your Pain Points
+## Pain Points Identified
 
-**Problem 1 — Multi-batch exams:** An exam like "Optics Chapter Quiz" can be assigned to `batchIds: ["batch-10a", "batch-10b"]`. Currently, clicking "View Results" navigates to `/teacher/exams/exam-3/results` and shows a single mixed pool of 25 students. There is no way to know which students belong to which batch. The reports of batch 10A and 10B are jumbled together.
+1. **No batch pre-selection**: Clicking an exam from ChapterReport or BatchReport Exams tab navigates to `/teacher/exams/:examId/results` without passing the batch context. The ExamResults page defaults to the first batch, not the one the teacher was viewing.
 
-**Problem 2 — Scale over time:** After 3-4 months, a teacher may have 40-60 completed exams across 3-7 batches. The Exams page (`/teacher/exams`) has no batch filter. The teacher cannot say "show me all tests I conducted for batch 10A" — she has to scroll through everything.
+2. **Exams tab is plain black & white**: The BatchReport Exams tab cards use `bg-muted/50` grey boxes with no color coding. No visual distinction between high-performing vs low-performing exams. Contrast this with the Chapters tab which uses emerald/amber/red color-coded circles.
 
----
+3. **No scalability controls on Exams tab**: No date filter, no pagination. After 6 months with 30-40 exams per batch, this becomes an endless scroll.
 
-## My Reasoning
-
-The results page needs a **batch selector** as a first-class element. When an exam has multiple batches, the teacher must pick which batch's report to view. Each batch gets its own isolated analytics (students, verdict, bands, topics). This is not optional — it is foundational.
-
-For the Exams listing page, we need a **batch filter** added to the existing status filter bar. This solves the 3-month scale problem without adding a separate Reports tab yet (that comes in Phase 2).
+4. **Thin mock data**: Only 3-5 completed exams per batch. Not enough to test pagination or date filtering.
 
 ---
 
 ## Implementation Plan
 
-### 1. Add batch selector to ExamResults page
+### 1. Batch pre-selection via URL query param
 
-**Route stays the same:** `/teacher/exams/:examId/results`
+- **ExamResults.tsx**: Read `?batch=batch-10a` from URL search params. If present, use it as the default `selectedBatchId` instead of `exam.batchIds[0]`.
+- **ChapterReport.tsx**: Update exam breakdown links to navigate with `?batch={batchId}`.
+- **BatchReport.tsx**: Update Exams tab card links to navigate with `?batch={batchId}`.
 
-**New flow when exam has multiple batches:**
-- Below the PageHeader and above the Tabs, show a horizontal **batch selector strip** — compact pills like `10A - Physics Morning` / `10B - Physics Evening`
-- Default to the first batch
-- When a batch is selected, all data below (verdict, bands, topics, charts, students) filters to that batch only
-- If exam has only 1 batch, the selector is hidden — no extra UI clutter
+### 2. Enrich Exams tab UI with color theming
 
-**Data layer changes (`examResults.ts`):**
-- Expand `ExamAnalytics` to include a `batchId` field on each `StudentResult`
-- Add a `generateExamAnalyticsForBatch()` helper that generates separate student pools per batch
-- The `examAnalyticsData` for multi-batch exams stores results keyed by `examId-batchId`
+Replace the plain grey stat boxes with color-coded design matching the teacher teal-cyan theme:
+- Add a left-side **pass rate indicator** (emerald/amber/red colored bar or badge) on each exam card.
+- Use subtle gradient backgrounds on stat cells: emerald tint for high pass rate, amber for moderate, red for low.
+- Add a small trend indicator or icon for visual richness.
+- Keep the same card structure but add the teal accent color to headers/icons.
 
-**VerdictBanner update:** Show the selected batch name as a subtitle under the exam name
+### 3. Add date filter and pagination to Exams tab
 
-### 2. Add batch filter to Exams listing page
+- **Date filter row**: Add a horizontal filter strip at the top of the Exams tab with options like "All Time", "Last 30 days", "Last 3 months", "Last 6 months". Compact pills, same style as batch selector.
+- **Pagination**: Show 10 exams per page with simple Previous/Next pagination at the bottom. Use the existing `Pagination` component.
 
-**On the Exams page (`Exams.tsx`):**
-- Add a second filter row (below the status filters) with batch pills: `All` / `10A` / `10B` / `11A`
-- This filters exams where `batchIds` includes the selected batch
-- Compact horizontal scroll on mobile, same design as the status filter pills
-- This solves the "after 3 months, too many exams" problem
+### 4. Expand mock data for scale testing
 
-### 3. Update mock data
-
-- Make `exam-3` (Optics) assigned to `["batch-10a", "batch-10b"]` so we can test multi-batch
-- Generate separate student pools for each batch (25 students per batch, different names/scores)
-- Add 2-3 more completed exams across different batches to simulate realistic volume
-
-### 4. Update exam card
-
-- The "Results" button on multi-batch exams navigates to the results page with the batch selector visible
-- No change to navigation pattern — just the results page handles multi-batch internally
-
----
-
-### Design specs
-- Batch selector pills use the same compact style as status filter pills (teal accent for active, muted for inactive)
-- On mobile: horizontal scroll, 32px height, 44px+ touch targets
-- Batch filter on Exams page: sits between status filters and search bar, same visual language
-- Single-batch exams: no selector shown, zero UI overhead
+- Add 15-20 more completed exams spread across batches in `exams.ts` with varied dates spanning 6 months.
+- Update `reportsData.ts` to generate exam history from the expanded dataset.
 
 ### Files to modify
-- `src/data/teacher/exams.ts` — update batchIds for exam-3, add more completed exams
-- `src/data/teacher/examResults.ts` — batch-aware analytics generation
-- `src/pages/teacher/ExamResults.tsx` — add batch selector, filter analytics by batch
-- `src/components/teacher/exams/results/VerdictBanner.tsx` — show batch name
-- `src/pages/teacher/Exams.tsx` — add batch filter row
+- `src/pages/teacher/ExamResults.tsx` — read `?batch=` query param for initial batch selection
+- `src/pages/teacher/BatchReport.tsx` — enrich Exams tab UI, add date filter + pagination, pass batch in navigation
+- `src/pages/teacher/ChapterReport.tsx` — pass batch in exam breakdown navigation links
+- `src/data/teacher/exams.ts` — add 15-20 more completed exams with varied dates
+- `src/data/teacher/reportsData.ts` — no structural changes needed (already reads from teacherExams)
 
