@@ -1,61 +1,75 @@
 
 
-## UI Audit Results — Teacher Reports Module
+## Your Pain Points — My Understanding and Assessment
 
-### Pages Audited
-1. **Reports** (`/teacher/reports`) — Batch listing
-2. **BatchReport** (`/teacher/reports/:batchId`) — Chapters + Exams tabs
-3. **ChapterReport** (`/teacher/reports/:batchId/chapters/:chapterId`) — Topic heatmap + Student buckets
-4. **InstituteTestDetail** (`/teacher/reports/:batchId/institute-test/:testId`) — Question analysis
-5. **ExamResults** (`/teacher/exams/:examId/results`) — Insights/Analytics/Questions/Students
+### Pain Point 1: Overview Banner Card is Hollow
+**What you're saying:** The orange gradient card at the top shows "51%, 2 Strong, 1 Moderate, 2 Weak" but those Strong/Moderate/Weak counts have no explanation. What do they refer to? Topics? Students? And there's no tooltip anywhere in the reports explaining what any metric means.
 
-### Devices Tested
-- 320px (small mobile)
-- 375px (iPhone SE / standard mobile)
+**You are 100% right.** The Strong/Moderate/Weak counts refer to *topics* (from the heatmap below), but nothing on the card says that. A teacher glancing at it would have no idea. The card duplicates what the Topic Heatmap already shows more clearly — so it's noise, not signal.
+
+**Fix:** Simplify the banner to show only: chapter name, overall success rate %, questions asked, and exam count. Remove the 3-column Strong/Moderate/Weak grid. Add info tooltips throughout the entire reports module (Topic Heatmap percentages, bucket labels, exam breakdown metrics).
 
 ---
 
-### Issues Found
+### Pain Point 2: Only 3 Student Performance Buckets Visible
+**What you're saying:** We designed 4 buckets (Mastery, Stable, Reinforcement, Risk) but only 3 show up.
 
-#### Issue 1: Student Performance Bucket Headers — Layout Broken on Mobile (Critical)
-**Page:** ChapterReport.tsx  
-**Problem:** The bucket header row contains: dot + label + count badge + "Generate Practice" button + chevron. At 320px and 375px, the "Generate Practice" button takes too much horizontal space, pushing the bucket label ("Mastery Ready", "Stable Progress", "Reinforcement Needed") to be severely truncated or hidden. The label text wraps awkwardly under/behind the button.
+**You are right.** The code has `if (bucket.count === 0) return null` — so if mock data randomly generates zero students for a bucket, it disappears entirely. This is confusing because the teacher doesn't know the bucket exists. With real data, the same issue would occur for small batches.
 
-**Fix:** On mobile (< 640px), move the "Generate Practice" button below the bucket header into the expanded section, or collapse it to an icon-only button. The header row should only show: dot + label + count badge + chevron.
-
-#### Issue 2: Institute Test Detail — Question Metrics Grid Cramped at 320px (Moderate)
-**Page:** InstituteTestDetail.tsx  
-**Problem:** Each question card uses `grid grid-cols-3` for the Correct/Attempted/Time metrics row. At 320px, the text and progress bars are squeezed together — "Attempted62%" runs into each other, progress bars are too small to be useful.
-
-**Fix:** Switch to `grid-cols-2` on small screens with the time metric moved to a second row, or stack metrics vertically on the smallest screens. Use `grid grid-cols-2 sm:grid-cols-3` and move the time display inline with the header row on mobile.
+**Fix:** Always show all 4 buckets. If a bucket has 0 students, show it in a muted/empty state with "No students in this band" instead of hiding it.
 
 ---
 
-### Issues NOT Found (Passed Audit)
-- **Reports page** (batch listing): Clean at 320px, cards render well, stats grid fits
-- **BatchReport Chapters tab**: Chapter cards with percentage circle, label, and metadata all fit properly
-- **BatchReport Exams tab**: My Exams / Institute Tests toggle, date filters, exam cards — all responsive
-- **BatchReport Institute Tests cards**: Pattern badges, score grids, participant counts render cleanly
-- **ChapterReport Overview Banner**: Success rate, strong/moderate/weak counts display correctly
-- **ChapterReport Topic Heatmap**: 2-column grid works well at 320px
-- **ChapterReport Student Rows** (inside expanded buckets): PI scores, trend arrows, secondary tags all fit and display properly
-- **ChapterReport Exam-wise Breakdown**: Exam rows with dates and percentage badges fit fine
-- **InstituteTestDetail Summary Cards**: 2x2 grid with scores/questions/participants looks good
-- **InstituteTestDetail Chapters Tab**: Accordion layout works properly
-- **InstituteTestDetail Difficulty Tab**: Progress bars and distribution chart render cleanly
-- **ExamResults page**: Insights, Performance Bands, Verdict banner — all clean on 375px
+### Pain Point 3: "Generate Practice" Button Hidden Inside Accordion
+**What you're saying:** You have to expand the bucket first to find the Generate Practice button. It should be visible on the header row itself so teachers can act without expanding.
+
+**You are right.** During the UI audit, I moved it inside the accordion to fix a mobile overflow issue, but that killed discoverability. The button is the primary action — hiding it defeats the purpose.
+
+**Fix:** Put the Generate Practice button back on the header row. On mobile, use an icon-only variant (sparkle icon) with a tooltip. On desktop, show the full button. This solves both mobile overflow and discoverability.
 
 ---
 
-### Implementation Plan
+### Pain Point 4: "PI: 78" is Meaningless Jargon for Teachers
+**What you're saying:** No teacher knows what "PI" means. It's useful as a backend sorting/bucketing mechanism but showing "PI: 78" on the frontend adds confusion, not value.
 
-**File 1: `src/pages/teacher/ChapterReport.tsx`**
-- Refactor the bucket header `<button>` layout (lines 189-237)
-- On mobile: Show bucket label + count + chevron in the header row only
-- Move "Generate Practice" button inside the expanded content area (before the student list), or show it as an icon-only button on mobile with a tooltip
-- Use `hidden sm:inline-flex` on the full button and show a small icon-only variant on mobile
+**You are absolutely right.** The Performance Index is an internal scoring algorithm. Teachers need to see: student name, trend arrow, secondary tags (Improving/Declining/Plateaued), and the actual average percentage. The PI score should drive which bucket the student lands in, but never be displayed.
 
-**File 2: `src/pages/teacher/InstituteTestDetail.tsx`**
-- Change the question metrics grid (lines 190-209) from `grid-cols-3` to `grid-cols-2 sm:grid-cols-3`
-- Move the time metric to display inline with the question header row on mobile, or place it in a full-width row below the 2-column grid
+**Fix:** Remove "PI: 78" from student rows. Show `avgPercentage%` instead. Keep PI as the backend sorting mechanism. The trend arrow and secondary tags already communicate the behavioral insights.
+
+---
+
+### Pain Point 5: Exam-wise Breakdown Doesn't Scale
+**What you're saying:** Only 3 exams show. What if there are 10 or 15? The UI will break.
+
+**You are right.** The data generator has a hardcoded `.slice(0, 3)` limiting to 3 exams. Even if we remove that, showing 15 exam rows in a flat list would create excessive scrolling.
+
+**Fix:** Remove the `.slice(0, 3)` limit. Show the first 3 exams by default with a "View all X exams" button that expands to show the rest. This handles scale gracefully.
+
+---
+
+### Pain Point 6: Exam Click Navigation is a Dead End
+**What you're saying:** Clicking an exam in the chapter breakdown navigates to `/teacher/exams/:examId/results` (under the Exams section). Once there, the back button doesn't return to the chapter report — it goes to the Exams list. To get back, you have to manually navigate Reports → Batch → Chapter again. This is tedious.
+
+**You are absolutely right. This is the most impactful UX bug.** The navigation breaks the user's mental context. They were in Reports, analyzing a chapter, and suddenly they're in a completely different section with no way back.
+
+**Fix:** Pass the return path as a query parameter: `/teacher/exams/:examId/results?batch=X&returnTo=/teacher/reports/batch-10a/chapters/ch-kinematics`. On the ExamResults page, if `returnTo` exists, the back button uses it instead of the default Exams route.
+
+---
+
+## Implementation Plan
+
+### File 1: `src/pages/teacher/ChapterReport.tsx`
+1. **Simplify overview banner**: Remove the 3-column Strong/Moderate/Weak grid. Keep only chapter name, success rate %, questions asked, exam count badge.
+2. **Add info tooltips**: Add `(i)` icon tooltips on: Topic Heatmap header ("% of students who answered correctly"), each bucket label ("Students are grouped by composite performance across exams"), exam breakdown header ("How this chapter was tested across exams").
+3. **Always show all 4 buckets**: Remove `if (bucket.count === 0) return null`. Show empty buckets with muted text.
+4. **Move Generate Practice back to header**: Show icon-only sparkle button on mobile (`sm:hidden`), full button on desktop (`hidden sm:inline-flex`). Both on the header row.
+5. **Remove PI display**: Replace `PI: {s.performanceIndex}` with `{s.avgPercentage}%` in student rows.
+6. **Exam breakdown scaling**: Show first 3, then "View all X exams" expand button.
+7. **Fix exam navigation**: Change `navigate()` call to include `returnTo` query param pointing back to the current chapter report URL.
+
+### File 2: `src/data/teacher/reportsData.ts`
+1. Remove `.slice(0, 3)` from `examBreakdown` generation to allow all exams through.
+
+### File 3: `src/pages/teacher/ExamResults.tsx` (or equivalent)
+1. Read `returnTo` query param. If present, use it for the back/breadcrumb navigation instead of the default `/teacher/exams` path.
 
