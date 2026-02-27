@@ -1,30 +1,82 @@
 
 
-## Color Consistency Audit Results
+## Refactoring Audit — Teacher Reports Module
 
-### Inconsistencies Found
+### Line Count Summary
 
-| File | Issue |
+| File | Lines | Verdict |
+|---|---|---|
+| `Reports.tsx` | 121 | OK — no action needed |
+| `BatchReport.tsx` | **495** | Over limit — 3 tab contents inline |
+| `ChapterReport.tsx` | **400** | Over limit — 4 distinct sections inline |
+| `StudentReport.tsx` | 375 | Borderline — has inline sub-components, should extract to files |
+| `InstituteTestDetail.tsx` | 361 | Over limit — 3 tab contents inline |
+
+No `src/components/teacher/reports/` directory exists yet. All report UI is monolithic inside page files.
+
+---
+
+### Refactoring Plan
+
+**Create directory:** `src/components/teacher/reports/`
+
+#### 1. BatchReport.tsx (495 → ~90 lines)
+
+Extract 3 tab panels + student search into separate components:
+
+| New Component File | What it contains | ~Lines |
+|---|---|---|
+| `reports/ChaptersTab.tsx` | Chapter list cards with status badges | ~60 |
+| `reports/ExamsTab.tsx` | My Exams list with date filters, pagination + Institute Tests list | ~180 |
+| `reports/StudentsTab.tsx` | Student search input + roster cards with PI badges | ~70 |
+
+BatchReport.tsx becomes a thin shell: header, tabs, and 3 component imports.
+
+#### 2. ChapterReport.tsx (400 → ~80 lines)
+
+| New Component File | What it contains | ~Lines |
+|---|---|---|
+| `reports/ChapterOverviewBanner.tsx` | Gradient banner with success rate | ~30 |
+| `reports/TopicHeatmapGrid.tsx` | Topic cards grid with status icons | ~50 |
+| `reports/StudentBuckets.tsx` | Performance bands with expandable student lists + Generate Practice | ~140 |
+| `reports/ChapterExamBreakdown.tsx` | Exam-wise breakdown list with show more | ~60 |
+
+#### 3. StudentReport.tsx (375 → ~100 lines)
+
+The file already has `ChapterMasteryCard` and `DifficultyCard` defined inline (lines 302-375). Move them to files:
+
+| New Component File | What it contains | ~Lines |
+|---|---|---|
+| `reports/StudentHeaderCard.tsx` | Name, accuracy, trend, tags, Generate Homework button, quick stats | ~70 |
+| `reports/ChapterMasteryCard.tsx` | Expandable chapter card with topic breakdown (already exists inline) | ~50 |
+| `reports/ExamHistoryTimeline.tsx` | Exam list with show-more pagination | ~60 |
+| `reports/DifficultyAnalysis.tsx` | Collapsible difficulty breakdown (includes DifficultyCard) | ~40 |
+| `reports/WeakTopicsList.tsx` | Weak topics sorted by accuracy | ~30 |
+
+#### 4. InstituteTestDetail.tsx (361 → ~80 lines)
+
+| New Component File | What it contains | ~Lines |
+|---|---|---|
+| `reports/InstituteQuestionsTab.tsx` | Per-question cards with metrics bars | ~60 |
+| `reports/InstituteChaptersTab.tsx` | Chapter accordion with nested question rows | ~70 |
+| `reports/InstituteDifficultyTab.tsx` | Difficulty bars + distribution chart | ~70 |
+
+#### 5. Barrel export
+
+Create `src/components/teacher/reports/index.ts` exporting all components.
+
+---
+
+### Shared Utilities (already done)
+
+- `src/lib/reportColors.ts` — `getPerformanceColor`, `getStatusColor` — already centralized, no change needed.
+
+### Files Summary
+
+| Action | Count |
 |---|---|
-| `PerformanceBands.tsx` | "Stable" band uses **blue** (`bg-blue-500`) instead of **teal** |
-| `ChapterReport.tsx` | "Stable" band uses **blue** (`bg-blue-500`) instead of **teal** |
-| `BatchReport.tsx` | Inline `statusBadge()` function (line 84) — 3-tier (emerald/amber/red), skips teal. Not using centralized utility |
-| `InstituteTestDetail.tsx` | Inline `statusBadge()` (line 31) — same 3-tier issue, not centralized |
-| `InstituteTestDetail.tsx` | Percentage circles (lines 181, 246, 276) use inline 3-tier color logic instead of `getPerformanceColor` |
-| `InstituteTestDetail.tsx` | Difficulty bar colors (line 336) are inline instead of shared |
-
-**Standard (from `reportColors.ts`):** Emerald ≥75, **Teal** ≥50, Amber ≥35, Red <35
-
-**What's wrong:** Two files use **blue** for the "Stable" tier instead of **teal**. Three files have duplicate inline color functions instead of importing the centralized utility. The Institute Test Detail page has 5+ inline color assignments that bypass the shared system entirely.
-
-### Fix Plan
-
-| File | Change |
-|---|---|
-| `src/components/teacher/exams/results/PerformanceBands.tsx` | Change stable band from `blue` → `teal` to match standard |
-| `src/pages/teacher/ChapterReport.tsx` | Change stable band from `blue` → `teal` to match standard |
-| `src/pages/teacher/BatchReport.tsx` | Remove inline `statusBadge()`, import and use `getStatusColor` from `reportColors.ts` |
-| `src/pages/teacher/InstituteTestDetail.tsx` | Remove inline `statusBadge()` and all inline color ternaries. Import `getPerformanceColor` and `getStatusColor` from `reportColors.ts` |
-
-No new files needed — all fixes use the existing centralized utility.
+| New component files | 15 |
+| New barrel export | 1 |
+| Modified page files | 4 (BatchReport, ChapterReport, StudentReport, InstituteTestDetail) |
+| No change | Reports.tsx, reportColors.ts |
 
