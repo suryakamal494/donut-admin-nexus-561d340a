@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { ArrowLeft, BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -9,13 +9,12 @@ import {
   ChapterOverviewBanner, TopicHeatmapGrid,
   StudentBuckets, ChapterExamBreakdown,
 } from "@/components/teacher/reports";
-import { ChapterPracticeGenerator } from "@/components/teacher/reports/ChapterPracticeGenerator";
+import { ChapterPracticeHistory } from "@/components/teacher/reports/ChapterPracticeHistory";
 
 const ChapterReport = () => {
   const { batchId, chapterId } = useParams<{ batchId: string; chapterId: string }>();
   const navigate = useNavigate();
   const location = useLocation();
-  const [showPracticeGenerator, setShowPracticeGenerator] = useState(false);
 
   const batchInfo = batchId ? batchInfoMap[batchId] : null;
   const chapter = useMemo(
@@ -59,22 +58,15 @@ const ChapterReport = () => {
 
       <StudentBuckets
         buckets={chapter.studentBuckets}
-        onGeneratePractice={() => setShowPracticeGenerator(true)}
+        onGeneratePractice={() => navigate(`/teacher/reports/${batchId}/chapters/${chapterId}/practice`)}
       />
+
+      <ChapterPracticeHistory chapterId={chapterId!} batchId={batchId!} />
 
       <ChapterExamBreakdown
         examBreakdown={chapter.examBreakdown}
         batchId={batchId!}
         currentPath={location.pathname}
-      />
-
-      <ChapterPracticeGenerator
-        open={showPracticeGenerator}
-        onOpenChange={setShowPracticeGenerator}
-        chapterName={chapter.chapterName}
-        subject={chapter.subject}
-        topics={chapter.topics}
-        buckets={chapter.studentBuckets}
       />
     </div>
   );
