@@ -11,6 +11,7 @@ export interface StudentResult {
   rank: number;
   timeTaken: number; // in minutes
   submittedAt: string;
+  batchId?: string;
   questionWiseResults: QuestionResult[];
 }
 
@@ -96,6 +97,13 @@ export interface VerdictSummary {
   verdictText: string;
 }
 
+// ── Batch info map ──
+export const batchInfoMap: Record<string, { name: string; className: string }> = {
+  "batch-10a": { name: "10A", className: "Class 10" },
+  "batch-10b": { name: "10B", className: "Class 10" },
+  "batch-11a": { name: "11A", className: "Class 11" },
+};
+
 // ── Helpers ──
 
 export function computePerformanceBands(students: StudentResult[]): PerformanceBand[] {
@@ -153,24 +161,25 @@ export function generateVerdictSummary(
   };
 }
 
-// Generate mock student results
-const generateStudentResults = (count: number, maxScore: number): StudentResult[] => {
+// Generate mock student results for a specific batch
+const generateStudentResults = (count: number, maxScore: number, batchId?: string, namePool?: string[]): StudentResult[] => {
   const results: StudentResult[] = [];
-  const names = [
+  const defaultNames = [
     "Aarav Sharma", "Priya Patel", "Rohan Kumar", "Sneha Singh", "Arjun Reddy",
     "Ananya Gupta", "Vikram Joshi", "Ishita Verma", "Karan Malhotra", "Meera Nair",
     "Aditya Rao", "Kavya Iyer", "Nikhil Tiwari", "Pooja Mehta", "Siddharth Kapoor",
     "Tanvi Desai", "Rahul Chauhan", "Shreya Agarwal", "Dev Saxena", "Riya Mishra",
     "Aryan Bhatt", "Diya Chandra", "Varun Sinha", "Nisha Prakash", "Yash Goel",
   ];
+  const names = namePool || defaultNames;
 
   for (let i = 0; i < count; i++) {
     const score = Math.floor(Math.random() * (maxScore * 0.6)) + Math.floor(maxScore * 0.3);
     const timeTaken = Math.floor(Math.random() * 30) + 30;
     
     results.push({
-      id: `result-${i + 1}`,
-      studentId: `student-${i + 1}`,
+      id: `result-${batchId || 'default'}-${i + 1}`,
+      studentId: `student-${batchId || 'default'}-${i + 1}`,
       studentName: names[i % names.length],
       rollNumber: `2024${String(i + 1).padStart(3, '0')}`,
       score,
@@ -179,6 +188,7 @@ const generateStudentResults = (count: number, maxScore: number): StudentResult[
       rank: 0,
       timeTaken,
       submittedAt: new Date(Date.now() - Math.random() * 86400000).toISOString(),
+      batchId,
       questionWiseResults: [],
     });
   }
@@ -192,9 +202,26 @@ const generateStudentResults = (count: number, maxScore: number): StudentResult[
   return results;
 };
 
-// Generate question analysis for dynamic exams
-const generateQuestionAnalysis = (totalStudents: number): QuestionAnalysis[] => {
-  const topics = [
+// Separate name pools per batch for realistic data
+const batchBNames = [
+  "Manish Yadav", "Sakshi Pandey", "Rajesh Nair", "Komal Thakur", "Deepak Jain",
+  "Sonal Mehra", "Gaurav Bhat", "Neha Kulkarni", "Tushar Soni", "Pallavi Saxena",
+  "Mayank Dubey", "Richa Tiwari", "Ajay Pillai", "Swati Bansal", "Hemant Rawat",
+  "Divya Chouhan", "Suresh Goyal", "Jyoti Arora", "Pankaj Rana", "Kritika Shah",
+  "Mohit Khandelwal", "Anusha Reddy", "Tarun Agarwal", "Geeta Bhardwaj", "Vishal Parmar",
+];
+
+const batch11ANames = [
+  "Aakash Tripathi", "Bhavna Chawla", "Chirag Oberoi", "Deepika Sethi", "Eshan Malhotra",
+  "Falguni Deshmukh", "Girish Bose", "Harini Menon", "Iqbal Siddiqui", "Jhanvi Kapoor",
+  "Kunal Grover", "Lavanya Rajan", "Mihir Dalal", "Namita Hegde", "Omkar Pawar",
+  "Parinita Luthra", "Qasim Khan", "Ritika Choudhary", "Samar Walia", "Tanya Kaushal",
+  "Uday Mathur", "Vani Krishnan", "Wasim Ahmed", "Xena Fernandes", "Yogesh Shetty",
+];
+
+// Generate question analysis
+const generateQuestionAnalysis = (totalStudents: number, topics?: { topic: string; subject: string }[]): QuestionAnalysis[] => {
+  const defaultTopics = [
     { topic: "Kinematics", subject: "Physics" },
     { topic: "Newton's Laws", subject: "Physics" },
     { topic: "Work & Energy", subject: "Physics" },
@@ -205,7 +232,8 @@ const generateQuestionAnalysis = (totalStudents: number): QuestionAnalysis[] => 
     { topic: "Waves", subject: "Physics" },
   ];
 
-  return topics.slice(0, Math.min(10, topics.length)).map((t, i) => {
+  const topicList = topics || defaultTopics;
+  return topicList.slice(0, Math.min(10, topicList.length)).map((t, i) => {
     const successRate = Math.floor(Math.random() * 70) + 15;
     const correct = Math.round(totalStudents * successRate / 100);
     const unattempted = Math.floor(Math.random() * 4);
@@ -225,45 +253,114 @@ const generateQuestionAnalysis = (totalStudents: number): QuestionAnalysis[] => 
   });
 };
 
-// Mock exam analytics data
-export const examAnalyticsData: Record<string, ExamAnalytics> = {
-  "exam-3": {
-    examId: "exam-3",
-    examName: "Optics Chapter Quiz",
-    totalStudents: 25,
-    attemptedCount: 24,
-    averageScore: 28,
-    highestScore: 38,
-    lowestScore: 16,
-    averageTime: 12,
-    passPercentage: 72,
-    scoreDistribution: [
-      { range: "0-10", count: 1, percentage: 4 },
-      { range: "11-20", count: 3, percentage: 12 },
-      { range: "21-30", count: 10, percentage: 40 },
-      { range: "31-40", count: 10, percentage: 40 },
-    ],
-    questionAnalysis: [
-      { questionId: "q1", questionNumber: 1, subject: "Physics", topic: "Reflection", correctAttempts: 20, incorrectAttempts: 4, unattempted: 1, averageTime: 45, successRate: 80, difficulty: 'easy' },
-      { questionId: "q2", questionNumber: 2, subject: "Physics", topic: "Refraction", correctAttempts: 18, incorrectAttempts: 5, unattempted: 2, averageTime: 60, successRate: 72, difficulty: 'easy' },
-      { questionId: "q3", questionNumber: 3, subject: "Physics", topic: "Lenses", correctAttempts: 15, incorrectAttempts: 8, unattempted: 2, averageTime: 75, successRate: 60, difficulty: 'medium' },
-      { questionId: "q4", questionNumber: 4, subject: "Physics", topic: "Mirrors", correctAttempts: 12, incorrectAttempts: 10, unattempted: 3, averageTime: 90, successRate: 48, difficulty: 'medium' },
-      { questionId: "q5", questionNumber: 5, subject: "Physics", topic: "Optical Instruments", correctAttempts: 8, incorrectAttempts: 12, unattempted: 5, averageTime: 100, successRate: 32, difficulty: 'hard' },
-      { questionId: "q6", questionNumber: 6, subject: "Physics", topic: "Wave Optics", correctAttempts: 14, incorrectAttempts: 8, unattempted: 3, averageTime: 80, successRate: 56, difficulty: 'medium' },
-      { questionId: "q7", questionNumber: 7, subject: "Physics", topic: "Interference", correctAttempts: 6, incorrectAttempts: 14, unattempted: 5, averageTime: 110, successRate: 24, difficulty: 'hard' },
-      { questionId: "q8", questionNumber: 8, subject: "Physics", topic: "Diffraction", correctAttempts: 10, incorrectAttempts: 11, unattempted: 4, averageTime: 95, successRate: 40, difficulty: 'hard' },
-      { questionId: "q9", questionNumber: 9, subject: "Physics", topic: "Polarization", correctAttempts: 16, incorrectAttempts: 6, unattempted: 3, averageTime: 65, successRate: 64, difficulty: 'medium' },
-      { questionId: "q10", questionNumber: 10, subject: "Physics", topic: "TIR", correctAttempts: 19, incorrectAttempts: 4, unattempted: 2, averageTime: 50, successRate: 76, difficulty: 'easy' },
-    ],
-    batchComparison: [
-      { batchId: "batch-10a", batchName: "Class 10-A", averageScore: 28, highestScore: 38, lowestScore: 16, passPercentage: 72, attemptedCount: 24, totalStudents: 25 },
-    ],
-    topPerformers: generateStudentResults(10, 40).slice(0, 5),
-    allStudents: generateStudentResults(25, 40),
-  },
+// Build analytics for a specific batch subset of students
+function buildAnalyticsFromStudents(
+  examId: string,
+  examName: string,
+  students: StudentResult[],
+  questionAnalysis: QuestionAnalysis[],
+  maxScore: number,
+  batchComparison: BatchStats[] = []
+): ExamAnalytics {
+  const scores = students.map(r => r.score);
+  const averageScore = scores.length > 0 ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : 0;
+  const highestScore = scores.length > 0 ? Math.max(...scores) : 0;
+  const lowestScore = scores.length > 0 ? Math.min(...scores) : 0;
+  const passingScore = maxScore * 0.4;
+  const passCount = students.filter(r => r.score >= passingScore).length;
+  const attemptedCount = students.length;
+
+  const ranges = [
+    { min: 0, max: maxScore * 0.25 },
+    { min: maxScore * 0.25, max: maxScore * 0.5 },
+    { min: maxScore * 0.5, max: maxScore * 0.75 },
+    { min: maxScore * 0.75, max: maxScore },
+  ];
+
+  const scoreDistribution = ranges.map((range) => {
+    const count = students.filter(r => r.score >= range.min && r.score < range.max).length;
+    return {
+      range: `${Math.round(range.min)}-${Math.round(range.max)}`,
+      count,
+      percentage: attemptedCount > 0 ? Math.round((count / attemptedCount) * 100) : 0,
+    };
+  });
+
+  return {
+    examId,
+    examName,
+    totalStudents: students.length,
+    attemptedCount,
+    averageScore,
+    highestScore,
+    lowestScore,
+    averageTime: Math.floor(Math.random() * 30) + 30,
+    passPercentage: attemptedCount > 0 ? Math.round((passCount / attemptedCount) * 100) : 0,
+    scoreDistribution,
+    questionAnalysis,
+    batchComparison,
+    topPerformers: [...students].sort((a, b) => b.score - a.score).slice(0, 5),
+    allStudents: students,
+  };
+}
+
+// ── Pre-generated batch-wise data ──
+
+const opticsTopics = [
+  { topic: "Reflection", subject: "Physics" },
+  { topic: "Refraction", subject: "Physics" },
+  { topic: "Lenses", subject: "Physics" },
+  { topic: "Mirrors", subject: "Physics" },
+  { topic: "Optical Instruments", subject: "Physics" },
+  { topic: "Wave Optics", subject: "Physics" },
+  { topic: "Interference", subject: "Physics" },
+  { topic: "Diffraction", subject: "Physics" },
+  { topic: "Polarization", subject: "Physics" },
+  { topic: "TIR", subject: "Physics" },
+];
+
+// exam-3 multi-batch data
+const exam3_batch10a_students = generateStudentResults(25, 40, "batch-10a");
+const exam3_batch10b_students = generateStudentResults(22, 40, "batch-10b", batchBNames);
+const exam3_batch10a_questions = generateQuestionAnalysis(25, opticsTopics);
+const exam3_batch10b_questions = generateQuestionAnalysis(22, opticsTopics);
+
+// exam-7 tri-batch data
+const wavesTopics = [
+  { topic: "Wave Motion", subject: "Physics" },
+  { topic: "Sound Waves", subject: "Physics" },
+  { topic: "Doppler Effect", subject: "Physics" },
+  { topic: "Superposition", subject: "Physics" },
+  { topic: "Standing Waves", subject: "Physics" },
+  { topic: "Resonance", subject: "Physics" },
+  { topic: "Beats", subject: "Physics" },
+  { topic: "Intensity", subject: "Physics" },
+];
+const exam7_batch10a_students = generateStudentResults(25, 80, "batch-10a");
+const exam7_batch10b_students = generateStudentResults(22, 80, "batch-10b", batchBNames);
+const exam7_batch11a_students = generateStudentResults(28, 80, "batch-11a", batch11ANames);
+
+// Store batch-level analytics keyed by "examId-batchId"
+export const batchExamAnalyticsData: Record<string, ExamAnalytics> = {
+  "exam-3-batch-10a": buildAnalyticsFromStudents("exam-3", "Optics Chapter Quiz", exam3_batch10a_students, exam3_batch10a_questions, 40),
+  "exam-3-batch-10b": buildAnalyticsFromStudents("exam-3", "Optics Chapter Quiz", exam3_batch10b_students, exam3_batch10b_questions, 40),
+  "exam-7-batch-10a": buildAnalyticsFromStudents("exam-7", "Waves & Sound Test", exam7_batch10a_students, generateQuestionAnalysis(25, wavesTopics), 80),
+  "exam-7-batch-10b": buildAnalyticsFromStudents("exam-7", "Waves & Sound Test", exam7_batch10b_students, generateQuestionAnalysis(22, wavesTopics), 80),
+  "exam-7-batch-11a": buildAnalyticsFromStudents("exam-7", "Waves & Sound Test", exam7_batch11a_students, generateQuestionAnalysis(28, wavesTopics), 80),
 };
 
-// Helper function to get exam analytics
+// Legacy combined analytics (kept for backwards compat)
+export const examAnalyticsData: Record<string, ExamAnalytics> = {
+  "exam-3": batchExamAnalyticsData["exam-3-batch-10a"], // default to first batch
+};
+
+// Helper function to get exam analytics for a specific batch
+export const getExamAnalyticsForBatch = (examId: string, batchId: string): ExamAnalytics | null => {
+  const key = `${examId}-${batchId}`;
+  return batchExamAnalyticsData[key] || null;
+};
+
+// Helper function to get exam analytics (legacy — returns first batch or generated)
 export const getExamAnalytics = (examId: string): ExamAnalytics | null => {
   return examAnalyticsData[examId] || null;
 };
@@ -271,47 +368,14 @@ export const getExamAnalytics = (examId: string): ExamAnalytics | null => {
 // Generate analytics for any exam (for demo purposes)
 export const generateExamAnalytics = (examId: string, examName: string, totalMarks: number): ExamAnalytics => {
   const totalStudents = Math.floor(Math.random() * 20) + 20;
-  const attemptedCount = totalStudents - Math.floor(Math.random() * 3);
-  const allStudents = generateStudentResults(attemptedCount, totalMarks);
-  
-  const scores = allStudents.map(r => r.score);
-  const averageScore = Math.round(scores.reduce((a, b) => a + b, 0) / scores.length);
-  const highestScore = Math.max(...scores);
-  const lowestScore = Math.min(...scores);
-  const passingScore = totalMarks * 0.4;
-  const passCount = allStudents.filter(r => r.score >= passingScore).length;
+  const allStudents = generateStudentResults(totalStudents, totalMarks);
+  return buildAnalyticsFromStudents(examId, examName, allStudents, generateQuestionAnalysis(totalStudents), totalMarks);
+};
 
-  // Generate score distribution
-  const ranges = [
-    { min: 0, max: totalMarks * 0.25 },
-    { min: totalMarks * 0.25, max: totalMarks * 0.5 },
-    { min: totalMarks * 0.5, max: totalMarks * 0.75 },
-    { min: totalMarks * 0.75, max: totalMarks },
-  ];
-
-  const scoreDistribution = ranges.map((range) => {
-    const count = allStudents.filter(r => r.score >= range.min && r.score < range.max).length;
-    return {
-      range: `${Math.round(range.min)}-${Math.round(range.max)}`,
-      count,
-      percentage: Math.round((count / attemptedCount) * 100),
-    };
-  });
-
-  return {
-    examId,
-    examName,
-    totalStudents,
-    attemptedCount,
-    averageScore,
-    highestScore,
-    lowestScore,
-    averageTime: Math.floor(Math.random() * 30) + 30,
-    passPercentage: Math.round((passCount / attemptedCount) * 100),
-    scoreDistribution,
-    questionAnalysis: generateQuestionAnalysis(attemptedCount),
-    batchComparison: [],
-    topPerformers: allStudents.slice(0, 5),
-    allStudents,
-  };
+// Generate analytics for a specific batch (for demo — on-demand)
+export const generateExamAnalyticsForBatch = (examId: string, examName: string, totalMarks: number, batchId: string): ExamAnalytics => {
+  const totalStudents = Math.floor(Math.random() * 15) + 18;
+  const namePool = batchId === "batch-10b" ? batchBNames : batchId === "batch-11a" ? batch11ANames : undefined;
+  const allStudents = generateStudentResults(totalStudents, totalMarks, batchId, namePool);
+  return buildAnalyticsFromStudents(examId, examName, allStudents, generateQuestionAnalysis(totalStudents), totalMarks);
 };

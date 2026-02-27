@@ -6,7 +6,8 @@ import {
   FileQuestion,
   Clock,
   Calendar,
-  CheckCircle
+  CheckCircle,
+  Users
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -18,6 +19,7 @@ import { ExamPreviewDialog } from "@/components/teacher/exams/ExamPreviewDialog"
 import { AssignBatchesDialog } from "@/components/teacher/exams/AssignBatchesDialog";
 import { ScheduleExamDialog } from "@/components/teacher/exams/ScheduleExamDialog";
 import { teacherExams as initialExams } from "@/data/teacher/exams";
+import { batchInfoMap } from "@/data/teacher/examResults";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import type { TeacherExam } from "@/data/teacher/types";
@@ -39,6 +41,7 @@ const Exams = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const debouncedSearch = useDebounce(searchQuery, 300);
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [batchFilter, setBatchFilter] = useState<string>("all");
   const [exams, setExams] = useState<TeacherExam[]>(initialExams);
 
   // Dialog states
@@ -86,11 +89,19 @@ const Exams = () => {
     ));
   }, []);
 
+  // Collect unique batch IDs across all exams
+  const allBatchIds = useMemo(() => {
+    const ids = new Set<string>();
+    exams.forEach(e => e.batchIds.forEach(b => ids.add(b)));
+    return Array.from(ids);
+  }, [exams]);
+
   const filteredExams = useMemo(() => exams.filter((e) => {
     const matchesSearch = e.name.toLowerCase().includes(debouncedSearch.toLowerCase());
     const matchesStatus = statusFilter === "all" || e.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  }), [exams, debouncedSearch, statusFilter]);
+    const matchesBatch = batchFilter === "all" || e.batchIds.includes(batchFilter);
+    return matchesSearch && matchesStatus && matchesBatch;
+  }), [exams, debouncedSearch, statusFilter, batchFilter]);
 
   const stats = useMemo(() => ({
     total: exams.length,
@@ -147,6 +158,45 @@ const Exams = () => {
           );
         })}
       </div>
+
+      {/* Batch Filter Row */}
+      {allBatchIds.length > 1 && (
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-hide">
+          <Users className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+          <button
+            onClick={() => setBatchFilter("all")}
+            className={cn(
+              "shrink-0 flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all",
+              "active:scale-[0.98] min-h-[32px]",
+              batchFilter === "all"
+                ? "bg-primary text-primary-foreground shadow-sm"
+                : "bg-muted/70 hover:bg-muted text-muted-foreground"
+            )}
+          >
+            All Batches
+          </button>
+          {allBatchIds.map((batchId) => {
+            const info = batchInfoMap[batchId];
+            const label = info ? info.name : batchId;
+            const isActive = batchFilter === batchId;
+            return (
+              <button
+                key={batchId}
+                onClick={() => setBatchFilter(batchId)}
+                className={cn(
+                  "shrink-0 flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all",
+                  "active:scale-[0.98] min-h-[32px]",
+                  isActive
+                    ? "bg-primary text-primary-foreground shadow-sm"
+                    : "bg-muted/70 hover:bg-muted text-muted-foreground"
+                )}
+              >
+                {label}
+              </button>
+            );
+          })}
+        </div>
+      )}
 
       {/* Search & Create - Compact */}
       <div className="flex gap-2">
