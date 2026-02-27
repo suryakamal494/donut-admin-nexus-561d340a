@@ -8,6 +8,7 @@ import { PageHeader } from "@/components/ui/page-header";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
+import { getPerformanceColor, getStatusColor } from "@/lib/reportColors";
 import { motion, AnimatePresence } from "framer-motion";
 import { format } from "date-fns";
 import { InfoTooltip } from "@/components/timetable/InfoTooltip";
@@ -29,12 +30,8 @@ const difficultyColors: Record<string, string> = {
 };
 
 const statusBadge = (status: "strong" | "moderate" | "weak") => {
-  const styles = {
-    strong: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
-    moderate: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
-    weak: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
-  };
-  return <Badge variant="secondary" className={cn("text-[10px] px-1.5 py-0 font-medium", styles[status])}>{status}</Badge>;
+  const colors = getStatusColor(status);
+  return <Badge variant="secondary" className={cn("text-[10px] px-1.5 py-0 font-medium", colors.badge)}>{status}</Badge>;
 };
 
 const typeLabels: Record<string, string> = {
@@ -178,8 +175,7 @@ const InstituteTestDetail = () => {
                     {/* Q number circle */}
                     <div className={cn(
                       "shrink-0 w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold text-white",
-                      q.status === "strong" ? "bg-emerald-500" :
-                      q.status === "moderate" ? "bg-amber-500" : "bg-red-500"
+                      getStatusColor(q.status).bg
                     )}>
                       Q{q.questionNumber}
                     </div>
@@ -243,8 +239,7 @@ const InstituteTestDetail = () => {
                   >
                     <div className={cn(
                       "shrink-0 w-11 h-11 rounded-xl flex flex-col items-center justify-center text-white font-bold text-sm",
-                      chStatus === "strong" ? "bg-emerald-500" :
-                      chStatus === "moderate" ? "bg-amber-500" : "bg-red-500"
+                      getStatusColor(chStatus).bg
                     )}>
                       {ch.avgCorrectRate}%
                     </div>
@@ -273,8 +268,7 @@ const InstituteTestDetail = () => {
                             <div key={q.questionId} className="flex items-center gap-2 p-2 rounded-lg bg-muted/30">
                               <div className={cn(
                                 "w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold text-white shrink-0",
-                                q.status === "strong" ? "bg-emerald-500" :
-                                q.status === "moderate" ? "bg-amber-500" : "bg-red-500"
+                                getStatusColor(q.status).bg
                               )}>
                                 {q.questionNumber}
                               </div>

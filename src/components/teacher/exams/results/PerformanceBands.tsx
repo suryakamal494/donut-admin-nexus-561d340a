@@ -16,10 +16,10 @@ const bandStyles: Record<BandKey, { dot: string; border: string; bg: string; bad
     badge: "bg-emerald-100 text-emerald-700",
   },
   stable: {
-    dot: "bg-blue-500",
-    border: "border-l-blue-500",
-    bg: "bg-blue-50",
-    badge: "bg-blue-100 text-blue-700",
+    dot: "bg-teal-500",
+    border: "border-l-teal-500",
+    bg: "bg-teal-50",
+    badge: "bg-teal-100 text-teal-700",
   },
   reinforcement: {
     dot: "bg-amber-500",
