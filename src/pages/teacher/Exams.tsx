@@ -72,8 +72,10 @@ const Exams = () => {
   }, []);
 
   const handleViewResults = useCallback((examId: string) => {
-    navigate(`/teacher/exams/${examId}/results`);
-  }, [navigate]);
+    const exam = exams.find(e => e.id === examId);
+    const firstBatch = exam?.batchIds[0] || "batch-10a";
+    navigate(`/teacher/reports/${firstBatch}/exams/${examId}`);
+  }, [navigate, exams]);
 
   const handleAssignBatches = useCallback((examId: string, batchIds: string[]) => {
     setExams(prev => prev.map(e => 

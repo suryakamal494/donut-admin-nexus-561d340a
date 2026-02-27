@@ -37,15 +37,17 @@ import { BatchSelector } from "@/components/teacher/exams/results/BatchSelector"
 const PIE_COLORS = ["#22c55e", "#f59e0b", "#ef4444", "#6b7280"];
 
 const ExamResults = () => {
-  const { examId } = useParams<{ examId: string }>();
+  const { examId, batchId: batchIdFromUrl } = useParams<{ examId: string; batchId?: string }>();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
   const exam = useMemo(() => teacherExams.find(e => e.id === examId), [examId]);
 
-  // Batch selector state — read ?batch= query param for pre-selection
-  const batchFromUrl = searchParams.get("batch");
+  // batchId comes from URL params (new route) or ?batch= query param (legacy route)
+  const batchFromUrl = batchIdFromUrl || searchParams.get("batch");
   const returnTo = searchParams.get("returnTo");
+  // Detect if we're on the new reports-based route
+  const isReportsContext = !!batchIdFromUrl;
   const [selectedBatchId, setSelectedBatchId] = useState<string>(
     (batchFromUrl && exam?.batchIds.includes(batchFromUrl) ? batchFromUrl : exam?.batchIds[0]) || ""
   );
@@ -116,16 +118,18 @@ const ExamResults = () => {
         title="Exam Results"
         description={exam.name}
         breadcrumbs={
-          returnTo
+          isReportsContext
             ? [
                 { label: "Teacher", href: "/teacher" },
                 { label: "Reports", href: "/teacher/reports" },
-                { label: "Back to Chapter", href: returnTo },
+                { label: selectedBatchName || "Batch", href: `/teacher/reports/${selectedBatchId}` },
+                ...(returnTo ? [{ label: "Chapter", href: returnTo }] : []),
                 { label: "Results" },
               ]
             : [
                 { label: "Teacher", href: "/teacher" },
-                { label: "Exams", href: "/teacher/exams" },
+                { label: "Reports", href: "/teacher/reports" },
+                { label: selectedBatchName || "Batch", href: `/teacher/reports/${selectedBatchId}` },
                 { label: "Results" },
               ]
         }

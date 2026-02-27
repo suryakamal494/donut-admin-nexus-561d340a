@@ -24,6 +24,7 @@ import TeacherNotifications from "@/pages/teacher/Notifications";
 // Heavy pages - LAZY LOADED
 const LessonPlanCanvas = lazy(() => import("@/pages/teacher/LessonPlanCanvas"));
 const CreateTeacherExam = lazy(() => import("@/pages/teacher/CreateExam"));
+const TeacherExamResultsLegacy = lazy(() => import("@/pages/teacher/ExamResults"));
 const TeacherExamResults = lazy(() => import("@/pages/teacher/ExamResults"));
 const EditTeacherExam = lazy(() => import("@/pages/teacher/EditExam"));
 const TeacherCreateContent = lazy(() => import("@/pages/teacher/content/CreateContent"));
@@ -59,11 +60,12 @@ export default function TeacherRoutes() {
         <Route path="exams" element={<TeacherExams />} />
         <Route path="exams/create" element={<LazyPage><CreateTeacherExam /></LazyPage>} />
         <Route path="exams/:examId/edit" element={<LazyPage><EditTeacherExam /></LazyPage>} />
-        <Route path="exams/:examId/results" element={<LazyPage><TeacherExamResults /></LazyPage>} />
+        <Route path="exams/:examId/results" element={<LazyPage><TeacherExamResultsLegacy /></LazyPage>} />
         <Route path="homework" element={<TeacherHomework />} />
         <Route path="reports" element={<LazyPage><TeacherReports /></LazyPage>} />
         <Route path="reports/:batchId" element={<LazyPage><TeacherBatchReport /></LazyPage>} />
         <Route path="reports/:batchId/chapters/:chapterId" element={<LazyPage><TeacherChapterReport /></LazyPage>} />
+        <Route path="reports/:batchId/exams/:examId" element={<LazyPage><TeacherExamResults /></LazyPage>} />
         <Route path="reports/:batchId/institute-test/:testId" element={<LazyPage><TeacherInstituteTestDetail /></LazyPage>} />
         <Route path="content" element={<TeacherContent />} />
         <Route path="content/create" element={<LazyPage><TeacherCreateContent /></LazyPage>} />
