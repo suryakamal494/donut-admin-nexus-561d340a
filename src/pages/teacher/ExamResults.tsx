@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useState, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { 
   ArrowLeft,
@@ -11,26 +11,17 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PageHeader } from "@/components/ui/page-header";
 import { 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
-  AreaChart,
-  Area,
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  PieChart, Pie, Cell, AreaChart, Area,
 } from "recharts";
 import { teacherExams } from "@/data/teacher/exams";
 import {
-  getExamAnalytics,
-  generateExamAnalytics,
+  getExamAnalyticsForBatch,
+  generateExamAnalyticsForBatch,
   computePerformanceBands,
   computeTopicFlags,
   generateVerdictSummary,
+  batchInfoMap,
   type ExamAnalytics,
 } from "@/data/teacher/examResults";
 import {
@@ -41,6 +32,7 @@ import {
   QuestionAnalysisCard,
   StudentResultRow,
 } from "@/components/teacher/exams/results";
+import { BatchSelector } from "@/components/teacher/exams/results/BatchSelector";
 
 const PIE_COLORS = ["#22c55e", "#f59e0b", "#ef4444", "#6b7280"];
 
@@ -50,12 +42,19 @@ const ExamResults = () => {
 
   const exam = useMemo(() => teacherExams.find(e => e.id === examId), [examId]);
 
+  // Batch selector state — default to first batch
+  const [selectedBatchId, setSelectedBatchId] = useState<string>(
+    exam?.batchIds[0] || ""
+  );
+
+  // Get analytics for the selected batch
   const analytics: ExamAnalytics | null = useMemo(() => {
     if (!exam) return null;
-    const existing = getExamAnalytics(exam.id);
+    const batchId = selectedBatchId || exam.batchIds[0];
+    const existing = getExamAnalyticsForBatch(exam.id, batchId);
     if (existing) return existing;
-    return generateExamAnalytics(exam.id, exam.name, exam.totalMarks);
-  }, [exam]);
+    return generateExamAnalyticsForBatch(exam.id, exam.name, exam.totalMarks, batchId);
+  }, [exam, selectedBatchId]);
 
   // Derived insight data
   const bands = useMemo(
@@ -84,6 +83,10 @@ const ExamResults = () => {
       </div>
     );
   }
+
+  const selectedBatchName = batchInfoMap[selectedBatchId]
+    ? `${batchInfoMap[selectedBatchId].className} - ${batchInfoMap[selectedBatchId].name}`
+    : undefined;
 
   // Chart data
   const scoreDistributionData = analytics.scoreDistribution.map((d, i) => ({
@@ -128,6 +131,13 @@ const ExamResults = () => {
         }
       />
 
+      {/* Batch Selector — only shown for multi-batch exams */}
+      <BatchSelector
+        batchIds={exam.batchIds}
+        selectedBatchId={selectedBatchId}
+        onSelect={setSelectedBatchId}
+      />
+
       {/* Tabs */}
       <Tabs defaultValue="insights" className="space-y-4">
         <TabsList className="w-full sm:w-auto h-auto p-1 grid grid-cols-4 sm:flex">
@@ -139,7 +149,7 @@ const ExamResults = () => {
 
         {/* ── Insights Tab (default) ── */}
         <TabsContent value="insights" className="space-y-5">
-          <VerdictBanner examName={exam.name} verdict={verdict} />
+          <VerdictBanner examName={exam.name} verdict={verdict} batchName={selectedBatchName} />
           <PerformanceBands bands={bands} />
           <TopicFlags flags={topicFlags} />
           <InsightCards questions={analytics.questionAnalysis} />
@@ -148,7 +158,6 @@ const ExamResults = () => {
         {/* ── Analytics Tab ── */}
         <TabsContent value="analytics" className="space-y-4">
           <div className="grid gap-4 lg:grid-cols-2">
-            {/* Score Distribution */}
             <Card className="card-premium">
               <CardHeader className="pb-2">
                 <CardTitle className="text-base font-semibold flex items-center gap-2">
@@ -163,14 +172,7 @@ const ExamResults = () => {
                       <CartesianGrid strokeDasharray="3 3" className="stroke-muted/30" />
                       <XAxis dataKey="range" tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
                       <YAxis tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
-                      <Tooltip
-                        contentStyle={{
-                          backgroundColor: 'hsl(var(--card))',
-                          border: '1px solid hsl(var(--border))',
-                          borderRadius: '8px',
-                          fontSize: '12px',
-                        }}
-                      />
+                      <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px', fontSize: '12px' }} />
                       <Bar dataKey="count" radius={[4, 4, 0, 0]}>
                         {scoreDistributionData.map((entry, index) => (
                           <Cell key={`cell-${index}`} fill={entry.fill} />
@@ -190,7 +192,6 @@ const ExamResults = () => {
               </CardContent>
             </Card>
 
-            {/* Attempt Pie */}
             <Card className="card-premium">
               <CardHeader className="pb-2">
                 <CardTitle className="text-base font-semibold flex items-center gap-2">
@@ -207,14 +208,7 @@ const ExamResults = () => {
                           <Cell key={`cell-${index}`} fill={entry.color} />
                         ))}
                       </Pie>
-                      <Tooltip
-                        contentStyle={{
-                          backgroundColor: 'hsl(var(--card))',
-                          border: '1px solid hsl(var(--border))',
-                          borderRadius: '8px',
-                          fontSize: '12px',
-                        }}
-                      />
+                      <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px', fontSize: '12px' }} />
                     </PieChart>
                   </ResponsiveContainer>
                 </div>
@@ -248,15 +242,7 @@ const ExamResults = () => {
                     <CartesianGrid strokeDasharray="3 3" className="stroke-muted/30" />
                     <XAxis dataKey="name" tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
                     <YAxis tick={{ fontSize: 11 }} tickLine={false} axisLine={false} domain={[0, 100]} />
-                    <Tooltip
-                      contentStyle={{
-                        backgroundColor: 'hsl(var(--card))',
-                        border: '1px solid hsl(var(--border))',
-                        borderRadius: '8px',
-                        fontSize: '12px',
-                      }}
-                      formatter={(value: number) => [`${value}%`, 'Success Rate']}
-                    />
+                    <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px', fontSize: '12px' }} formatter={(value: number) => [`${value}%`, 'Success Rate']} />
                     <Area type="monotone" dataKey="successRate" stroke="hsl(var(--primary))" fill="hsl(var(--primary) / 0.2)" strokeWidth={2} />
                   </AreaChart>
                 </ResponsiveContainer>

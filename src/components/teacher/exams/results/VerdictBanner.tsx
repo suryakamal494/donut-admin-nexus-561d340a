@@ -5,9 +5,10 @@ import type { VerdictSummary } from "@/data/teacher/examResults";
 interface VerdictBannerProps {
   examName: string;
   verdict: VerdictSummary;
+  batchName?: string;
 }
 
-export const VerdictBanner = ({ examName, verdict }: VerdictBannerProps) => {
+export const VerdictBanner = ({ examName, verdict, batchName }: VerdictBannerProps) => {
   return (
     <motion.div
       initial={{ opacity: 0, y: 12 }}
@@ -16,7 +17,10 @@ export const VerdictBanner = ({ examName, verdict }: VerdictBannerProps) => {
       className="rounded-xl bg-gradient-to-r from-teal-500 to-cyan-500 p-4 sm:p-5 text-white shadow-lg"
     >
       {/* Title row */}
-      <p className="text-xs font-medium text-white/70 mb-1 truncate">{examName}</p>
+      <p className="text-xs font-medium text-white/70 mb-0.5 truncate">{examName}</p>
+      {batchName && (
+        <p className="text-[11px] font-medium text-white/50 mb-1 truncate">{batchName}</p>
+      )}
 
       {/* Verdict text */}
       <h2 className="text-base sm:text-lg font-bold leading-snug mb-3">
