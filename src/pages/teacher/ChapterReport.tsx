@@ -1,20 +1,31 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, BookOpen, CheckCircle, AlertTriangle, XCircle, BarChart3, FileText, Calendar } from "lucide-react";
+import { ArrowLeft, BookOpen, CheckCircle, AlertTriangle, XCircle, BarChart3, FileText, Calendar, ChevronDown, ChevronUp, Sparkles, Users } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { PageHeader } from "@/components/ui/page-header";
-import { Progress } from "@/components/ui/progress";
 import { batchInfoMap } from "@/data/teacher/examResults";
 import { getChapterDetail } from "@/data/teacher/reportsData";
+import type { ChapterStudentBucket } from "@/data/teacher/reportsData";
 import { cn } from "@/lib/utils";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { format } from "date-fns";
+import { AIHomeworkGeneratorDialog } from "@/components/teacher/AIHomeworkGeneratorDialog";
+
+// Band visual styles
+const bandStyles: Record<string, { dot: string; border: string; bg: string; badge: string }> = {
+  mastery: { dot: "bg-emerald-500", border: "border-l-emerald-500", bg: "bg-emerald-50 dark:bg-emerald-950/30", badge: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300" },
+  stable: { dot: "bg-blue-500", border: "border-l-blue-500", bg: "bg-blue-50 dark:bg-blue-950/30", badge: "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300" },
+  reinforcement: { dot: "bg-amber-500", border: "border-l-amber-500", bg: "bg-amber-50 dark:bg-amber-950/30", badge: "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300" },
+  risk: { dot: "bg-red-500", border: "border-l-red-500", bg: "bg-red-50 dark:bg-red-950/30", badge: "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300" },
+};
 
 const ChapterReport = () => {
   const { batchId, chapterId } = useParams<{ batchId: string; chapterId: string }>();
   const navigate = useNavigate();
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({ reinforcement: true, risk: true });
+  const [showAIGenerator, setShowAIGenerator] = useState(false);
 
   const batchInfo = batchId ? batchInfoMap[batchId] : null;
   const chapter = useMemo(
@@ -37,6 +48,8 @@ const ChapterReport = () => {
   const strong = chapter.topics.filter((t) => t.status === "strong");
   const moderate = chapter.topics.filter((t) => t.status === "moderate");
   const weak = chapter.topics.filter((t) => t.status === "weak");
+
+  const toggle = (key: string) => setExpanded((prev) => ({ ...prev, [key]: !prev[key] }));
 
   return (
     <div className="space-y-4 sm:space-y-5 max-w-7xl mx-auto pb-20 md:pb-6">
@@ -88,53 +101,147 @@ const ChapterReport = () => {
         </div>
       </motion.div>
 
-      {/* Topic-wise Analysis */}
+      {/* ── Topic Heatmap Grid ── */}
       <Card className="card-premium">
         <CardHeader className="pb-2">
           <CardTitle className="text-base font-semibold flex items-center gap-2">
             <BarChart3 className="w-4 h-4 text-primary" />
-            Topic-wise Performance
+            Topic Heatmap
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+            {chapter.topics.map((topic, i) => {
+              const bgColor = topic.status === "strong"
+                ? "bg-emerald-50 border-emerald-200 dark:bg-emerald-950/30 dark:border-emerald-800"
+                : topic.status === "moderate"
+                ? "bg-amber-50 border-amber-200 dark:bg-amber-950/30 dark:border-amber-800"
+                : "bg-red-50 border-red-200 dark:bg-red-950/30 dark:border-red-800";
+              const textColor = topic.status === "strong"
+                ? "text-emerald-700 dark:text-emerald-300"
+                : topic.status === "moderate"
+                ? "text-amber-700 dark:text-amber-300"
+                : "text-red-700 dark:text-red-300";
+              const StatusIcon = topic.status === "strong" ? CheckCircle :
+                topic.status === "moderate" ? AlertTriangle : XCircle;
+
+              return (
+                <motion.div
+                  key={topic.topicId}
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.2, delay: i * 0.03 }}
+                  className={cn("rounded-xl border p-3 flex flex-col items-center text-center gap-1.5", bgColor)}
+                >
+                  <StatusIcon className={cn("w-5 h-5", textColor)} />
+                  <p className={cn("text-xs font-semibold leading-tight", textColor)}>{topic.topicName}</p>
+                  <p className={cn("text-lg font-bold", textColor)}>{topic.avgSuccessRate}%</p>
+                  <p className="text-[10px] text-muted-foreground">{topic.questionsAsked} Qs · {topic.examsAppeared} exam{topic.examsAppeared > 1 ? "s" : ""}</p>
+                </motion.div>
+              );
+            })}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* ── Student Performance Buckets ── */}
+      <Card className="card-premium">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base font-semibold flex items-center gap-2">
+            <Users className="w-4 h-4 text-primary" />
+            Student Performance Buckets
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          {chapter.topics.map((topic, i) => {
-            const StatusIcon = topic.status === "strong" ? CheckCircle :
-              topic.status === "moderate" ? AlertTriangle : XCircle;
-            const barColor = topic.status === "strong" ? "bg-emerald-500" :
-              topic.status === "moderate" ? "bg-amber-500" : "bg-red-500";
-            const iconColor = topic.status === "strong" ? "text-emerald-500" :
-              topic.status === "moderate" ? "text-amber-500" : "text-red-500";
+          {chapter.studentBuckets.map((bucket) => {
+            if (bucket.count === 0) return null;
+            const style = bandStyles[bucket.key];
+            const isOpen = !!expanded[bucket.key];
 
             return (
-              <motion.div
-                key={topic.topicId}
-                initial={{ opacity: 0, x: -8 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.2, delay: i * 0.03 }}
-                className="flex items-center gap-3"
+              <div
+                key={bucket.key}
+                className={cn(
+                  "rounded-xl border border-border bg-card overflow-hidden border-l-4",
+                  style.border
+                )}
               >
-                <StatusIcon className={cn("w-4 h-4 shrink-0", iconColor)} />
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-xs font-medium text-foreground truncate">{topic.topicName}</span>
-                    <span className="text-xs font-bold text-foreground ml-2">{topic.avgSuccessRate}%</span>
+                {/* Header */}
+                <button
+                  onClick={() => toggle(bucket.key)}
+                  className="flex items-center justify-between w-full p-3.5 sm:p-4 min-h-[48px] text-left"
+                >
+                  <div className="flex items-center gap-2.5 flex-1 min-w-0">
+                    <span className={cn("w-2.5 h-2.5 rounded-full shrink-0", style.dot)} />
+                    <span className="text-sm font-semibold text-foreground">{bucket.label}</span>
+                    <span className={cn("text-xs font-medium rounded-full px-2 py-0.5", style.badge)}>
+                      {bucket.count}
+                    </span>
                   </div>
-                  <div className="h-1.5 bg-muted rounded-full overflow-hidden">
-                    <div className={cn("h-full rounded-full transition-all", barColor)} style={{ width: `${topic.avgSuccessRate}%` }} />
+                  <div className="flex items-center gap-2 shrink-0">
+                    {(bucket.key === "reinforcement" || bucket.key === "risk") && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-7 text-xs gap-1 border-teal-300 text-teal-700 hover:bg-teal-50 dark:border-teal-700 dark:text-teal-300 dark:hover:bg-teal-950/40"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setShowAIGenerator(true);
+                        }}
+                      >
+                        <Sparkles className="w-3 h-3" />
+                        Generate Practice
+                      </Button>
+                    )}
+                    {isOpen ? (
+                      <ChevronUp className="w-4 h-4 text-muted-foreground" />
+                    ) : (
+                      <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                    )}
                   </div>
-                  <div className="flex gap-2 mt-0.5 text-[10px] text-muted-foreground">
-                    <span>{topic.questionsAsked} Qs</span>
-                    <span>·</span>
-                    <span>{topic.examsAppeared} exam{topic.examsAppeared > 1 ? "s" : ""}</span>
-                  </div>
-                </div>
-              </motion.div>
+                </button>
+
+                {/* Student List */}
+                <AnimatePresence initial={false}>
+                  {isOpen && (
+                    <motion.div
+                      key="content"
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: "auto", opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.25, ease: "easeInOut" }}
+                      className="overflow-hidden"
+                    >
+                      <div className="px-3.5 pb-3.5 sm:px-4 sm:pb-4 space-y-1">
+                        {bucket.students.map((s) => (
+                          <div
+                            key={s.id}
+                            className={cn(
+                              "flex items-center justify-between rounded-lg px-3 py-2.5 text-sm",
+                              style.bg
+                            )}
+                          >
+                            <div className="min-w-0">
+                              <p className="font-medium truncate text-foreground">{s.studentName}</p>
+                              <p className="text-xs text-muted-foreground">{s.rollNumber}</p>
+                            </div>
+                            <div className="text-right shrink-0 ml-3">
+                              <p className="font-semibold text-foreground">{s.avgPercentage}%</p>
+                              <p className="text-xs text-muted-foreground">{s.examsAttempted} exam{s.examsAttempted > 1 ? "s" : ""}</p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
             );
           })}
         </CardContent>
       </Card>
 
-      {/* Exam Breakdown */}
+      {/* ── Exam-wise Breakdown ── */}
       <Card className="card-premium">
         <CardHeader className="pb-2">
           <CardTitle className="text-base font-semibold flex items-center gap-2">
@@ -174,6 +281,12 @@ const ChapterReport = () => {
           )}
         </CardContent>
       </Card>
+
+      {/* AI Homework Generator Dialog */}
+      <AIHomeworkGeneratorDialog
+        open={showAIGenerator}
+        onOpenChange={setShowAIGenerator}
+      />
     </div>
   );
 };

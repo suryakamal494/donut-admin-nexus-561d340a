@@ -49,6 +49,21 @@ export interface ChapterTopicAnalysis {
   examsAppeared: number;
 }
 
+export interface ChapterStudentEntry {
+  id: string;
+  studentName: string;
+  rollNumber: string;
+  avgPercentage: number;
+  examsAttempted: number;
+}
+
+export interface ChapterStudentBucket {
+  key: "mastery" | "stable" | "reinforcement" | "risk";
+  label: string;
+  count: number;
+  students: ChapterStudentEntry[];
+}
+
 export interface ChapterDetailReport {
   chapterId: string;
   chapterName: string;
@@ -60,6 +75,7 @@ export interface ChapterDetailReport {
   examsCovering: number;
   topics: ChapterTopicAnalysis[];
   examBreakdown: ChapterExamBreakdown[];
+  studentBuckets: ChapterStudentBucket[];
 }
 
 export interface ChapterExamBreakdown {
@@ -169,6 +185,35 @@ const generateChapterDetail = (chapterId: string, batchId: string): ChapterDetai
 
   const overallSuccess = Math.round(topics.reduce((s, t) => s + t.avgSuccessRate, 0) / topics.length);
 
+  // Generate student buckets (mock aggregated data)
+  const studentNames = [
+    "Aarav Sharma", "Priya Patel", "Rohan Gupta", "Ananya Singh", "Vikram Reddy",
+    "Sneha Iyer", "Arjun Nair", "Kavya Menon", "Rahul Das", "Meera Joshi",
+    "Siddharth Kumar", "Divya Rao", "Aditya Verma", "Ishita Banerjee", "Karthik Subramaniam",
+    "Neha Agarwal", "Varun Mishra", "Riya Chauhan", "Harsh Pandey", "Pooja Deshmukh",
+    "Amit Tiwari", "Simran Kaur", "Nikhil Saxena", "Tanvi Kulkarni", "Deepak Yadav",
+  ];
+
+  const allStudents: ChapterStudentEntry[] = studentNames.slice(0, 20 + Math.floor(Math.random() * 5)).map((name, i) => ({
+    id: `${chapterId}-s${i}`,
+    studentName: name,
+    rollNumber: `R${String(101 + i)}`,
+    avgPercentage: Math.round(10 + Math.random() * 85),
+    examsAttempted: 1 + Math.floor(Math.random() * examBreakdown.length + 1),
+  }));
+
+  const mastery = allStudents.filter(s => s.avgPercentage >= 75);
+  const stable = allStudents.filter(s => s.avgPercentage >= 50 && s.avgPercentage < 75);
+  const reinforcement = allStudents.filter(s => s.avgPercentage >= 35 && s.avgPercentage < 50);
+  const risk = allStudents.filter(s => s.avgPercentage < 35);
+
+  const studentBuckets: ChapterStudentBucket[] = [
+    { key: "mastery", label: "Mastery Ready", count: mastery.length, students: mastery },
+    { key: "stable", label: "Stable Progress", count: stable.length, students: stable },
+    { key: "reinforcement", label: "Reinforcement Needed", count: reinforcement.length, students: reinforcement },
+    { key: "risk", label: "Foundational Risk", count: risk.length, students: risk },
+  ];
+
   return {
     chapterId,
     chapterName: chapter.name,
@@ -180,6 +225,7 @@ const generateChapterDetail = (chapterId: string, batchId: string): ChapterDetai
     examsCovering: examBreakdown.length,
     topics,
     examBreakdown,
+    studentBuckets,
   };
 };
 
