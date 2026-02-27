@@ -33,6 +33,7 @@ import {
   StudentResultRow,
 } from "@/components/teacher/exams/results";
 import { BatchSelector } from "@/components/teacher/exams/results/BatchSelector";
+import { InfoTooltip } from "@/components/timetable/InfoTooltip";
 
 const PIE_COLORS = ["#22c55e", "#f59e0b", "#ef4444", "#6b7280"];
 
@@ -43,11 +44,8 @@ const ExamResults = () => {
 
   const exam = useMemo(() => teacherExams.find(e => e.id === examId), [examId]);
 
-  // batchId comes from URL params (new route) or ?batch= query param (legacy route)
-  const batchFromUrl = batchIdFromUrl || searchParams.get("batch");
+  const batchFromUrl = batchIdFromUrl;
   const returnTo = searchParams.get("returnTo");
-  // Detect if we're on the new reports-based route
-  const isReportsContext = !!batchIdFromUrl;
   const [selectedBatchId, setSelectedBatchId] = useState<string>(
     (batchFromUrl && exam?.batchIds.includes(batchFromUrl) ? batchFromUrl : exam?.batchIds[0]) || ""
   );
@@ -81,9 +79,9 @@ const ExamResults = () => {
         <BarChart3 className="w-16 h-16 text-muted-foreground mb-4" />
         <h2 className="text-xl font-semibold mb-2">Exam Not Found</h2>
         <p className="text-muted-foreground mb-4">The exam you're looking for doesn't exist.</p>
-        <Button onClick={() => navigate("/teacher/exams")}>
+        <Button onClick={() => navigate("/teacher/reports")}>
           <ArrowLeft className="w-4 h-4 mr-2" />
-          Back to Exams
+          Back to Reports
         </Button>
       </div>
     );
@@ -117,22 +115,13 @@ const ExamResults = () => {
       <PageHeader
         title="Exam Results"
         description={exam.name}
-        breadcrumbs={
-          isReportsContext
-            ? [
-                { label: "Teacher", href: "/teacher" },
-                { label: "Reports", href: "/teacher/reports" },
-                { label: selectedBatchName || "Batch", href: `/teacher/reports/${selectedBatchId}` },
-                ...(returnTo ? [{ label: "Chapter", href: returnTo }] : []),
-                { label: "Results" },
-              ]
-            : [
-                { label: "Teacher", href: "/teacher" },
-                { label: "Reports", href: "/teacher/reports" },
-                { label: selectedBatchName || "Batch", href: `/teacher/reports/${selectedBatchId}` },
-                { label: "Results" },
-              ]
-        }
+        breadcrumbs={[
+          { label: "Teacher", href: "/teacher" },
+          { label: "Reports", href: "/teacher/reports" },
+          { label: selectedBatchName || "Batch", href: `/teacher/reports/${selectedBatchId}` },
+          ...(returnTo ? [{ label: "Chapter", href: returnTo }] : []),
+          { label: "Results" },
+        ]}
         actions={
           <div className="flex gap-2">
             <Button variant="outline" size="sm" className="h-9">
@@ -179,6 +168,7 @@ const ExamResults = () => {
                 <CardTitle className="text-base font-semibold flex items-center gap-2">
                   <BarChart3 className="w-4 h-4 text-primary" />
                   Score Distribution
+                  <InfoTooltip content="Shows how student scores are distributed across mark ranges. Taller bars indicate more students scored in that range." />
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -213,6 +203,7 @@ const ExamResults = () => {
                 <CardTitle className="text-base font-semibold flex items-center gap-2">
                   <BarChart3 className="w-4 h-4 text-primary" />
                   Overall Attempt Analysis
+                  <InfoTooltip content="Breakdown of all attempts across all questions — correct, incorrect, and unattempted." />
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -246,9 +237,10 @@ const ExamResults = () => {
         <TabsContent value="questions" className="space-y-4">
           <Card className="card-premium">
             <CardHeader className="pb-2">
-              <CardTitle className="text-base font-semibold flex items-center gap-2">
+                <CardTitle className="text-base font-semibold flex items-center gap-2">
                 <BarChart3 className="w-4 h-4 text-primary" />
                 Question-wise Success Rate
+                <InfoTooltip content="Success rate for each question — the percentage of students who answered correctly. Dips indicate commonly missed questions." />
               </CardTitle>
             </CardHeader>
             <CardContent>

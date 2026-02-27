@@ -20,6 +20,7 @@ import { currentTeacher } from "@/data/teacher/profile";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 import { format, subDays, isAfter } from "date-fns";
+import { InfoTooltip } from "@/components/timetable/InfoTooltip";
 
 const EXAMS_PER_PAGE = 10;
 
@@ -108,10 +109,12 @@ const BatchReport = () => {
           <TabsTrigger value="chapters" className="text-xs sm:text-sm gap-1.5">
             <BookOpen className="w-3.5 h-3.5" />
             Chapters
+            <InfoTooltip content="Chapter-wise performance overview — average success rate, topic count, and weak areas for each chapter." />
           </TabsTrigger>
           <TabsTrigger value="exams" className="text-xs sm:text-sm gap-1.5">
             <FileText className="w-3.5 h-3.5" />
             Exams ({allExamHistory.length})
+            <InfoTooltip content="All completed exams for this batch — click any exam to view detailed results and analytics." />
           </TabsTrigger>
         </TabsList>
 
