@@ -12,6 +12,7 @@ import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { format } from "date-fns";
 import { AIHomeworkGeneratorDialog } from "@/components/teacher/AIHomeworkGeneratorDialog";
+import type { AIHomeworkPrefill } from "@/components/teacher/AIHomeworkGeneratorDialog";
 
 // Band visual styles
 const bandStyles: Record<string, { dot: string; border: string; bg: string; badge: string }> = {
@@ -26,6 +27,7 @@ const ChapterReport = () => {
   const navigate = useNavigate();
   const [expanded, setExpanded] = useState<Record<string, boolean>>({ reinforcement: true, risk: true });
   const [showAIGenerator, setShowAIGenerator] = useState(false);
+  const [aiPrefill, setAiPrefill] = useState<AIHomeworkPrefill | undefined>();
 
   const batchInfo = batchId ? batchInfoMap[batchId] : null;
   const chapter = useMemo(
@@ -186,6 +188,18 @@ const ChapterReport = () => {
                         className="h-7 text-xs gap-1 border-teal-300 text-teal-700 hover:bg-teal-50 dark:border-teal-700 dark:text-teal-300 dark:hover:bg-teal-950/40"
                         onClick={(e) => {
                           e.stopPropagation();
+                          const weakTopics = chapter.topics.filter(t => t.status === "weak").map(t => t.topicName);
+                          const moderateTopics = chapter.topics.filter(t => t.status === "moderate").map(t => t.topicName);
+                          const focusTopics = [...weakTopics, ...moderateTopics];
+                          setAiPrefill({
+                            title: `${chapter.chapterName} Practice — ${bucket.label}`,
+                            subject: chapter.subject,
+                            batchId: batchId || "batch-10a",
+                            instructions: focusTopics.length > 0
+                              ? `Focus on weak topics: ${focusTopics.join(", ")}. Generate practice for students in the "${bucket.label}" band.`
+                              : `Generate practice for "${bucket.label}" band — ${chapter.chapterName}.`,
+                            contextBanner: `Pre-filled from: ${chapter.chapterName} · ${bucket.label} · ${focusTopics.length} focus topic${focusTopics.length !== 1 ? "s" : ""}`,
+                          });
                           setShowAIGenerator(true);
                         }}
                       >
@@ -285,7 +299,11 @@ const ChapterReport = () => {
       {/* AI Homework Generator Dialog */}
       <AIHomeworkGeneratorDialog
         open={showAIGenerator}
-        onOpenChange={setShowAIGenerator}
+        onOpenChange={(v) => {
+          setShowAIGenerator(v);
+          if (!v) setAiPrefill(undefined);
+        }}
+        prefill={aiPrefill}
       />
     </div>
   );

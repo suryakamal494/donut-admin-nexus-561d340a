@@ -24,6 +24,7 @@ import {
   ContextSourceType,
   GeneratedHomework,
   AIHomeworkFormData,
+  AIHomeworkPrefill,
   getBatchDisplayName,
   getClassName,
 } from "./ai-homework/types";
@@ -31,19 +32,21 @@ import { AIHomeworkForm } from "./ai-homework/AIHomeworkForm";
 import { AIHomeworkPreview } from "./ai-homework/AIHomeworkPreview";
 import { AIHomeworkActions } from "./ai-homework/AIHomeworkActions";
 
-// Re-export type for external use
-export type { HomeworkType };
+// Re-export types for external use
+export type { HomeworkType, AIHomeworkPrefill };
 
 interface AIHomeworkGeneratorDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onCreated?: (homework: any) => void;
+  prefill?: AIHomeworkPrefill;
 }
 
 export const AIHomeworkGeneratorDialog = ({
   open,
   onOpenChange,
   onCreated,
+  prefill,
 }: AIHomeworkGeneratorDialogProps) => {
   const { toast } = useToast();
   const isMobile = useIsMobile();
@@ -73,12 +76,20 @@ export const AIHomeworkGeneratorDialog = ({
   const [generatedHomework, setGeneratedHomework] = useState<GeneratedHomework | null>(null);
   const [isAssigning, setIsAssigning] = useState(false);
 
-  // Reset form when dialog closes
+  // Reset or prefill form when dialog opens/closes
   useEffect(() => {
     if (!open) {
       resetForm();
+    } else if (prefill) {
+      setFormData(prev => ({
+        ...prev,
+        title: prefill.title || prev.title,
+        subject: prefill.subject || prev.subject,
+        batchId: prefill.batchId || prev.batchId,
+        instructions: prefill.instructions || prev.instructions,
+      }));
     }
-  }, [open]);
+  }, [open, prefill]);
 
   const resetForm = useCallback(() => {
     setFormData({
@@ -273,6 +284,7 @@ export const AIHomeworkGeneratorDialog = ({
           onContentSelect={() => setShowContentPicker(true)}
           onLessonPlanSelect={() => setShowLessonPlanPicker(true)}
           onClearContext={clearContext}
+          contextBanner={prefill?.contextBanner}
           isMobile={isMobile}
         />
       )}
