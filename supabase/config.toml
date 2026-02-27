@@ -8,3 +8,6 @@ verify_jwt = false
 
 [functions.presentation-ai-assist]
 verify_jwt = false
+
+[functions.analyze-exam-results]
+verify_jwt = false
