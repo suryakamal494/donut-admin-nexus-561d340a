@@ -1,38 +1,45 @@
 
 
-## Summary of Findings
+## Two Issues Found
 
-### 1. Legacy Route Still Exists — Should Be Removed
-Line 63 in `TeacherRoutes.tsx` still has `exams/:examId/results` pointing to `TeacherExamResultsLegacy`. Line 27 has a duplicate import (`TeacherExamResultsLegacy`). All navigation sources already use the new reports-based path, so this is dead code that will confuse developers.
+### Issue 1: Tooltips Getting Clipped
+**Root cause:** `InfoTooltip` hardcodes `side="top"` with no collision handling. Radix Tooltip supports `avoidCollisions` and `collisionPadding` props, but they aren't being passed. When the tooltip is near the navbar or screen edge, it renders behind/outside the viewport.
 
-### 2. Tooltips Status
-- **ChapterReport.tsx** — Has 3 InfoTooltips (Topic Heatmap, Student Performance Buckets, Exam-wise Breakdown). ✓
-- **BatchReport.tsx** — No tooltips. Missing.
-- **InstituteTestDetail.tsx** — No tooltips. Missing.
-- **ExamResults.tsx** — No tooltips. Missing.
+**Fix in `src/components/timetable/InfoTooltip.tsx`:**
+- Add `collisionPadding={16}` to `TooltipContent` — this tells Radix to flip/shift the tooltip when it's within 16px of any viewport edge
+- Remove the hardcoded `side="top"` — let Radix auto-pick the best side based on available space
+- Add `sideOffset={6}` for slightly more breathing room
 
-### 3. ExamResults.tsx "Not Found" State Still Points to `/teacher/exams`
-Line 84: the fallback "Back to Exams" button navigates to `/teacher/exams` instead of `/teacher/reports`. Since results now live under Reports, this should go to `/teacher/reports`.
+### Issue 2: Percentages Changing on Every Refresh
+**Root cause:** The exported functions `getBatchChapters()`, `getBatchExamHistory()`, `getChapterDetail()` call their generator functions directly every time they're invoked. Since generators use `Math.random()`, every component render/refresh produces different numbers.
 
----
+The `batchReports` export at line 311 is stable (called once at module load and cached). But the `getBatchChapters`, `getBatchExamHistory`, and `getChapterDetail` functions regenerate on every call.
 
-## Implementation Plan
+**Fix in `src/data/teacher/reportsData.ts`:**
+- Add a simple cache (`Map`) for each generator function
+- On first call for a given key (batchId or chapterId+batchId), generate and cache the result
+- On subsequent calls, return the cached result
+- This matches the pattern already used in `examResults.ts` (which has `getExamAnalyticsForBatch` with a cache)
 
-### File 1: `src/routes/TeacherRoutes.tsx`
-- Remove line 27 (`TeacherExamResultsLegacy` import) — it's a duplicate of line 28
-- Remove line 63 (`exams/:examId/results` route) — dead legacy route
+```typescript
+// Cache maps
+const chapterReportsCache = new Map<string, ChapterReportCard[]>();
+const batchExamsCache = new Map<string, BatchExamEntry[]>();
+const chapterDetailCache = new Map<string, ChapterDetailReport>();
 
-### File 2: `src/pages/teacher/ExamResults.tsx`
-- Remove the `isReportsContext` conditional logic (lines 46-50) — it's always reports context now since legacy route is gone
-- Simplify `batchFromUrl` to just use `batchIdFromUrl` (no fallback to query param)
-- Fix line 84: change fallback navigation from `/teacher/exams` to `/teacher/reports`
-- Remove the comment about "legacy route" on line 46
-- Add InfoTooltips to: Score Distribution chart header, Overall Attempt Analysis header, Question-wise Success Rate header
+export const getBatchChapters = (batchId: string): ChapterReportCard[] => {
+  if (!chapterReportsCache.has(batchId)) {
+    chapterReportsCache.set(batchId, generateChapterReports(batchId));
+  }
+  return chapterReportsCache.get(batchId)!;
+};
 
-### File 3: `src/pages/teacher/BatchReport.tsx`
-- Add InfoTooltip to Chapters tab section header explaining what the chapter cards show
-- Add InfoTooltip to the Exams tab explaining what the exam cards represent
+// Same pattern for getBatchExamHistory and getChapterDetail
+```
 
-### File 4: `src/pages/teacher/InstituteTestDetail.tsx`
-- Add InfoTooltips to key section headers (Summary cards, Question Analysis, Chapters, Difficulty Distribution)
+### Files to modify
+| File | Change |
+|------|--------|
+| `src/components/timetable/InfoTooltip.tsx` | Remove hardcoded `side="top"`, add `collisionPadding={16}` |
+| `src/data/teacher/reportsData.ts` | Add caching to all generator-backed exports |
 
