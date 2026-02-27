@@ -240,7 +240,7 @@ const BatchReport = () => {
                           "card-premium cursor-pointer hover:shadow-md transition-shadow active:scale-[0.99] border-l-4",
                           colors.border
                         )}
-                        onClick={() => navigate(`/teacher/exams/${exam.examId}/results?batch=${batchId}`)}
+                        onClick={() => navigate(`/teacher/reports/${batchId}/exams/${exam.examId}`)}
                       >
                         <CardContent className="p-3.5 sm:p-4">
                           <div className="flex items-start justify-between mb-2">
