@@ -147,7 +147,7 @@ const ChapterReport = () => {
             <div
               key={exam.examId}
               className="flex items-center justify-between p-3 rounded-lg bg-muted/40 cursor-pointer hover:bg-muted/70 transition-colors"
-              onClick={() => navigate(`/teacher/exams/${exam.examId}/results`)}
+              onClick={() => navigate(`/teacher/exams/${exam.examId}/results?batch=${batchId}`)}
             >
               <div className="min-w-0 flex-1">
                 <p className="text-xs font-medium text-foreground truncate">{exam.examName}</p>

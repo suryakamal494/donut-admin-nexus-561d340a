@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { 
   ArrowLeft,
   BarChart3,
@@ -39,12 +39,14 @@ const PIE_COLORS = ["#22c55e", "#f59e0b", "#ef4444", "#6b7280"];
 const ExamResults = () => {
   const { examId } = useParams<{ examId: string }>();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
   const exam = useMemo(() => teacherExams.find(e => e.id === examId), [examId]);
 
-  // Batch selector state — default to first batch
+  // Batch selector state — read ?batch= query param for pre-selection
+  const batchFromUrl = searchParams.get("batch");
   const [selectedBatchId, setSelectedBatchId] = useState<string>(
-    exam?.batchIds[0] || ""
+    (batchFromUrl && exam?.batchIds.includes(batchFromUrl) ? batchFromUrl : exam?.batchIds[0]) || ""
   );
 
   // Get analytics for the selected batch
