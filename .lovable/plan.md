@@ -1,82 +1,66 @@
 
 
-## Refactoring Audit — Teacher Reports Module
+## Issues Identified & Reasoning
 
-### Line Count Summary
+### Issue 1: Topic Heatmap — All Topics Show Same Color
+**Root Cause Found:** In `src/data/teacher/reportsData.ts` line 179, the status is set using old 3-tier thresholds: `sr >= 65 ? "strong" : sr >= 40 ? "moderate" : "weak"`. Then `TopicHeatmapGrid.tsx` calls `getStatusColor(topic.status)` which maps "moderate" to teal. So 40%, 44%, 58% all become "moderate" → same teal color. Similarly, `computeTopicFlags` in `examResults.ts` line 127 uses 70/40 thresholds.
 
-| File | Lines | Verdict |
-|---|---|---|
-| `Reports.tsx` | 121 | OK — no action needed |
-| `BatchReport.tsx` | **495** | Over limit — 3 tab contents inline |
-| `ChapterReport.tsx` | **400** | Over limit — 4 distinct sections inline |
-| `StudentReport.tsx` | 375 | Borderline — has inline sub-components, should extract to files |
-| `InstituteTestDetail.tsx` | 361 | Over limit — 3 tab contents inline |
+**Fix:** Stop routing through `status` for color. Use `getPerformanceColor(avgSuccessRate)` directly on the percentage value. This gives the correct 4-tier color: 40% → red, 44% → amber, 58% → teal, 79% → emerald.
 
-No `src/components/teacher/reports/` directory exists yet. All report UI is monolithic inside page files.
+### Issue 2: Analytics Tab — "Overall Attempt Analysis" Is Not Actionable
+**Your point is valid.** Showing "118 correct, 118 incorrect, 14 unattempted" as a pie chart gives no actionable takeaway. A teacher can't act on that.
 
----
+**Replace with two actionable charts:**
+1. **Difficulty-wise Class Performance** — Bar chart showing class average accuracy for Easy/Medium/Hard questions. Teacher can see "My class is scoring 80% on Easy but only 25% on Hard" → actionable.
+2. **Cognitive Type Performance** — Radar or bar chart showing accuracy across Logical/Analytical/Conceptual/Numerical/Application/Memory types. Teacher can see "Students struggle with Application-type questions" → actionable.
 
-### Refactoring Plan
+The Score Distribution bar chart stays — it IS useful (shows how many students fall in each marks range).
 
-**Create directory:** `src/components/teacher/reports/`
+### Issue 3: AI-Generated Insights — When to Generate?
+**Your pain point:** Results update dynamically as students submit. When should the teacher generate insights?
 
-#### 1. BatchReport.tsx (495 → ~90 lines)
+**Solution:** Add a button labeled **"Analyze Results"** (not "Generate Insights" — "Analyze" feels natural to teachers, like analyzing answer sheets). When clicked, it calls Lovable AI to produce a 4-5 point summary of: what went well, what needs reteaching, which students need attention, and a recommended next step. The AI output appears in a card below the button.
 
-Extract 3 tab panels + student search into separate components:
+**Why "Analyze Results"?** Teachers already "analyze" papers. It's familiar language. It implies the teacher is in control of when analysis happens, not that it's auto-generated on incomplete data.
 
-| New Component File | What it contains | ~Lines |
-|---|---|---|
-| `reports/ChaptersTab.tsx` | Chapter list cards with status badges | ~60 |
-| `reports/ExamsTab.tsx` | My Exams list with date filters, pagination + Institute Tests list | ~180 |
-| `reports/StudentsTab.tsx` | Student search input + roster cards with PI badges | ~70 |
+### Issue 4: Questions Tab — Area Chart Is Useless
+**Your point is valid.** The curve chart of Q1→Q10 success rates doesn't show any pattern because question order is arbitrary (Q1 isn't inherently related to Q2). It just looks like random noise.
 
-BatchReport.tsx becomes a thin shell: header, tabs, and 3 component imports.
+**Replace with:** Remove the chart entirely. Instead, group questions into **4 accuracy bands** displayed as collapsible sections, ordered from worst to best:
 
-#### 2. ChapterReport.tsx (400 → ~80 lines)
+1. **Needs Reteaching** (< 35% accuracy) — shown first, expanded by default, red accent
+2. **Review Recommended** (35–50%) — amber accent
+3. **Satisfactory** (50–75%) — teal accent
+4. **Well Understood** (≥ 75%) — emerald accent, collapsed by default
 
-| New Component File | What it contains | ~Lines |
-|---|---|---|
-| `reports/ChapterOverviewBanner.tsx` | Gradient banner with success rate | ~30 |
-| `reports/TopicHeatmapGrid.tsx` | Topic cards grid with status icons | ~50 |
-| `reports/StudentBuckets.tsx` | Performance bands with expandable student lists + Generate Practice | ~140 |
-| `reports/ChapterExamBreakdown.tsx` | Exam-wise breakdown list with show more | ~60 |
+This way, with 30 questions, the teacher immediately sees "5 questions need reteaching" at the top. They don't have to scan 30 cards.
 
-#### 3. StudentReport.tsx (375 → ~100 lines)
+### Issue 5: Questions — Show Actual Question Text, Not "Q1"
+**Your point is valid.** "Question 1" tells the teacher nothing. They need to see the actual question to know what to reteach.
 
-The file already has `ChapterMasteryCard` and `DifficultyCard` defined inline (lines 302-375). Move them to files:
+**Fix:** Show a truncated question text (first ~80 chars) on each card. Add an **"View Question"** expand/dialog that shows the full question text, options (if MCQ), correct answer highlighted, and the class accuracy stats.
 
-| New Component File | What it contains | ~Lines |
-|---|---|---|
-| `reports/StudentHeaderCard.tsx` | Name, accuracy, trend, tags, Generate Homework button, quick stats | ~70 |
-| `reports/ChapterMasteryCard.tsx` | Expandable chapter card with topic breakdown (already exists inline) | ~50 |
-| `reports/ExamHistoryTimeline.tsx` | Exam list with show-more pagination | ~60 |
-| `reports/DifficultyAnalysis.tsx` | Collapsible difficulty breakdown (includes DifficultyCard) | ~40 |
-| `reports/WeakTopicsList.tsx` | Weak topics sorted by accuracy | ~30 |
+The `QuestionAnalysis` type currently doesn't have `questionText`. I'll extend it to include `questionText` and `options` fields, populated from `examQuestionsData.ts` which already has full question content.
 
-#### 4. InstituteTestDetail.tsx (361 → ~80 lines)
-
-| New Component File | What it contains | ~Lines |
-|---|---|---|
-| `reports/InstituteQuestionsTab.tsx` | Per-question cards with metrics bars | ~60 |
-| `reports/InstituteChaptersTab.tsx` | Chapter accordion with nested question rows | ~70 |
-| `reports/InstituteDifficultyTab.tsx` | Difficulty bars + distribution chart | ~70 |
-
-#### 5. Barrel export
-
-Create `src/components/teacher/reports/index.ts` exporting all components.
+### Issue 6: Collapsible Grouping — Expand/Collapse?
+**Recommendation:** Use collapsible sections (Accordion pattern). The worst-performing group (< 35%) is **expanded by default** since that's where the teacher needs to act. The best group (≥ 75%) is **collapsed by default** since those are fine. This keeps the page short on mobile while surfacing the most important questions first.
 
 ---
 
-### Shared Utilities (already done)
+## Implementation Plan
 
-- `src/lib/reportColors.ts` — `getPerformanceColor`, `getStatusColor` — already centralized, no change needed.
+### Files to modify/create:
 
-### Files Summary
-
-| Action | Count |
+| File | Change |
 |---|---|
-| New component files | 15 |
-| New barrel export | 1 |
-| Modified page files | 4 (BatchReport, ChapterReport, StudentReport, InstituteTestDetail) |
-| No change | Reports.tsx, reportColors.ts |
+| `src/data/teacher/reportsData.ts` | Fix topic status thresholds to use 4-tier (75/50/35) instead of 3-tier (65/40) |
+| `src/data/teacher/examResults.ts` | 1) Fix `computeTopicFlags` thresholds (75/50/35). 2) Extend `QuestionAnalysis` with `questionText`, `options`, `cognitiveType`. 3) Update `generateQuestionAnalysis` to pull from `examQuestionsData.ts` |
+| `src/components/teacher/reports/TopicHeatmapGrid.tsx` | Use `getPerformanceColor(topic.avgSuccessRate)` directly instead of `getStatusColor(topic.status)` |
+| `src/pages/teacher/ExamResults.tsx` | 1) Replace Analytics tab: remove pie chart, add Difficulty + Cognitive charts, add "Analyze Results" AI button. 2) Replace Questions tab: remove area chart, add grouped accordion layout |
+| `src/components/teacher/exams/results/QuestionAnalysisCard.tsx` | Show truncated question text instead of "Question 1". Add "View Question" expand |
+| `src/components/teacher/exams/results/QuestionGroupAccordion.tsx` | **New** — Accordion component that groups questions by accuracy band with color-coded headers |
+| `src/components/teacher/exams/results/DifficultyChart.tsx` | **New** — Bar chart showing class accuracy by difficulty level |
+| `src/components/teacher/exams/results/CognitiveChart.tsx` | **New** — Bar chart showing class accuracy by cognitive type |
+| `src/components/teacher/exams/results/AIAnalysisCard.tsx` | **New** — "Analyze Results" button + AI-generated insight display card |
+| `supabase/functions/analyze-exam-results/index.ts` | **New** — Edge function calling Lovable AI to generate exam analysis summary |
 
