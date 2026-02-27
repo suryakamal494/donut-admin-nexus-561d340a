@@ -25,7 +25,7 @@ export const InfoTooltip = ({ content, className }: InfoTooltipProps) => {
           <Info className="w-3 h-3" />
         </button>
       </TooltipTrigger>
-      <TooltipContent side="top" className="max-w-[280px] text-sm">
+      <TooltipContent collisionPadding={16} sideOffset={6} className="max-w-[280px] text-sm">
         {content}
       </TooltipContent>
     </Tooltip>
