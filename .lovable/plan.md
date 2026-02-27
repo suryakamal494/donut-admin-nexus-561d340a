@@ -1,29 +1,21 @@
 
 
-## Issues & Root Causes
+## Reasoning: Where to Place "Generate Homework"
 
-### Issue 1: All Exam Cards Show Same Teal Color
-**Root cause:** Mock data generator at `src/data/teacher/reportsData.ts` line 164:
-```
-passPercentage: 50 + Math.floor(Math.random() * 40)
-```
-This produces values **only in 50–89%** range. Since the 4-tier color scheme is:
-- Emerald ≥75, Teal ≥50, Amber ≥35, Red <35
+Your instinct is correct — placing it at the **top level near the batch selector** is better than per-performance-band. Here's why:
 
-Most values land in teal (50–74), a few in emerald (75–89). Emerald and teal are visually similar greens. **No exam ever gets amber or red** because the minimum is 50%.
+1. **Per-band buttons are redundant.** The AI homework generator already accepts context (exam data, weak topics). A single entry point that passes the full exam context is more powerful than 4 separate buttons that each only target one band.
 
-Same problem exists in institute test data (line 303): `45 + Math.floor(Math.random() * 40)` → always 45–84%.
+2. **Teacher intent is exam-level, not band-level.** When a teacher thinks "I want homework based on this test," they're thinking about the whole test — the AI can internally prioritize weak areas without forcing the teacher to pick a band first.
 
-Additionally, `colors.bg` (e.g. `bg-teal-500`, `bg-emerald-500`) is used as the background for the score cells. These solid green backgrounds make the score text hard to read. Should use `colors.light` (lighter surface) instead, with `colors.text` for the numbers.
+3. **Top-level placement keeps the page clean.** Performance bands are data displays. Mixing action buttons into every band creates visual clutter, especially on mobile with 4 bands.
 
-**Fix:**
-1. Widen the `passPercentage` range in mock data to span all 4 tiers (e.g., 30–95%)
-2. Use `colors.light` + `colors.text` on score cells instead of `colors.bg` for better readability and visual differentiation
+**Proposed placement:** Add a "Generate Homework" button in the `PageHeader` actions row, next to Export and Share. This is the standard action placement across the app. On mobile it shows just the icon (Sparkles), on desktop it shows the full label.
 
-### Issue 2: "Analyze Results" Buried at Bottom of Analytics Tab
-**Root cause:** In `ExamResults.tsx`, the `AIAnalysisCard` is placed last in the Analytics tab (line 187), after Score Distribution, Difficulty Chart, and Cognitive Chart.
-
-**Fix:** Move `AIAnalysisCard` to the first position in the Analytics tab, before the charts grid.
+**What it does when clicked:** Opens the existing `CreateHomeworkDialog` (AI mode) pre-filled with:
+- Subject & chapter from the exam
+- Context type = "exam_results" with the exam analytics summary (weak topics, difficulty gaps)
+- This way the AI generates homework that specifically targets what students struggled with
 
 ---
 
@@ -31,7 +23,8 @@ Additionally, `colors.bg` (e.g. `bg-teal-500`, `bg-emerald-500`) is used as the 
 
 | File | Change |
 |---|---|
-| `src/data/teacher/reportsData.ts` | Line 164: Change `passPercentage` to `30 + Math.floor(Math.random() * 60)` (range 30–89%, covers all 4 tiers). Line 303: Same for institute tests. |
-| `src/components/teacher/reports/ExamsTab.tsx` | Lines 125–126, 129–130: Change `colors.bg` to `colors.light` on score cells for visual contrast between tiers |
-| `src/pages/teacher/ExamResults.tsx` | Move `AIAnalysisCard` from line 187 to before the charts grid (after line 141) |
+| `src/pages/teacher/ExamResults.tsx` | Add Sparkles icon import, add "Generate Homework" button in PageHeader actions (beside Export/Share). Add state for dialog open. Import and render `CreateHomeworkDialog` with exam context pre-filled. |
+| No new components needed | Reuses existing `CreateHomeworkDialog` which already supports context-based AI generation |
+
+The button will pass context like: `contextType: "exam_results"`, `contextContent: "Exam: {name}, Weak topics: {topics}, Difficulty gaps: {gaps}"` — leveraging the existing `assessment-ai` edge function's context support.
 
