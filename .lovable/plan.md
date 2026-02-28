@@ -1,43 +1,58 @@
 
 
-## Issues Identified
+## Refactoring Audit — Reports Module
 
-### Issue 1 — No Collapse/Expand for Band Sections in Questions Tab
-Currently the Questions tab renders each band's questions inside a plain `Card` with no collapsible behavior. All bands are always fully visible. The Students tab already uses `Accordion` with `defaultValue` set to all bands expanded — the Questions tab should follow the same pattern.
+### Current State
 
-**Solution**: Replace the static `Card` wrapper in the Questions tab with `Accordion` (same as Students tab). Default all bands to expanded. Teacher can collapse any band they don't need.
-
-### Issue 2 — No Visual Alert for Low Success Rate Questions
-All question cards currently use the same `bg-muted/20` background and band-colored border regardless of success rate. A question with 15% success looks identical to one with 90%. Teachers can't quickly scan for problem questions.
-
-**Solution**: Apply the 4-tier color system to each question card's **left border** based on `successRate`:
-- **Emerald** (≥75%): `border-l-emerald-500` — students are doing well
-- **Teal** (50–74%): `border-l-teal-500` — stable
-- **Amber** (35–49%): `border-l-amber-500` — needs attention
-- **Red** (<35%): `border-l-red-500 bg-red-500/5` — requires teacher focus, subtle red tint background
-
-This gives instant visual scanning without cluttering the UI.
+Most of the reports module is already well-decomposed (BatchReport 88 lines, ChapterReport 75 lines, StudentReport 114 lines, ExamResults 238 lines, InstituteTestDetail 166 lines, and 16 granular components in `src/components/teacher/reports/`). Only two files exceed the 300-line threshold.
 
 ---
 
-## Implementation
+### File 1: `ChapterPracticeReview.tsx` — 533 lines (needs split)
 
-**File**: `src/pages/teacher/PracticeSessionDetail.tsx`
+This page has 3 inline render functions (`renderConfigure`, `renderReview`, `renderDone`) plus all state and handlers in one monolithic component.
 
-### Change 1 — Questions Tab: Replace Card with Accordion
-- Replace the `<Card>` per band (lines 131–144) with `<Accordion type="multiple" defaultValue={bandDetails.map(b => b.key)}>` containing `<AccordionItem>` per band
-- Same trigger style as Students tab: band dot + label + question count badge
-- Content area contains the question cards
+**Extraction plan** — create `src/components/teacher/practice-review/`:
 
-### Change 2 — QuestionCard: Color-coded left border by success rate
-- Add a utility function `successBorderColor(pct)` returning border + background classes
-- Apply `border-l-4` + color class to each question card div
-- For <35% questions, also add a subtle red background tint (`bg-red-500/5`) to make them stand out
-
-| Success Rate | Left Border | Background |
+| New File | What moves there | ~Lines |
 |---|---|---|
-| ≥75% | `border-l-emerald-500` | `bg-muted/20` (default) |
-| 50–74% | `border-l-teal-500` | `bg-muted/20` |
-| 35–49% | `border-l-amber-500` | `bg-amber-500/5` |
-| <35% | `border-l-red-500` | `bg-red-500/5` |
+| `ConfigureStep.tsx` | `renderConfigure()` content, band config card, instructions, sticky bar | ~120 |
+| `ReviewStep.tsx` | `renderReview()` content, band tabs, question cards, regenerate bar, sticky bar | ~180 |
+| `DoneStep.tsx` | `renderDone()` content, success state | ~25 |
+| `types.ts` | `GeneratedQuestion`, `BandResult`, `bandMeta`, `allBandKeys`, shared types | ~50 |
+| `index.ts` | Barrel exports | ~5 |
+
+The page file (`ChapterPracticeReview.tsx`) keeps routing params, state management, and step switching — drops to ~120 lines. State is passed down as props.
+
+---
+
+### File 2: `PracticeSessionDetail.tsx` — 301 lines (needs split)
+
+Has 4 inline sub-components (`StatCard`, `BandCard`, `StudentRow`, `QuestionCard`) plus shared constants (`bandConfig`, `accuracyColor`).
+
+**Extraction plan** — create `src/components/teacher/practice-detail/`:
+
+| New File | What moves there | ~Lines |
+|---|---|---|
+| `StatCard.tsx` | StatCard component | ~15 |
+| `BandCard.tsx` | BandCard + bandConfig + accuracyColor | ~50 |
+| `StudentRow.tsx` | StudentRow component | ~30 |
+| `QuestionCard.tsx` | QuestionCard + optionLabels | ~70 |
+| `constants.ts` | `bandConfig`, `accuracyColor` (shared by BandCard + QuestionCard) | ~15 |
+| `index.ts` | Barrel exports | ~8 |
+
+The page file drops to ~160 lines — just routing, data fetching, and layout composition.
+
+---
+
+### No UI Changes
+
+All extractions are pure refactors — move code into separate files, add imports, export via barrel. Zero visual or behavioral changes.
+
+### Files Modified/Created
+
+- `src/pages/teacher/ChapterPracticeReview.tsx` — trimmed to ~120 lines
+- `src/components/teacher/practice-review/` — 5 new files
+- `src/pages/teacher/PracticeSessionDetail.tsx` — trimmed to ~160 lines
+- `src/components/teacher/practice-detail/` — 6 new files
 
