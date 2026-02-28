@@ -78,3 +78,28 @@ export function generateMockQuestions(
   }
   return results;
 }
+
+/**
+ * Get replacement questions for a band that aren't already used.
+ * Returns `count` new questions from the pool, excluding `usedIds`.
+ */
+export function getReplacementQuestions(
+  bandKey: string,
+  usedIds: Set<string>,
+  count: number
+): GeneratedQuestion[] {
+  const pool = questionPool[bandKey] || questionPool.reinforcement;
+  const available = pool.filter(q => !usedIds.has(q.id));
+  // If pool is exhausted, create variants with new IDs
+  const result: GeneratedQuestion[] = [];
+  for (let i = 0; i < count; i++) {
+    if (i < available.length) {
+      result.push(available[i]);
+    } else {
+      // Clone from pool with a unique id
+      const source = pool[i % pool.length];
+      result.push({ ...source, id: `${source.id}_regen_${Date.now()}_${i}` });
+    }
+  }
+  return result;
+}
