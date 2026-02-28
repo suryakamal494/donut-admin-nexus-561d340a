@@ -23,3 +23,6 @@ export { InstituteDifficultyTab } from './InstituteDifficultyTab';
 
 // Batch Health
 export { BatchHealthCard } from './BatchHealthCard';
+
+// Student AI Summary
+export { StudentAISummary } from './StudentAISummary';
