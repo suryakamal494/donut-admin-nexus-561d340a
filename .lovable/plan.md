@@ -1,57 +1,40 @@
 
 
-## Issue — Reorder Step 2 & Hide Marking When Sections Enabled
+## Issues Identified
 
-### Core Pain Point
+### Issue 1 — Replace Per-Subject Question Inputs with Single "Questions per Subject" Input
 
-When "Section-wise Examination" is enabled, marking configuration (uniform marking, negative marking, partial marking) exists in **both** Step 2 and the Sections step — each section's question types already define marks per question and negative marks. This creates duplication and confusion during evaluation. The marking cards in Step 2 should disappear when sections are enabled, since the Sections step handles all marking granularly.
+**Pain point**: Currently, each subject has its own number input (Physics: 25, Chemistry: 25, Math: 25). If someone accidentally enters 25 and 26, it breaks the uniform assumption. Since in exams like JEE Mains/NEET, every subject has the *same* number of questions, a single input makes more sense.
 
-Additionally, the current layout order is wrong. It should follow the logical flow: Duration → Questions → Section toggle → (conditionally) Marking.
+**What I understood**: Replace the per-subject individual inputs with a single "Questions per Subject" number input. The system auto-calculates total questions = (input value) × (number of subjects). E.g., enter 25 with 3 subjects → 75 total questions. All subjects get the same count automatically.
 
----
-
-### What I Understood
-
-1. **New layout order** for Step 2:
-   - Duration card (slider + presets)
-   - Questions per Subject (or Total Questions fallback)
-   - Section-wise Examination toggle
-   - Section-wise Time Limits toggle
-   - **Only if `hasSections` is OFF**: Uniform Marking, Negative Marking, Partial Marking
-   - Totals summary
-   - Tips
-   - Navigation
-
-2. **When `hasSections` is ON**: The three marking cards (Uniform, Negative, Partial) are hidden entirely because marking is configured per question type inside each section.
-
-3. **When `hasSections` is OFF**: The marking cards appear as before — this is the simple exam mode (like JEE Mains/NEET) where all questions share the same marking scheme.
-
-### Reasoning
-
-This is correct because:
-- In section-wise exams (JEE Advanced), each section has different question types with different marks (+4 for MCQ, +3 for integer, etc.) and different negative marks. Global uniform marking is meaningless here.
-- In non-section exams (JEE Mains, NEET), all questions are the same type with the same marks, so global marking makes sense.
-- Removing duplication prevents conflicting configurations.
+**Implementation**:
+- In `DurationMarksStep.tsx`: Replace the per-subject input loop with a single input labeled "Questions per Subject". Show a computed summary: "3 subjects × 25 questions = 75 total".
+- In `usePatternBuilder.ts`: Replace `subjectQuestionCounts: Record<string, number>` usage with a single `questionsPerSubject` number. When computing `totalQuestions`, use `questionsPerSubject * subjects.length`. Update `setSubjectQuestionCount` → single `setQuestionsPerSubject` setter that internally sets the same count for all subjects.
+- Update `perSubjectQuestionCount` to simply return the single value.
+- Update `canProceedStep2` validation accordingly.
 
 ---
 
-### Implementation
+### Issue 2 — Question Type Selector When Sections are Disabled
 
-**File: `DurationMarksStep.tsx`** — Reorder JSX and wrap marking cards in `{!hasSections && (...)}`:
+**Pain point**: For non-section exams (JEE Mains, NEET), there's no way to specify the question type (e.g., Single Correct). All parameters for exam creation need to be defined, but question type is missing in the non-section flow.
 
-Current order → New order:
-```text
-1. Duration           →  1. Duration (unchanged)
-2. Section-wise Time  →  2. Questions per Subject / Total Questions
-3. Questions          →  3. Section-wise Examination toggle
-4. Uniform Marking    →  4. Section-wise Time Limits
-5. Negative Marking   →  5. Totals summary
-6. Partial Marking    →  6. Uniform Marking      ← only if !hasSections
-7. Totals summary     →  7. Negative Marking      ← only if !hasSections
-8. Section-wise Exam  →  8. Partial Marking        ← only if !hasSections
-9. Tips               →  9. Tips
-10. Navigation        → 10. Navigation
-```
+**What I understood**: When `hasSections` is OFF, show a "Question Type" selector card below the Section-wise Examination toggle. This allows selecting exactly **one** question type (single select, not multi). When `hasSections` is ON, this card disappears (question types are configured per section in the Sections step).
 
-Single file change, no hook modifications needed. The `hasSections` prop already exists.
+**Implementation**:
+- Add `globalQuestionType: QuestionType` to `PatternBuilderState` (default: `'single_correct'`).
+- In `DurationMarksStep.tsx`: After the Section-wise Examination card, when `!hasSections`, render a "Question Type" card with pill buttons for each type (single select). Import `questionTypeLabels` from `examPatternsData`.
+- Add new props: `globalQuestionType` and `setGlobalQuestionType`.
+- Pass these from `PatternBuilder.tsx`.
+
+---
+
+### Files Modified
+
+| File | Changes |
+|------|---------|
+| `src/hooks/usePatternBuilder.ts` | Add `globalQuestionType` state, refactor `subjectQuestionCounts` to use single value, add setter |
+| `src/components/institute/exams-new/steps/DurationMarksStep.tsx` | Single "Questions per Subject" input, Question Type selector when `!hasSections` |
+| `src/pages/institute/exams-new/PatternBuilder.tsx` | Pass new props |
 
