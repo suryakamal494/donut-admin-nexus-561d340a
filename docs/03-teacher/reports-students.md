@@ -355,6 +355,58 @@ Topic: Acceleration, Projectile Motion
 
 **Weak topics selection**: Top 5 topics by ascending accuracy (accuracy < 50%), extracted from the student's `chapterMastery` data.
 
+##### Context Source Types
+
+The `AIHomeworkGeneratorDialog` supports three **context sources** that provide additional material for the AI to base homework on. These are optional and selectable in the dialog form:
+
+| Source Type | Key | Description | UI |
+|------------|-----|-------------|-----|
+| **Document Upload** | `document` | Teacher uploads a PDF/doc file | File input with drag-drop |
+| **Content Library** | `content` | Selects from existing content library items | `ContentLibraryPicker` modal |
+| **Lesson Plan** | `lesson_plan` | Selects from existing lesson plans | `LessonPlanPicker` modal |
+| **None** | `none` | No additional context (default) | — |
+
+Only one context source can be active at a time. Selecting a new source clears the previous one.
+
+##### Refactored Component Structure
+
+The `AIHomeworkGeneratorDialog` has been decomposed into focused sub-components under `src/components/teacher/ai-homework/`:
+
+| Component | File | Responsibility |
+|-----------|------|---------------|
+| `AIHomeworkForm` | `AIHomeworkForm.tsx` | Form fields: title, type, subject, batch, due date, instructions, context source selector |
+| `AIHomeworkPreview` | `AIHomeworkPreview.tsx` | Preview of generated homework with editable fields |
+| `AIHomeworkActions` | `AIHomeworkActions.tsx` | Footer buttons: Cancel, Generate, Regenerate, Accept & Assign |
+| `types.ts` | `types.ts` | Shared types: `HomeworkType`, `ContextSourceType`, `GeneratedHomework`, `AIHomeworkFormData`, `AIHomeworkPrefill` |
+
+##### Edge Function Payload (`assessment-ai`)
+
+The dialog invokes the `assessment-ai` edge function with action `generate_homework`:
+
+```json
+{
+  "action": "generate_homework",
+  "topic": "Acceleration and Projectile Motion",
+  "subject": "Physics",
+  "homeworkType": "practice",
+  "customInstructions": "Focus on easy conceptual questions for remediation.",
+  "contextType": "lesson_plan",
+  "contextContent": "Lesson Plan: Kinematics Week 3. Topics: Acceleration, Projectile Motion. ..."
+}
+```
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `action` | string | Always `"generate_homework"` |
+| `topic` | string | Homework title / topic |
+| `subject` | string | Subject name |
+| `homeworkType` | string | `"practice"`, `"test"`, or `"project"` |
+| `customInstructions` | string | Teacher's custom instructions (optional) |
+| `contextType` | string | `"document"`, `"content"`, `"lesson_plan"`, or `undefined` |
+| `contextContent` | string | Serialized context from the selected source (optional) |
+
+**Response**: Returns `{ success: true, data: GeneratedHomework }` with `title`, `description`, `instructions[]`, `tasks[]`, and `estimatedTime`.
+
 ---
 
 ### Generate Homework Comparison Table
@@ -366,6 +418,7 @@ Topic: Acceleration, Projectile Motion
 | **Component** | `ChapterPracticeReview` | `CreateHomeworkDialog` | `AIHomeworkGeneratorDialog` |
 | **Scope** | Multi-band, chapter-specific | Exam-wide, batch-specific | Student-specific, cross-chapter |
 | **Pre-fills** | Band context + topic status | Weak topics from exam | Student's weakest topics + difficulty |
+| **Context Sources** | Topics + band data | Exam results | Content Library / Lesson Plan / Document |
 | **Output** | Differentiated MCQs per band | Single homework assignment | Single homework for specific student |
 | **Target** | All students (grouped by band) | Entire batch | Individual student |
 

@@ -8,8 +8,61 @@
 
 The **Chapters** tab within the Batch Report provides a comprehensive, chapter-by-chapter view of how students are performing across all exams that tested a given chapter. Each chapter card drills down into a detailed Chapter Report page containing topic-level heatmaps, PI-based student buckets, practice assignment history, and exam-wise breakdown.
 
+### Reports Landing Page
+
+Before reaching the Chapters tab, the teacher lands on the **Reports Landing Page** (`/teacher/reports`), which displays a batch selection grid. This is the entry point to the entire Reports module.
+
+**Route**: `/teacher/reports`
+**Component**: `Reports.tsx`
+
+```text
+┌─────────────────────────────────────────────────────────┐
+│  Class 10 — 10A           [↑ 3%]              [62%]    │
+│  35 students · 12 exams · 62% avg · 3 at risk          │
+├─────────────────────────────────────────────────────────┤
+│  Class 10 — 10B           [↓ 2%]              [48%]    │
+│  32 students · 10 exams · 48% avg · 5 at risk          │
+├─────────────────────────────────────────────────────────┤
+│  Class 9 — 9A             [→ Stable]          [71%]    │
+│  30 students · 8 exams · 71% avg · 1 at risk           │
+└─────────────────────────────────────────────────────────┘
+```
+
+**Batch Card Data Points:**
+
+| Field | Description | Source |
+|-------|-------------|--------|
+| `className` | Class name (e.g., "Class 10") | Batch definition |
+| `batchName` | Batch identifier (e.g., "10A") | Batch definition |
+| `totalStudents` | Number of students in the batch | Batch data |
+| `classAverage` | Overall class average percentage | Computed across all exams |
+| `previousAverage` | Previous period average (for trend) | Historical data |
+| `trend` | `up` / `down` / `stable` | Comparison of `classAverage` vs `previousAverage` |
+| `atRiskCount` | Students with PI in "Foundational Risk" band | PI computation |
+| `totalExamsConducted` | Number of completed exams | Exam count |
+
+**Card Visual Styling:**
+
+| Element | Rule |
+|---------|------|
+| Header strip | Teal-to-cyan gradient (`from-teal-500 to-cyan-500`) |
+| Average badge BG | Emerald gradient (≥65%), Amber gradient (≥40%), Red gradient (<40%) |
+| Trend pill | Emerald bg (up), Red bg (down), Muted bg (stable) |
+| At-risk count color | Red (>3), Amber (1–3), Emerald (0) |
+
+**Inline stats row**: `{totalExamsConducted} exams · {classAverage}% avg · {atRiskCount} at risk`
+
+**Navigation**: Clicking a batch card navigates to `/teacher/reports/:batchId`, which opens the Batch Report with Chapters, Exams, and Students tabs.
+
+**Empty State**: Shows `Users` icon with message _"No batches found"_ and helper text _"Reports will appear once exams are conducted for your batches."_
+
+**Animation**: Cards use staggered `framer-motion` fade-in (`opacity: 0→1, y: 16→0`) with 80ms delay per card.
+
+---
+
 ## Access
 
+- **Route (Reports Landing)**: `/teacher/reports`
 - **Route (Chapters listing)**: `/teacher/reports/:batchId` → Chapters tab
 - **Route (Chapter Report)**: `/teacher/reports/:batchId/chapters/:chapterId`
 - **Route (Generate Practice)**: `/teacher/reports/:batchId/chapters/:chapterId/practice`
@@ -395,11 +448,13 @@ Tabbed interface with one tab per band. Each tab shows generated MCQ questions w
 ```
 
 **Review Features:**
-- Remove individual questions (toggle — can restore)
+- Remove individual questions (click ✗ to remove — removed questions are hidden from view)
+- **Regenerate**: When questions are removed, a sticky amber banner appears showing _"{N} question(s) removed across bands"_ with a **"Regenerate {N}"** button. Clicking it replaces all removed questions with fresh AI-generated replacements (via `getReplacementQuestions()`). A toast confirms _"Regenerated {N} questions successfully"_. This is distinct from restoring — regeneration fetches entirely new questions.
 - Per-band "Assign to X students" button
 - "Assign All Bands" bulk action
 - Tab shows active question count (excluding removed)
-- Assigned bands show ✓ and become read-only
+- Removed count shown in tab as red `-{count}` indicator
+- Assigned bands show ✓ and become read-only with reduced opacity
 
 #### Step 3: Done
 
@@ -500,28 +555,54 @@ Accordion per band (all expanded by default). Each student row shows:
 
 ##### Questions Tab
 
-Grouped by band. Each question shows:
+Grouped by band using collapsible accordions (default expanded). Each question is rendered as a bordered `QuestionCard` with visual indicators for performance.
 
 ```text
 🟢 Mastery Ready (10 questions)
-┌─────────────────────────────────────────────────────────┐
-│ Q1  A particle moves along a straight line with...      │
-│     [Displacement] [Medium]              78% success    │
-│                                          (4/5 correct)  │
-├─────────────────────────────────────────────────────────┤
-│ Q2  Calculate the displacement when...                   │
-│     [Velocity] [Hard]                    40% success    │
-│                                          (2/5 correct)  │
-└─────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────┐
+│ ┌──┐                                                     │
+│ │Q1│ A particle moves along a straight line with...      │
+│ └──┘ [Displacement] [Medium]              78% success    │
+│                                           (4/5 correct)  │
+│      [👁 View Solution]                                  │
+│      ┌─────────────┬─────────────┐                       │
+│      │ A. 8 m/s²   │ B. 10 m/s² ✓│  (emerald highlight) │
+│      │ C. 12 m/s²  │ D. 14 m/s²  │                       │
+│      └─────────────┴─────────────┘                       │
+├──────────────────────────────────────────────────────────┤
+│ ┌──┐                                                     │
+│ │Q2│ Calculate the displacement when...    ⚠ LOW (28%)   │
+│ └──┘ [Velocity] [Hard]                    28% success    │
+│      (background tinted red)              (1/5 correct)  │
+└──────────────────────────────────────────────────────────┘
 ```
+
+**Question Card Data:**
 
 | Field | Description |
 |-------|-------------|
-| Question text | Truncated to 2 lines |
-| Topic badge | Outline style |
-| Difficulty badge | Secondary style |
-| Success rate | Color-coded percentage |
+| Question number | Circular badge (e.g., `Q1`) with `bg-primary/10 text-primary` |
+| Question text | Full text displayed |
+| Topic badge | Outline variant |
+| Difficulty badge | Secondary variant |
+| Success rate | Color-coded percentage using `accuracyColor()` |
 | Attempts | `correctAttempts / totalAttempts` |
+
+**Visual Styling by Success Rate (left border + background):**
+
+| Success Rate | Left Border Color | Background Tint |
+|-------------|-------------------|-----------------|
+| ≥ 75% | `border-l-emerald-500` | None |
+| ≥ 50% | `border-l-teal-500` | None |
+| ≥ 35% | `border-l-amber-500` | `bg-amber-500/5` |
+| < 35% | `border-l-red-500` | `bg-red-500/5` (signals teacher attention needed) |
+
+**"View Solution" Toggle:**
+- Button with `Eye` icon, ghost variant, toggles solution visibility
+- When expanded, shows a 2-column grid (1 col on mobile) of answer options
+- **Correct answer**: Highlighted with `bg-emerald-500/10`, `border-emerald-500/40`, emerald text, bold font, and a `CheckCircle2` icon
+- **Other options**: `bg-muted/30` with `border-border` and muted text
+- Each option prefixed with label (A, B, C, D)
 
 ---
 
