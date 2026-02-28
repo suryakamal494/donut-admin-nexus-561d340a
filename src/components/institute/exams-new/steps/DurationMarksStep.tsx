@@ -314,23 +314,25 @@ export function DurationMarksStep({
         </CardContent>
       </Card>
 
-      {/* ========== TOTALS SUMMARY ========== */}
-      <div className="grid grid-cols-2 gap-3">
-        <div className="flex items-center gap-2 p-3 rounded-lg bg-primary/5 border border-primary/20">
-          <Calculator className="w-4 h-4 text-primary" />
-          <div>
-            <p className="text-xl font-bold">{totalQuestions}</p>
-            <p className="text-xs text-muted-foreground">Total Questions</p>
+      {/* ========== TOTALS SUMMARY (only when no sections) ========== */}
+      {!hasSections && (
+        <div className="grid grid-cols-2 gap-3">
+          <div className="flex items-center gap-2 p-3 rounded-lg bg-primary/5 border border-primary/20">
+            <Calculator className="w-4 h-4 text-primary" />
+            <div>
+              <p className="text-xl font-bold">{totalQuestions}</p>
+              <p className="text-xs text-muted-foreground">Total Questions</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 p-3 rounded-lg bg-primary/5 border border-primary/20">
+            <Award className="w-4 h-4 text-primary" />
+            <div>
+              <p className="text-xl font-bold">{totalMarks}</p>
+              <p className="text-xs text-muted-foreground">Total Marks</p>
+            </div>
           </div>
         </div>
-        <div className="flex items-center gap-2 p-3 rounded-lg bg-primary/5 border border-primary/20">
-          <Award className="w-4 h-4 text-primary" />
-          <div>
-            <p className="text-xl font-bold">{totalMarks}</p>
-            <p className="text-xs text-muted-foreground">Total Marks</p>
-          </div>
-        </div>
-      </div>
+      )}
 
       {/* ========== MARKING SCHEME (only when no sections) ========== */}
       {!hasSections && (
