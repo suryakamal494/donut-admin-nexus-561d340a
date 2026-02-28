@@ -40,7 +40,7 @@ export const ChapterPracticeHistory = ({ chapterId, batchId }: Props) => {
             <FileText className="w-10 h-10 text-muted-foreground/40 mb-2" />
             <p className="text-sm text-muted-foreground">No practice sessions yet</p>
             <p className="text-xs text-muted-foreground/70 mt-0.5">
-              Generate practice from the Student Performance section above
+              Generate homework from the Student Performance section above
             </p>
           </div>
         </CardContent>

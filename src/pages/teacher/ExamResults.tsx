@@ -33,7 +33,8 @@ import { CognitiveChart } from "@/components/teacher/exams/results/CognitiveChar
 import { AIAnalysisCard } from "@/components/teacher/exams/results/AIAnalysisCard";
 import { QuestionGroupAccordion } from "@/components/teacher/exams/results/QuestionGroupAccordion";
 import { InfoTooltip } from "@/components/timetable/InfoTooltip";
-import { CreateHomeworkDialog } from "@/components/teacher/CreateHomeworkDialog";
+import { AIHomeworkGeneratorDialog } from "@/components/teacher/AIHomeworkGeneratorDialog";
+import type { AIHomeworkPrefill } from "@/components/teacher/ai-homework/types";
 
 const PIE_COLORS = ["#22c55e", "#f59e0b", "#ef4444", "#6b7280"];
 
@@ -50,6 +51,7 @@ const ExamResults = () => {
     (batchFromUrl && exam?.batchIds.includes(batchFromUrl) ? batchFromUrl : exam?.batchIds[0]) || ""
   );
   const [homeworkDialogOpen, setHomeworkDialogOpen] = useState(false);
+  const [homeworkPrefill, setHomeworkPrefill] = useState<AIHomeworkPrefill | undefined>();
 
   const analytics: ExamAnalytics | null = useMemo(() => {
     if (!exam) return null;
@@ -77,7 +79,35 @@ const ExamResults = () => {
   );
 
   const handleInsightAction = (insight: ActionableInsight) => {
-    // Pre-fill homework dialog with the insight's context
+    const weakTopics = insight.actionPayload?.topic || '';
+    const studentNames = insight.affectedStudents?.map(s => s.name).join(', ') || '';
+    setHomeworkPrefill({
+      subject: exam?.subjects?.[0],
+      batchId: selectedBatchId,
+      instructions: `Focus on: ${weakTopics}. ${insight.finding}. Affected students: ${studentNames}`,
+      contextBanner: insight.finding,
+    });
+    setHomeworkDialogOpen(true);
+  };
+
+  const handleHeaderGenerateHomework = () => {
+    const weakTopicNames = topicFlags.filter(f => f.status === 'weak').map(f => f.topic).join(', ');
+    setHomeworkPrefill({
+      subject: exam?.subjects?.[0],
+      batchId: selectedBatchId,
+      instructions: weakTopicNames ? `Focus on weak topics: ${weakTopicNames}` : '',
+      contextBanner: `Based on ${exam?.name} results`,
+    });
+    setHomeworkDialogOpen(true);
+  };
+
+  const handleReteachingGenerateHomework = (topics: string[]) => {
+    setHomeworkPrefill({
+      subject: exam?.subjects?.[0],
+      batchId: selectedBatchId,
+      instructions: `Reteaching focus: ${topics.join(', ')}. Create targeted practice for these weak topics.`,
+      contextBanner: `Reteaching plan from ${exam?.name}`,
+    });
     setHomeworkDialogOpen(true);
   };
 
@@ -121,7 +151,7 @@ const ExamResults = () => {
             <Button
               size="sm"
               className="h-9 gradient-button"
-              onClick={() => setHomeworkDialogOpen(true)}
+              onClick={handleHeaderGenerateHomework}
             >
               <Sparkles className="w-4 h-4 mr-1.5" />
               <span className="hidden sm:inline">Generate Homework</span>
@@ -214,7 +244,7 @@ const ExamResults = () => {
 
         {/* ── Questions Tab — Grouped Accordion ── */}
         <TabsContent value="questions" className="space-y-4">
-          <ReteachingPlanCard questions={analytics.questionAnalysis} />
+          <ReteachingPlanCard questions={analytics.questionAnalysis} onGenerateHomework={handleReteachingGenerateHomework} />
           <QuestionGroupAccordion questions={analytics.questionAnalysis} />
         </TabsContent>
 
@@ -235,16 +265,10 @@ const ExamResults = () => {
         </TabsContent>
       </Tabs>
 
-      <CreateHomeworkDialog
+      <AIHomeworkGeneratorDialog
         open={homeworkDialogOpen}
         onOpenChange={setHomeworkDialogOpen}
-        context={{
-          subject: exam.subjects?.[0],
-          batchId: selectedBatchId,
-          batchName: selectedBatchName,
-          chapter: exam.name,
-          topic: topicFlags.filter(f => f.status === 'weak').map(f => f.topic).join(', ') || undefined,
-        }}
+        prefill={homeworkPrefill}
       />
     </div>
   );

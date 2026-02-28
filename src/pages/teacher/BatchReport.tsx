@@ -83,6 +83,7 @@ const BatchReport = () => {
           <BatchHealthCard
             health={batchHealth}
             batchId={batchId}
+            onNavigateToChapter={(chapterId) => navigate(`/teacher/reports/${batchId}/chapters/${chapterId}`)}
             onNavigateToStudent={handleNavigateToStudent}
           />
         )}

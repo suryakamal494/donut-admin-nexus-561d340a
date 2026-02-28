@@ -55,11 +55,11 @@ export const StudentBuckets = ({ buckets, onGeneratePractice }: StudentBucketsPr
                 <Sparkles className="w-3.5 h-3.5" />
               </Button>
             </TooltipTrigger>
-            <TooltipContent side="top">Generate Practice</TooltipContent>
+            <TooltipContent side="top">Generate Homework</TooltipContent>
           </Tooltip>
           <Button size="sm" className="hidden sm:inline-flex h-8 text-xs gap-1.5 gradient-button" onClick={onGeneratePractice}>
             <Sparkles className="w-3.5 h-3.5" />
-            Generate Practice
+            Generate Homework
           </Button>
         </div>
       </CardHeader>

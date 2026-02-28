@@ -36,7 +36,7 @@ The **Exams** tab within the Batch Report lists all completed exams for the batc
 | `ReteachingPlanCard` | **NEW** — Collapsible reteaching plan with Copy Plan | Exam Results → Questions (above accordion) |
 | `QuestionAnalysisCard` | Individual question analysis card | Inside accordion |
 | `StudentResultRow` | Individual student result row | Exam Results → Students |
-| `CreateHomeworkDialog` | AI homework generator dialog | Exam Results → Header action |
+| `AIHomeworkGeneratorDialog` | AI homework generator dialog with context prefill | Exam Results → Header action + Insight cards + Reteaching plan |
 | `InstituteQuestionsTab` | Per-question analysis for grand tests | Institute Test Detail |
 | `InstituteChaptersTab` | Chapter-wise breakdown for grand tests | Institute Test Detail |
 | `InstituteDifficultyTab` | Difficulty split for grand tests | Institute Test Detail |
@@ -142,7 +142,7 @@ Three buttons (labels hidden on mobile, icons always visible):
 
 | Action | Icon | Function |
 |--------|------|----------|
-| Generate Homework | `Sparkles` | Opens `CreateHomeworkDialog` with weak topics pre-filled |
+| Generate Homework | `Sparkles` | Opens `AIHomeworkGeneratorDialog` with weak topics pre-filled |
 | Export | `Download` | Export results (placeholder) |
 | Share | `Share2` | Share results (placeholder) |
 
@@ -236,8 +236,8 @@ interface ActionableInsight {
 ```
 
 **[Take Action] button behavior:**
-- `actionType: 'homework'` → Opens `CreateHomeworkDialog` pre-filled with `actionPayload.topic` and difficulty
-- `actionType: 'practice'` → Opens `CreateHomeworkDialog` (same dialog, practice mode)
+- `actionType: 'homework'` → Opens `AIHomeworkGeneratorDialog` pre-filled with `actionPayload.topic`, affected student names, and contextBanner
+- `actionType: 'practice'` → Opens `AIHomeworkGeneratorDialog` (same dialog, practice context)
 - `actionType: 'none'` → No button shown (celebrate cards)
 
 **Current implementation**: Uses `generateMockActionableInsights()` which derives insights from existing `bands` and `topicFlags` data. No AI call is made.
@@ -390,7 +390,7 @@ A prominent "Analyze Results" button that triggers an AI-generated markdown summ
 │     ├ Walk through worked examples...                    │
 │     └ [Numerical] 2 questions                           │
 │                                                          │
-│  ⏱ Total: ~22 minutes              [📋 Copy Plan]      │
+│  ⏱ Total: ~22 minutes  [📋 Copy Plan] [✨ Generate Homework] │
 └─────────────────────────────────────────────────────────┘
 ```
 

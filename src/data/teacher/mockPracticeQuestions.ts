@@ -1,4 +1,4 @@
-// Static mock questions for the Generate Practice UI prototype
+// Static mock questions for the Generate Homework UI prototype
 // Returns instant results for all 4 bands without API calls
 
 interface GeneratedQuestion {

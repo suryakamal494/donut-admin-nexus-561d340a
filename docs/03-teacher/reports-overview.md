@@ -64,7 +64,7 @@ The Batch Report uses a compact inline header with tabs on the same row as the t
 
 | Tab | Focus | Key Actions |
 |-----|-------|-------------|
-| **Chapters** | Chapter-by-chapter performance with topic heatmaps | Generate Practice |
+| **Chapters** | Chapter-by-chapter performance with topic heatmaps | Generate Homework |
 | **Exams** | Exam results with AI analysis | Generate Homework |
 | **Students** | Individual student profiles with PI bucketing | Generate Homework |
 
@@ -118,14 +118,14 @@ The Reports module integrates AI in **seven** distinct locations (3 existing liv
 
 | # | Action | Location | Component | Scope | Status |
 |---|--------|----------|-----------|-------|--------|
-| 1 | **Generate Practice** | Chapter Report → Student Buckets | `ChapterPracticeReview` | Multi-band, chapter-specific MCQs | ✅ Live (edge function) |
-| 2 | **Generate Homework** (Exam) | Exam Results → Header | `CreateHomeworkDialog` | Batch-wide, exam-context homework | ✅ Live |
+| 1 | **Generate Homework** | Chapter Report → Student Buckets | `ChapterPracticeReview` | Multi-band, chapter-specific MCQs | ✅ Live (edge function) |
+| 2 | **Generate Homework** (Exam) | Exam Results → Header | `AIHomeworkGeneratorDialog` | Batch-wide, exam-context homework | ✅ Live |
 | 3 | **Generate Homework** (Student) | Student Profile → Header | `AIHomeworkGeneratorDialog` | Student-specific, cross-chapter homework | ✅ Live |
-| 4 | **Actionable Insight Cards** | Exam Results → Insights tab (between Verdict & Bands) | `ActionableInsightCards` | Severity-coded findings with [Take Action] buttons | ✅ Mock data |
-| 5 | **Today's Focus / Batch Health** | Batch Report → Between tabs and content | `BatchHealthCard` | Daily briefing: priority topics, at-risk students, suggested focus | ✅ Mock data |
+| 4 | **Actionable Insight Cards** | Exam Results → Insights tab (between Verdict & Bands) | `ActionableInsightCards` | Severity-coded findings with [Take Action] → `AIHomeworkGeneratorDialog` | ✅ Mock data |
+| 5 | **Today's Focus / Batch Health** | Batch Report → Between tabs and content | `BatchHealthCard` | Daily briefing: priority topics (clickable → chapter), at-risk students | ✅ Mock data |
 | 6 | **AI Deep-Dive Analysis** | Exam Results → Analytics tab (bottom) | `AIAnalysisCard` | Free-form AI narrative summary | ✅ Live (edge function) |
 | 7 | **AI Student Summary** | Student Profile → Between header and chapter grid | `StudentAISummary` | Personalized strengths, priorities, engagement note | ✅ Mock data |
-| — | **Reteaching Plan** | Exam Results → Questions tab (above accordion) | `ReteachingPlanCard` | Topic-wise lesson plan with approaches and time estimates | ✅ Mock data |
+| — | **Reteaching Plan** | Exam Results → Questions tab (above accordion) | `ReteachingPlanCard` | Topic-wise lesson plan with "Generate Homework" button | ✅ Mock data |
 
 ### AI Integration Map — Future Edge Functions
 
