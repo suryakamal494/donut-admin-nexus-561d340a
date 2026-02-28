@@ -405,6 +405,124 @@ export const getExamAnalytics = (examId: string): ExamAnalytics | null => {
   return examAnalyticsData[examId] || null;
 };
 
+// ── Actionable Insight Types ──
+
+export interface ActionableInsight {
+  id: string;
+  type: 'reteach' | 'practice' | 'celebrate' | 'attention';
+  severity: 'critical' | 'warning' | 'positive';
+  finding: string;
+  detail: string;
+  affectedStudents: { id: string; name: string; score: number }[];
+  suggestedAction: string;
+  actionType: 'homework' | 'practice' | 'none';
+  actionPayload: {
+    topic?: string;
+    difficulty?: string;
+    studentIds?: string[];
+  };
+}
+
+/**
+ * Generate mock actionable insights from existing analytics data.
+ * In production, this would be replaced by an AI edge function call.
+ * See docs/03-teacher/reports-exams.md for prompt specification.
+ */
+export function generateMockActionableInsights(
+  analytics: ExamAnalytics,
+  bands: PerformanceBand[],
+  topicFlags: TopicFlag[]
+): ActionableInsight[] {
+  const insights: ActionableInsight[] = [];
+
+  // 1. Reteach insight — weakest topic
+  const weakTopics = topicFlags.filter(t => t.status === 'weak').sort((a, b) => a.successRate - b.successRate);
+  if (weakTopics.length > 0) {
+    const weakest = weakTopics[0];
+    const riskStudents = bands.find(b => b.key === 'risk')?.students ?? [];
+    const reinforcementStudents = bands.find(b => b.key === 'reinforcement')?.students ?? [];
+    const affectedStudents = [...riskStudents, ...reinforcementStudents].slice(0, 8);
+
+    insights.push({
+      id: 'insight-reteach-1',
+      type: 'reteach',
+      severity: 'critical',
+      finding: `${affectedStudents.length} students scored below 35% on ${weakest.topic}`,
+      detail: `Average accuracy was ${weakest.successRate}%. Most errors were conceptual — students struggled with application-level problems.`,
+      affectedStudents: affectedStudents.map(s => ({ id: s.studentId, name: s.studentName, score: s.percentage })),
+      suggestedAction: 'Generate targeted homework',
+      actionType: 'homework',
+      actionPayload: {
+        topic: weakest.topic,
+        difficulty: 'easy',
+        studentIds: affectedStudents.map(s => s.studentId),
+      },
+    });
+  }
+
+  // 2. Practice insight — second weakest topic or reinforcement band
+  if (weakTopics.length > 1) {
+    const secondWeak = weakTopics[1];
+    const reinforcementStudents = bands.find(b => b.key === 'reinforcement')?.students ?? [];
+
+    insights.push({
+      id: 'insight-practice-1',
+      type: 'practice',
+      severity: 'warning',
+      finding: `${secondWeak.topic} needs reinforcement — ${secondWeak.successRate}% success`,
+      detail: `${reinforcementStudents.length} students in the reinforcement band need additional practice on this topic.`,
+      affectedStudents: reinforcementStudents.slice(0, 6).map(s => ({ id: s.studentId, name: s.studentName, score: s.percentage })),
+      suggestedAction: 'Assign practice questions',
+      actionType: 'practice',
+      actionPayload: {
+        topic: secondWeak.topic,
+        difficulty: 'medium',
+        studentIds: reinforcementStudents.map(s => s.studentId),
+      },
+    });
+  }
+
+  // 3. Celebrate insight — strongest topic
+  const strongTopics = topicFlags.filter(t => t.status === 'strong').sort((a, b) => b.successRate - a.successRate);
+  if (strongTopics.length > 0) {
+    const strongest = strongTopics[0];
+    const masteryStudents = bands.find(b => b.key === 'mastery')?.students ?? [];
+
+    insights.push({
+      id: 'insight-celebrate-1',
+      type: 'celebrate',
+      severity: 'positive',
+      finding: `${strongest.topic} — ${strongest.successRate}% class success rate`,
+      detail: `${masteryStudents.length} students achieved mastery. This topic was well understood across the class.`,
+      affectedStudents: masteryStudents.slice(0, 5).map(s => ({ id: s.studentId, name: s.studentName, score: s.percentage })),
+      suggestedAction: '',
+      actionType: 'none',
+      actionPayload: {},
+    });
+  }
+
+  // 4. Attention insight — at-risk student count
+  const riskBand = bands.find(b => b.key === 'risk');
+  if (riskBand && riskBand.count > 0) {
+    insights.push({
+      id: 'insight-attention-1',
+      type: 'attention',
+      severity: riskBand.count >= 5 ? 'critical' : 'warning',
+      finding: `${riskBand.count} students in foundational risk band`,
+      detail: `These students scored below 35% overall. They may need individual attention and simplified revision material.`,
+      affectedStudents: riskBand.students.slice(0, 8).map(s => ({ id: s.studentId, name: s.studentName, score: s.percentage })),
+      suggestedAction: 'Generate remedial homework',
+      actionType: 'homework',
+      actionPayload: {
+        difficulty: 'easy',
+        studentIds: riskBand.students.map(s => s.studentId),
+      },
+    });
+  }
+
+  return insights;
+}
+
 // Generate analytics for any exam (for demo purposes)
 export const generateExamAnalytics = (examId: string, examName: string, totalMarks: number): ExamAnalytics => {
   const totalStudents = Math.floor(Math.random() * 20) + 20;

@@ -9,3 +9,4 @@ export { DifficultyChart } from './DifficultyChart';
 export { CognitiveChart } from './CognitiveChart';
 export { AIAnalysisCard } from './AIAnalysisCard';
 export { QuestionGroupAccordion } from './QuestionGroupAccordion';
+export { ActionableInsightCards } from './ActionableInsightCards';
