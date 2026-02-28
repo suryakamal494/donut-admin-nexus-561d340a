@@ -71,6 +71,17 @@ const InstitutePYPView = lazy(() => import("@/pages/institute/exams/PYPView"));
 const InstituteMasterData = lazy(() => import("@/pages/institute/masterdata/MasterData"));
 const InstituteRoles = lazy(() => import("@/pages/institute/roles/Roles"));
 
+// Reports
+const ReportsLanding = lazy(() => import("@/pages/institute/reports/ReportsLanding"));
+const BatchReports = lazy(() => import("@/pages/institute/reports/BatchReports"));
+const BatchReportDetail = lazy(() => import("@/pages/institute/reports/BatchReportDetail"));
+const ExamReports = lazy(() => import("@/pages/institute/reports/ExamReports"));
+const ExamResultDetail = lazy(() => import("@/pages/institute/reports/ExamResultDetail"));
+const GrandTestResults = lazy(() => import("@/pages/institute/reports/GrandTestResults"));
+const SubjectDetail = lazy(() => import("@/pages/institute/reports/SubjectDetail"));
+const StudentReports = lazy(() => import("@/pages/institute/reports/StudentReports"));
+const StudentProfile360 = lazy(() => import("@/pages/institute/reports/StudentProfile360"));
+
 // Academic Schedule - Consolidated
 const AcademicScheduleSetup = lazy(() => import("@/pages/institute/academic-schedule/Setup"));
 const AcademicPlannerHub = lazy(() => import("@/pages/institute/academic-schedule/AcademicPlannerHub"));
@@ -159,6 +170,17 @@ export default function InstituteRoutes() {
         <Route path="master-data" element={<LazyPage><InstituteMasterData /></LazyPage>} />
         <Route path="roles" element={<LazyPage><InstituteRoles /></LazyPage>} />
         
+        {/* Reports */}
+        <Route path="reports" element={<LazyPage><ReportsLanding /></LazyPage>} />
+        <Route path="reports/batches" element={<LazyPage><BatchReports /></LazyPage>} />
+        <Route path="reports/batches/:batchId" element={<LazyPage><BatchReportDetail /></LazyPage>} />
+        <Route path="reports/batches/:batchId/subjects/:subjectId" element={<LazyPage><SubjectDetail /></LazyPage>} />
+        <Route path="reports/exams" element={<LazyPage><ExamReports /></LazyPage>} />
+        <Route path="reports/exams/:examId" element={<LazyPage><ExamResultDetail /></LazyPage>} />
+        <Route path="reports/exams/:examId/grand-test" element={<LazyPage><GrandTestResults /></LazyPage>} />
+        <Route path="reports/students" element={<LazyPage><StudentReports /></LazyPage>} />
+        <Route path="reports/students/:studentId" element={<LazyPage><StudentProfile360 /></LazyPage>} />
+
         {/* Academic Schedule - Consolidated */}
         <Route path="academic-schedule/setup" element={<LazyPage><AcademicScheduleSetup /></LazyPage>} />
         <Route path="academic-schedule/plans" element={<LazyPage><AcademicPlannerHub /></LazyPage>} />
