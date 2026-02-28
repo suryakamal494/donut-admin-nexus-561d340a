@@ -56,6 +56,8 @@ const PatternBuilder = () => {
             subjects={builder.subjects}
             subjectQuestionCounts={builder.subjectQuestionCounts}
             setSubjectQuestionCount={builder.setSubjectQuestionCount}
+            totalQuestionCount={builder.totalQuestionCount}
+            setTotalQuestionCount={builder.setTotalQuestionCount}
             hasSections={builder.hasSections}
             setHasSections={builder.setHasSections}
             totalQuestions={builder.totalQuestions}
@@ -78,6 +80,10 @@ const PatternBuilder = () => {
           hasSectionWiseTime={builder.hasSectionWiseTime}
           hasUniformMarking={builder.hasUniformMarking}
           perSubjectQuestionCount={builder.perSubjectQuestionCount}
+          sectionValidationTarget={builder.sectionValidationTarget}
+          defaultMarksPerQuestion={builder.defaultMarksPerQuestion}
+          hasNegativeMarking={builder.hasNegativeMarking}
+          defaultNegativeMarks={builder.defaultNegativeMarks}
           addSection={builder.addSection}
           removeSection={builder.removeSection}
           updateSection={builder.updateSection}

@@ -14,6 +14,7 @@ import {
   LayoutGrid,
   BookOpen,
   Calculator,
+  Hash,
 } from "lucide-react";
 import { formatDuration } from "@/data/examPatternsData";
 import { availableSubjects } from "@/hooks/usePatternBuilder";
@@ -40,6 +41,9 @@ interface DurationMarksStepProps {
   subjects: string[];
   subjectQuestionCounts: Record<string, number>;
   setSubjectQuestionCount: (subjectId: string, count: number) => void;
+  // Total questions (when no fixed subjects)
+  totalQuestionCount: number;
+  setTotalQuestionCount: (count: number) => void;
   // Sections toggle
   hasSections: boolean;
   setHasSections: (value: boolean) => void;
@@ -73,6 +77,8 @@ export function DurationMarksStep({
   subjects,
   subjectQuestionCounts,
   setSubjectQuestionCount,
+  totalQuestionCount,
+  setTotalQuestionCount,
   hasSections,
   setHasSections,
   totalQuestions,
@@ -83,6 +89,9 @@ export function DurationMarksStep({
 }: DurationMarksStepProps) {
   const getSubjectName = (id: string) =>
     availableSubjects.find((s) => s.id === id)?.name || id;
+
+  const showPerSubject = hasFixedSubjects && subjects.length > 0;
+  const showTotalQuestions = !showPerSubject;
 
   return (
     <div className="space-y-6">
@@ -158,6 +167,79 @@ export function DurationMarksStep({
           </div>
         </CardContent>
       </Card>
+
+      {/* ========== QUESTIONS ========== */}
+      {showPerSubject && (
+        <Card>
+          <CardContent className="p-4 sm:p-6 space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-primary/10">
+                <BookOpen className="w-5 h-5 text-primary" />
+              </div>
+              <div>
+                <p className="font-medium">Questions per Subject</p>
+                <p className="text-sm text-muted-foreground">
+                  Enter the number of questions for each subject
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              {subjects.map((subjectId) => (
+                <div
+                  key={subjectId}
+                  className="flex items-center justify-between gap-4 p-3 rounded-lg bg-muted/50"
+                >
+                  <Label className="text-sm font-medium min-w-0 truncate">
+                    {getSubjectName(subjectId)}
+                  </Label>
+                  <Input
+                    type="number"
+                    value={subjectQuestionCounts[subjectId] || ""}
+                    onChange={(e) =>
+                      setSubjectQuestionCount(
+                        subjectId,
+                        parseInt(e.target.value) || 0
+                      )
+                    }
+                    placeholder="0"
+                    className="w-24 text-center"
+                    min={0}
+                  />
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {showTotalQuestions && (
+        <Card>
+          <CardContent className="p-4 sm:p-6 space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-primary/10">
+                <Hash className="w-5 h-5 text-primary" />
+              </div>
+              <div>
+                <p className="font-medium">Total Questions</p>
+                <p className="text-sm text-muted-foreground">
+                  Enter the total number of questions in the examination
+                </p>
+              </div>
+            </div>
+            <Input
+              type="number"
+              value={totalQuestionCount || ""}
+              onChange={(e) =>
+                setTotalQuestionCount(parseInt(e.target.value) || 0)
+              }
+              placeholder="Enter total questions"
+              className="text-center text-lg font-semibold"
+              min={1}
+            />
+          </CardContent>
+        </Card>
+      )}
 
       {/* ========== MARKING SCHEME ========== */}
 
@@ -297,68 +379,23 @@ export function DurationMarksStep({
         </CardContent>
       </Card>
 
-      {/* ========== QUESTIONS PER SUBJECT ========== */}
-      {hasFixedSubjects && subjects.length > 0 && (
-        <Card>
-          <CardContent className="p-4 sm:p-6 space-y-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-primary/10">
-                <BookOpen className="w-5 h-5 text-primary" />
-              </div>
-              <div>
-                <p className="font-medium">Questions per Subject</p>
-                <p className="text-sm text-muted-foreground">
-                  Enter the number of questions for each subject
-                </p>
-              </div>
-            </div>
-
-            <div className="space-y-3">
-              {subjects.map((subjectId) => (
-                <div
-                  key={subjectId}
-                  className="flex items-center justify-between gap-4 p-3 rounded-lg bg-muted/50"
-                >
-                  <Label className="text-sm font-medium min-w-0 truncate">
-                    {getSubjectName(subjectId)}
-                  </Label>
-                  <Input
-                    type="number"
-                    value={subjectQuestionCounts[subjectId] || ""}
-                    onChange={(e) =>
-                      setSubjectQuestionCount(
-                        subjectId,
-                        parseInt(e.target.value) || 0
-                      )
-                    }
-                    placeholder="0"
-                    className="w-24 text-center"
-                    min={0}
-                  />
-                </div>
-              ))}
-            </div>
-
-            {/* Totals */}
-            <div className="grid grid-cols-2 gap-3 pt-2 border-t">
-              <div className="flex items-center gap-2 p-3 rounded-lg bg-primary/5 border border-primary/20">
-                <Calculator className="w-4 h-4 text-primary" />
-                <div>
-                  <p className="text-xl font-bold">{totalQuestions}</p>
-                  <p className="text-xs text-muted-foreground">Total Questions</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2 p-3 rounded-lg bg-primary/5 border border-primary/20">
-                <Award className="w-4 h-4 text-primary" />
-                <div>
-                  <p className="text-xl font-bold">{totalMarks}</p>
-                  <p className="text-xs text-muted-foreground">Total Marks</p>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      {/* ========== TOTALS SUMMARY ========== */}
+      <div className="grid grid-cols-2 gap-3">
+        <div className="flex items-center gap-2 p-3 rounded-lg bg-primary/5 border border-primary/20">
+          <Calculator className="w-4 h-4 text-primary" />
+          <div>
+            <p className="text-xl font-bold">{totalQuestions}</p>
+            <p className="text-xs text-muted-foreground">Total Questions</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2 p-3 rounded-lg bg-primary/5 border border-primary/20">
+          <Award className="w-4 h-4 text-primary" />
+          <div>
+            <p className="text-xl font-bold">{totalMarks}</p>
+            <p className="text-xs text-muted-foreground">Total Marks</p>
+          </div>
+        </div>
+      </div>
 
       {/* ========== SECTION-WISE EXAM TOGGLE ========== */}
       <Card>
