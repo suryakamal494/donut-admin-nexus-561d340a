@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { TrendingUp, TrendingDown, Minus, AlertTriangle, BookOpen, Sparkles, ChevronDown, ChevronUp, Users } from "lucide-react";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -23,7 +24,8 @@ const trendColor = (trend: "up" | "down" | "flat") =>
   trend === "up" ? "text-emerald-600" : trend === "down" ? "text-red-600" : "text-muted-foreground";
 
 export const BatchHealthCard = ({ health, batchId, onNavigateToChapter, onNavigateToStudent }: BatchHealthCardProps) => {
-  const [isExpanded, setIsExpanded] = useState(true);
+  const isMobile = useIsMobile();
+  const [isExpanded, setIsExpanded] = useState(!isMobile);
 
   const overallTrendIcon = health.overallTrend === "improving"
     ? <TrendingUp className="w-4 h-4" />

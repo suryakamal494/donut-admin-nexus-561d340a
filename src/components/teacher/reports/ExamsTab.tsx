@@ -112,13 +112,13 @@ export const ExamsTab = ({ allExamHistory, instituteTests, batchId }: ExamsTabPr
                       <div className="flex items-center justify-between">
                         <div className="min-w-0 flex-1">
                           <h3 className="text-sm font-semibold text-foreground truncate">{exam.examName}</h3>
-                          <div className="flex items-center gap-1.5 mt-0.5 text-[11px] text-muted-foreground">
+                          <div className="flex items-center gap-1.5 mt-0.5 text-[11px] text-muted-foreground flex-wrap">
                             <Calendar className="w-3 h-3" />
                             {format(new Date(exam.date), "dd MMM yyyy")}
                             <span>·</span>
                             <span>Avg <span className={cn("font-semibold", colors.text)}>{exam.classAverage}/{exam.totalMarks}</span></span>
-                            <span>·</span>
-                            <span>High {exam.highestScore}/{exam.totalMarks}</span>
+                            <span className="hidden xs:inline">·</span>
+                            <span className="hidden xs:inline">High {exam.highestScore}/{exam.totalMarks}</span>
                             <span>·</span>
                             <span>{exam.totalStudents} students</span>
                           </div>
@@ -155,13 +155,31 @@ export const ExamsTab = ({ allExamHistory, instituteTests, batchId }: ExamsTabPr
                     className={cn(currentPage === 1 && "pointer-events-none opacity-50", "cursor-pointer")}
                   />
                 </PaginationItem>
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
-                  <PaginationItem key={page}>
-                    <PaginationLink isActive={page === currentPage} onClick={() => setCurrentPage(page)} className="cursor-pointer">
-                      {page}
-                    </PaginationLink>
-                  </PaginationItem>
-                ))}
+                {(() => {
+                  const pages: (number | "ellipsis")[] = [];
+                  if (totalPages <= 5) {
+                    for (let i = 1; i <= totalPages; i++) pages.push(i);
+                  } else {
+                    pages.push(1);
+                    if (currentPage > 3) pages.push("ellipsis");
+                    for (let i = Math.max(2, currentPage - 1); i <= Math.min(totalPages - 1, currentPage + 1); i++) pages.push(i);
+                    if (currentPage < totalPages - 2) pages.push("ellipsis");
+                    pages.push(totalPages);
+                  }
+                  return pages.map((page, idx) =>
+                    page === "ellipsis" ? (
+                      <PaginationItem key={`ellipsis-${idx}`}>
+                        <span className="px-2 text-muted-foreground">…</span>
+                      </PaginationItem>
+                    ) : (
+                      <PaginationItem key={page}>
+                        <PaginationLink isActive={page === currentPage} onClick={() => setCurrentPage(page)} className="cursor-pointer">
+                          {page}
+                        </PaginationLink>
+                      </PaginationItem>
+                    )
+                  );
+                })()}
                 <PaginationItem>
                   <PaginationNext
                     onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
