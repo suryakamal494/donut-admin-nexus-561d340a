@@ -1,14 +1,14 @@
-import { useMemo } from "react";
+import { useMemo, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Users, BookOpen, FileText, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useState } from "react";
 import { batchInfoMap } from "@/data/teacher/examResults";
-import { getBatchChapters, getBatchExamHistory, getBatchInstituteTests } from "@/data/teacher/reportsData";
+import { getBatchChapters, getBatchExamHistory, getBatchInstituteTests, getBatchHealth } from "@/data/teacher/reportsData";
 import { getBatchStudentRoster } from "@/data/teacher/studentReportData";
 import { currentTeacher } from "@/data/teacher/profile";
-import { ChaptersTab, ExamsTab, StudentsTab } from "@/components/teacher/reports";
+import { ChaptersTab, ExamsTab, StudentsTab, BatchHealthCard } from "@/components/teacher/reports";
 
 const BatchReport = () => {
   const { batchId } = useParams<{ batchId: string }>();
@@ -20,6 +20,15 @@ const BatchReport = () => {
   const allExamHistory = useMemo(() => (batchId ? getBatchExamHistory(batchId) : []), [batchId]);
   const instituteTests = useMemo(() => (batchId ? getBatchInstituteTests(batchId, currentTeacher.subjects[0] || "Physics") : []), [batchId]);
   const studentRoster = useMemo(() => (batchId ? getBatchStudentRoster(batchId) : []), [batchId]);
+
+  const batchHealth = useMemo(() => {
+    if (!batchId) return null;
+    return getBatchHealth(batchId, chapters, allExamHistory, studentRoster);
+  }, [batchId, chapters, allExamHistory, studentRoster]);
+
+  const handleNavigateToStudent = useCallback((studentId: string) => {
+    navigate(`/teacher/reports/${batchId}/students/${studentId}`);
+  }, [navigate, batchId]);
 
   if (!batchId || !batchInfo) {
     return (
@@ -68,6 +77,15 @@ const BatchReport = () => {
             </TabsTrigger>
           </TabsList>
         </div>
+
+        {/* Today's Focus — always visible, between tabs and content */}
+        {batchHealth && (
+          <BatchHealthCard
+            health={batchHealth}
+            batchId={batchId}
+            onNavigateToStudent={handleNavigateToStudent}
+          />
+        )}
 
         <TabsContent value="chapters" className="mt-0">
           <ChaptersTab chapters={chapters} batchId={batchId} />

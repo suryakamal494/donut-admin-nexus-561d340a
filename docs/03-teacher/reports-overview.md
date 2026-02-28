@@ -114,13 +114,100 @@ Used consistently across all reports for visual severity:
 
 ## AI-Powered Actions
 
-The Reports module integrates AI in three distinct locations:
+The Reports module integrates AI in **six** distinct locations (3 existing + 3 new from Phase 1-2):
 
-| Action | Location | Component | Scope |
-|--------|----------|-----------|-------|
-| **Generate Practice** | Chapter Report → Student Buckets | `ChapterPracticeReview` (full-page wizard) | Multi-band, chapter-specific MCQs |
-| **Generate Homework** (Exam) | Exam Results → Header | `CreateHomeworkDialog` | Batch-wide, exam-context homework |
-| **Generate Homework** (Student) | Student Profile → Header | `AIHomeworkGeneratorDialog` | Student-specific, cross-chapter homework with context sources |
+| # | Action | Location | Component | Scope | Status |
+|---|--------|----------|-----------|-------|--------|
+| 1 | **Generate Practice** | Chapter Report → Student Buckets | `ChapterPracticeReview` | Multi-band, chapter-specific MCQs | ✅ Live |
+| 2 | **Generate Homework** (Exam) | Exam Results → Header | `CreateHomeworkDialog` | Batch-wide, exam-context homework | ✅ Live |
+| 3 | **Generate Homework** (Student) | Student Profile → Header | `AIHomeworkGeneratorDialog` | Student-specific, cross-chapter homework | ✅ Live |
+| 4 | **Actionable Insight Cards** | Exam Results → Insights tab (between Verdict & Bands) | `ActionableInsightCards` | Severity-coded findings with [Take Action] buttons | ✅ Mock data |
+| 5 | **Today's Focus / Batch Health** | Batch Report → Between tabs and content | `BatchHealthCard` | Daily briefing: priority topics, at-risk students, suggested focus | ✅ Mock data |
+| 6 | **AI Deep-Dive Analysis** | Exam Results → Analytics tab (bottom) | `AIAnalysisCard` | Free-form AI narrative summary | ✅ Live (edge function) |
+
+### Batch Health Summary (Phase 2) — NEW
+
+The **BatchHealthCard** appears on every Batch Report page, positioned between the tab bar and tab content. It is **always visible regardless of which tab is active** — the teacher sees "what matters today" before diving into any specific data.
+
+```text
+Batch Report Layout:
+  1. Breadcrumbs
+  2. Title + Tab Bar
+  3. ┌─────────────────────────────────────────────────┐
+     │  ✨ TODAY'S FOCUS                    Improving ▲ │
+     │  [📖 3 topics need attention] [⚠ 2 at-risk]    │
+     │  [👥 Last exam avg 52%]                          │
+     │  ─────────────────────────────────────────────── │
+     │  Suggested Focus:                                │
+     │  "Review Doppler Effect in Waves & Sound —       │
+     │   3 students consistently below 35%"             │
+     │                                                  │
+     │  PRIORITY TOPICS                                 │
+     │  Doppler Effect (Waves) · 28% · ↓               │
+     │  Wave Optics (Optics) · 34% · →                 │
+     │  Second Law (Thermodynamics) · 41% · →          │
+     │                                                  │
+     │  STUDENTS TO CHECK IN                            │
+     │  Riya Chauhan · At risk — 24% avg · ↓           │
+     │  Harsh Pandey · Plateaued · →                   │
+     └─────────────────────────────────────────────────┘
+  4. Tab Content (Chapters / Exams / Students)
+```
+
+**Data Structure:**
+
+```typescript
+interface BatchHealthSummary {
+  generatedAt: string;
+  overallTrend: 'improving' | 'declining' | 'stable';
+  recentExamAvg: number;
+  priorityTopics: {
+    topic: string; chapter: string;
+    successRate: number; trend: 'up' | 'down' | 'flat';
+    examCount: number;
+  }[];
+  studentsToCheckIn: {
+    studentId: string; studentName: string;
+    reason: string; avgPercentage: number;
+    trend: 'up' | 'down' | 'flat';
+  }[];
+  suggestedFocus: string;
+  atRiskCount: number;
+  weakTopicCount: number;
+}
+```
+
+**Current implementation**: Uses `generateMockBatchHealth()` which derives data from existing chapters, exam history, and student roster. No AI call is made.
+
+**Future AI integration** (Edge function: `batch-health-summary`):
+
+```text
+System: You are a teaching assistant AI. Analyze batch performance data and generate a daily briefing. Return ONLY valid JSON.
+
+User prompt:
+Batch: {batchName}, Class: {className}
+Recent exams (last 5): {examHistory with dates, avg scores, topic breakdowns}
+Chapter performance: {chapters with success rates and weak topic counts}
+Student roster: {students with PI buckets, trends, behavioral tags}
+
+Generate a batch health summary:
+{
+  "overallTrend": "improving" | "declining" | "stable",
+  "priorityTopics": [top 3 topics needing attention, with success rate and trend],
+  "studentsToCheckIn": [top 3 students needing intervention, with reason],
+  "suggestedFocus": "One sentence: what the teacher should prioritize today",
+  "atRiskCount": number,
+  "weakTopicCount": number
+}
+
+Rules:
+- priorityTopics: Pick topics that are weak (<50%) AND declining or flat
+- studentsToCheckIn: Pick students in risk/reinforcement band with declining or plateaued tags
+- suggestedFocus: Must reference a specific topic and student count
+- Be concise — teacher reads this in 5 seconds
+
+Model: google/gemini-2.5-flash
+```
 
 ### Context Sources (Student Homework)
 
