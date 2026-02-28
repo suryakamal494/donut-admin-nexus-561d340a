@@ -683,6 +683,7 @@ All data generators use `Map`-based caching keyed by `chapterId__batchId` (or `s
 
 ## Related Documentation
 
+- [Reports — Overview](./reports-overview.md) — Module architecture and navigation map
 - [Reports — Exams](./reports-exams.md) — Exam results drill-down
 - [Reports — Students](./reports-students.md) — Student profile and Generate Homework
 - [Teacher Exams](./exams.md) — Exam creation and management

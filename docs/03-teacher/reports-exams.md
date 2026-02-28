@@ -465,6 +465,7 @@ Batch Report → Exams Tab
 
 ## Related Documentation
 
+- [Reports — Overview](./reports-overview.md) — Module architecture and navigation map
 - [Reports — Chapters](./reports-chapters.md) — Chapter drill-down and practice generation
 - [Reports — Students](./reports-students.md) — Student profile and Generate Homework
 - [Teacher Exams](./exams.md) — Exam creation and management
