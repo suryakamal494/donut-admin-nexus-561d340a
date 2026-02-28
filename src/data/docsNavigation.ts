@@ -98,8 +98,9 @@ export const docsNavigation: DocSection[] = [
       { title: "Exams", path: "03-teacher/exams" },
       {
         title: "Reports",
-        path: "03-teacher/reports-chapters",
+        path: "03-teacher/reports-overview",
         children: [
+          { title: "Overview", path: "03-teacher/reports-overview" },
           { title: "Chapters", path: "03-teacher/reports-chapters" },
           { title: "Exams", path: "03-teacher/reports-exams" },
           { title: "Students & Homework", path: "03-teacher/reports-students" },
