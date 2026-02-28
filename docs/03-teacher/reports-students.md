@@ -507,6 +507,7 @@ All generators use seeded random (`seededRandom()` with `hashString()`) for dete
 
 ## Related Documentation
 
+- [Reports — Overview](./reports-overview.md) — Module architecture and navigation map
 - [Reports — Chapters](./reports-chapters.md) — Chapter drill-down and practice generation
 - [Reports — Exams](./reports-exams.md) — Exam results with multi-tab analysis
 - [Homework & AI Generation](./homework.md) — Full homework system
