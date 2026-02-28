@@ -29,7 +29,7 @@ const bandLabels: Record<string, string> = {
 const generateSessions = (chapterId: string, batchId: string): PracticeSession[] => {
   // Seed from chapterId to keep deterministic
   const seed = chapterId.split("").reduce((a, c) => a + c.charCodeAt(0), 0);
-  const count = 2 + (seed % 2); // 2 or 3 sessions
+  const count = 3 + (seed % 4); // 3 to 6 sessions
 
   return Array.from({ length: count }, (_, i) => {
     const daysAgo = 7 * (count - i) + (seed % 5);
