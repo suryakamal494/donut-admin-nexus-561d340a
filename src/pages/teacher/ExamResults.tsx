@@ -92,7 +92,7 @@ const ExamResults = () => {
   }));
 
   return (
-    <div className="space-y-4 sm:space-y-5 max-w-7xl mx-auto pb-20 md:pb-6">
+    <div className="space-y-3 max-w-7xl mx-auto pb-20 md:pb-6">
       <PageHeader
         title="Exam Results"
         description={exam.name}
@@ -131,7 +131,7 @@ const ExamResults = () => {
         onSelect={setSelectedBatchId}
       />
 
-      <Tabs defaultValue="insights" className="space-y-4">
+      <Tabs defaultValue="insights" className="space-y-3">
         <TabsList className="w-full sm:w-auto h-auto p-1 grid grid-cols-4 sm:flex">
           <TabsTrigger value="insights" className="text-xs sm:text-sm">Insights</TabsTrigger>
           <TabsTrigger value="analytics" className="text-xs sm:text-sm">Analytics</TabsTrigger>

@@ -70,7 +70,7 @@ const SessionRow = ({ session }: { session: PracticeSession }) => {
 
   return (
     <div
-      className="flex items-center gap-3 rounded-lg border p-3 hover:bg-muted/40 transition-colors cursor-pointer group"
+      className="flex items-center gap-3 rounded-lg border p-2.5 hover:bg-muted/40 transition-colors cursor-pointer group"
       onClick={() => navigate(`/teacher/reports/${session.batchId}/chapters/${session.chapterId}/practice/${session.id}`)}
     >
       <div className="flex-1 min-w-0">

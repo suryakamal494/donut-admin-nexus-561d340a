@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { TrendingUp, TrendingDown, Minus, Users, FileText, AlertTriangle } from "lucide-react";
+import { TrendingUp, TrendingDown, Minus, Users } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { PageHeader } from "@/components/ui/page-header";
 import { batchReports } from "@/data/teacher/reportsData";
@@ -10,7 +10,7 @@ const Reports = () => {
   const navigate = useNavigate();
 
   return (
-    <div className="space-y-4 sm:space-y-5 max-w-7xl mx-auto pb-20 md:pb-6">
+    <div className="space-y-3 max-w-7xl mx-auto pb-20 md:pb-6">
       <PageHeader
         title="Reports"
         description="Batch-wise performance overview"
@@ -21,7 +21,7 @@ const Reports = () => {
       />
 
       {/* Batch Cards Grid */}
-      <div className="grid gap-3 sm:gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-2.5 sm:gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {batchReports.map((batch, i) => {
           const TrendIcon = batch.trend === "up" ? TrendingUp : batch.trend === "down" ? TrendingDown : Minus;
           const trendColor = batch.trend === "up" ? "text-emerald-500" : batch.trend === "down" ? "text-red-500" : "text-muted-foreground";
@@ -40,12 +40,12 @@ const Reports = () => {
               >
                 {/* Teal gradient header strip */}
                 <div className="h-1.5 bg-gradient-to-r from-teal-500 to-cyan-500" />
-                <CardContent className="p-4 sm:p-5">
+                <CardContent className="p-3 sm:p-4">
                   {/* Header */}
-                  <div className="flex items-start justify-between mb-3">
-                    <div>
-                      <h3 className="text-base sm:text-lg font-bold text-foreground">{batch.className} — {batch.batchName}</h3>
-                      <div className="flex items-center gap-2 mt-1">
+                  <div className="flex items-start justify-between mb-2">
+                    <div className="min-w-0 flex-1">
+                      <h3 className="text-sm sm:text-base font-bold text-foreground truncate">{batch.className} — {batch.batchName}</h3>
+                      <div className="flex items-center gap-2 mt-0.5">
                         <span className="text-xs text-muted-foreground">{batch.totalStudents} students</span>
                         <span className="text-muted-foreground">·</span>
                         <div className={cn(
@@ -59,9 +59,8 @@ const Reports = () => {
                         </div>
                       </div>
                     </div>
-                    {/* Class average ring */}
                     <div className={cn(
-                      "shrink-0 w-12 h-12 rounded-xl flex flex-col items-center justify-center text-white font-bold text-sm shadow-md",
+                      "shrink-0 w-10 h-10 rounded-lg flex items-center justify-center text-white font-bold text-xs shadow-sm",
                       batch.classAverage >= 65 ? "bg-gradient-to-br from-emerald-500 to-teal-500" :
                       batch.classAverage >= 40 ? "bg-gradient-to-br from-amber-500 to-orange-500" :
                       "bg-gradient-to-br from-red-500 to-rose-500"
@@ -70,33 +69,19 @@ const Reports = () => {
                     </div>
                   </div>
 
-                  {/* Stats row */}
-                  <div className="grid grid-cols-3 gap-2">
-                    <div className="bg-gradient-to-br from-teal-50 to-cyan-50 dark:from-teal-950/30 dark:to-cyan-950/30 rounded-lg p-2.5 text-center ring-1 ring-teal-100 dark:ring-teal-900/30">
-                      <FileText className="w-4 h-4 mx-auto mb-1 text-teal-600 dark:text-teal-400" />
-                      <p className="text-lg font-bold text-foreground">{batch.totalExamsConducted}</p>
-                      <p className="text-[10px] text-muted-foreground">Exams</p>
-                    </div>
-                    <div className="bg-gradient-to-br from-teal-50 to-cyan-50 dark:from-teal-950/30 dark:to-cyan-950/30 rounded-lg p-2.5 text-center ring-1 ring-teal-100 dark:ring-teal-900/30">
-                      <TrendingUp className="w-4 h-4 mx-auto mb-1 text-teal-600 dark:text-teal-400" />
-                      <p className="text-lg font-bold text-foreground">{batch.classAverage}%</p>
-                      <p className="text-[10px] text-muted-foreground">Avg Score</p>
-                    </div>
-                    <div className={cn(
-                      "rounded-lg p-2.5 text-center ring-1",
-                      batch.atRiskCount > 3
-                        ? "bg-gradient-to-br from-red-50 to-rose-50 dark:from-red-950/30 dark:to-rose-950/30 ring-red-100 dark:ring-red-900/30"
-                        : batch.atRiskCount > 0
-                        ? "bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/30 ring-amber-100 dark:ring-amber-900/30"
-                        : "bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950/30 dark:to-teal-950/30 ring-emerald-100 dark:ring-emerald-900/30"
-                    )}>
-                      <AlertTriangle className={cn(
-                        "w-4 h-4 mx-auto mb-1",
-                        batch.atRiskCount > 3 ? "text-red-500" : batch.atRiskCount > 0 ? "text-amber-500" : "text-emerald-500"
-                      )} />
-                      <p className="text-lg font-bold text-foreground">{batch.atRiskCount}</p>
-                      <p className="text-[10px] text-muted-foreground">At Risk</p>
-                    </div>
+                  {/* Inline stats row */}
+                  <div className="flex items-center gap-3 text-xs text-muted-foreground pt-1 border-t border-border/40">
+                    <span><span className="font-semibold text-foreground">{batch.totalExamsConducted}</span> exams</span>
+                    <span>·</span>
+                    <span><span className="font-semibold text-foreground">{batch.classAverage}%</span> avg</span>
+                    <span>·</span>
+                    <span className={cn(
+                      "font-semibold",
+                      batch.atRiskCount > 3 ? "text-red-600 dark:text-red-400" :
+                      batch.atRiskCount > 0 ? "text-amber-600 dark:text-amber-400" :
+                      "text-emerald-600 dark:text-emerald-400"
+                    )}>{batch.atRiskCount}</span>
+                    <span>at risk</span>
                   </div>
                 </CardContent>
               </Card>

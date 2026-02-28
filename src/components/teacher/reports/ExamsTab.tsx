@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { FileText, Calendar, Filter, GraduationCap, Award } from "lucide-react";
+import { FileText, Calendar, Filter, GraduationCap } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -53,7 +53,7 @@ export const ExamsTab = ({ allExamHistory, instituteTests, batchId }: ExamsTabPr
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {/* Source toggle */}
       <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-hide">
         <button
@@ -108,32 +108,24 @@ export const ExamsTab = ({ allExamHistory, instituteTests, batchId }: ExamsTabPr
                     className={cn("card-premium cursor-pointer hover:shadow-md transition-shadow active:scale-[0.99] border-l-4", colors.border)}
                     onClick={() => navigate(`/teacher/reports/${batchId}/exams/${exam.examId}`)}
                   >
-                    <CardContent className="p-3.5 sm:p-4">
-                      <div className="flex items-start justify-between mb-2">
+                    <CardContent className="p-3">
+                      <div className="flex items-center justify-between">
                         <div className="min-w-0 flex-1">
                           <h3 className="text-sm font-semibold text-foreground truncate">{exam.examName}</h3>
                           <div className="flex items-center gap-1.5 mt-0.5 text-[11px] text-muted-foreground">
                             <Calendar className="w-3 h-3" />
                             {format(new Date(exam.date), "dd MMM yyyy")}
+                            <span>·</span>
+                            <span>Avg <span className={cn("font-semibold", colors.text)}>{exam.classAverage}/{exam.totalMarks}</span></span>
+                            <span>·</span>
+                            <span>High {exam.highestScore}/{exam.totalMarks}</span>
+                            <span>·</span>
+                            <span>{exam.totalStudents} students</span>
                           </div>
                         </div>
-                        <Badge variant="secondary" className={cn("text-[10px] shrink-0 font-semibold", colors.badge)}>
+                        <Badge variant="secondary" className={cn("text-[10px] shrink-0 font-semibold ml-2", colors.badge)}>
                           {exam.passPercentage}% pass
                         </Badge>
-                      </div>
-                      <div className="grid grid-cols-3 gap-2 mt-2">
-                        <div className={cn("rounded-lg p-2 text-center", colors.light)}>
-                          <p className={cn("text-sm font-bold", colors.text)}>{exam.classAverage}/{exam.totalMarks}</p>
-                          <p className="text-[10px] text-muted-foreground">Avg Score</p>
-                        </div>
-                        <div className={cn("rounded-lg p-2 text-center", colors.light)}>
-                          <p className={cn("text-sm font-bold", colors.text)}>{exam.highestScore}/{exam.totalMarks}</p>
-                          <p className="text-[10px] text-muted-foreground">Highest</p>
-                        </div>
-                        <div className="bg-muted/50 rounded-lg p-2 text-center">
-                          <p className="text-sm font-bold text-foreground">{exam.totalStudents}</p>
-                          <p className="text-[10px] text-muted-foreground">Students</p>
-                        </div>
                       </div>
                     </CardContent>
                   </Card>
@@ -185,7 +177,7 @@ export const ExamsTab = ({ allExamHistory, instituteTests, batchId }: ExamsTabPr
       {/* Institute Tests */}
       {examSource === "institute" && (
         <>
-          <div className="space-y-3">
+          <div className="space-y-2">
             {instituteTests.map((test, i) => {
               const patternStyles: Record<string, { label: string; bg: string; text: string }> = {
                 jee_main: { label: "JEE Main", bg: "bg-blue-100 dark:bg-blue-900/30", text: "text-blue-700 dark:text-blue-400" },
@@ -201,44 +193,30 @@ export const ExamsTab = ({ allExamHistory, instituteTests, batchId }: ExamsTabPr
                     className="card-premium border-l-4 border-l-violet-500 cursor-pointer hover:shadow-md transition-shadow active:scale-[0.99]"
                     onClick={() => navigate(`/teacher/reports/${batchId}/institute-test/${test.examId}`)}
                   >
-                    <CardContent className="p-3.5 sm:p-4">
-                      <div className="flex items-start justify-between mb-2">
+                    <CardContent className="p-3">
+                      <div className="flex items-center justify-between">
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-2 mb-0.5 flex-wrap">
                             <h3 className="text-sm font-semibold text-foreground truncate">{test.examName}</h3>
                             <Badge variant="secondary" className={cn("text-[10px] px-1.5 py-0 font-semibold", ps.bg, ps.text)}>
                               {ps.label}
                             </Badge>
+                            <Badge variant="secondary" className="text-[10px] px-1.5 py-0 shrink-0 font-semibold bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400">
+                              Grand Test
+                            </Badge>
                           </div>
-                          <div className="flex items-center gap-2 mt-0.5 text-[11px] text-muted-foreground">
+                          <div className="flex items-center gap-1.5 mt-0.5 text-[11px] text-muted-foreground flex-wrap">
                             <Calendar className="w-3 h-3" />
                             {format(new Date(test.date), "dd MMM yyyy")}
                             <span>·</span>
-                            <Award className="w-3 h-3" />
-                            <span className="font-medium text-violet-600 dark:text-violet-400">{currentTeacher.subjects[0]}</span>
+                            <span>Avg <span className="font-semibold text-violet-600 dark:text-violet-400">{test.subjectAvgScore}/{test.subjectMaxMarks}</span> ({currentTeacher.subjects[0]})</span>
+                            <span>·</span>
+                            <span>High {test.subjectHighest}/{test.subjectMaxMarks}</span>
+                            <span>·</span>
+                            <span>{test.participantCount.toLocaleString()} students</span>
                           </div>
                         </div>
-                        <Badge variant="secondary" className="text-[10px] shrink-0 font-semibold bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400">
-                          Grand Test
-                        </Badge>
-                      </div>
-                      <div className="grid grid-cols-3 gap-2 mt-2">
-                        <div className="bg-violet-50 dark:bg-violet-950/30 rounded-lg p-2 text-center">
-                          <p className="text-sm font-bold text-violet-700 dark:text-violet-400">{test.subjectAvgScore}/{test.subjectMaxMarks}</p>
-                          <p className="text-[10px] text-muted-foreground">Avg ({currentTeacher.subjects[0]})</p>
-                        </div>
-                        <div className="bg-violet-50 dark:bg-violet-950/30 rounded-lg p-2 text-center">
-                          <p className="text-sm font-bold text-violet-700 dark:text-violet-400">{test.subjectHighest}/{test.subjectMaxMarks}</p>
-                          <p className="text-[10px] text-muted-foreground">Highest</p>
-                        </div>
-                        <div className="bg-muted/50 rounded-lg p-2 text-center">
-                          <p className="text-sm font-bold text-foreground">{test.participantCount.toLocaleString()}</p>
-                          <p className="text-[10px] text-muted-foreground">Participants</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center justify-between mt-2 pt-2 border-t border-border/50">
-                        <span className="text-[11px] text-muted-foreground">Total: {test.totalMarks} marks</span>
-                        <Badge variant="secondary" className={cn("text-[10px] font-semibold", passColors.badge)}>
+                        <Badge variant="secondary" className={cn("text-[10px] font-semibold shrink-0 ml-2", passColors.badge)}>
                           {test.passPercentage}% pass
                         </Badge>
                       </div>

@@ -35,7 +35,7 @@ const ChapterReport = () => {
   }
 
   return (
-    <div className="space-y-4 sm:space-y-5 max-w-7xl mx-auto pb-20 md:pb-6">
+    <div className="space-y-3 max-w-7xl mx-auto pb-20 md:pb-6">
       <PageHeader
         title={chapter.chapterName}
         description={`${chapter.subject} · ${batchInfo.className} ${batchInfo.name}`}
