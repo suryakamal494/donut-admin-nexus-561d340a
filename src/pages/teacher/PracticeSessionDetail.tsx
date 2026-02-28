@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { PageHeader } from "@/components/ui/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
   Users, CheckCircle2, Clock, Target, BarChart3, FileText,
-  ArrowLeft, BookOpen, CircleCheck, CircleX, Timer
+  ArrowLeft, BookOpen, CircleCheck, CircleX, Timer, ChevronDown, ChevronUp, Eye
 } from "lucide-react";
 import { getPracticeSessionDetail } from "@/data/teacher/practiceSessionDetailData";
 import type { BandDetail, StudentResult, QuestionResult } from "@/data/teacher/practiceSessionDetailData";
@@ -135,12 +136,10 @@ export default function PracticeSessionDetail() {
                     <span className="text-xs font-normal text-muted-foreground">({band.questionCount} questions)</span>
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="p-0">
-                  <div className="divide-y">
-                    {band.questions.map((q, idx) => (
-                      <QuestionRow key={q.id} question={q} index={idx + 1} />
-                    ))}
-                  </div>
+                <CardContent className="px-3 pb-3 pt-0 space-y-2">
+                  {band.questions.map((q, idx) => (
+                    <QuestionCard key={q.id} question={q} index={idx + 1} bandKey={band.key} />
+                  ))}
                 </CardContent>
               </Card>
             ))}
@@ -231,20 +230,63 @@ function StudentRow({ student }: { student: StudentResult }) {
   );
 }
 
-function QuestionRow({ question, index }: { question: QuestionResult; index: number }) {
+const optionLabels = ["A", "B", "C", "D"];
+
+function QuestionCard({ question, index, bandKey }: { question: QuestionResult; index: number; bandKey: string }) {
+  const [showSolution, setShowSolution] = useState(false);
+  const cfg = bandConfig[bandKey] || bandConfig.risk;
+
   return (
-    <div className="px-4 py-3 space-y-1.5">
-      <div className="flex items-start gap-2">
-        <span className="text-xs text-muted-foreground font-mono shrink-0 mt-0.5">Q{index}</span>
-        <p className="text-sm text-foreground line-clamp-2 flex-1">{question.text}</p>
-      </div>
-      <div className="flex items-center gap-2 flex-wrap pl-6">
-        <Badge variant="outline" className="text-xs">{question.topic}</Badge>
-        <Badge variant="secondary" className="text-xs">{question.difficulty}</Badge>
-        <span className={cn("text-xs font-medium ml-auto", accuracyColor(question.successRate))}>
-          {question.successRate}% success ({question.correctAttempts}/{question.totalAttempts})
+    <div className={cn("border rounded-lg p-3 bg-muted/20 space-y-2", cfg.border)}>
+      <div className="flex items-start gap-2.5">
+        <span className={cn(
+          "w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold shrink-0 mt-0.5",
+          "bg-primary/10 text-primary"
+        )}>
+          Q{index}
         </span>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm text-foreground leading-relaxed">{question.text}</p>
+          <div className="flex items-center gap-2 flex-wrap mt-1.5">
+            <Badge variant="outline" className="text-xs">{question.topic}</Badge>
+            <Badge variant="secondary" className="text-xs">{question.difficulty}</Badge>
+            <span className={cn("text-xs font-medium ml-auto", accuracyColor(question.successRate))}>
+              {question.successRate}% success ({question.correctAttempts}/{question.totalAttempts})
+            </span>
+          </div>
+        </div>
       </div>
+
+      <Button
+        variant="ghost"
+        size="sm"
+        className="text-xs text-muted-foreground hover:text-foreground h-7 px-2 gap-1"
+        onClick={() => setShowSolution((v) => !v)}
+      >
+        <Eye className="w-3 h-3" />
+        {showSolution ? "Hide Solution" : "View Solution"}
+        {showSolution ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+      </Button>
+
+      {showSolution && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 pl-1">
+          {question.options.map((opt, i) => (
+            <div
+              key={i}
+              className={cn(
+                "text-xs px-2.5 py-1.5 rounded-md border",
+                i === question.correctOption
+                  ? "bg-emerald-500/10 border-emerald-500/40 text-emerald-700 dark:text-emerald-400 font-medium"
+                  : "bg-muted/30 border-border text-muted-foreground"
+              )}
+            >
+              <span className="font-semibold mr-1">{optionLabels[i]}.</span>
+              {opt}
+              {i === question.correctOption && <CheckCircle2 className="w-3 h-3 inline ml-1 -mt-0.5" />}
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

@@ -23,6 +23,8 @@ export interface QuestionResult {
   successRate: number;
   totalAttempts: number;
   correctAttempts: number;
+  options: string[];
+  correctOption: number; // 0-indexed
 }
 
 export interface BandDetail {
@@ -102,6 +104,19 @@ const questionTexts: Record<string, string[]> = {
   ],
 };
 
+const optionSets: string[][] = [
+  ["v = u + at", "v² = u² + 2as", "s = ut + ½at²", "v = u - at"],
+  ["9.8 m/s²", "10 m/s²", "8.9 m/s²", "9.2 m/s²"],
+  ["15.3 m", "20.4 m", "10.2 m", "25.0 m"],
+  ["40 km/h", "100 km/h", "60 km/h", "20 km/h"],
+  ["2 m/s²", "4 m/s²", "8 m/s²", "1 m/s²"],
+  ["30 m", "50 m", "40 m", "45 m"],
+  ["5 s", "3 s", "10 s", "7 s"],
+  ["20 m/s", "15 m/s", "10 m/s", "25 m/s"],
+  ["ω = v/r", "ω = vr", "ω = r/v", "ω = v²/r"],
+  ["45.9 m", "44.1 m", "50.0 m", "39.2 m"],
+];
+
 const topics = ["Kinematics Basics", "Equations of Motion", "Projectile Motion", "Circular Motion", "Free Fall"];
 const difficulties: Array<"Easy" | "Medium" | "Hard"> = ["Easy", "Medium", "Hard"];
 
@@ -143,6 +158,8 @@ const generateDetail = (session: PracticeSession): PracticeSessionDetail => {
     const questions: QuestionResult[] = Array.from({ length: band.questionCount }, (_, i) => {
       const successRate = Math.round(15 + rand() * 75);
       const totalAttempts = band.completedCount;
+      const opts = optionSets[i % optionSets.length];
+      const correctOption = Math.floor(rand() * 4);
       return {
         id: `q-${band.key}-${i}`,
         text: qTexts[i % qTexts.length],
@@ -151,6 +168,8 @@ const generateDetail = (session: PracticeSession): PracticeSessionDetail => {
         successRate,
         totalAttempts,
         correctAttempts: Math.round((successRate / 100) * totalAttempts),
+        options: opts,
+        correctOption,
       };
     });
 
