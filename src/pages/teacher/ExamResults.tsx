@@ -37,6 +37,42 @@ import { AIHomeworkGeneratorDialog } from "@/components/teacher/AIHomeworkGenera
 import type { AIHomeworkPrefill } from "@/components/teacher/ai-homework/types";
 
 const PIE_COLORS = ["#22c55e", "#f59e0b", "#ef4444", "#6b7280"];
+const STUDENTS_INITIAL = 15;
+
+const StudentsTabContent = ({ analytics }: { analytics: ExamAnalytics }) => {
+  const [visibleCount, setVisibleCount] = useState(STUDENTS_INITIAL);
+  const visible = analytics.allStudents.slice(0, visibleCount);
+  const hasMore = visibleCount < analytics.allStudents.length;
+
+  return (
+    <Card className="card-premium">
+      <CardHeader className="pb-2">
+        <CardTitle className="text-base font-semibold">
+          All Students ({analytics.allStudents.length})
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="p-0">
+        <div className="divide-y">
+          {visible.map((student) => (
+            <StudentResultRow key={student.id} student={student} />
+          ))}
+        </div>
+        {hasMore && (
+          <div className="p-3 text-center">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setVisibleCount((c) => c + STUDENTS_INITIAL)}
+              className="text-xs text-primary"
+            >
+              Show more ({analytics.allStudents.length - visibleCount} remaining)
+            </Button>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+};
 
 const ExamResults = () => {
   const { examId, batchId: batchIdFromUrl } = useParams<{ examId: string; batchId?: string }>();
@@ -250,18 +286,7 @@ const ExamResults = () => {
 
         {/* ── Students Tab ── */}
         <TabsContent value="students" className="space-y-4">
-          <Card className="card-premium">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base font-semibold">All Students</CardTitle>
-            </CardHeader>
-            <CardContent className="p-0">
-              <div className="divide-y">
-                {analytics.allStudents.map((student) => (
-                  <StudentResultRow key={student.id} student={student} />
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+          <StudentsTabContent analytics={analytics} />
         </TabsContent>
       </Tabs>
 

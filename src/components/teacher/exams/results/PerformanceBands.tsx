@@ -12,26 +12,26 @@ const bandStyles: Record<BandKey, { dot: string; border: string; bg: string; bad
   mastery: {
     dot: "bg-emerald-500",
     border: "border-l-emerald-500",
-    bg: "bg-emerald-50",
-    badge: "bg-emerald-100 text-emerald-700",
+    bg: "bg-emerald-50 dark:bg-emerald-950/30",
+    badge: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300",
   },
   stable: {
     dot: "bg-teal-500",
     border: "border-l-teal-500",
-    bg: "bg-teal-50",
-    badge: "bg-teal-100 text-teal-700",
+    bg: "bg-teal-50 dark:bg-teal-950/30",
+    badge: "bg-teal-100 text-teal-700 dark:bg-teal-900/40 dark:text-teal-300",
   },
   reinforcement: {
     dot: "bg-amber-500",
     border: "border-l-amber-500",
-    bg: "bg-amber-50",
-    badge: "bg-amber-100 text-amber-700",
+    bg: "bg-amber-50 dark:bg-amber-950/30",
+    badge: "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300",
   },
   risk: {
     dot: "bg-red-500",
     border: "border-l-red-500",
-    bg: "bg-red-50",
-    badge: "bg-red-100 text-red-700",
+    bg: "bg-red-50 dark:bg-red-950/30",
+    badge: "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300",
   },
 };
 
