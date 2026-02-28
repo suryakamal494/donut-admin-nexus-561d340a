@@ -1,90 +1,95 @@
 
 
-## What You're Asking
+## Pain Point
 
-You want me to write comprehensive documentation for the entire Teacher Reports module in the existing docs section (`docs/03-teacher/`). This documentation should cover every feature, calculation, component, and flow that exists in the Reports — covering the Chapters tab, Exams tab, Students tab, the drill-down pages (Chapter Report, Exam Results, Student Profile), the Practice Assignment lifecycle, and the Generate Homework feature across all three places it appears.
+You're right. The current Reports UI is **too spacious on desktop** — large paddings, oversized stat grids with icons, tall banners, and generous gaps between sections. The result: excessive scrolling to reach meaningful content. Only 2-3 items are visible per screen, and 50%+ of viewport is consumed by headers/banners before content even begins.
 
-You want this done **phase-wise** to avoid missing details:
-- **Phase 1**: Chapters tab + Chapter Report drill-down (topics, heatmaps, student buckets, practice history, exam breakdown)
-- **Phase 2**: Exams tab + Exam Results drill-down (Insights, Analytics, Questions, Students sub-tabs, Institute Tests)
-- **Phase 3**: Students tab + Student Profile drill-down (chapter mastery, exam history, difficulty analysis, weak topics, Generate Homework across all 3 locations)
+The UI is visually polished, but the information density is too low for a daily-use teacher dashboard.
 
-## My Understanding of What Exists
+## Root Causes (per screenshot)
 
-After reading every file in the Reports module, here is the complete inventory:
+| Page | Issue |
+|------|-------|
+| **Reports Landing** | Batch cards have 3-column stat grid with icons — each card ~180px tall. Only 3 visible on a full screen |
+| **Chapters Tab** | OK density, but `space-y-3` gaps add up. Chapter cards are reasonable |
+| **Exams Tab** | Source toggle + date filters + exam cards with 3-col stat grid inside = only 2 exams visible |
+| **Students Tab** | Decent density, similar to chapters |
+| **Chapter Report** | PageHeader + Overview Banner (`text-2xl/3xl` + `p-4/p-5`) + Topic Heatmap (each cell has icon + name + % + meta with `p-3`) = 50% of screen before useful content |
+| **Exam Results** | PageHeader + batch selector + tabs bar + verdict banner = top 50% before performance bands |
 
-**Level 1 — Reports Landing** (`/teacher/reports`): Batch cards with class average, trend, exam count, at-risk count.
+## Solution: Targeted Density Improvements
 
-**Level 2 — Batch Report** (`/teacher/reports/:batchId`): Three tabs — Chapters, Exams, Students.
+Not a redesign — just tightening spacing, reducing redundant elements, and making cards more compact. No functionality changes.
 
-**Level 3 — Drill-down pages:**
-- Chapter Report → Overview Banner, Topic Heatmap, Student Buckets (4 PI-based bands), Practice History, Exam-wise Breakdown
-- Chapter Practice Review → 3-step Generate Practice flow (Configure → Review → Assign)
-- Practice Session Detail → Per-band completion, accuracy, student results, question success rates
-- Exam Results → 4 tabs (Insights: verdict/bands/topics/insight cards; Analytics: AI analysis/score distribution/difficulty/cognitive charts; Questions: grouped accordion by accuracy bands; Students: all student rows)
-- Institute Test Detail → Separate page for grand tests with chapters/difficulty/questions tabs
-- Student Profile → Header with PI/tags, Chapter Mastery grid, Exam History timeline, Difficulty Analysis, Weak Topics list
+### Phase 1 — Reports Landing (batch cards)
 
-**Generate Homework appears in 3 places:**
-1. Chapter Report → "Generate Practice" button → full-page multi-band practice flow
-2. Exam Results → "Generate Homework" button → CreateHomeworkDialog with weak topics pre-filled
-3. Student Profile → "Generate Homework" button → AIHomeworkGeneratorDialog with student-specific weak topics pre-filled
+**File:** `src/pages/teacher/Reports.tsx`
 
-**Key calculations:**
-- Performance Index (PI) = 0.50×Accuracy + 0.20×Consistency + 0.15×TimeEfficiency + 0.15×AttemptRate
-- Student bucketing: Mastery (PI≥75), Stable (50-74), Reinforcement (35-49), Risk (<35)
-- Topic status: Strong (≥65%), Moderate (40-64%), Weak (<40%)
-- Trend detection: Linear regression slope (>2 = up, <-2 = down)
-- Plateau: 3+ exams, stddev<5, slope<1.5
-- Secondary tags: improving, declining, plateaued, inconsistent, speed-issue, low-attempt
+- Replace 3-column icon stat grid with **inline stat row** (e.g., `15 exams · 49% avg · 1 at risk`) — removes icons and grid, reduces card height by ~40%
+- Reduce card padding from `p-4 sm:p-5` to `p-3 sm:p-4`
+- Reduce `space-y-4 sm:space-y-5` to `space-y-3`
+- Target: 4-5 cards visible on desktop instead of 3
 
-## Implementation Plan
+### Phase 2 — Exams Tab (exam cards)
 
-### Phase 1 — Chapters Documentation
-**File**: `docs/03-teacher/reports-chapters.md`
+**File:** `src/components/teacher/reports/ExamsTab.tsx`
 
-Will document:
-- Chapters tab listing (status badges, topic count, weak count)
-- Chapter Report page: Overview Banner, Topic Heatmap Grid (4-tier color standard), Student Performance Buckets (PI formula, band thresholds, secondary tags), Practice History section, Exam-wise Breakdown
-- Practice Generation flow (Configure → Review → Assign), edge function prompt structure
-- Practice Session Detail page (band performance cards, student results, question success rates)
+- Replace 3-column stat grid inside each exam card with a **single-row inline layout**: `Avg 20/40 · Highest 32/40 · 27 students`
+- Reduce card padding from `p-3.5 sm:p-4` to `p-3`
+- Reduce `space-y-3` between cards to `space-y-2`
+- Target: 4-5 exams visible instead of 2
 
-### Phase 2 — Exams Documentation
-**File**: `docs/03-teacher/reports-exams.md`
+### Phase 3 — Chapter Report page (overview + heatmap)
 
-Will document:
-- Exams tab: My Exams (date filters, pagination) vs Institute Tests (grand tests filtered by teacher's subject)
-- Exam Results page: Batch Selector, 4 sub-tabs
-  - Insights: VerdictBanner, PerformanceBands, TopicFlags, InsightCards
-  - Analytics: AIAnalysisCard, Score Distribution chart, Difficulty Chart, Cognitive Chart
-  - Questions: QuestionGroupAccordion (4 accuracy bands: Well Understood ≥75%, Moderate 50-74%, Needs Attention 35-49%, Needs Reteaching <35%)
-  - Students: StudentResultRow list
-- Institute Test Detail page
+**Files:** `src/components/teacher/reports/ChapterOverviewBanner.tsx`, `TopicHeatmapGrid.tsx`
 
-### Phase 3 — Students & Generate Homework Documentation
-**File**: `docs/03-teacher/reports-students.md`
+**Overview Banner:**
+- Reduce percentage from `text-2xl sm:text-3xl` to `text-xl sm:text-2xl`
+- Reduce padding from `p-4 sm:p-5` to `p-3 sm:p-4`
+- Make it more horizontal: percentage + stats on same row instead of stacked
 
-Will document:
-- Students tab: search, PI bucket badges, trend indicators
-- Student Profile page: HeaderCard (accuracy, trend, behavioral tags, consistency, weak chapters), Chapter Mastery grid (expandable topics), Exam History timeline (Show more pattern), Difficulty Analysis (Easy/Medium/Hard), Weak Topics list
-- Generate Homework — all 3 locations, what context gets pre-filled, prompt structure
+**Topic Heatmap:**
+- Remove the status icons from each cell (the color already communicates status)
+- Reduce cell padding from `p-3` to `p-2.5`
+- Reduce percentage font from `text-lg` to `text-base`
+- Target: heatmap takes ~30% less vertical space
 
-### Phase 4 — Navigation Update
-**File**: `src/data/docsNavigation.ts`
+### Phase 4 — Student Buckets + Practice History + Exam Breakdown
 
-Add "Reports" as a parent nav item under Teacher Portal with 3 children:
-- Reports — Chapters (`03-teacher/reports-chapters`)
-- Reports — Exams (`03-teacher/reports-exams`)
-- Reports — Students (`03-teacher/reports-students`)
+**Files:** `StudentBuckets.tsx`, `ChapterPracticeHistory.tsx`, `ChapterExamBreakdown.tsx`
 
-### Summary of File Changes
+- Reduce CardHeader padding (already `pb-2`, keep)
+- Student rows: reduce padding from `px-3 py-2.5` to `px-3 py-2`
+- Practice history rows: reduce padding from `p-3` to `p-2.5`
+- Reduce `space-y-3` between sections on ChapterReport to `space-y-3` (already) — reduce `space-y-4 sm:space-y-5` on the page container to `space-y-3`
 
-| Action | File |
-|--------|------|
-| **Create** | `docs/03-teacher/reports-chapters.md` |
-| **Create** | `docs/03-teacher/reports-exams.md` |
-| **Create** | `docs/03-teacher/reports-students.md` |
-| **Modify** | `src/data/docsNavigation.ts` — add Reports nav items |
+### Phase 5 — Exam Results page header area
 
-Each doc follows the existing format: Overview → Access → UI Components table → Features & Functionality (with ASCII diagrams) → Data Flow → Business Rules → Mobile Behavior → Related Documentation.
+**File:** `src/pages/teacher/ExamResults.tsx`
+
+- Reduce PageHeader bottom margin
+- Tighten batch selector + tabs spacing
+- Verdict banner: reduce padding slightly
+
+### Phase 6 — PageHeader global tightening (reports only)
+
+**File:** `src/components/ui/page-header.tsx` — No changes here (shared component). Instead, reduce the `space-y-4 sm:space-y-5` on each report page container to `space-y-3`.
+
+---
+
+### Summary of changes
+
+All changes are CSS/spacing only — no structural or functional changes. Every file touched is within the Reports module. Estimated scroll reduction: **30-40%** across all report pages.
+
+| File | Change Type |
+|------|------------|
+| `src/pages/teacher/Reports.tsx` | Compact batch cards: inline stats, less padding |
+| `src/components/teacher/reports/ExamsTab.tsx` | Compact exam cards: inline stats |
+| `src/components/teacher/reports/ChapterOverviewBanner.tsx` | Smaller banner |
+| `src/components/teacher/reports/TopicHeatmapGrid.tsx` | Remove icons, tighter cells |
+| `src/components/teacher/reports/StudentBuckets.tsx` | Tighter student rows |
+| `src/components/teacher/reports/ChapterPracticeHistory.tsx` | Tighter session rows |
+| `src/pages/teacher/ChapterReport.tsx` | Reduce container spacing |
+| `src/pages/teacher/BatchReport.tsx` | Reduce container spacing |
+| `src/pages/teacher/ExamResults.tsx` | Reduce header area spacing |
 
