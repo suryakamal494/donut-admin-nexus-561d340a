@@ -4,8 +4,8 @@ import { PageHeader } from "@/components/ui/page-header";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getInstituteBatchById, getExamsByBatch, getStudentsByBatch } from "@/data/institute/reportsData";
 import SubjectOverviewCards from "@/components/institute/reports/SubjectOverviewCards";
-import BatchExamsTabStub from "@/components/institute/reports/BatchExamsTabStub";
-import BatchStudentsTabStub from "@/components/institute/reports/BatchStudentsTabStub";
+import BatchExamsTab from "@/components/institute/reports/BatchExamsTab";
+import BatchStudentsTab from "@/components/institute/reports/BatchStudentsTab";
 import { BookOpen, ClipboardList, Users } from "lucide-react";
 
 const BatchReportDetail = () => {
@@ -82,11 +82,11 @@ const BatchReportDetail = () => {
         </TabsContent>
 
         <TabsContent value="exams" className="mt-3">
-          <BatchExamsTabStub exams={exams} />
+          <BatchExamsTab exams={exams} />
         </TabsContent>
 
         <TabsContent value="students" className="mt-3">
-          <BatchStudentsTabStub students={students} batchId={batch.batchId} />
+          <BatchStudentsTab students={students} batchId={batch.batchId} />
         </TabsContent>
       </Tabs>
     </div>
