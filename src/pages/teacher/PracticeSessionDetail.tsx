@@ -126,24 +126,26 @@ export default function PracticeSessionDetail() {
         </TabsContent>
 
         <TabsContent value="questions">
-          <div className="space-y-3">
+          <Accordion type="multiple" defaultValue={bandDetails.map(b => b.key)} className="space-y-2">
             {bandDetails.map((band) => (
-              <Card key={band.key} className="overflow-hidden">
-                <CardHeader className="py-3 px-4">
-                  <CardTitle className="text-sm font-semibold flex items-center gap-2">
+              <AccordionItem key={band.key} value={band.key} className="border rounded-lg overflow-hidden">
+                <AccordionTrigger className="px-4 py-3 hover:no-underline">
+                  <div className="flex items-center gap-2 text-sm font-medium">
                     <span className={cn("w-2.5 h-2.5 rounded-full", bandConfig[band.key]?.color)} />
                     {band.label}
-                    <span className="text-xs font-normal text-muted-foreground">({band.questionCount} questions)</span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="px-3 pb-3 pt-0 space-y-2">
+                    <Badge variant="secondary" className="text-xs font-normal ml-1">
+                      {band.questionCount} questions
+                    </Badge>
+                  </div>
+                </AccordionTrigger>
+                <AccordionContent className="px-3 pb-3 pt-0 space-y-2">
                   {band.questions.map((q, idx) => (
                     <QuestionCard key={q.id} question={q} index={idx + 1} bandKey={band.key} />
                   ))}
-                </CardContent>
-              </Card>
+                </AccordionContent>
+              </AccordionItem>
             ))}
-          </div>
+          </Accordion>
         </TabsContent>
       </Tabs>
     </div>
@@ -235,9 +237,16 @@ const optionLabels = ["A", "B", "C", "D"];
 function QuestionCard({ question, index, bandKey }: { question: QuestionResult; index: number; bandKey: string }) {
   const [showSolution, setShowSolution] = useState(false);
   const cfg = bandConfig[bandKey] || bandConfig.risk;
+  const successStyle = question.successRate >= 75
+    ? "border-l-emerald-500"
+    : question.successRate >= 50
+    ? "border-l-teal-500"
+    : question.successRate >= 35
+    ? "border-l-amber-500 bg-amber-500/5"
+    : "border-l-red-500 bg-red-500/5";
 
   return (
-    <div className={cn("border rounded-lg p-3 bg-muted/20 space-y-2", cfg.border)}>
+    <div className={cn("border border-l-4 rounded-lg p-3 space-y-2", successStyle)}>
       <div className="flex items-start gap-2.5">
         <span className={cn(
           "w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold shrink-0 mt-0.5",
