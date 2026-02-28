@@ -2,142 +2,115 @@
 
 ## Issues Identified
 
-### Issue 1 — Batch Report Header Takes ~40% of Viewport
-**Screenshot 1 & 2.** Breadcrumbs + title ("Class 10 — 10A") + description + tabs + source toggle (My Exams / Institute) + date filters stack vertically, consuming ~200px before any content appears. On Students tab, it's even worse — the header is ~35% of the viewport with zero content visible.
+### Issue 1 — Configure Page: Excessive White Space + No Visual Warmth
+The compact form works functionally but the page is barren — plain text on white background with no card containers, no color accents, and "Per-band instructions" is cryptic. More than 50% of the viewport is empty white space below the Generate button.
 
-### Issue 2 — Generate Practice: Generate Button Below the Fold
-**Screenshot 3.** Three separate cards (Performance Bands, Questions per Band, Instructions) stack vertically. The "Generate" button is always below the fold, requiring a scroll every time.
+**Reasoning**: You're right. Compactness was achieved but visual warmth was lost. The form needs a proper card container with subtle background, and the Generate button should be **sticky at the bottom** (like Image 3's "Review & Assign" bar) so the page feels intentional rather than empty.
 
-### Issue 3 — Review Questions: Only 1 Question Visible, Band Switching Pain
-**Screenshot 4.** Each question card shows full text + 4 options in a 2-column grid + difficulty/topic tags. This means only ~1.2 questions fit per screen. Switching bands requires scrolling back to the top to reach the tab bar.
-
-### Issue 4 — Static UI for Question Generation
-Currently calls an edge function. Since this is a UI prototype, the generation should use static mock data instantly instead of making API calls.
+**Solution**: Wrap the configure form in a styled card with a subtle gradient header showing chapter context. Make the bottom bar (total count + Generate button) **fixed/sticky at the bottom** of the viewport. Add visual hierarchy with section dividers and proper label styling.
 
 ---
 
-## Solutions with Options
+### Issue 2 — Review Page: Clumsy, No Visual Distinction Between Questions
+Questions run together with only thin dividers — no card boundaries, no visual breathing room. It looks like a raw text dump rather than a structured review interface. Switching bands requires scrolling to top.
 
-### Issue 1 — Compact Batch Report Header
+**Reasoning**: You're absolutely right. Comparing to Image 3, each question group there has a proper bordered card with clear headers. Our current `divide-y` approach creates a wall of text. Questions need individual card-like containers with subtle backgrounds.
 
-**Option A (Recommended): Inline header with tabs on the same row**
-
-```text
-┌─────────────────────────────────────────────────────────────┐
-│ Teacher > Reports > 10A                                      │
-│ Class 10 — 10A  [Chapters] [Exams (15)] [Students (21)]     │
-│                  Chapter-wise & exam performance              │
-│ [My Exams (15)] [Institute (6)]  [All Time|30d|3m|6m]  15   │
-├─────────────────────────────────────────────────────────────┤
-│ exam cards start here...                                     │
-└─────────────────────────────────────────────────────────────┘
-```
-
-Move the TabsList to sit beside/below the title on the same visual row on desktop. Source toggle + date filters merge into one compact row. Saves ~60px.
-
-**Option B: Sticky tabs bar**
-
-Keep header as-is but make the TabsList + filters sticky at top when scrolling. Content scrolls underneath. Header scrolls away.
-
-```text
-(scrolled state)
-┌────────────────────────────────────────────────┐
-│ sticky: [Chapters] [Exams] [Students]          │
-│ sticky: [My Exams] [Institute]  [filters]      │
-├────────────────────────────────────────────────┤
-│ content...                                      │
-└────────────────────────────────────────────────┘
-```
-
-**Option C: Collapsible header**
-
-PageHeader collapses on scroll — breadcrumbs and description hide, title shrinks. Tabs remain visible.
-
-**Recommendation: Option A** — simplest, no scroll-dependent behavior, works on all devices. Reduces header from ~200px to ~120px.
+**Solution**: Give each question a proper card-like container (bordered, slight background, rounded). Keep inline options but add proper visual separation. Make band tabs sticky (already done). Add a **sticky bottom bar** showing "X questions total · Y/4 bands assigned" + "Assign All" button (like Image 3's bottom bar).
 
 ---
 
-### Issue 2 — Generate Practice: Single-Screen Configure
+### Issue 3 — No Regenerate Option After Deleting Questions
+When a teacher removes questions, there's no way to get replacements. They either accept fewer questions or start over. This is a UX gap.
 
-**Option A (Recommended): Merge cards into one compact form**
-
-Collapse the 3 separate cards into a single streamlined form. Bands as inline chips (already compact), question count as inline toggle, instructions as a single collapsible textarea. Generate button is always visible.
-
-```text
-┌──────────────────────────────────────────────────────┐
-│ Generate Practice                                     │
-│ Kinematics · Physics · Class 10 10A                  │
-│                                                       │
-│ Bands: [● Mastery 1] [● Stable 13] [● Reinforce 9]  │
-│                                                       │
-│ Questions: (●) 5  ( ) 10  per band  │  15 total      │
-│                                                       │
-│ Instructions (optional)              [▼ Per-band]    │
-│ ┌──────────────────────────────────────────────┐     │
-│ │ e.g., Focus on numerical problems...          │     │
-│ └──────────────────────────────────────────────┘     │
-│                                                       │
-│ [✨ Generate 15 Questions]                            │
-└──────────────────────────────────────────────────────┘
-```
-
-Everything fits in one screen. No scrolling needed to reach Generate.
-
-**Option B: Fixed Generate button at bottom**
-
-Keep current layout but make the Generate button sticky at the bottom of the viewport.
-
-**Recommendation: Option A** — cleaner, eliminates unnecessary card chrome.
+**Solution**: Track deleted question count per band. When any band has deleted questions, show a highlighted "Regenerate X Questions" button (either per-band or global). On click, pull replacement questions from the static mock pool to fill the gaps. The button only appears when deletions exist.
 
 ---
 
-### Issue 3 — Review Questions: Compact Cards + Sticky Band Tabs
-
-**Option A (Recommended): Compact question cards + sticky band bar**
-
-- Reduce question card size: options in a tighter single-column list (not 2-col grid), smaller font, less padding
-- Make the band tab bar sticky so switching bands never requires scrolling to the top
-- Show 3-4 questions per screen instead of 1
-
-```text
-┌───────────────────────────────────────────────────┐
-│ [← Back]                    [Assign All Bands]    │
-│ sticky: [● Mastery(5)] [● Stable(5)] [● Reinf(5)]│
-├───────────────────────────────────────────────────┤
-│ Q1. An object moves along a circular...    [×]    │
-│   A. 0 m/s   B. 5.0 m/s   ✓C. 7.1 m/s   D. 10  │
-│   medium · Displacement                           │
-│───────────────────────────────────────────────────│
-│ Q2. A projectile is launched from...       [×]    │
-│   A. 45°   ✓B. 60°   C. 30°   D. 90°            │
-│   hard · Projectile Motion                        │
-│───────────────────────────────────────────────────│
-│ Q3. ...                                           │
-└───────────────────────────────────────────────────┘
-```
-
-Options displayed inline (A/B/C/D on one row) instead of a 2×2 grid. Each question takes ~80px instead of ~200px. 4-5 questions visible per screen.
-
-**Option B: Accordion per question**
-
-Show only question text by default, expand to see options on click. Very compact but requires extra clicks.
-
-**Recommendation: Option A** — maintains readability while tripling density.
-
----
-
-### Issue 4 — Static Question Generation
-
-Replace the `supabase.functions.invoke("generate-chapter-practice")` call with a local static mock generator that returns questions instantly. Use the same `GeneratedQuestion` interface. Always show all 4 bands (mastery, stable, reinforcement, risk) regardless of student count.
+### Issue 4 — Static Generation for All 4 Bands
+Already implemented in previous phase. Just need to ensure all 4 bands always appear regardless of student count (already done).
 
 ---
 
 ## Implementation Plan
 
-| Phase | Scope | Files |
-|-------|-------|-------|
-| **Phase 1** | Compact Batch Report header — tabs beside title, merge source+filter row | `BatchReport.tsx` |
-| **Phase 2** | Single-screen Generate Practice — merge 3 cards, always-visible Generate button | `ChapterPracticeReview.tsx` (configure step) |
-| **Phase 3** | Static mock question generator — remove API call, instant generation, all 4 bands | `ChapterPracticeReview.tsx` + new mock data util |
-| **Phase 4** | Compact Review Questions — inline options, sticky band tabs, 4-5 Qs per screen | `ChapterPracticeReview.tsx` (review step) |
+### Phase 1 — Configure Page: Card Container + Sticky Bottom Bar
+
+**File**: `src/pages/teacher/ChapterPracticeReview.tsx` (renderConfigure)
+
+Changes:
+- Wrap form content in a `Card` with subtle colored header showing chapter/subject context
+- Move Generate button out of the form into a **sticky bottom bar** (`fixed bottom-0`) with total question count on the left
+- Add proper labels with slightly larger text, section spacing
+- Remove excess white space by centering the card vertically
+
+```text
+┌─────────────────────────────────────────────┐
+│ breadcrumbs                                  │
+│ Generate Practice                            │
+│ ┌─────────────────────────────────────────┐ │
+│ │ Performance Bands                        │ │
+│ │ [● Mastery 1] [● Stable 13] ...         │ │
+│ │                                          │ │
+│ │ Questions per band: (●)5  ( )10   20tot │ │
+│ │                                          │ │
+│ │ Instructions (optional)                  │ │
+│ │ ┌──────────────────────────────────┐    │ │
+│ │ │ placeholder...                    │    │ │
+│ │ └──────────────────────────────────┘    │ │
+│ │ ▸ Per-band instructions                  │ │
+│ └─────────────────────────────────────────┘ │
+│                                              │
+├──────────────────────────────────────────────┤
+│ sticky: 20 questions total  [✨ Generate 20] │
+└──────────────────────────────────────────────┘
+```
+
+### Phase 2 — Review Page: Question Cards + Sticky Bottom Bar + Visual Polish
+
+**File**: `src/pages/teacher/ChapterPracticeReview.tsx` (renderReview)
+
+Changes:
+- Replace `divide-y` flat list with individual question cards (subtle border, rounded-lg, `p-3`, slight band-colored left border or background tint)
+- Move "Configure" back button to breadcrumb area, not inside review content
+- Move "Assign All" button to a **sticky bottom bar** with summary: `"X questions · Y/4 bands assigned"` on left, `[Assign All]` on right
+- Keep sticky band tabs at top
+- Each question card: question text + inline options + tags, with clear visual boundaries
+
+```text
+┌──────────────────────────────────────────────┐
+│ sticky: [● Mastery(5)] [● Stable(5)] ...     │
+├──────────────────────────────────────────────┤
+│ ┌──────────────────────────────────────────┐ │
+│ │ Q1. A particle moves in a circle...   [×]│ │
+│ │   ✓A. 2.5 m/s²  B. 5.0  C. 0.5  D. 25  │ │
+│ │   hard · Circular Motion                  │ │
+│ └──────────────────────────────────────────┘ │
+│ ┌──────────────────────────────────────────┐ │
+│ │ Q2. Two blocks of masses 2 kg...      [×]│ │
+│ │   ✓A. 1.96  B. 3.92  C. 4.9  D. 2.45   │ │
+│ │   hard · Newton's Laws                    │ │
+│ └──────────────────────────────────────────┘ │
+│                                              │
+├──────────────────────────────────────────────┤
+│ sticky: 20 questions · 0/4 assigned  [Assign]│
+└──────────────────────────────────────────────┘
+```
+
+### Phase 3 — Regenerate Deleted Questions
+
+**File**: `src/pages/teacher/ChapterPracticeReview.tsx`
+
+Changes:
+- Track total removed count per band
+- When any band has removed questions, show a **"Regenerate X Questions"** button with `RotateCcw` icon, highlighted in the band's accent color
+- Position: below the band tabs, above the question list (or in the sticky bottom bar)
+- On click: pull replacement questions from the mock pool (questions not already in the results) and insert them into the band's question list
+- Button only visible when `removedQuestions` has entries
+
+| Phase | Scope | File |
+|-------|-------|------|
+| **Phase 1** | Configure: card container + sticky Generate bar | `ChapterPracticeReview.tsx` |
+| **Phase 2** | Review: question cards + sticky bottom bar + visual polish | `ChapterPracticeReview.tsx` |
+| **Phase 3** | Regenerate deleted questions feature | `ChapterPracticeReview.tsx` + `mockPracticeQuestions.ts` |
 
