@@ -114,16 +114,31 @@ Used consistently across all reports for visual severity:
 
 ## AI-Powered Actions
 
-The Reports module integrates AI in **six** distinct locations (3 existing + 3 new from Phase 1-2):
+The Reports module integrates AI in **seven** distinct locations (3 existing live + 4 new mock-data touchpoints):
 
 | # | Action | Location | Component | Scope | Status |
 |---|--------|----------|-----------|-------|--------|
-| 1 | **Generate Practice** | Chapter Report → Student Buckets | `ChapterPracticeReview` | Multi-band, chapter-specific MCQs | ✅ Live |
+| 1 | **Generate Practice** | Chapter Report → Student Buckets | `ChapterPracticeReview` | Multi-band, chapter-specific MCQs | ✅ Live (edge function) |
 | 2 | **Generate Homework** (Exam) | Exam Results → Header | `CreateHomeworkDialog` | Batch-wide, exam-context homework | ✅ Live |
 | 3 | **Generate Homework** (Student) | Student Profile → Header | `AIHomeworkGeneratorDialog` | Student-specific, cross-chapter homework | ✅ Live |
 | 4 | **Actionable Insight Cards** | Exam Results → Insights tab (between Verdict & Bands) | `ActionableInsightCards` | Severity-coded findings with [Take Action] buttons | ✅ Mock data |
 | 5 | **Today's Focus / Batch Health** | Batch Report → Between tabs and content | `BatchHealthCard` | Daily briefing: priority topics, at-risk students, suggested focus | ✅ Mock data |
 | 6 | **AI Deep-Dive Analysis** | Exam Results → Analytics tab (bottom) | `AIAnalysisCard` | Free-form AI narrative summary | ✅ Live (edge function) |
+| 7 | **AI Student Summary** | Student Profile → Between header and chapter grid | `StudentAISummary` | Personalized strengths, priorities, engagement note | ✅ Mock data |
+| — | **Reteaching Plan** | Exam Results → Questions tab (above accordion) | `ReteachingPlanCard` | Topic-wise lesson plan with approaches and time estimates | ✅ Mock data |
+
+### AI Integration Map — Future Edge Functions
+
+| Edge Function | Touchpoint # | Input Data | Output Format | Prompt Doc |
+|--------------|-------------|------------|---------------|------------|
+| `analyze-exam-results` | 6 | ExamAnalytics, question analysis | Markdown summary | [reports-exams.md](./reports-exams.md) |
+| `generate-chapter-practice` | 1 | Chapter topics, student bands | MCQ sets per band | [reports-chapters.md](./reports-chapters.md) |
+| `generate-actionable-insights` | 4 | ExamAnalytics, bands, topic flags | `ActionableInsight[]` JSON | [reports-exams.md](./reports-exams.md) |
+| `batch-health-summary` | 5 | Chapters, exam history, student roster | `BatchHealthSummary` JSON | [reports-overview.md](#batch-health-summary-phase-2--new) |
+| `student-insight-summary` | 7 | StudentBatchProfile (full) | `StudentAIInsight` JSON | [reports-students.md](./reports-students.md) |
+| `generate-reteaching-plan` | — | Questions with <50% success rate | `ReteachingPlan` JSON | [reports-exams.md](./reports-exams.md) |
+
+> **Note**: Touchpoints 4, 5, 7, and the Reteaching Plan currently use mock data generators that derive insights from existing analytics data. When the edge functions are built, they should return the same JSON structure so the UI components work without modification.
 
 ### Batch Health Summary (Phase 2) — NEW
 

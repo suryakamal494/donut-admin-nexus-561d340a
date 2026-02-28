@@ -606,11 +606,24 @@ All generators use seeded random (`seededRandom()` with `hashString()`) for dete
 
 ---
 
+## AI Touchpoints in This Module
+
+The Students tab / Student Profile contains **3 AI touchpoints**:
+
+| # | Action | Component | Status |
+|---|--------|-----------|--------|
+| 3 | Generate Homework (Student) | `AIHomeworkGeneratorDialog` | ✅ Live |
+| 7 | AI Student Summary | `StudentAISummary` → future `student-insight-summary` edge function | ✅ Mock data |
+
+For the complete AI Integration Map across all 7+ touchpoints, see [Reports — Overview](./reports-overview.md#ai-powered-actions).
+
+---
+
 ## Related Documentation
 
-- [Reports — Overview](./reports-overview.md) — Module architecture and navigation map
+- [Reports — Overview](./reports-overview.md) — Module architecture, AI Integration Map, and navigation
 - [Reports — Chapters](./reports-chapters.md) — Chapter drill-down and practice generation
-- [Reports — Exams](./reports-exams.md) — Exam results with multi-tab analysis
+- [Reports — Exams](./reports-exams.md) — Exam results, Actionable Insights, Reteaching Plan
 - [Homework & AI Generation](./homework.md) — Full homework system
 - [Student Bucketing & PI Logic](./reports-chapters.md#performance-index-pi-formula) — Detailed PI formula
 - [Academic Progress](./academic-progress.md) — Broader academic tracking
