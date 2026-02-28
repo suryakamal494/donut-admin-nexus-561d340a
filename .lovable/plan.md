@@ -1,57 +1,57 @@
 
 
-## Issues Identified
+## Issue — Reorder Step 2 & Hide Marking When Sections Enabled
 
-### Issue 1 — Section Question Type Configuration: Per-Type Questions, Marks, and Negative Marking
+### Core Pain Point
 
-**What you said**: Currently each section has a single `questionCount` and a single `marksPerQuestion`. But in reality (like JEE Advanced), a section can have multiple question types (e.g., Single Correct AND Multiple Correct). When multiple types are selected, each type needs its own: (a) number of questions, (b) marks per question, (c) negative marks per wrong answer. The screenshots show this clearly — selecting "Single Correct" shows a config card for it; selecting both "Single Correct" and "Multiple Correct" shows two separate config cards.
+When "Section-wise Examination" is enabled, marking configuration (uniform marking, negative marking, partial marking) exists in **both** Step 2 and the Sections step — each section's question types already define marks per question and negative marks. This creates duplication and confusion during evaluation. The marking cards in Step 2 should disappear when sections are enabled, since the Sections step handles all marking granularly.
 
-**What I understood**: Replace the current single `questionCount` slider with a per-question-type configuration system. When a teacher selects question types (pill buttons), a "Question Type Configuration" card appears below for each selected type with three fields: Questions (number input), Marks/Question (number input, disabled/greyed with "(Global: X)" hint when uniform marking is on), and Negative Marks (number input). The section's total question count becomes the sum across all its question types.
-
-**Implementation**:
-- Add a new type `QuestionTypeConfig = { type: QuestionType; count: number; marksPerQuestion: number; negativeMarks: number }` to the `SectionDraft` interface (new field `questionTypeConfigs: QuestionTypeConfig[]`).
-- Remove the single `questionCount` slider from the section card. Replace with per-type config cards that appear dynamically as types are toggled.
-- When uniform marking is ON, the marks input is disabled and shows the global value with a hint "Marks are set globally in Duration step".
-- The section header badge updates to show per-type summaries (e.g., "Single Correct (10q, 40m)" and "Multiple Correct (5q, 20m)").
-- The section's effective `questionCount` = sum of all `questionTypeConfigs[].count`.
+Additionally, the current layout order is wrong. It should follow the logical flow: Duration → Questions → Section toggle → (conditionally) Marking.
 
 ---
 
-### Issue 2 — No Total Questions Input When Fixed Subjects is OFF
+### What I Understood
 
-**What you said**: In Step 1, if "Fixed Subjects" is not enabled (no subjects selected), Step 2 shows no way to enter the total number of questions for the exam. The "Questions per Subject" card only appears when subjects are selected. There must always be a way to define total questions.
+1. **New layout order** for Step 2:
+   - Duration card (slider + presets)
+   - Questions per Subject (or Total Questions fallback)
+   - Section-wise Examination toggle
+   - Section-wise Time Limits toggle
+   - **Only if `hasSections` is OFF**: Uniform Marking, Negative Marking, Partial Marking
+   - Totals summary
+   - Tips
+   - Navigation
 
-**What I understood**: When `hasFixedSubjects` is false (or no subjects selected), show a simple "Total Questions" input card in Step 2 instead of the per-subject breakdown. This value feeds into the section validation target.
+2. **When `hasSections` is ON**: The three marking cards (Uniform, Negative, Partial) are hidden entirely because marking is configured per question type inside each section.
 
-**Implementation**:
-- Add `totalQuestionCount: number` to hook state (used when no fixed subjects).
-- In `DurationMarksStep`, when `!hasFixedSubjects || subjects.length === 0`, render a "Total Questions" card with a single number input and the same totals summary (Total Questions + Total Marks).
-- Update `totalQuestions` computed value to use this field as fallback.
-- Update `canProceedStep2` to require `totalQuestionCount > 0` when no fixed subjects.
+3. **When `hasSections` is OFF**: The marking cards appear as before — this is the simple exam mode (like JEE Mains/NEET) where all questions share the same marking scheme.
 
----
+### Reasoning
 
-### Issue 3 — Section Validation Must Always Work (Not Just for Fixed Subjects)
-
-**What you said**: The validation banner in the Sections step only appears when `hasFixedSubjects && perSubjectQuestionCount > 0`. But even without fixed subjects, we defined a total question count in Step 2. The sections must validate against that total too.
-
-**What I understood**: The validation target should be: if fixed subjects → per-subject count; if no fixed subjects → total question count from Step 2. Either way, sections must sum to the target. The banner, progress bar, and "Next" button blocking all apply regardless.
-
-**Implementation**:
-- Pass `totalQuestionCount` (the non-subject fallback) to `SectionsStep`.
-- Change validation logic: `target = hasFixedSubjects ? perSubjectQuestionCount : totalQuestionCount`.
-- `hasTarget` becomes true whenever target > 0 (not just when fixed subjects).
-- Banner label adjusts: "per subject" vs "total" wording based on mode.
-- `canProceedStep3` uses the same logic.
+This is correct because:
+- In section-wise exams (JEE Advanced), each section has different question types with different marks (+4 for MCQ, +3 for integer, etc.) and different negative marks. Global uniform marking is meaningless here.
+- In non-section exams (JEE Mains, NEET), all questions are the same type with the same marks, so global marking makes sense.
+- Removing duplication prevents conflicting configurations.
 
 ---
 
-## Files Modified
+### Implementation
 
-| File | Changes |
-|------|---------|
-| `src/hooks/usePatternBuilder.ts` | Add `totalQuestionCount` state, `QuestionTypeConfig` type on `SectionDraft`, update computed values and validation |
-| `src/components/institute/exams-new/steps/SectionsStep.tsx` | Replace single question count slider with per-type config cards (Questions, Marks, Negative Marks), update header badges, fix validation to work with or without fixed subjects |
-| `src/components/institute/exams-new/steps/DurationMarksStep.tsx` | Add "Total Questions" input card when no fixed subjects |
-| `src/pages/institute/exams-new/PatternBuilder.tsx` | Pass `totalQuestionCount` to SectionsStep |
+**File: `DurationMarksStep.tsx`** — Reorder JSX and wrap marking cards in `{!hasSections && (...)}`:
+
+Current order → New order:
+```text
+1. Duration           →  1. Duration (unchanged)
+2. Section-wise Time  →  2. Questions per Subject / Total Questions
+3. Questions          →  3. Section-wise Examination toggle
+4. Uniform Marking    →  4. Section-wise Time Limits
+5. Negative Marking   →  5. Totals summary
+6. Partial Marking    →  6. Uniform Marking      ← only if !hasSections
+7. Totals summary     →  7. Negative Marking      ← only if !hasSections
+8. Section-wise Exam  →  8. Partial Marking        ← only if !hasSections
+9. Tips               →  9. Tips
+10. Navigation        → 10. Navigation
+```
+
+Single file change, no hook modifications needed. The `hasSections` prop already exists.
 
