@@ -25,6 +25,7 @@ import {
   InsightCards,
   StudentResultRow,
   ActionableInsightCards,
+  ReteachingPlanCard,
 } from "@/components/teacher/exams/results";
 import { BatchSelector } from "@/components/teacher/exams/results/BatchSelector";
 import { DifficultyChart } from "@/components/teacher/exams/results/DifficultyChart";
@@ -213,6 +214,7 @@ const ExamResults = () => {
 
         {/* ── Questions Tab — Grouped Accordion ── */}
         <TabsContent value="questions" className="space-y-4">
+          <ReteachingPlanCard questions={analytics.questionAnalysis} />
           <QuestionGroupAccordion questions={analytics.questionAnalysis} />
         </TabsContent>
 
