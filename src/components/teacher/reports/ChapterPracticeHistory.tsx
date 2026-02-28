@@ -1,6 +1,8 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Clock, ChevronRight, FileText } from "lucide-react";
+import { Clock, ChevronRight, ChevronDown, ChevronUp, FileText } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { getPracticeHistory } from "@/data/teacher/practiceHistoryData";
 import type { PracticeSession } from "@/data/teacher/practiceHistoryData";
@@ -17,9 +19,12 @@ interface Props {
   batchId: string;
 }
 
+const VISIBLE_DEFAULT = 3;
+
 export const ChapterPracticeHistory = ({ chapterId, batchId }: Props) => {
   const navigate = useNavigate();
   const sessions = getPracticeHistory(chapterId, batchId);
+  const [showAll, setShowAll] = useState(false);
 
   if (sessions.length === 0) {
     return (
@@ -43,6 +48,9 @@ export const ChapterPracticeHistory = ({ chapterId, batchId }: Props) => {
     );
   }
 
+  const hasMore = sessions.length > VISIBLE_DEFAULT;
+  const visible = showAll ? sessions : sessions.slice(0, VISIBLE_DEFAULT);
+
   return (
     <Card className="card-premium">
       <CardHeader className="pb-2">
@@ -53,9 +61,23 @@ export const ChapterPracticeHistory = ({ chapterId, batchId }: Props) => {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-2">
-        {sessions.map((session) => (
+        {visible.map((session) => (
           <SessionRow key={session.id} session={session} />
         ))}
+        {hasMore && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="w-full text-xs text-muted-foreground hover:text-foreground"
+            onClick={() => setShowAll((v) => !v)}
+          >
+            {showAll ? (
+              <>Show less <ChevronUp className="w-3 h-3 ml-1" /></>
+            ) : (
+              <>Show all {sessions.length} sessions <ChevronDown className="w-3 h-3 ml-1" /></>
+            )}
+          </Button>
+        )}
       </CardContent>
     </Card>
   );

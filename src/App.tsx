@@ -12,6 +12,7 @@ import LazyErrorBoundary from "@/components/ui/lazy-error-boundary";
 // ============================================
 import Landing from "./pages/Landing";
 import NotFound from "./pages/NotFound";
+import ScrollToTop from "./components/ScrollToTop";
 
 // ============================================
 // MODULE ROUTES - LAZY LOADED
@@ -52,6 +53,7 @@ function AppContent() {
 
   return (
     <BrowserRouter>
+      <ScrollToTop />
       <Routes>
         {/* Landing Page - Portal Selection */}
         <Route path="/" element={<Landing />} />
