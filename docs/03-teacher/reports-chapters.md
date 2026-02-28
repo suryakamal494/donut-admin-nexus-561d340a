@@ -681,11 +681,23 @@ All data generators use `Map`-based caching keyed by `chapterId__batchId` (or `s
 
 ---
 
+## AI Touchpoints in This Module
+
+The Chapters tab contains **1 live AI touchpoint**:
+
+| # | Action | Component | Status |
+|---|--------|-----------|--------|
+| 1 | Generate Practice | `ChapterPracticeReview` → `generate-chapter-practice` edge function | ✅ Live |
+
+For the complete AI Integration Map across all 7+ touchpoints, see [Reports — Overview](./reports-overview.md#ai-powered-actions).
+
+---
+
 ## Related Documentation
 
-- [Reports — Overview](./reports-overview.md) — Module architecture and navigation map
-- [Reports — Exams](./reports-exams.md) — Exam results drill-down
-- [Reports — Students](./reports-students.md) — Student profile and Generate Homework
+- [Reports — Overview](./reports-overview.md) — Module architecture, AI Integration Map, and navigation
+- [Reports — Exams](./reports-exams.md) — Exam results drill-down, Actionable Insights, Reteaching Plan
+- [Reports — Students](./reports-students.md) — Student profile, AI Student Summary, Generate Homework
 - [Teacher Exams](./exams.md) — Exam creation and management
 - [Homework & AI Generation](./homework.md) — Homework system
 - [Exam Flow](../05-cross-login-flows/exam-flow.md) — Cross-login exam lifecycle

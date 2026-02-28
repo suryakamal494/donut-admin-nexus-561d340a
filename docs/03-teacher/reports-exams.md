@@ -660,11 +660,26 @@ Batch Report → Exams Tab
 
 ---
 
+## AI Touchpoints in This Module
+
+The Exams tab / Exam Results contains **4 AI touchpoints**:
+
+| # | Action | Component | Status |
+|---|--------|-----------|--------|
+| 2 | Generate Homework (Exam) | `CreateHomeworkDialog` | ✅ Live |
+| 4 | Actionable Insight Cards | `ActionableInsightCards` → future `generate-actionable-insights` | ✅ Mock data |
+| 6 | AI Deep-Dive Analysis | `AIAnalysisCard` → `analyze-exam-results` edge function | ✅ Live |
+| — | Reteaching Plan | `ReteachingPlanCard` → future `generate-reteaching-plan` | ✅ Mock data |
+
+For the complete AI Integration Map across all 7+ touchpoints, see [Reports — Overview](./reports-overview.md#ai-powered-actions).
+
+---
+
 ## Related Documentation
 
-- [Reports — Overview](./reports-overview.md) — Module architecture and navigation map
+- [Reports — Overview](./reports-overview.md) — Module architecture, AI Integration Map, and navigation
 - [Reports — Chapters](./reports-chapters.md) — Chapter drill-down and practice generation
-- [Reports — Students](./reports-students.md) — Student profile and Generate Homework
+- [Reports — Students](./reports-students.md) — Student profile, AI Student Summary, Generate Homework
 - [Teacher Exams](./exams.md) — Exam creation and management
 - [Homework & AI Generation](./homework.md) — Homework system and AI generation
 - [Exam Flow](../05-cross-login-flows/exam-flow.md) — Cross-login exam lifecycle
