@@ -33,6 +33,7 @@ The **Exams** tab within the Batch Report lists all completed exams for the batc
 | `CognitiveChart` | Cognitive type accuracy chart | Exam Results → Analytics |
 | `AIAnalysisCard` | AI-generated deep-dive summary (repositioned below charts) | Exam Results → Analytics (bottom) |
 | `QuestionGroupAccordion` | Questions grouped by 4 accuracy bands | Exam Results → Questions |
+| `ReteachingPlanCard` | **NEW** — Collapsible reteaching plan with Copy Plan | Exam Results → Questions (above accordion) |
 | `QuestionAnalysisCard` | Individual question analysis card | Inside accordion |
 | `StudentResultRow` | Individual student result row | Exam Results → Students |
 | `CreateHomeworkDialog` | AI homework generator dialog | Exam Results → Header action |
@@ -363,6 +364,113 @@ A prominent "Analyze Results" button that triggers an AI-generated markdown summ
 ---
 
 #### 2c. Questions Tab
+
+**Layout Order:**
+1. **ReteachingPlanCard (NEW)** — Collapsible plan card
+2. QuestionGroupAccordion — Questions grouped by accuracy bands
+
+##### Reteaching Plan Card (`ReteachingPlanCard`) — NEW
+
+**Position**: Above the `QuestionGroupAccordion`. Provides a structured lesson plan derived from weak questions.
+
+**Component**: `src/components/teacher/exams/results/ReteachingPlanCard.tsx`
+
+```text
+┌─────────────────────────────────────────────────────────┐
+│ ✨ 4 topics need reteaching · ~22 min    [View Plan ▼] │
+│                                                          │
+│ (expanded)                                               │
+│ "Prioritize Projectile Motion and Entropy in your next  │
+│  session — these had the lowest class accuracy."         │
+│                                                          │
+│  1. Projectile Motion          22%   ⏱ 9m              │
+│     ├ Use visual diagrams...                             │
+│     └ [Conceptual] 3 questions                          │
+│  2. Entropy                    28%   ⏱ 7m              │
+│     ├ Walk through worked examples...                    │
+│     └ [Numerical] 2 questions                           │
+│                                                          │
+│  ⏱ Total: ~22 minutes              [📋 Copy Plan]      │
+└─────────────────────────────────────────────────────────┘
+```
+
+**Data Structure** (`ReteachingPlan`):
+| Field | Type | Description |
+|-------|------|-------------|
+| `topics` | ReteachingTopic[] | Topics needing reteaching, sorted by accuracy ascending |
+| `totalEstimatedMinutes` | number | Sum of per-topic estimates |
+| `overallAdvice` | string | One-sentence summary referencing specific topics |
+
+**ReteachingTopic fields:**
+| Field | Type | Description |
+|-------|------|-------------|
+| `topic` | string | Topic name |
+| `successRate` | number | Average accuracy across weak questions |
+| `questionCount` | number | Number of questions in this topic |
+| `suggestedApproach` | string | One sentence — varies by cognitiveType |
+| `estimatedMinutes` | number | 5-8 min per topic |
+| `cognitiveType` | CognitiveType | From the question data |
+
+**Mock data generator**: `generateMockReteachingPlan(questions)` in the component file. Groups questions with <50% accuracy by topic, generates approaches based on cognitiveType.
+
+**Approach mapping by cognitive type:**
+| CognitiveType | Suggested Approach Pattern |
+|---------------|--------------------------|
+| Conceptual | Visual diagrams and real-world analogies |
+| Numerical | Worked examples + similar practice problems |
+| Logical | Step-by-step flowcharts showing reasoning |
+| Analytical | Reverse-engineer solved problems |
+| Application | Real-world scenario questions |
+| Memory | Quick-reference sheets + quizzes |
+
+**Actions:**
+- **View Plan / Hide** — toggle expand/collapse
+- **Copy Plan** — copies formatted text to clipboard with toast feedback
+
+**Visibility**: Card is hidden if no topics have <50% success rate.
+
+---
+
+##### Future AI Integration: `generate-reteaching-plan`
+
+**Edge function** (to be built): `generate-reteaching-plan`
+
+**Prompt specification:**
+```text
+System: You are a lesson planning assistant. Return ONLY valid JSON.
+
+User: Given these exam questions that students struggled with:
+{questions with <50% success rate, including topic, successRate, cognitiveType, difficulty}
+
+Generate a reteaching plan:
+{
+  "topics": [{
+    "topic": "name",
+    "suggestedApproach": "One sentence: how to reteach this",
+    "estimatedMinutes": number
+  }],
+  "totalEstimatedMinutes": number,
+  "overallAdvice": "One sentence summary"
+}
+
+Rules:
+- suggestedApproach must vary by cognitiveType (visual for conceptual, worked examples for numerical)
+- estimatedMinutes: 5-8 min per topic
+- overallAdvice: reference specific topic names
+
+Model: google/gemini-2.5-flash (structured output via tool calling)
+Response format: { "plan": ReteachingPlan }
+```
+
+**Data inputs for the prompt:**
+| Input | Source |
+|-------|--------|
+| Questions with <50% success rate | `ExamAnalytics.questionAnalysis` filtered |
+| Per-question: topic, successRate, cognitiveType, difficulty | `QuestionAnalysis` fields |
+
+---
+
+##### Question Accuracy Bands
 
 Questions grouped into **4 accuracy bands** using a collapsible accordion.
 
