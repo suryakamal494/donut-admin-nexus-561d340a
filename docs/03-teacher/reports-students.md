@@ -87,7 +87,108 @@ A searchable list of all students in the batch with PI-based classification.
 
 A holistic landscape of the student's academic journey across all chapters and exams in the batch.
 
+**Layout Order:**
+1. PageHeader (breadcrumbs)
+2. StudentHeaderCard (name, accuracy, trend, tags, Generate Homework)
+3. **StudentAISummary (NEW)** — AI-generated insight card
+4. Chapter Mastery Grid
+5. Exam History Timeline
+6. Difficulty Analysis
+7. Weak Topics List
+
 #### 2a. Student Header Card (`StudentHeaderCard`)
+
+#### 2a-bis. AI Student Summary (`StudentAISummary`) — NEW
+
+**Position**: Between `StudentHeaderCard` and Chapter Mastery Grid. This answers "What does this student need?" before showing the raw evidence.
+
+**Component**: `src/components/teacher/reports/StudentAISummary.tsx`
+
+```text
+┌─────────────────────────────────────────────────────────┐
+│ ✨ AI Summary                              [Mock Data]  │
+│                                                          │
+│ "Riya needs targeted practice on Thermodynamics and     │
+│  Waves. Her accuracy dropped to 42% with a declining    │
+│  trend."                                                 │
+│                                                          │
+│ [✨ Generate Homework]  [↓ View Weak Topics]  [Details] │
+│                                                          │
+│ (expanded detail section)                                │
+│ ✅ Strengths: Kinematics (82%), Optics (78%)            │
+│ ⚡ Priority: Thermodynamics (31%) — foundational gaps    │
+│ 📉 Engagement: Attempt rate declining over last 3 exams  │
+└─────────────────────────────────────────────────────────┘
+```
+
+**Data Structure** (`StudentAIInsight`):
+| Field | Type | Description |
+|-------|------|-------------|
+| `summary` | string | 2-3 sentence personalized summary using student's first name |
+| `strengths` | string[] | Strong chapters with accuracy (e.g., "Kinematics (82%)") |
+| `priorities` | string[] | Weak chapters with gap type (e.g., "Thermodynamics (31%) — foundational gaps") |
+| `engagementNote` | string | Behavioral observation based on secondary tags |
+| `suggestedDifficulty` | string | "easy" / "medium" / "hard" |
+| `suggestedTopics` | string[] | Top 3 weak topic names |
+
+**Mock data generator**: `generateMockStudentInsight(profile)` in `src/data/teacher/studentReportData.ts`. Derives insights from existing `StudentBatchProfile` data.
+
+**Action buttons:**
+- **Generate Homework** → opens `AIHomeworkGeneratorDialog` (same as header card button)
+- **View Weak Topics ↓** → smooth-scrolls to `WeakTopicsList` section
+- **Details** → toggles collapsible section showing strengths, priorities, engagement
+
+---
+
+##### Future AI Integration: `student-insight-summary`
+
+**Edge function** (to be built): `student-insight-summary`
+
+**Prompt specification:**
+```text
+System: You are a teaching assistant. Analyze a single student's performance and generate a personalized summary. Return ONLY valid JSON.
+
+User prompt:
+Student: {name}, Roll: {rollNumber}
+Overall accuracy: {overallAccuracy}%, Trend: {trend}
+Behavioral tags: {secondaryTags}
+Chapter mastery: {chapterMastery array with topic breakdowns}
+Exam history: {recent 5 exams with scores and percentages}
+Weak topics: {weakTopics with accuracy percentages}
+Difficulty breakdown: {easy/medium/hard accuracy}
+
+Generate:
+{
+  "summary": "2-3 sentences about what this student needs right now",
+  "strengths": ["Topic (accuracy%)", ...],
+  "priorities": ["Topic (accuracy%) — gap type", ...],
+  "engagementNote": "One sentence about participation patterns",
+  "suggestedDifficulty": "easy" | "medium" | "mixed",
+  "suggestedTopics": ["topic1", "topic2"]
+}
+
+Rules:
+- summary must mention the student by first name
+- priorities limited to top 2 weakest topics
+- engagementNote: mention if attempt rate or consistency is declining
+- suggestedDifficulty: "easy" if student is in risk band, "mixed" otherwise
+
+Model: google/gemini-2.5-flash (structured output via tool calling)
+Response format: { "insight": StudentAIInsight }
+```
+
+**Data inputs for the prompt:**
+| Input | Source |
+|-------|--------|
+| Student name, roll number | `StudentBatchProfile` |
+| Overall accuracy, trend | `StudentBatchProfile.overallAccuracy`, `.trend` |
+| Behavioral tags | `StudentBatchProfile.secondaryTags` |
+| Chapter mastery | `StudentBatchProfile.chapterMastery` (full array with topics) |
+| Exam history | `StudentBatchProfile.examHistory` (last 5) |
+| Weak topics | `StudentBatchProfile.weakTopics` |
+| Difficulty breakdown | `StudentBatchProfile.difficultyBreakdown` |
+
+---
 
 ```text
 ┌─────────────────────────────────────────────────────────┐

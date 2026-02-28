@@ -321,3 +321,79 @@ export function getStudentBatchProfile(studentId: string, batchId: string): Stud
   }
   return profileCache.get(key)!;
 }
+
+// ── Student AI Insight (mock) ──
+
+export interface StudentAIInsight {
+  summary: string;
+  strengths: string[];
+  priorities: string[];
+  engagementNote: string;
+  suggestedDifficulty: string;
+  suggestedTopics: string[];
+}
+
+export function generateMockStudentInsight(profile: StudentBatchProfile): StudentAIInsight {
+  const firstName = profile.studentName.split(" ")[0];
+
+  // Strengths: top chapters with strong status
+  const strongChapters = profile.chapterMastery
+    .filter(ch => ch.status === "strong")
+    .sort((a, b) => b.avgSuccessRate - a.avgSuccessRate)
+    .slice(0, 3);
+  const strengths = strongChapters.map(ch => `${ch.chapterName} (${ch.avgSuccessRate}%)`);
+
+  // Priorities: weakest chapters
+  const weakChapters = profile.chapterMastery
+    .filter(ch => ch.status === "weak")
+    .sort((a, b) => a.avgSuccessRate - b.avgSuccessRate)
+    .slice(0, 2);
+  const priorities = weakChapters.map(ch => `${ch.chapterName} (${ch.avgSuccessRate}%) — foundational gaps`);
+
+  // If no weak chapters, use moderate ones
+  if (priorities.length === 0) {
+    const modChapters = profile.chapterMastery
+      .filter(ch => ch.status === "moderate")
+      .sort((a, b) => a.avgSuccessRate - b.avgSuccessRate)
+      .slice(0, 2);
+    priorities.push(...modChapters.map(ch => `${ch.chapterName} (${ch.avgSuccessRate}%) — needs reinforcement`));
+  }
+
+  // Engagement note based on tags
+  let engagementNote = "";
+  if (profile.secondaryTags.includes("declining")) {
+    engagementNote = `${firstName}'s performance has been declining over recent exams. Consider a check-in.`;
+  } else if (profile.secondaryTags.includes("low-attempt")) {
+    engagementNote = `${firstName} has a low attempt rate — recent exams show incomplete submissions.`;
+  } else if (profile.secondaryTags.includes("inconsistent")) {
+    engagementNote = `${firstName}'s scores fluctuate significantly between exams — consistency is a concern.`;
+  } else if (profile.secondaryTags.includes("plateaued")) {
+    engagementNote = `${firstName}'s scores have plateaued — consider varying question types to break the pattern.`;
+  } else if (profile.consistency < 50) {
+    engagementNote = `Consistency score is ${profile.consistency}% — performance varies widely across exams.`;
+  } else {
+    engagementNote = `${firstName} shows steady engagement across exams.`;
+  }
+
+  // Summary
+  const weakTopicStr = profile.weakTopicNames.slice(0, 2).join(" and ");
+  let summary: string;
+  if (profile.trend === "down") {
+    summary = `${firstName} needs immediate attention. Accuracy has dropped to ${profile.overallAccuracy}% with a declining trend.${weakTopicStr ? ` Focus areas: ${weakTopicStr}.` : ""}`;
+  } else if (profile.overallAccuracy < 40) {
+    summary = `${firstName} is in the foundational risk zone at ${profile.overallAccuracy}% overall accuracy.${weakTopicStr ? ` Targeted practice on ${weakTopicStr} is recommended at ${profile.suggestedDifficulty} difficulty.` : ""}`;
+  } else if (weakChapters.length > 0) {
+    summary = `${firstName} shows mixed performance at ${profile.overallAccuracy}%.${strengths.length > 0 ? ` Strong in ${strongChapters[0]?.chapterName}` : ""}, but needs focused work on ${weakTopicStr || "weak areas"}.`;
+  } else {
+    summary = `${firstName} is performing well at ${profile.overallAccuracy}% overall.${strengths.length > 0 ? ` Particularly strong in ${strengths[0]}.` : ""} Consider challenging with harder questions.`;
+  }
+
+  return {
+    summary,
+    strengths,
+    priorities,
+    engagementNote,
+    suggestedDifficulty: profile.suggestedDifficulty,
+    suggestedTopics: profile.weakTopicNames.slice(0, 3),
+  };
+}

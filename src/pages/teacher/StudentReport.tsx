@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, AlertTriangle, BookOpen } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -6,13 +6,14 @@ import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui/page-header";
 import { InfoTooltip } from "@/components/timetable/InfoTooltip";
 import { batchInfoMap } from "@/data/teacher/examResults";
-import { getStudentBatchProfile } from "@/data/teacher/studentReportData";
+import { getStudentBatchProfile, generateMockStudentInsight } from "@/data/teacher/studentReportData";
 import { AIHomeworkGeneratorDialog } from "@/components/teacher/AIHomeworkGeneratorDialog";
 import type { AIHomeworkPrefill } from "@/components/teacher/AIHomeworkGeneratorDialog";
 import { currentTeacher } from "@/data/teacher/profile";
 import {
   StudentHeaderCard, ChapterMasteryCard,
   ExamHistoryTimeline, DifficultyAnalysis, WeakTopicsList,
+  StudentAISummary,
 } from "@/components/teacher/reports";
 import { motion } from "framer-motion";
 
@@ -22,12 +23,18 @@ const StudentReport = () => {
   const [showDifficulty, setShowDifficulty] = useState(false);
   const [expandedChapter, setExpandedChapter] = useState<string | null>(null);
   const [showAIGenerator, setShowAIGenerator] = useState(false);
+  const weakTopicsRef = useRef<HTMLDivElement>(null);
 
   const batchInfo = batchId ? batchInfoMap[batchId] : null;
   const profile = useMemo(() => {
     if (!studentId || !batchId) return null;
     return getStudentBatchProfile(studentId, batchId);
   }, [studentId, batchId]);
+
+  const aiInsight = useMemo(() => {
+    if (!profile) return null;
+    return generateMockStudentInsight(profile);
+  }, [profile]);
 
   if (!profile || !batchInfo) {
     return (
@@ -69,6 +76,15 @@ const StudentReport = () => {
         onGenerateHomework={() => setShowAIGenerator(true)}
       />
 
+      {/* AI Summary — positioned between header and chapter mastery */}
+      {aiInsight && (
+        <StudentAISummary
+          insight={aiInsight}
+          onGenerateHomework={() => setShowAIGenerator(true)}
+          onScrollToWeakTopics={() => weakTopicsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })}
+        />
+      )}
+
       {/* Chapter Mastery Grid */}
       <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.1 }}>
         <Card className="card-premium">
@@ -100,7 +116,9 @@ const StudentReport = () => {
         onOpenChange={setShowDifficulty}
       />
 
-      <WeakTopicsList weakTopics={profile.weakTopics} />
+      <div ref={weakTopicsRef}>
+        <WeakTopicsList weakTopics={profile.weakTopics} />
+      </div>
 
       <AIHomeworkGeneratorDialog
         open={showAIGenerator}
