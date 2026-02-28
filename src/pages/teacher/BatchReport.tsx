@@ -3,13 +3,11 @@ import { useParams, useNavigate } from "react-router-dom";
 import { Users, BookOpen, FileText, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { PageHeader } from "@/components/ui/page-header";
 import { useState } from "react";
 import { batchInfoMap } from "@/data/teacher/examResults";
 import { getBatchChapters, getBatchExamHistory, getBatchInstituteTests } from "@/data/teacher/reportsData";
 import { getBatchStudentRoster } from "@/data/teacher/studentReportData";
 import { currentTeacher } from "@/data/teacher/profile";
-import { InfoTooltip } from "@/components/timetable/InfoTooltip";
 import { ChaptersTab, ExamsTab, StudentsTab } from "@/components/teacher/reports";
 
 const BatchReport = () => {
@@ -36,45 +34,50 @@ const BatchReport = () => {
   }
 
   return (
-    <div className="space-y-3 max-w-7xl mx-auto pb-20 md:pb-6">
-      <PageHeader
-        title={`${batchInfo.className} — ${batchInfo.name}`}
-        description="Chapter-wise & exam performance"
-        breadcrumbs={[
-          { label: "Teacher", href: "/teacher" },
-          { label: "Reports", href: "/teacher/reports" },
-          { label: batchInfo.name },
-        ]}
-      />
+    <div className="space-y-2 max-w-7xl mx-auto pb-20 md:pb-6">
+      {/* Compact breadcrumbs */}
+      <nav className="flex items-center gap-1 text-xs text-muted-foreground">
+        <a href="/teacher" className="hover:text-foreground transition-colors">Teacher</a>
+        <span>›</span>
+        <a href="/teacher/reports" className="hover:text-foreground transition-colors">Reports</a>
+        <span>›</span>
+        <span className="text-foreground font-medium">{batchInfo.name}</span>
+      </nav>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-3">
-        <TabsList className="w-full sm:w-auto h-auto p-1 grid grid-cols-3 sm:flex max-w-md">
-          <TabsTrigger value="chapters" className="text-xs sm:text-sm gap-1.5">
-            <BookOpen className="w-3.5 h-3.5" />
-            Chapters
-            <InfoTooltip content="Chapter-wise performance overview — average success rate, topic count, and weak areas for each chapter." />
-          </TabsTrigger>
-          <TabsTrigger value="exams" className="text-xs sm:text-sm gap-1.5">
-            <FileText className="w-3.5 h-3.5" />
-            Exams ({allExamHistory.length})
-            <InfoTooltip content="All completed exams for this batch — click any exam to view detailed results and analytics." />
-          </TabsTrigger>
-          <TabsTrigger value="students" className="text-xs sm:text-sm gap-1.5">
-            <Users className="w-3.5 h-3.5" />
-            Students ({studentRoster.length})
-            <InfoTooltip content="Student-wise performance overview — click any student to see their detailed report across all chapters and exams." />
-          </TabsTrigger>
-        </TabsList>
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-2">
+        {/* Title + tabs on same row on desktop */}
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+          <div className="min-w-0">
+            <h1 className="text-lg md:text-xl font-bold text-foreground truncate">
+              {batchInfo.className} — {batchInfo.name}
+            </h1>
+            <p className="text-xs text-muted-foreground">Chapter-wise & exam performance</p>
+          </div>
+          <TabsList className="w-full sm:w-auto h-auto p-0.5 grid grid-cols-3 sm:flex sm:ml-auto">
+            <TabsTrigger value="chapters" className="text-xs gap-1 px-2.5 py-1.5">
+              <BookOpen className="w-3 h-3" />
+              Chapters
+            </TabsTrigger>
+            <TabsTrigger value="exams" className="text-xs gap-1 px-2.5 py-1.5">
+              <FileText className="w-3 h-3" />
+              Exams ({allExamHistory.length})
+            </TabsTrigger>
+            <TabsTrigger value="students" className="text-xs gap-1 px-2.5 py-1.5">
+              <Users className="w-3 h-3" />
+              Students ({studentRoster.length})
+            </TabsTrigger>
+          </TabsList>
+        </div>
 
-        <TabsContent value="chapters">
+        <TabsContent value="chapters" className="mt-0">
           <ChaptersTab chapters={chapters} batchId={batchId} />
         </TabsContent>
 
-        <TabsContent value="exams">
+        <TabsContent value="exams" className="mt-0">
           <ExamsTab allExamHistory={allExamHistory} instituteTests={instituteTests} batchId={batchId} />
         </TabsContent>
 
-        <TabsContent value="students">
+        <TabsContent value="students" className="mt-0">
           <StudentsTab studentRoster={studentRoster} batchId={batchId} />
         </TabsContent>
       </Tabs>

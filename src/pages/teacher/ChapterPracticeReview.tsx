@@ -1,21 +1,20 @@
 import { useState, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
-  Sparkles, ChevronDown, ChevronUp, X, RotateCcw, Check, Loader2, Send, ArrowLeft, BookOpen,
+  Sparkles, ChevronDown, ChevronUp, X, RotateCcw, Check, Send, ArrowLeft, BookOpen,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { PageHeader } from "@/components/ui/page-header";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
 import { batchInfoMap } from "@/data/teacher/examResults";
 import { getChapterDetail } from "@/data/teacher/reportsData";
-import type { ChapterTopicAnalysis, ChapterStudentBucket } from "@/data/teacher/reportsData";
+import type { ChapterTopicAnalysis } from "@/data/teacher/reportsData";
+import { generateMockQuestions } from "@/data/teacher/mockPracticeQuestions";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 // ── Types ──
 
@@ -33,19 +32,21 @@ interface BandResult {
   error?: string;
 }
 
-const bandMeta: Record<string, { dot: string; bg: string; tabBg: string; border: string; context: (topics: ChapterTopicAnalysis[]) => string }> = {
+const allBandKeys = ["mastery", "stable", "reinforcement", "risk"] as const;
+
+const bandMeta: Record<string, { label: string; dot: string; bg: string; tabBg: string; border: string; context: (topics: ChapterTopicAnalysis[]) => string }> = {
   mastery: {
-    dot: "bg-emerald-500", bg: "bg-emerald-50 dark:bg-emerald-950/30", border: "border-emerald-200 dark:border-emerald-800",
+    label: "Mastery Ready", dot: "bg-emerald-500", bg: "bg-emerald-50 dark:bg-emerald-950/30", border: "border-emerald-200 dark:border-emerald-800",
     tabBg: "data-[state=active]:bg-emerald-100 dark:data-[state=active]:bg-emerald-900/40",
     context: (topics) => `Strong in all topics. Challenge with advanced/application-based questions. Strong topics: ${topics.filter(t => t.status === "strong").map(t => t.topicName).join(", ") || "all"}`,
   },
   stable: {
-    dot: "bg-teal-500", bg: "bg-teal-50 dark:bg-teal-950/30", border: "border-teal-200 dark:border-teal-800",
+    label: "Stable Progress", dot: "bg-teal-500", bg: "bg-teal-50 dark:bg-teal-950/30", border: "border-teal-200 dark:border-teal-800",
     tabBg: "data-[state=active]:bg-teal-100 dark:data-[state=active]:bg-teal-900/40",
     context: (topics) => `Good understanding, needs reinforcement. Focus: ${topics.filter(t => t.status === "moderate").map(t => t.topicName).join(", ") || "general review"}`,
   },
   reinforcement: {
-    dot: "bg-amber-500", bg: "bg-amber-50 dark:bg-amber-950/30", border: "border-amber-200 dark:border-amber-800",
+    label: "Reinforcement", dot: "bg-amber-500", bg: "bg-amber-50 dark:bg-amber-950/30", border: "border-amber-200 dark:border-amber-800",
     tabBg: "data-[state=active]:bg-amber-100 dark:data-[state=active]:bg-amber-900/40",
     context: (topics) => {
       const weak = topics.filter(t => t.status === "weak").map(t => t.topicName);
@@ -54,7 +55,7 @@ const bandMeta: Record<string, { dot: string; bg: string; tabBg: string; border:
     },
   },
   risk: {
-    dot: "bg-red-500", bg: "bg-red-50 dark:bg-red-950/30", border: "border-red-200 dark:border-red-800",
+    label: "Foundational Risk", dot: "bg-red-500", bg: "bg-red-50 dark:bg-red-950/30", border: "border-red-200 dark:border-red-800",
     tabBg: "data-[state=active]:bg-red-100 dark:data-[state=active]:bg-red-900/40",
     context: (topics) => {
       const weak = topics.filter(t => t.status === "weak").map(t => t.topicName);
@@ -75,28 +76,28 @@ const ChapterPracticeReview = () => {
     [batchId, chapterId]
   );
 
-  const activeBuckets = useMemo(
-    () => (chapter?.studentBuckets || []).filter(b => b.count > 0),
-    [chapter]
-  );
+  // Always show all 4 bands with student counts from data (or 0)
+  const bandList = useMemo(() => {
+    const buckets = chapter?.studentBuckets || [];
+    return allBandKeys.map(key => {
+      const found = buckets.find(b => b.key === key);
+      return {
+        key,
+        label: bandMeta[key].label,
+        count: found?.count ?? 0,
+      };
+    });
+  }, [chapter]);
 
   const [step, setStep] = useState<Step>("configure");
   const [commonInstructions, setCommonInstructions] = useState("");
   const [bandInstructions, setBandInstructions] = useState<Record<string, string>>({});
-  const [expandedBands, setExpandedBands] = useState<Record<string, boolean>>({});
+  const [showPerBand, setShowPerBand] = useState(false);
   const [questionCount, setQuestionCount] = useState<"5" | "10">("5");
-  const [isGenerating, setIsGenerating] = useState(false);
   const [results, setResults] = useState<Record<string, BandResult>>({});
   const [removedQuestions, setRemovedQuestions] = useState<Record<string, Set<string>>>({});
   const [assignedBands, setAssignedBands] = useState<Set<string>>(new Set());
-  const [activeTab, setActiveTab] = useState("");
-
-  // Set initial active tab when buckets load
-  useMemo(() => {
-    if (activeBuckets.length > 0 && !activeTab) {
-      setActiveTab(activeBuckets[0].key);
-    }
-  }, [activeBuckets]);
+  const [activeTab, setActiveTab] = useState<string>(allBandKeys[0]);
 
   if (!chapter || !batchInfo) {
     return (
@@ -110,41 +111,15 @@ const ChapterPracticeReview = () => {
     );
   }
 
-  const topics = chapter.topics;
-
-  const handleGenerate = async () => {
-    setIsGenerating(true);
-    try {
-      const bandsPayload = activeBuckets.map(b => ({
-        key: b.key,
-        label: b.label,
-        studentCount: b.count,
-        questionCount: parseInt(questionCount),
-        instructions: [commonInstructions, bandInstructions[b.key]].filter(Boolean).join(". "),
-        context: bandMeta[b.key]?.context(topics) || "",
-      }));
-
-      const { data, error } = await supabase.functions.invoke("generate-chapter-practice", {
-        body: {
-          chapter: chapter.chapterName,
-          subject: chapter.subject,
-          bands: bandsPayload,
-          topics: topics.map(t => ({ name: t.topicName, status: t.status, avgSuccessRate: t.avgSuccessRate })),
-        },
-      });
-
-      if (error) throw error;
-      if (data?.error) throw new Error(data.error);
-
-      setResults(data.results || {});
-      setActiveTab(activeBuckets[0]?.key || "");
-      setStep("review");
-    } catch (e: any) {
-      console.error("Generation error:", e);
-      toast.error(e.message || "Failed to generate practice questions");
-    } finally {
-      setIsGenerating(false);
-    }
+  const handleGenerate = () => {
+    const mockResults = generateMockQuestions(
+      allBandKeys as unknown as string[],
+      parseInt(questionCount)
+    );
+    setResults(mockResults);
+    setActiveTab(allBandKeys[0]);
+    setStep("review");
+    toast.success(`Generated ${parseInt(questionCount) * 4} questions across 4 bands`);
   };
 
   const toggleRemove = (bandKey: string, qId: string) => {
@@ -165,12 +140,12 @@ const ChapterPracticeReview = () => {
     const qs = getActiveQuestions(bandKey);
     if (qs.length === 0) return;
     setAssignedBands(prev => new Set([...prev, bandKey]));
-    const bucket = activeBuckets.find(b => b.key === bandKey);
-    toast.success(`${qs.length} questions assigned to ${bucket?.count || 0} students in "${bucket?.label}"`);
+    const band = bandList.find(b => b.key === bandKey);
+    toast.success(`${qs.length} questions assigned to ${band?.count || 0} students in "${band?.label}"`);
   };
 
   const handleAssignAll = () => {
-    activeBuckets.forEach(b => {
+    bandList.forEach(b => {
       if (!assignedBands.has(b.key) && getActiveQuestions(b.key).length > 0) {
         handleAssignBand(b.key);
       }
@@ -178,237 +153,194 @@ const ChapterPracticeReview = () => {
     setStep("done");
   };
 
-  const allAssigned = activeBuckets.every(b => assignedBands.has(b.key) || getActiveQuestions(b.key).length === 0);
-
+  const allAssigned = bandList.every(b => assignedBands.has(b.key) || getActiveQuestions(b.key).length === 0);
   const goBack = () => navigate(`/teacher/reports/${batchId}/chapters/${chapterId}`);
+  const totalQ = parseInt(questionCount) * bandList.length;
 
-  // ── Step 1: Configure ──
+  // ── Step 1: Configure — Single compact form ──
   const renderConfigure = () => (
-    <div className="space-y-5 max-w-3xl mx-auto">
-      {/* Band summary chips */}
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-semibold">Performance Bands</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-wrap gap-2">
-            {activeBuckets.map(b => (
-              <div key={b.key} className={cn("flex items-center gap-1.5 text-xs font-medium rounded-full px-3 py-1.5 border", bandMeta[b.key]?.bg, bandMeta[b.key]?.border)}>
-                <span className={cn("w-2.5 h-2.5 rounded-full", bandMeta[b.key]?.dot)} />
-                {b.label}
-                <span className="font-bold ml-0.5">{b.count}</span>
-                <span className="text-muted-foreground">students</span>
+    <div className="max-w-2xl mx-auto space-y-4">
+      {/* Bands as inline chips */}
+      <div>
+        <p className="text-xs font-medium text-muted-foreground mb-2">Performance Bands</p>
+        <div className="flex flex-wrap gap-1.5">
+          {bandList.map(b => (
+            <div key={b.key} className={cn("flex items-center gap-1.5 text-xs font-medium rounded-full px-2.5 py-1 border", bandMeta[b.key]?.bg, bandMeta[b.key]?.border)}>
+              <span className={cn("w-2 h-2 rounded-full", bandMeta[b.key]?.dot)} />
+              {b.label} <span className="font-bold">{b.count}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Question count — inline */}
+      <div className="flex items-center gap-3">
+        <p className="text-xs font-medium text-muted-foreground shrink-0">Questions per band:</p>
+        <RadioGroup value={questionCount} onValueChange={(v) => setQuestionCount(v as "5" | "10")} className="flex gap-3">
+          <div className="flex items-center gap-1.5">
+            <RadioGroupItem value="5" id="q5" className="w-3.5 h-3.5" />
+            <Label htmlFor="q5" className="text-xs cursor-pointer">5</Label>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <RadioGroupItem value="10" id="q10" className="w-3.5 h-3.5" />
+            <Label htmlFor="q10" className="text-xs cursor-pointer">10</Label>
+          </div>
+        </RadioGroup>
+        <span className="text-xs text-muted-foreground ml-auto">{totalQ} total</span>
+      </div>
+
+      {/* Instructions — collapsible */}
+      <div className="space-y-2">
+        <Textarea
+          placeholder="Instructions (optional) — e.g., Focus on numerical problems, include diagram-based questions..."
+          value={commonInstructions}
+          onChange={e => setCommonInstructions(e.target.value)}
+          className="min-h-[56px] text-xs"
+        />
+
+        <Collapsible open={showPerBand} onOpenChange={setShowPerBand}>
+          <CollapsibleTrigger className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors">
+            {showPerBand ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+            Per-band instructions
+          </CollapsibleTrigger>
+          <CollapsibleContent className="space-y-1.5 mt-2">
+            {bandList.map(b => (
+              <div key={b.key} className="flex items-start gap-2">
+                <span className={cn("w-2 h-2 rounded-full mt-2 shrink-0", bandMeta[b.key]?.dot)} />
+                <Textarea
+                  placeholder={`${b.label} — specific instructions...`}
+                  value={bandInstructions[b.key] || ""}
+                  onChange={e => setBandInstructions(prev => ({ ...prev, [b.key]: e.target.value }))}
+                  className="min-h-[40px] text-xs flex-1"
+                />
               </div>
             ))}
-          </div>
-          <p className="text-xs text-muted-foreground mt-2">
-            Total: {activeBuckets.reduce((s, b) => s + b.count, 0)} students across {activeBuckets.length} bands
-          </p>
-        </CardContent>
-      </Card>
+          </CollapsibleContent>
+        </Collapsible>
+      </div>
 
-      {/* Question count */}
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-semibold">Questions per Band</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <RadioGroup value={questionCount} onValueChange={(v) => setQuestionCount(v as "5" | "10")} className="flex gap-4">
-            <div className="flex items-center gap-2">
-              <RadioGroupItem value="5" id="q5" />
-              <Label htmlFor="q5" className="text-sm">5 questions</Label>
-            </div>
-            <div className="flex items-center gap-2">
-              <RadioGroupItem value="10" id="q10" />
-              <Label htmlFor="q10" className="text-sm">10 questions</Label>
-            </div>
-          </RadioGroup>
-          <p className="text-xs text-muted-foreground mt-2">
-            Will generate {parseInt(questionCount) * activeBuckets.length} questions total ({questionCount} × {activeBuckets.length} bands)
-          </p>
-        </CardContent>
-      </Card>
-
-      {/* Instructions */}
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-semibold">Instructions (Optional)</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <div>
-            <Label className="text-xs text-muted-foreground mb-1.5 block">Common instructions — applies to all bands</Label>
-            <Textarea
-              placeholder="e.g., Focus on numerical problems, include diagram-based questions..."
-              value={commonInstructions}
-              onChange={e => setCommonInstructions(e.target.value)}
-              className="min-h-[72px] text-sm"
-            />
-          </div>
-
-          <div className="space-y-1.5">
-            <Label className="text-xs text-muted-foreground block">Per-band overrides</Label>
-            {activeBuckets.map(b => (
-              <div key={b.key} className={cn("rounded-lg border overflow-hidden", bandMeta[b.key]?.border)}>
-                <button
-                  onClick={() => setExpandedBands(prev => ({ ...prev, [b.key]: !prev[b.key] }))}
-                  className="flex items-center justify-between w-full px-3 py-2.5 text-sm font-medium text-left hover:bg-muted/50 transition-colors"
-                >
-                  <div className="flex items-center gap-2">
-                    <span className={cn("w-2 h-2 rounded-full", bandMeta[b.key]?.dot)} />
-                    {b.label}
-                  </div>
-                  {expandedBands[b.key] ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                </button>
-                {expandedBands[b.key] && (
-                  <div className="px-3 pb-3">
-                    <Textarea
-                      placeholder={`e.g., For ${b.label}: focus on conceptual clarity...`}
-                      value={bandInstructions[b.key] || ""}
-                      onChange={e => setBandInstructions(prev => ({ ...prev, [b.key]: e.target.value }))}
-                      className="min-h-[56px] text-sm"
-                    />
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-
-      <Button
-        className="w-full gradient-button h-11"
-        onClick={handleGenerate}
-        disabled={isGenerating || activeBuckets.length === 0}
-      >
-        {isGenerating ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Sparkles className="w-4 h-4 mr-2" />}
-        {isGenerating ? "Generating..." : `Generate ${parseInt(questionCount) * activeBuckets.length} Questions`}
+      {/* Generate button — always visible */}
+      <Button className="w-full gradient-button h-10" onClick={handleGenerate}>
+        <Sparkles className="w-4 h-4 mr-2" />
+        Generate {totalQ} Questions
       </Button>
     </div>
   );
 
-  // ── Step 2: Review ──
+  // ── Step 2: Review — Compact cards + sticky band tabs ──
   const renderReview = () => (
-    <div className="space-y-4">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <Button variant="outline" size="sm" onClick={() => { setStep("configure"); setResults({}); setRemovedQuestions({}); setAssignedBands(new Set()); }}>
-          <ArrowLeft className="w-3.5 h-3.5 mr-1.5" /> Back to Configure
+    <div className="space-y-2">
+      {/* Top actions */}
+      <div className="flex items-center justify-between gap-2">
+        <Button variant="ghost" size="sm" className="h-8 text-xs px-2" onClick={() => { setStep("configure"); setResults({}); setRemovedQuestions({}); setAssignedBands(new Set()); }}>
+          <ArrowLeft className="w-3 h-3 mr-1" /> Configure
         </Button>
-        <div className="flex gap-2">
-          {!allAssigned && (
-            <Button size="sm" className="gradient-button" onClick={handleAssignAll}>
-              <Send className="w-3.5 h-3.5 mr-1.5" /> Assign All Bands
-            </Button>
-          )}
-          {allAssigned && (
-            <Button size="sm" className="gradient-button" onClick={() => setStep("done")}>
-              <Check className="w-3.5 h-3.5 mr-1.5" /> Done
-            </Button>
-          )}
-        </div>
+        {!allAssigned ? (
+          <Button size="sm" className="gradient-button h-8 text-xs" onClick={handleAssignAll}>
+            <Send className="w-3 h-3 mr-1" /> Assign All
+          </Button>
+        ) : (
+          <Button size="sm" className="gradient-button h-8 text-xs" onClick={() => setStep("done")}>
+            <Check className="w-3 h-3 mr-1" /> Done
+          </Button>
+        )}
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="w-full justify-start gap-1 h-auto flex-wrap bg-transparent p-0 mb-4">
-          {activeBuckets.map(b => {
-            const qs = getActiveQuestions(b.key);
-            const isAssigned = assignedBands.has(b.key);
-            return (
-              <TabsTrigger
-                key={b.key}
-                value={b.key}
-                className={cn(
-                  "text-xs sm:text-sm gap-1.5 px-3 py-2 rounded-full border",
-                  bandMeta[b.key]?.tabBg,
-                  bandMeta[b.key]?.border,
-                  isAssigned && "opacity-60"
-                )}
-              >
-                <span className={cn("w-2 h-2 rounded-full", bandMeta[b.key]?.dot)} />
-                {b.label} ({qs.length})
-                {isAssigned && <Check className="w-3 h-3 text-emerald-500" />}
-              </TabsTrigger>
-            );
-          })}
-        </TabsList>
+        {/* Sticky band tabs */}
+        <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm pb-2 -mx-1 px-1">
+          <TabsList className="w-full justify-start gap-1 h-auto flex-wrap bg-transparent p-0">
+            {bandList.map(b => {
+              const qs = getActiveQuestions(b.key);
+              const isAssigned = assignedBands.has(b.key);
+              return (
+                <TabsTrigger
+                  key={b.key}
+                  value={b.key}
+                  className={cn(
+                    "text-[11px] gap-1 px-2 py-1.5 rounded-full border",
+                    bandMeta[b.key]?.tabBg,
+                    bandMeta[b.key]?.border,
+                    isAssigned && "opacity-50"
+                  )}
+                >
+                  <span className={cn("w-1.5 h-1.5 rounded-full", bandMeta[b.key]?.dot)} />
+                  {b.label} ({qs.length})
+                  {isAssigned && <Check className="w-2.5 h-2.5 text-emerald-500" />}
+                </TabsTrigger>
+              );
+            })}
+          </TabsList>
+        </div>
 
-        {activeBuckets.map(b => {
+        {bandList.map(b => {
           const bandResult = results[b.key];
           const qs = getActiveQuestions(b.key);
           const removed = removedQuestions[b.key] || new Set();
           const isAssigned = assignedBands.has(b.key);
 
           return (
-            <TabsContent key={b.key} value={b.key} className="mt-0 space-y-3">
+            <TabsContent key={b.key} value={b.key} className="mt-0 space-y-1">
               {bandResult?.error && (
-                <p className="text-sm text-destructive bg-destructive/10 rounded-lg px-4 py-3">{bandResult.error}</p>
+                <p className="text-xs text-destructive bg-destructive/10 rounded px-3 py-2">{bandResult.error}</p>
               )}
 
               {isAssigned ? (
-                <Card>
-                  <CardContent className="flex items-center gap-2 py-8 justify-center text-sm text-emerald-600 dark:text-emerald-400">
-                    <Check className="w-5 h-5" /> Assigned to {b.count} students
-                  </CardContent>
-                </Card>
+                <div className="flex items-center gap-2 py-6 justify-center text-sm text-emerald-600 dark:text-emerald-400">
+                  <Check className="w-4 h-4" /> Assigned to {b.count} students
+                </div>
               ) : (
                 <>
-                  <div className="grid gap-3">
+                  {/* Compact question cards — inline options */}
+                  <div className="divide-y divide-border">
                     {(bandResult?.questions || []).map((q, idx) => {
                       const isRemoved = removed.has(q.id);
                       return (
-                        <Card
-                          key={q.id}
-                          className={cn(
-                            "transition-opacity",
-                            isRemoved ? "opacity-40" : ""
+                        <div key={q.id} className={cn("py-2.5 px-1", isRemoved && "opacity-30")}>
+                          <div className="flex items-start justify-between gap-2">
+                            <p className="text-xs sm:text-sm text-foreground leading-snug flex-1">
+                              <span className="text-muted-foreground font-medium mr-1">Q{idx + 1}.</span>
+                              {q.text}
+                            </p>
+                            <button
+                              className="shrink-0 p-1 rounded hover:bg-muted transition-colors"
+                              onClick={() => toggleRemove(b.key, q.id)}
+                            >
+                              {isRemoved ? <RotateCcw className="w-3 h-3 text-muted-foreground" /> : <X className="w-3 h-3 text-muted-foreground" />}
+                            </button>
+                          </div>
+                          {!isRemoved && (
+                            <>
+                              {/* Inline options: A/B/C/D on one or two rows */}
+                              <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1.5 ml-5">
+                                {q.options.map(opt => (
+                                  <span
+                                    key={opt.label}
+                                    className={cn(
+                                      "text-[11px] sm:text-xs",
+                                      opt.label === q.correctAnswer
+                                        ? "text-emerald-600 dark:text-emerald-400 font-semibold"
+                                        : "text-muted-foreground"
+                                    )}
+                                  >
+                                    {opt.label === q.correctAnswer ? "✓" : ""}{opt.label}. {opt.text}
+                                  </span>
+                                ))}
+                              </div>
+                              <div className="flex gap-1.5 mt-1 ml-5">
+                                <span className="text-[10px] text-muted-foreground bg-muted rounded px-1.5 py-0.5">{q.difficulty}</span>
+                                <span className="text-[10px] text-muted-foreground bg-muted rounded px-1.5 py-0.5">{q.topic}</span>
+                              </div>
+                            </>
                           )}
-                        >
-                          <CardContent className="p-4">
-                            <div className="flex items-start justify-between gap-3 mb-2">
-                              <p className="font-medium text-foreground text-sm sm:text-base leading-relaxed">
-                                <span className="text-muted-foreground mr-2">Q{idx + 1}.</span>
-                                {q.text}
-                              </p>
-                              <Button
-                                size="icon"
-                                variant="ghost"
-                                className="h-7 w-7 shrink-0"
-                                onClick={() => toggleRemove(b.key, q.id)}
-                              >
-                                {isRemoved ? <RotateCcw className="w-3.5 h-3.5" /> : <X className="w-3.5 h-3.5" />}
-                              </Button>
-                            </div>
-                            {!isRemoved && (
-                              <>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-3">
-                                  {q.options.map(opt => (
-                                    <div
-                                      key={opt.label}
-                                      className={cn(
-                                        "text-sm rounded-lg px-3 py-2 border",
-                                        opt.label === q.correctAnswer
-                                          ? "bg-emerald-50 dark:bg-emerald-900/30 border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 font-medium"
-                                          : "bg-muted/30 border-border"
-                                      )}
-                                    >
-                                      <span className="font-semibold mr-1.5">{opt.label}.</span> {opt.text}
-                                    </div>
-                                  ))}
-                                </div>
-                                <div className="flex gap-2 mt-3">
-                                  <span className="text-xs text-muted-foreground bg-muted rounded-full px-2.5 py-1">{q.difficulty}</span>
-                                  <span className="text-xs text-muted-foreground bg-muted rounded-full px-2.5 py-1">{q.topic}</span>
-                                </div>
-                              </>
-                            )}
-                          </CardContent>
-                        </Card>
+                        </div>
                       );
                     })}
                   </div>
 
                   {qs.length > 0 && (
-                    <Button className="w-full gradient-button h-10" onClick={() => handleAssignBand(b.key)}>
-                      <Send className="w-4 h-4 mr-2" />
+                    <Button className="w-full gradient-button h-9 text-xs mt-2" onClick={() => handleAssignBand(b.key)}>
+                      <Send className="w-3 h-3 mr-1.5" />
                       Assign {qs.length} questions to {b.count} students
                     </Button>
                   )}
@@ -423,40 +355,49 @@ const ChapterPracticeReview = () => {
 
   // ── Step 3: Done ──
   const renderDone = () => {
-    const totalAssigned = activeBuckets.reduce((sum, b) => sum + (assignedBands.has(b.key) ? getActiveQuestions(b.key).length : 0), 0);
-    const totalStudents = activeBuckets.reduce((sum, b) => sum + (assignedBands.has(b.key) ? b.count : 0), 0);
+    const totalAssigned = bandList.reduce((sum, b) => sum + (assignedBands.has(b.key) ? getActiveQuestions(b.key).length : 0), 0);
+    const totalStudents = bandList.reduce((sum, b) => sum + (assignedBands.has(b.key) ? b.count : 0), 0);
     return (
-      <Card className="max-w-lg mx-auto">
-        <CardContent className="flex flex-col items-center justify-center py-12 text-center space-y-4">
-          <div className="w-14 h-14 rounded-full bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center">
-            <Check className="w-7 h-7 text-emerald-600 dark:text-emerald-400" />
-          </div>
-          <div>
-            <p className="text-lg font-semibold text-foreground">Practice Assigned!</p>
-            <p className="text-sm text-muted-foreground mt-1.5">
-              {assignedBands.size} practice set{assignedBands.size > 1 ? "s" : ""} created · {totalAssigned} questions · {totalStudents} students
-            </p>
-          </div>
-          <Button variant="outline" onClick={goBack}>
-            <ArrowLeft className="w-4 h-4 mr-2" /> Back to Chapter Report
-          </Button>
-        </CardContent>
-      </Card>
+      <div className="flex flex-col items-center justify-center py-12 text-center space-y-4 max-w-sm mx-auto">
+        <div className="w-12 h-12 rounded-full bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center">
+          <Check className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
+        </div>
+        <div>
+          <p className="text-base font-semibold text-foreground">Practice Assigned!</p>
+          <p className="text-xs text-muted-foreground mt-1">
+            {assignedBands.size} sets · {totalAssigned} questions · {totalStudents} students
+          </p>
+        </div>
+        <Button variant="outline" size="sm" onClick={goBack}>
+          <ArrowLeft className="w-3.5 h-3.5 mr-1.5" /> Back to Chapter
+        </Button>
+      </div>
     );
   };
 
   return (
-    <div className="space-y-4 sm:space-y-5 max-w-7xl mx-auto pb-20 md:pb-6">
-      <PageHeader
-        title={step === "done" ? "Practice Assigned" : step === "review" ? "Review Questions" : "Generate Practice"}
-        description={`${chapter.chapterName} · ${chapter.subject} · ${batchInfo.className} ${batchInfo.name}`}
-        breadcrumbs={[
-          { label: "Reports", href: "/teacher/reports" },
-          { label: batchInfo.name, href: `/teacher/reports/${batchId}` },
-          { label: chapter.chapterName, href: `/teacher/reports/${batchId}/chapters/${chapterId}` },
-          { label: step === "done" ? "Assigned" : step === "review" ? "Review" : "Generate Practice" },
-        ]}
-      />
+    <div className="space-y-2 max-w-7xl mx-auto pb-20 md:pb-6">
+      {/* Compact header */}
+      <nav className="flex items-center gap-1 text-xs text-muted-foreground">
+        <a href="/teacher/reports" className="hover:text-foreground transition-colors">Reports</a>
+        <span>›</span>
+        <a href={`/teacher/reports/${batchId}`} className="hover:text-foreground transition-colors">{batchInfo.name}</a>
+        <span>›</span>
+        <a href={`/teacher/reports/${batchId}/chapters/${chapterId}`} className="hover:text-foreground transition-colors">{chapter.chapterName}</a>
+        <span>›</span>
+        <span className="text-foreground font-medium">
+          {step === "done" ? "Assigned" : step === "review" ? "Review" : "Generate"}
+        </span>
+      </nav>
+
+      <div>
+        <h1 className="text-lg font-bold text-foreground">
+          {step === "done" ? "Practice Assigned" : step === "review" ? "Review Questions" : "Generate Practice"}
+        </h1>
+        <p className="text-xs text-muted-foreground">
+          {chapter.chapterName} · {chapter.subject} · {batchInfo.className} {batchInfo.name}
+        </p>
+      </div>
 
       {step === "configure" && renderConfigure()}
       {step === "review" && renderReview()}
