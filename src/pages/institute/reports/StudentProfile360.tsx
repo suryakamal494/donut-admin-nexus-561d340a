@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PageHeader } from "@/components/ui/page-header";
 import { cn } from "@/lib/utils";
-import { getStudentById, getExamsByBatch, type InstituteStudentSummary } from "@/data/institute/reportsData";
+import { getStudentById, getStudentExamHistory, type InstituteStudentSummary } from "@/data/institute/reportsData";
 import { getPerformanceColor } from "@/lib/reportColors";
 import { motion } from "framer-motion";
 
@@ -22,34 +22,6 @@ const trendLabel = (trend: string) => {
   return "Stable";
 };
 
-// Generate mock exam history for a student
-interface ExamHistoryEntry {
-  examName: string;
-  subject: string;
-  date: string;
-  score: number;
-  maxScore: number;
-  percentage: number;
-}
-
-function generateExamHistory(student: InstituteStudentSummary): ExamHistoryEntry[] {
-  const exams = getExamsByBatch(student.batchId);
-  return exams.map((exam) => {
-    const sub = student.subjects.find(s => s.subjectName === exam.subject);
-    const baseAvg = sub ? sub.average : student.overallAverage;
-    const pct = Math.max(10, Math.min(98, baseAvg + Math.floor(Math.random() * 30) - 15));
-    const score = Math.round((pct / 100) * exam.totalMarks);
-    return {
-      examName: exam.examName,
-      subject: exam.type === "grand_test" ? "Grand Test" : exam.subject,
-      date: exam.date,
-      score,
-      maxScore: exam.totalMarks,
-      percentage: pct,
-    };
-  }).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-}
-
 // Identify weak spots
 interface WeakSpot {
   subject: string;
@@ -64,12 +36,14 @@ function getWeakSpots(student: InstituteStudentSummary): WeakSpot[] {
     .map(s => ({ subject: s.subjectName, average: s.average, color: s.subjectColor }));
 }
 
+const INITIAL_EXAM_COUNT = 10;
+
 const StudentProfile360 = () => {
   const { studentId } = useParams<{ studentId: string }>();
   const navigate = useNavigate();
 
   const student = useMemo(() => getStudentById(studentId || ""), [studentId]);
-  const examHistory = useMemo(() => (student ? generateExamHistory(student) : []), [student]);
+  const examHistory = useMemo(() => (student ? getStudentExamHistory(student) : []), [student]);
   const weakSpots = useMemo(() => (student ? getWeakSpots(student) : []), [student]);
 
   if (!student) {
@@ -174,39 +148,7 @@ const StudentProfile360 = () => {
         </TabsContent>
 
         {/* ── Exam History Tab ── */}
-        <TabsContent value="exams" className="space-y-2">
-          <Card className="card-premium">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base font-semibold flex items-center gap-2">
-                <ClipboardList className="w-4 h-4 text-primary" />
-                Exam History ({examHistory.length})
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-0">
-              <div className="divide-y">
-                {examHistory.map((exam, i) => {
-                  const color = getPerformanceColor(exam.percentage);
-                  return (
-                    <div key={`${exam.examName}-${i}`} className={cn("flex items-center gap-3 px-3 py-2.5 border-l-3", color.border)}>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs sm:text-sm font-medium text-foreground truncate">{exam.examName}</p>
-                        <div className="flex items-center gap-2 text-[10px] text-muted-foreground mt-0.5">
-                          <span>{exam.subject}</span>
-                          <span>·</span>
-                          <span>{new Date(exam.date).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}</span>
-                        </div>
-                      </div>
-                      <div className="text-right flex-shrink-0">
-                        <p className={cn("text-sm font-bold", color.text)}>{exam.percentage}%</p>
-                        <p className="text-[10px] text-muted-foreground">{exam.score}/{exam.maxScore}</p>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
+        <ExamHistoryTab examHistory={examHistory} />
 
         {/* ── Analysis Tab ── */}
         <TabsContent value="analysis" className="space-y-3">
@@ -274,7 +216,7 @@ const StudentProfile360 = () => {
             </CardContent>
           </Card>
 
-          {/* Performance Trend Sparkline (simplified) */}
+          {/* Performance Trend Sparkline */}
           <Card className="border-0 shadow-sm">
             <CardHeader className="pb-2">
               <CardTitle className="text-base font-semibold flex items-center gap-2">
@@ -308,5 +250,57 @@ const StudentProfile360 = () => {
     </div>
   );
 };
+
+// Extracted exam history tab with Show more
+import { useState } from "react";
+import type { ExamHistoryEntry } from "@/data/institute/reportsData";
+
+function ExamHistoryTab({ examHistory }: { examHistory: ExamHistoryEntry[] }) {
+  const [showAll, setShowAll] = useState(false);
+  const visible = showAll ? examHistory : examHistory.slice(0, INITIAL_EXAM_COUNT);
+
+  return (
+    <TabsContent value="exams" className="space-y-2">
+      <Card className="card-premium">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base font-semibold flex items-center gap-2">
+            <ClipboardList className="w-4 h-4 text-primary" />
+            Exam History ({examHistory.length})
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-0">
+          <div className="divide-y">
+            {visible.map((exam, i) => {
+              const color = getPerformanceColor(exam.percentage);
+              return (
+                <div key={`${exam.examName}-${i}`} className={cn("flex items-center gap-3 px-3 py-2.5 border-l-3", color.border)}>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs sm:text-sm font-medium text-foreground truncate">{exam.examName}</p>
+                    <div className="flex items-center gap-2 text-[10px] text-muted-foreground mt-0.5">
+                      <span>{exam.subject}</span>
+                      <span>·</span>
+                      <span>{new Date(exam.date).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}</span>
+                    </div>
+                  </div>
+                  <div className="text-right flex-shrink-0">
+                    <p className={cn("text-sm font-bold", color.text)}>{exam.percentage}%</p>
+                    <p className="text-[10px] text-muted-foreground">{exam.score}/{exam.maxScore}</p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          {examHistory.length > INITIAL_EXAM_COUNT && (
+            <div className="p-3 text-center">
+              <Button variant="ghost" size="sm" className="text-xs" onClick={() => setShowAll(!showAll)}>
+                {showAll ? "Show less" : `View all ${examHistory.length} exams`}
+              </Button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </TabsContent>
+  );
+}
 
 export default StudentProfile360;

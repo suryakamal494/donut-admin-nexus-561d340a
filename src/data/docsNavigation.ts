@@ -80,6 +80,16 @@ export const docsNavigation: DocSection[] = [
       { title: "Content Library", path: "02-institute/content-library" },
       { title: "Question Bank", path: "02-institute/question-bank" },
       { title: "Exams", path: "02-institute/exams-new" },
+      {
+        title: "Reports",
+        path: "02-institute/reports-overview",
+        children: [
+          { title: "Overview", path: "02-institute/reports-overview" },
+          { title: "Batch Reports", path: "02-institute/reports-batches" },
+          { title: "Exam Reports", path: "02-institute/reports-exams" },
+          { title: "Student Reports", path: "02-institute/reports-students" },
+        ],
+      },
       { title: "Roles & Access", path: "02-institute/roles-access" },
     ],
   },
