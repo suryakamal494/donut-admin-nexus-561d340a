@@ -25,7 +25,6 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Slider } from "@/components/ui/slider";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
   ArrowLeft,
@@ -39,9 +38,10 @@ import {
   Award,
   AlertCircle,
   CheckCircle2,
+  Minus,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { SectionDraft } from "@/hooks/usePatternBuilder";
+import { SectionDraft, QuestionTypeConfig } from "@/hooks/usePatternBuilder";
 import { QuestionType, questionTypeLabels } from "@/data/examPatternsData";
 
 interface SectionsStepProps {
@@ -51,6 +51,10 @@ interface SectionsStepProps {
   hasSectionWiseTime: boolean;
   hasUniformMarking: boolean;
   perSubjectQuestionCount: number;
+  sectionValidationTarget: number;
+  defaultMarksPerQuestion: number;
+  hasNegativeMarking: boolean;
+  defaultNegativeMarks: number;
   addSection: () => void;
   removeSection: (id: string) => void;
   updateSection: (id: string, updates: Partial<SectionDraft>) => void;
@@ -75,6 +79,93 @@ const allQuestionTypes: QuestionType[] = [
   "true_false",
 ];
 
+// ============================================
+// Per-type config card
+// ============================================
+
+function QuestionTypeConfigCard({
+  config,
+  hasUniformMarking,
+  globalMarks,
+  hasGlobalNegative,
+  globalNegative,
+  onChange,
+}: {
+  config: QuestionTypeConfig;
+  hasUniformMarking: boolean;
+  globalMarks: number;
+  hasGlobalNegative: boolean;
+  globalNegative: number;
+  onChange: (updated: QuestionTypeConfig) => void;
+}) {
+  return (
+    <div className="p-3 rounded-lg border bg-muted/30 space-y-3">
+      <p className="text-sm font-semibold">{questionTypeLabels[config.type]}</p>
+      <div className="grid grid-cols-3 gap-3">
+        {/* Questions */}
+        <div className="space-y-1">
+          <Label className="text-xs text-muted-foreground">Questions</Label>
+          <Input
+            type="number"
+            value={config.count || ""}
+            onChange={(e) =>
+              onChange({ ...config, count: parseInt(e.target.value) || 0 })
+            }
+            placeholder="0"
+            className="text-center h-9"
+            min={0}
+          />
+        </div>
+        {/* Marks per Question */}
+        <div className="space-y-1">
+          <Label className="text-xs text-muted-foreground">Marks/Q</Label>
+          {hasUniformMarking ? (
+            <div className="h-9 flex items-center justify-center text-sm font-medium text-muted-foreground bg-muted rounded-md border">
+              {globalMarks}
+            </div>
+          ) : (
+            <Input
+              type="number"
+              value={config.marksPerQuestion}
+              onChange={(e) =>
+                onChange({ ...config, marksPerQuestion: parseFloat(e.target.value) || 1 })
+              }
+              className="text-center h-9"
+              min={0.5}
+              step={0.5}
+            />
+          )}
+        </div>
+        {/* Negative Marks */}
+        <div className="space-y-1">
+          <Label className="text-xs text-muted-foreground flex items-center gap-1">
+            <Minus className="w-3 h-3" />Negative
+          </Label>
+          <Input
+            type="number"
+            value={config.negativeMarks}
+            onChange={(e) =>
+              onChange({ ...config, negativeMarks: parseFloat(e.target.value) || 0 })
+            }
+            className="text-center h-9"
+            min={0}
+            step={0.25}
+          />
+        </div>
+      </div>
+      {hasUniformMarking && (
+        <p className="text-[10px] text-muted-foreground italic">
+          Marks set globally ({globalMarks}/question)
+        </p>
+      )}
+    </div>
+  );
+}
+
+// ============================================
+// Sortable Section Card
+// ============================================
+
 interface SortableSectionCardProps {
   section: SectionDraft;
   index: number;
@@ -83,10 +174,12 @@ interface SortableSectionCardProps {
   hasUniformMarking: boolean;
   hasSectionWiseTime: boolean;
   sectionsCount: number;
+  globalMarks: number;
+  hasGlobalNegative: boolean;
+  globalNegative: number;
   updateSection: (id: string, updates: Partial<SectionDraft>) => void;
   duplicateSection: (id: string) => void;
   removeSection: (id: string) => void;
-  toggleQuestionType: (sectionId: string, type: QuestionType) => void;
 }
 
 function SortableSectionCard({
@@ -97,10 +190,12 @@ function SortableSectionCard({
   hasUniformMarking,
   hasSectionWiseTime,
   sectionsCount,
+  globalMarks,
+  hasGlobalNegative,
+  globalNegative,
   updateSection,
   duplicateSection,
   removeSection,
-  toggleQuestionType,
 }: SortableSectionCardProps) {
   const {
     attributes,
@@ -115,6 +210,47 @@ function SortableSectionCard({
     transform: CSS.Transform.toString(transform),
     transition,
   };
+
+  const toggleQuestionType = (type: QuestionType) => {
+    const isSelected = section.questionTypes.includes(type);
+    let newTypes: QuestionType[];
+    let newConfigs: QuestionTypeConfig[];
+
+    if (isSelected) {
+      newTypes = section.questionTypes.filter((t) => t !== type);
+      newConfigs = section.questionTypeConfigs.filter((c) => c.type !== type);
+    } else {
+      newTypes = [...section.questionTypes, type];
+      newConfigs = [
+        ...section.questionTypeConfigs,
+        {
+          type,
+          count: 0,
+          marksPerQuestion: hasUniformMarking ? globalMarks : 4,
+          negativeMarks: hasGlobalNegative ? globalNegative : 0,
+        },
+      ];
+    }
+
+    updateSection(section.id, {
+      questionTypes: newTypes,
+      questionTypeConfigs: newConfigs,
+    });
+  };
+
+  const updateTypeConfig = (updated: QuestionTypeConfig) => {
+    const newConfigs = section.questionTypeConfigs.map((c) =>
+      c.type === updated.type ? updated : c
+    );
+    updateSection(section.id, { questionTypeConfigs: newConfigs });
+  };
+
+  // Section summary
+  const totalQ = section.questionTypeConfigs.reduce((s, c) => s + c.count, 0);
+  const totalM = section.questionTypeConfigs.reduce(
+    (s, c) => s + c.count * (hasUniformMarking ? globalMarks : c.marksPerQuestion),
+    0
+  );
 
   return (
     <Card
@@ -144,20 +280,23 @@ function SortableSectionCard({
                     <Badge variant="secondary" className="text-xs">Optional</Badge>
                   )}
                 </div>
-                <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
+                <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground flex-wrap">
                   <span className="flex items-center gap-1">
                     <FileQuestion className="w-3 h-3" />
-                    {section.questionCount} questions
+                    {totalQ} questions
                   </span>
                   <span className="flex items-center gap-1">
                     <Award className="w-3 h-3" />
-                    {section.marksPerQuestion} marks each
+                    {totalM} marks
                   </span>
+                  {section.questionTypes.length > 0 && (
+                    <span>{section.questionTypes.length} type{section.questionTypes.length > 1 ? "s" : ""}</span>
+                  )}
                 </div>
               </div>
               <ChevronDown
                 className={cn(
-                  "w-5 h-5 text-muted-foreground transition-transform",
+                  "w-5 h-5 text-muted-foreground transition-transform shrink-0",
                   isExpanded && "rotate-180"
                 )}
               />
@@ -180,24 +319,7 @@ function SortableSectionCard({
               />
             </div>
 
-            {/* Question Count */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label>Number of Questions</Label>
-                <span className="text-sm font-medium">{section.questionCount}</span>
-              </div>
-              <Slider
-                value={[section.questionCount]}
-                onValueChange={([value]) =>
-                  updateSection(section.id, { questionCount: value })
-                }
-                min={1}
-                max={50}
-                step={1}
-              />
-            </div>
-
-            {/* Question Types */}
+            {/* Question Types Selector */}
             <div className="space-y-2">
               <Label>Question Types</Label>
               <div className="flex flex-wrap gap-2">
@@ -207,7 +329,7 @@ function SortableSectionCard({
                     <button
                       key={type}
                       type="button"
-                      onClick={() => toggleQuestionType(section.id, type)}
+                      onClick={() => toggleQuestionType(type)}
                       className={cn(
                         "px-3 py-2 min-h-[36px] sm:min-h-[32px] rounded-full text-xs font-medium transition-all",
                         isSelected
@@ -221,6 +343,24 @@ function SortableSectionCard({
                 })}
               </div>
             </div>
+
+            {/* Per-Type Configuration Cards */}
+            {section.questionTypeConfigs.length > 0 && (
+              <div className="space-y-3">
+                <Label className="text-sm">Question Type Configuration</Label>
+                {section.questionTypeConfigs.map((config) => (
+                  <QuestionTypeConfigCard
+                    key={config.type}
+                    config={config}
+                    hasUniformMarking={hasUniformMarking}
+                    globalMarks={globalMarks}
+                    hasGlobalNegative={hasGlobalNegative}
+                    globalNegative={globalNegative}
+                    onChange={updateTypeConfig}
+                  />
+                ))}
+              </div>
+            )}
 
             {/* Optional Section */}
             <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
@@ -236,7 +376,7 @@ function SortableSectionCard({
                 onCheckedChange={(checked) =>
                   updateSection(section.id, {
                     isOptional: checked,
-                    attemptLimit: checked ? Math.min(section.questionCount, 5) : null,
+                    attemptLimit: checked ? Math.min(totalQ, 5) : null,
                   })
                 }
               />
@@ -254,51 +394,17 @@ function SortableSectionCard({
                       updateSection(section.id, {
                         attemptLimit: Math.min(
                           parseInt(e.target.value) || 1,
-                          section.questionCount
+                          totalQ
                         ),
                       })
                     }
                     className="w-20 text-center"
                     min={1}
-                    max={section.questionCount}
+                    max={totalQ}
                   />
                   <span className="text-sm text-muted-foreground">
-                    out of {section.questionCount}
+                    out of {totalQ}
                   </span>
-                </div>
-              </div>
-            )}
-
-            {/* Marks per Question (if not uniform) */}
-            {!hasUniformMarking && (
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Marks per Question</Label>
-                  <Input
-                    type="number"
-                    value={section.marksPerQuestion}
-                    onChange={(e) =>
-                      updateSection(section.id, {
-                        marksPerQuestion: parseFloat(e.target.value) || 1,
-                      })
-                    }
-                    min={0.5}
-                    step={0.5}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Negative Marks</Label>
-                  <Input
-                    type="number"
-                    value={section.negativeMarks}
-                    onChange={(e) =>
-                      updateSection(section.id, {
-                        negativeMarks: parseFloat(e.target.value) || 0,
-                      })
-                    }
-                    min={0}
-                    step={0.25}
-                  />
                 </div>
               </div>
             )}
@@ -353,7 +459,11 @@ function SortableSectionCard({
   );
 }
 
-function DragOverlayCard({ section }: { section: SectionDraft }) {
+function DragOverlayCard({ section, hasUniformMarking, globalMarks }: { section: SectionDraft; hasUniformMarking: boolean; globalMarks: number }) {
+  const totalQ = section.questionTypeConfigs.reduce((s, c) => s + c.count, 0);
+  const totalM = section.questionTypeConfigs.reduce(
+    (s, c) => s + c.count * (hasUniformMarking ? globalMarks : c.marksPerQuestion), 0
+  );
   return (
     <Card className="shadow-xl ring-2 ring-primary rotate-2 opacity-95">
       <CardHeader className="p-4">
@@ -369,11 +479,11 @@ function DragOverlayCard({ section }: { section: SectionDraft }) {
             <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
               <span className="flex items-center gap-1">
                 <FileQuestion className="w-3 h-3" />
-                {section.questionCount} questions
+                {totalQ} questions
               </span>
               <span className="flex items-center gap-1">
                 <Award className="w-3 h-3" />
-                {section.marksPerQuestion} marks each
+                {totalM} marks
               </span>
             </div>
           </div>
@@ -383,6 +493,10 @@ function DragOverlayCard({ section }: { section: SectionDraft }) {
   );
 }
 
+// ============================================
+// Main SectionsStep
+// ============================================
+
 export function SectionsStep({
   sections,
   hasFixedSubjects,
@@ -390,6 +504,10 @@ export function SectionsStep({
   hasSectionWiseTime,
   hasUniformMarking,
   perSubjectQuestionCount,
+  sectionValidationTarget,
+  defaultMarksPerQuestion,
+  hasNegativeMarking,
+  defaultNegativeMarks,
   addSection,
   removeSection,
   updateSection,
@@ -421,21 +539,18 @@ export function SectionsStep({
     );
   };
 
-  const toggleQuestionType = (sectionId: string, type: QuestionType) => {
-    const section = sections.find((s) => s.id === sectionId);
-    if (!section) return;
-    const newTypes = section.questionTypes.includes(type)
-      ? section.questionTypes.filter((t) => t !== type)
-      : [...section.questionTypes, type];
-    updateSection(sectionId, { questionTypes: newTypes });
-  };
+  // Section question total
+  const sectionQuestionTotal = sections.reduce(
+    (sum, s) => sum + s.questionTypeConfigs.reduce((a, c) => a + c.count, 0),
+    0
+  );
+  const target = sectionValidationTarget;
+  const hasTarget = target > 0;
+  const remaining = hasTarget ? target - sectionQuestionTotal : 0;
+  const isMatched = hasTarget && sectionQuestionTotal === target;
+  const isExceeded = hasTarget && sectionQuestionTotal > target;
 
-  // Section question total vs per-subject target
-  const sectionQuestionTotal = sections.reduce((sum, s) => sum + s.questionCount, 0);
-  const hasTarget = hasFixedSubjects && perSubjectQuestionCount > 0;
-  const remaining = hasTarget ? perSubjectQuestionCount - sectionQuestionTotal : 0;
-  const isMatched = hasTarget && sectionQuestionTotal === perSubjectQuestionCount;
-  const isExceeded = hasTarget && sectionQuestionTotal > perSubjectQuestionCount;
+  const targetLabel = hasFixedSubjects ? "per subject" : "total";
 
   const handleDragStart = (event: DragStartEvent) => {
     setActiveId(event.active.id as string);
@@ -458,7 +573,7 @@ export function SectionsStep({
       <div className="space-y-1">
         <h2 className="text-xl font-semibold">Sections Configuration</h2>
         <p className="text-sm text-muted-foreground">
-          Define sections with question counts and types. Same structure applies to all subjects.
+          Define sections with question types, counts, and marks. Same structure applies to all subjects.
         </p>
       </div>
 
@@ -479,18 +594,17 @@ export function SectionsStep({
               )}
               <div className="flex-1">
                 <p className="text-sm font-medium">
-                  Section total: {sectionQuestionTotal} / {perSubjectQuestionCount} per subject
+                  Section total: {sectionQuestionTotal} / {target} {targetLabel}
                 </p>
                 <p className="text-xs text-muted-foreground">
                   {isMatched
-                    ? "✓ Section questions match per-subject count"
+                    ? `✓ Section questions match ${targetLabel} count`
                     : isExceeded
                     ? `Exceeded by ${Math.abs(remaining)} questions — reduce section counts`
                     : `${remaining} more questions needed across sections`}
                 </p>
               </div>
             </div>
-            {/* Progress bar */}
             <div className="mt-2 h-2 bg-muted rounded-full overflow-hidden">
               <div
                 className={cn(
@@ -499,7 +613,7 @@ export function SectionsStep({
                   isExceeded && "bg-destructive",
                   !isMatched && !isExceeded && "bg-primary"
                 )}
-                style={{ width: `${Math.min((sectionQuestionTotal / perSubjectQuestionCount) * 100, 100)}%` }}
+                style={{ width: `${Math.min((sectionQuestionTotal / target) * 100, 100)}%` }}
               />
             </div>
           </CardContent>
@@ -522,7 +636,9 @@ export function SectionsStep({
         </Card>
         <Card className="bg-primary/5 border-primary/20">
           <CardContent className="p-3 text-center">
-            <p className="text-2xl font-bold">{sections.length}</p>
+            <p className="text-2xl font-bold">
+              {new Set(sections.flatMap((s) => s.questionTypes)).size}
+            </p>
             <p className="text-xs text-muted-foreground">Types</p>
           </CardContent>
         </Card>
@@ -551,17 +667,25 @@ export function SectionsStep({
                 hasUniformMarking={hasUniformMarking}
                 hasSectionWiseTime={hasSectionWiseTime}
                 sectionsCount={sections.length}
+                globalMarks={defaultMarksPerQuestion}
+                hasGlobalNegative={hasNegativeMarking}
+                globalNegative={defaultNegativeMarks}
                 updateSection={updateSection}
                 duplicateSection={duplicateSection}
                 removeSection={removeSection}
-                toggleQuestionType={toggleQuestionType}
               />
             ))}
           </div>
         </SortableContext>
 
         <DragOverlay>
-          {activeSection ? <DragOverlayCard section={activeSection} /> : null}
+          {activeSection ? (
+            <DragOverlayCard
+              section={activeSection}
+              hasUniformMarking={hasUniformMarking}
+              globalMarks={defaultMarksPerQuestion}
+            />
+          ) : null}
         </DragOverlay>
       </DndContext>
 
