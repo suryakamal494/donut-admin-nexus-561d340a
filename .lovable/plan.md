@@ -1,45 +1,59 @@
 
 
-## Issues Identified
+## Issue Identified — Questions Tab: Flat, Monotone Question Cards
 
-### Issue 1 — Pages Don't Scroll to Top on Navigation
-**Root cause**: React Router v6 does not automatically scroll to top on route changes. The app has no `ScrollRestoration` or `useEffect` that calls `window.scrollTo(0, 0)` on navigation. When a user clicks a Practice History session or an Exam Breakdown link, the new page renders at whatever scroll position the previous page was at — often the bottom, since Practice History and Exam Breakdown are near the bottom of the Chapter Report page.
+**Current state**: The `QuestionRow` component in `PracticeSessionDetail.tsx` renders questions as plain `divide-y` rows with gray "Q1" labels, black text, and two small badges. There's no visual warmth, no color on the Q number, no card boundaries, and no way to view the solution or answer options. Everything is black-and-white with thin dividers — no clear distinction between questions.
 
-**Where it happens**: Every navigation within the Reports module (and likely the entire teacher portal). Examples:
-- Chapter Report → Practice Session Detail
-- Chapter Report → Exam Results
-- Batch Report → Chapter Report
-- Batch Report → Student Report
-- Batch Report → Exam Results
+**What the reference image (your screenshot) does right**: Each question has a subtle card-like separation with warm background, colored Q numbers, topic + difficulty badges on the left, and color-coded success rates on the right. Clean, readable, well-spaced.
 
-**Solution**: Add a `ScrollToTop` component that listens to `useLocation()` and calls `window.scrollTo(0, 0)` on every pathname change. Place it inside the `BrowserRouter` in `App.tsx` so it applies globally to all portals.
-
-### Issue 2 — Practice History Doesn't Scale Beyond 2-3 Sessions
-**Root cause**: The mock data generator (`practiceHistoryData.ts`) produces only 2-3 sessions (`const count = 2 + (seed % 2)`). The `ChapterPracticeHistory` component renders all sessions in a flat list with no pagination or "Show more" pattern. With 5-6+ sessions, the card would become very tall and push content below it further down.
-
-**Solution**:
-1. Increase mock data to generate 4-6 sessions to test scalability
-2. Add a "Show more" pattern to `ChapterPracticeHistory`: show first 3 sessions, with a "Show all X" toggle button to expand. This matches the pattern already used in Student Report's exam history.
+**What's missing from current UI**:
+1. Q number has no color — just gray monospace text
+2. No solution/answer viewing capability — `QuestionResult` interface doesn't even have options or correct answer data
+3. No card-like boundaries between questions — just `divide-y`
+4. No background warmth — plain white
 
 ---
 
-## Implementation Plan
+## Solution
 
-### Phase 1 — Scroll-to-Top on Navigation
+### Phase 1 — Enhance Data Model + Question Card UI
 
-**File**: New `src/components/ScrollToTop.tsx`
-- Create a small component using `useEffect` + `useLocation` that calls `window.scrollTo(0, 0)` on pathname change
+**File: `src/data/teacher/practiceSessionDetailData.ts`**
+- Add `options: string[]` and `correctOption: number` fields to `QuestionResult` interface
+- Generate 4 mock options per question with a marked correct answer
 
-**File**: `src/App.tsx`
-- Import and place `<ScrollToTop />` inside `<BrowserRouter>` before `<Routes>`
+**File: `src/pages/teacher/PracticeSessionDetail.tsx`**
+- Replace `divide-y` flat list with individual card-like containers per question (subtle border, rounded, slight padding, `bg-muted/30` background)
+- Style Q number with a colored circular badge (band accent color or primary tint, e.g., `bg-primary/10 text-primary` rounded-full)
+- Add an expandable "View Solution" toggle per question using local state — clicking reveals the 4 options with the correct one highlighted in green
+- Keep topic badge + difficulty badge + success rate in current positions but ensure the success rate is color-coded (already done via `accuracyColor`)
+- Add subtle left border using band color on each question card for visual grouping
 
-### Phase 2 — Practice History Scalability
+```text
+┌─────────────────────────────────────────────────────┐
+│ ● Mastery Ready  (5 questions)                       │
+│                                                       │
+│ ┌───────────────────────────────────────────────────┐│
+│ │ [Q1] A particle moves along a straight line...    ││
+│ │   Free Fall · Medium              74% success 1/2 ││
+│ │   ▸ View Solution                                  ││
+│ └───────────────────────────────────────────────────┘│
+│ ┌───────────────────────────────────────────────────┐│
+│ │ [Q2] Derive the equation of motion...             ││
+│ │   Circular Motion · Easy          43% success 1/2 ││
+│ │   ▾ View Solution                                  ││
+│ │   A. 2as = v²-u²   ✓B. v²=u²+2as  C. ...  D. ...││
+│ └───────────────────────────────────────────────────┘│
+└─────────────────────────────────────────────────────┘
+```
 
-**File**: `src/data/teacher/practiceHistoryData.ts`
-- Change session count from `2 + (seed % 2)` (2-3) to `3 + (seed % 4)` (3-6) for realistic testing
+### Changes Summary
 
-**File**: `src/components/teacher/reports/ChapterPracticeHistory.tsx`
-- Add `useState` for `showAll` (default false)
-- Show first 3 sessions when collapsed, all when expanded
-- Add a "Show all X sessions" / "Show less" toggle button at the bottom of the list when sessions > 3
+| What | Detail |
+|------|--------|
+| Q number badge | Colored circular badge (`bg-primary/10 text-primary font-semibold rounded-full w-7 h-7 flex items-center justify-center`) |
+| Card boundaries | Each question wrapped in a div with `border rounded-lg p-3 bg-muted/20` |
+| View Solution | Collapsible section per question showing 4 options (A/B/C/D) with correct answer in green |
+| Data model | Add `options: string[]` and `correctOption: number` to `QuestionResult` |
+| Mock options | Generate 4 plausible options per question text using seeded patterns |
 
