@@ -25,7 +25,10 @@ const trendColor = (trend: "up" | "down" | "flat") =>
 
 export const BatchHealthCard = ({ health, batchId, onNavigateToChapter, onNavigateToStudent }: BatchHealthCardProps) => {
   const isMobile = useIsMobile();
-  const [isExpanded, setIsExpanded] = useState(!isMobile);
+  const [isExpanded, setIsExpanded] = useState(() => {
+    if (typeof window !== "undefined") return window.innerWidth >= 768;
+    return true;
+  });
 
   const overallTrendIcon = health.overallTrend === "improving"
     ? <TrendingUp className="w-4 h-4" />
