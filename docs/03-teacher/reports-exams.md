@@ -25,12 +25,13 @@ The **Exams** tab within the Batch Report lists all completed exams for the batc
 | `ExamsTab` | Source toggle (My Exams / Institute Tests), date filters, exam cards, pagination | Batch Report → Exams tab |
 | `BatchSelector` | Batch pill selector for multi-batch exams | Exam Results → Top |
 | `VerdictBanner` | Teal gradient banner with plain-language verdict | Exam Results → Insights |
+| `ActionableInsightCards` | **NEW** — Severity-coded cards with [Take Action] buttons | Exam Results → Insights (after VerdictBanner) |
 | `PerformanceBands` | 4-band student grouping | Exam Results → Insights |
 | `TopicFlags` | Per-topic success rate badges | Exam Results → Insights |
-| `InsightCards` | Actionable insight cards | Exam Results → Insights |
-| `AIAnalysisCard` | AI-generated performance summary | Exam Results → Analytics |
+| `InsightCards` | Key insight cards (hardest question, most skipped) | Exam Results → Insights |
 | `DifficultyChart` | Easy/Medium/Hard accuracy chart | Exam Results → Analytics |
 | `CognitiveChart` | Cognitive type accuracy chart | Exam Results → Analytics |
+| `AIAnalysisCard` | AI-generated deep-dive summary (repositioned below charts) | Exam Results → Analytics (bottom) |
 | `QuestionGroupAccordion` | Questions grouped by 4 accuracy bands | Exam Results → Questions |
 | `QuestionAnalysisCard` | Individual question analysis card | Inside accordion |
 | `StudentResultRow` | Individual student result row | Exam Results → Students |
@@ -176,6 +177,105 @@ Always uses teal-to-cyan gradient. Insight pills show:
 - Top student name + percentage
 - Average percentage
 
+##### Actionable Insight Cards (`ActionableInsightCards`) — **NEW (Phase 1)**
+
+Positioned **between VerdictBanner and PerformanceBands** — the teacher sees "what to do" before seeing the raw data.
+
+```text
+┌─────────────────────────────────────────────────────────┐
+│  ✨ Actionable Insights · 4 findings                    │
+│                                                          │
+│  ┌─────────────────────┐  ┌─────────────────────┐      │
+│  │ 🔴 URGENT           │  │ 🟡 ATTENTION        │      │
+│  │ 7 students scored   │  │ Waves needs          │      │
+│  │ below 35% on        │  │ reinforcement —      │      │
+│  │ Projectile Motion   │  │ 42% success          │      │
+│  │ ▾ 7 students        │  │ ▾ 4 students         │      │
+│  │ [Generate homework] │  │ [Assign practice]    │      │
+│  └─────────────────────┘  └─────────────────────┘      │
+│                                                          │
+│  ┌─────────────────────┐  ┌─────────────────────┐      │
+│  │ 🟢 POSITIVE         │  │ 🔴 URGENT           │      │
+│  │ Kinematics — 82%    │  │ 5 students in        │      │
+│  │ class success rate   │  │ foundational risk    │      │
+│  │                      │  │ ▾ 5 students         │      │
+│  │                      │  │ [Generate remedial   │      │
+│  │                      │  │  homework]           │      │
+│  └─────────────────────┘  └─────────────────────┘      │
+└─────────────────────────────────────────────────────────┘
+```
+
+**Card Types:**
+
+| Type | Severity | Icon | Border Color | When Generated |
+|------|----------|------|-------------|----------------|
+| `reteach` | `critical` | AlertTriangle | Red | Any topic with <35% success rate |
+| `practice` | `warning` | Target | Amber | Second weakest topic (35-49%) |
+| `celebrate` | `positive` | PartyPopper | Emerald | Any topic with >75% success rate |
+| `attention` | `critical`/`warning` | Eye | Teal | Students in foundational risk band |
+
+**Data Structure:**
+
+```typescript
+interface ActionableInsight {
+  id: string;
+  type: 'reteach' | 'practice' | 'celebrate' | 'attention';
+  severity: 'critical' | 'warning' | 'positive';
+  finding: string;           // "7 students scored below 35% on Projectile Motion"
+  detail: string;            // "Average accuracy was 28%. Most errors were conceptual."
+  affectedStudents: { id: string; name: string; score: number }[];
+  suggestedAction: string;   // "Generate targeted homework"
+  actionType: 'homework' | 'practice' | 'none';
+  actionPayload: {
+    topic?: string;
+    difficulty?: string;
+    studentIds?: string[];
+  };
+}
+```
+
+**[Take Action] button behavior:**
+- `actionType: 'homework'` → Opens `CreateHomeworkDialog` pre-filled with `actionPayload.topic` and difficulty
+- `actionType: 'practice'` → Opens `CreateHomeworkDialog` (same dialog, practice mode)
+- `actionType: 'none'` → No button shown (celebrate cards)
+
+**Current implementation**: Uses `generateMockActionableInsights()` which derives insights from existing `bands` and `topicFlags` data. No AI call is made.
+
+**Future AI integration** (Edge function: `generate-actionable-insights`):
+
+```text
+System: You are an education analytics engine. Return ONLY valid JSON — no markdown.
+
+User prompt:
+Given the following exam data:
+- Exam: {examName}
+- Score distribution: {scoreDistribution}
+- Question analysis (topic, successRate, difficulty, cognitiveType): {questionAnalysis}
+- Student results (name, score, percentage): {allStudents}
+- Performance bands: {bands with student lists}
+
+Generate 3-4 actionable insight objects. Each must have:
+{
+  "type": "reteach" | "practice" | "celebrate" | "attention",
+  "severity": "critical" | "warning" | "positive",
+  "finding": "Plain English, <15 words",
+  "detail": "One sentence with specific numbers",
+  "affectedStudentIds": ["student-id-1", ...],
+  "suggestedAction": "What teacher should do, <12 words",
+  "actionType": "homework" | "practice" | "none",
+  "topicFocus": "Topic name if applicable"
+}
+
+Rules:
+- At least 1 card must be type=reteach if any topic has <35% success
+- At least 1 card must be type=celebrate if any topic has >75% success
+- Include student IDs so the UI can link to their profiles
+- Be specific: use topic names, student counts, percentages
+
+Model: google/gemini-2.5-flash (structured output via tool calling)
+Response format: { "insights": ActionableInsight[] }
+```
+
 ##### Performance Bands (`PerformanceBands`)
 
 Same 4-band grouping as Chapter Buckets, but based on **exam percentage** (not PI):
@@ -209,24 +309,7 @@ Actionable cards highlighting specific patterns from question analysis (e.g., "3
 
 #### 2b. Analytics Tab
 
-Data visualization and AI-generated analysis.
-
-##### AI Analysis Card (`AIAnalysisCard`)
-
-A prominent "Analyze Results" button that triggers an AI-generated summary:
-
-```text
-┌─────────────────────────────────────────────────────────┐
-│  🤖 AI Analysis                                         │
-│                                                          │
-│  [✨ Analyze Results]                                    │
-│                                                          │
-│  (After clicking:)                                       │
-│  The class performed moderately on Kinematics...         │
-│  Key gaps: Projectile Motion (32% success)...            │
-│  Recommended: Focus next class on application...         │
-└─────────────────────────────────────────────────────────┘
-```
+Data visualization and AI deep-dive analysis.
 
 ##### Score Distribution Chart
 
@@ -270,6 +353,12 @@ Accuracy by cognitive classification:
 | Memory | Recall-based |
 
 Each question is tagged with a `cognitiveType` in the exam data.
+
+##### AI Analysis Card (`AIAnalysisCard`) — Repositioned
+
+> **Positioning change (Phase 1)**: Moved from top of Analytics tab to **below charts**. The primary AI surface is now the Actionable Insight Cards on the Insights tab. This card serves as a "deep-dive" option for teachers who want a free-form AI narrative.
+
+A prominent "Analyze Results" button that triggers an AI-generated markdown summary via edge function (`analyze-exam-results`).
 
 ---
 

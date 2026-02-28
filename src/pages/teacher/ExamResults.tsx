@@ -13,8 +13,10 @@ import {
   computePerformanceBands,
   computeTopicFlags,
   generateVerdictSummary,
+  generateMockActionableInsights,
   batchInfoMap,
   type ExamAnalytics,
+  type ActionableInsight,
 } from "@/data/teacher/examResults";
 import {
   VerdictBanner,
@@ -22,6 +24,7 @@ import {
   TopicFlags,
   InsightCards,
   StudentResultRow,
+  ActionableInsightCards,
 } from "@/components/teacher/exams/results";
 import { BatchSelector } from "@/components/teacher/exams/results/BatchSelector";
 import { DifficultyChart } from "@/components/teacher/exams/results/DifficultyChart";
@@ -67,6 +70,15 @@ const ExamResults = () => {
     () => (analytics ? generateVerdictSummary(analytics, bands, topicFlags) : null),
     [analytics, bands, topicFlags]
   );
+  const actionableInsights = useMemo(
+    () => (analytics ? generateMockActionableInsights(analytics, bands, topicFlags) : []),
+    [analytics, bands, topicFlags]
+  );
+
+  const handleInsightAction = (insight: ActionableInsight) => {
+    // Pre-fill homework dialog with the insight's context
+    setHomeworkDialogOpen(true);
+  };
 
   if (!exam || !analytics || !verdict) {
     return (
@@ -142,6 +154,7 @@ const ExamResults = () => {
         {/* ── Insights Tab ── */}
         <TabsContent value="insights" className="space-y-5">
           <VerdictBanner examName={exam.name} verdict={verdict} batchName={selectedBatchName} />
+          <ActionableInsightCards insights={actionableInsights} onTakeAction={handleInsightAction} />
           <PerformanceBands bands={bands} />
           <TopicFlags flags={topicFlags} />
           <InsightCards questions={analytics.questionAnalysis} />
@@ -149,11 +162,8 @@ const ExamResults = () => {
 
         {/* ── Analytics Tab ── */}
         <TabsContent value="analytics" className="space-y-4">
-          {/* AI Analysis — First priority */}
-          <AIAnalysisCard analytics={analytics} examName={exam.name} />
-
           <div className="grid gap-4 lg:grid-cols-2">
-            {/* Score Distribution — kept */}
+            {/* Score Distribution */}
             <Card className="card-premium">
               <CardHeader className="pb-2">
                 <CardTitle className="text-base font-semibold flex items-center gap-2">
@@ -193,8 +203,11 @@ const ExamResults = () => {
             <DifficultyChart questions={analytics.questionAnalysis} />
           </div>
 
-          {/* Cognitive Type Performance — NEW */}
+          {/* Cognitive Type Performance */}
           <CognitiveChart questions={analytics.questionAnalysis} />
+
+          {/* AI Deep-Dive Analysis — moved below charts */}
+          <AIAnalysisCard analytics={analytics} examName={exam.name} />
 
         </TabsContent>
 
