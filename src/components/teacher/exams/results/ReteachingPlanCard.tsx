@@ -79,9 +79,10 @@ export function generateMockReteachingPlan(questions: QuestionAnalysis[]): Retea
 
 interface ReteachingPlanCardProps {
   questions: QuestionAnalysis[];
+  onGenerateHomework?: (topics: string[]) => void;
 }
 
-export const ReteachingPlanCard = ({ questions }: ReteachingPlanCardProps) => {
+export const ReteachingPlanCard = ({ questions, onGenerateHomework }: ReteachingPlanCardProps) => {
   const [expanded, setExpanded] = useState(false);
   const [copied, setCopied] = useState(false);
   const { toast } = useToast();
@@ -192,15 +193,27 @@ export const ReteachingPlanCard = ({ questions }: ReteachingPlanCardProps) => {
                   </div>
 
                   {/* Footer */}
-                  <div className="flex items-center justify-between pt-1">
+                  <div className="flex items-center justify-between pt-1 flex-wrap gap-2">
                     <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                       <Clock className="w-3.5 h-3.5" />
                       Total: ~{plan.totalEstimatedMinutes} minutes
                     </div>
-                    <Button size="sm" variant="outline" onClick={handleCopyPlan} className="gap-1.5 text-xs h-8">
-                      {copied ? <CheckCircle2 className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3" />}
-                      {copied ? "Copied!" : "Copy Plan"}
-                    </Button>
+                    <div className="flex items-center gap-2">
+                      <Button size="sm" variant="outline" onClick={handleCopyPlan} className="gap-1.5 text-xs h-8">
+                        {copied ? <CheckCircle2 className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3" />}
+                        {copied ? "Copied!" : "Copy Plan"}
+                      </Button>
+                      {onGenerateHomework && (
+                        <Button
+                          size="sm"
+                          className="gap-1.5 text-xs h-8 gradient-button"
+                          onClick={() => onGenerateHomework(plan.topics.map(t => t.topic))}
+                        >
+                          <Sparkles className="w-3 h-3" />
+                          Generate Homework
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 </div>
               </motion.div>

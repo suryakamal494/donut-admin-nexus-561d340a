@@ -138,13 +138,13 @@ const ChapterPracticeReview = () => {
         <a href={`/teacher/reports/${batchId}/chapters/${chapterId}`} className="hover:text-foreground transition-colors">{chapter.chapterName}</a>
         <span>›</span>
         <span className="text-foreground font-medium">
-          {step === "done" ? "Assigned" : step === "review" ? "Review" : "Generate"}
+          {step === "done" ? "Assigned" : step === "review" ? "Review" : "Generate Homework"}
         </span>
       </nav>
 
       <div>
         <h1 className="text-lg font-bold text-foreground">
-          {step === "done" ? "Practice Assigned" : step === "review" ? "Review Questions" : "Generate Practice"}
+          {step === "done" ? "Homework Assigned" : step === "review" ? "Review Questions" : "Generate Homework"}
         </h1>
         {step !== "configure" && (
           <p className="text-xs text-muted-foreground">

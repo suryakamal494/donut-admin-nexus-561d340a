@@ -276,11 +276,11 @@ slope = linear regression slope across exam percentages (chronological order)
 
 > Maximum 2 tags per student. Tags are assigned in order of priority and truncated.
 
-##### "Generate Practice" Button
+##### "Generate Homework" Button
 
 Placed in the card header:
 - **Mobile**: Icon-only `Sparkles` button (8×8 px)
-- **Desktop**: Full "Generate Practice" button with `Sparkles` icon
+- **Desktop**: Full "Generate Homework" button with `Sparkles` icon
 
 Clicking navigates to `/teacher/reports/:batchId/chapters/:chapterId/practice`.
 
@@ -313,7 +313,7 @@ Practice History (3)
 
 **Clicking a row** navigates to the Practice Session Detail page.
 
-**Empty State**: Shows FileText icon with message _"No practice sessions yet"_ and helper text _"Generate practice from the Student Performance section above"_.
+**Empty State**: Shows FileText icon with message _"No practice sessions yet"_ and helper text _"Generate homework from the Student Performance section above"_.
 
 ---
 
