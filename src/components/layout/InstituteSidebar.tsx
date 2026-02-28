@@ -15,6 +15,7 @@ import {
   ChevronRight,
   ChevronDown,
   Database,
+  Layers,
   Wrench,
   Eye,
   Library,
@@ -72,6 +73,16 @@ const navItems: NavItem[] = [
   { title: "Question Bank", icon: FileQuestion, href: "/institute/questions" },
   { title: "Content Library", icon: Library, href: "/institute/content" },
   { title: "Exams", icon: ClipboardList, href: "/institute/exams" },
+  {
+    title: "Reports",
+    icon: TrendingUp,
+    href: "/institute/reports",
+    subItems: [
+      { title: "Batch Reports", icon: Layers, href: "/institute/reports/batches" },
+      { title: "Exam Reports", icon: ClipboardList, href: "/institute/reports/exams" },
+      { title: "Student Reports", icon: GraduationCap, href: "/institute/reports/students" },
+    ]
+  },
   { 
     title: "Exams New", 
     icon: ClipboardList, 
@@ -94,10 +105,12 @@ const InstituteSidebar = ({ collapsed, onToggle, isMobile, onMobileClose }: Inst
   
   // Track which submenus are open
   const [openSubmenus, setOpenSubmenus] = useState<string[]>(() => {
-    if (currentPath.startsWith('/institute/timetable')) {
-      return ['Timetable'];
-    }
-    return [];
+    const open: string[] = [];
+    if (currentPath.startsWith('/institute/timetable')) open.push('Timetable');
+    if (currentPath.startsWith('/institute/reports')) open.push('Reports');
+    if (currentPath.startsWith('/institute/academic-schedule')) open.push('Syllabus Tracker');
+    if (currentPath.startsWith('/institute/exams-new')) open.push('Exams New');
+    return open;
   });
 
   const isActive = (href: string) => {
