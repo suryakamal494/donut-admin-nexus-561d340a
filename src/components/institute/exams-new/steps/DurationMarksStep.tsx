@@ -15,8 +15,9 @@ import {
   BookOpen,
   Calculator,
   Hash,
+  FileQuestion,
 } from "lucide-react";
-import { formatDuration } from "@/data/examPatternsData";
+import { formatDuration, questionTypeLabels, QuestionType } from "@/data/examPatternsData";
 import { availableSubjects } from "@/hooks/usePatternBuilder";
 
 interface DurationMarksStepProps {
@@ -39,14 +40,17 @@ interface DurationMarksStepProps {
   // Per-subject questions
   hasFixedSubjects: boolean;
   subjects: string[];
-  subjectQuestionCounts: Record<string, number>;
-  setSubjectQuestionCount: (subjectId: string, count: number) => void;
+  questionsPerSubject: number;
+  setQuestionsPerSubject: (count: number) => void;
   // Total questions (when no fixed subjects)
   totalQuestionCount: number;
   setTotalQuestionCount: (count: number) => void;
   // Sections toggle
   hasSections: boolean;
   setHasSections: (value: boolean) => void;
+  // Global question type (when no sections)
+  globalQuestionType: QuestionType;
+  setGlobalQuestionType: (type: QuestionType) => void;
   // Computed
   totalQuestions: number;
   totalMarks: number;
@@ -57,6 +61,16 @@ interface DurationMarksStepProps {
 }
 
 const durationPresets = [30, 45, 60, 90, 120, 180, 200];
+
+const selectableQuestionTypes: QuestionType[] = [
+  'single_correct',
+  'multiple_correct',
+  'numerical',
+  'integer',
+  'true_false',
+  'fill_in_blanks',
+  'assertion_reasoning',
+];
 
 export function DurationMarksStep({
   totalDuration,
@@ -75,21 +89,20 @@ export function DurationMarksStep({
   setHasPartialMarking,
   hasFixedSubjects,
   subjects,
-  subjectQuestionCounts,
-  setSubjectQuestionCount,
+  questionsPerSubject,
+  setQuestionsPerSubject,
   totalQuestionCount,
   setTotalQuestionCount,
   hasSections,
   setHasSections,
+  globalQuestionType,
+  setGlobalQuestionType,
   totalQuestions,
   totalMarks,
   canProceed,
   onNext,
   onBack,
 }: DurationMarksStepProps) {
-  const getSubjectName = (id: string) =>
-    availableSubjects.find((s) => s.id === id)?.name || id;
-
   const showPerSubject = hasFixedSubjects && subjects.length > 0;
   const showTotalQuestions = !showPerSubject;
 
@@ -158,36 +171,27 @@ export function DurationMarksStep({
               <div>
                 <p className="font-medium">Questions per Subject</p>
                 <p className="text-sm text-muted-foreground">
-                  Enter the number of questions for each subject
+                  Same number of questions for each subject
                 </p>
               </div>
             </div>
 
-            <div className="space-y-3">
-              {subjects.map((subjectId) => (
-                <div
-                  key={subjectId}
-                  className="flex items-center justify-between gap-4 p-3 rounded-lg bg-muted/50"
-                >
-                  <Label className="text-sm font-medium min-w-0 truncate">
-                    {getSubjectName(subjectId)}
-                  </Label>
-                  <Input
-                    type="number"
-                    value={subjectQuestionCounts[subjectId] || ""}
-                    onChange={(e) =>
-                      setSubjectQuestionCount(
-                        subjectId,
-                        parseInt(e.target.value) || 0
-                      )
-                    }
-                    placeholder="0"
-                    className="w-24 text-center"
-                    min={0}
-                  />
-                </div>
-              ))}
-            </div>
+            <Input
+              type="number"
+              value={questionsPerSubject || ""}
+              onChange={(e) =>
+                setQuestionsPerSubject(parseInt(e.target.value) || 0)
+              }
+              placeholder="e.g. 25"
+              className="text-center text-lg font-semibold"
+              min={1}
+            />
+
+            {questionsPerSubject > 0 && (
+              <div className="p-3 rounded-lg bg-muted/50 text-sm text-muted-foreground">
+                {subjects.length} subject{subjects.length > 1 ? "s" : ""} × {questionsPerSubject} questions = <span className="font-semibold text-foreground">{subjects.length * questionsPerSubject} total questions</span>
+              </div>
+            )}
           </CardContent>
         </Card>
       )}
@@ -255,7 +259,41 @@ export function DurationMarksStep({
         </CardContent>
       </Card>
 
-      {/* ========== 4. SECTION-WISE TIME ========== */}
+      {/* ========== QUESTION TYPE (only when no sections) ========== */}
+      {!hasSections && (
+        <Card>
+          <CardContent className="p-4 sm:p-6 space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-primary/10">
+                <FileQuestion className="w-5 h-5 text-primary" />
+              </div>
+              <div>
+                <p className="font-medium">Question Type</p>
+                <p className="text-sm text-muted-foreground">
+                  Select the type of questions for this exam
+                </p>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              {selectableQuestionTypes.map((type) => (
+                <Button
+                  key={type}
+                  type="button"
+                  variant={globalQuestionType === type ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setGlobalQuestionType(type)}
+                  className="h-10 sm:h-9"
+                >
+                  {questionTypeLabels[type]}
+                </Button>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* ========== SECTION-WISE TIME ========== */}
       <Card>
         <CardContent className="p-4">
           <div className="flex items-center justify-between">
@@ -276,7 +314,7 @@ export function DurationMarksStep({
         </CardContent>
       </Card>
 
-      {/* ========== 5. TOTALS SUMMARY ========== */}
+      {/* ========== TOTALS SUMMARY ========== */}
       <div className="grid grid-cols-2 gap-3">
         <div className="flex items-center gap-2 p-3 rounded-lg bg-primary/5 border border-primary/20">
           <Calculator className="w-4 h-4 text-primary" />
@@ -294,7 +332,7 @@ export function DurationMarksStep({
         </div>
       </div>
 
-      {/* ========== 6-8. MARKING SCHEME (only when no sections) ========== */}
+      {/* ========== MARKING SCHEME (only when no sections) ========== */}
       {!hasSections && (
         <>
           {/* Uniform Marking */}
