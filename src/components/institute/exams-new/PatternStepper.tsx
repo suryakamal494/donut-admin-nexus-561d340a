@@ -1,20 +1,29 @@
 import { cn } from "@/lib/utils";
-import { Check, FileText, Clock, LayoutGrid, Award, Eye } from "lucide-react";
+import { Check, FileText, Clock, LayoutGrid, Eye } from "lucide-react";
 
 interface PatternStepperProps {
   currentStep: number;
   totalSteps: number;
+  hasSections: boolean;
 }
 
-const steps = [
-  { number: 1, title: "Basic Info", icon: FileText },
-  { number: 2, title: "Duration", icon: Clock },
-  { number: 3, title: "Sections", icon: LayoutGrid },
-  { number: 4, title: "Marking", icon: Award },
-  { number: 5, title: "Review", icon: Eye },
-];
+const getSteps = (hasSections: boolean) => {
+  const base = [
+    { number: 1, title: "Basic Info", icon: FileText },
+    { number: 2, title: "Duration & Marks", icon: Clock },
+  ];
+  if (hasSections) {
+    base.push({ number: 3, title: "Sections", icon: LayoutGrid });
+    base.push({ number: 4, title: "Review", icon: Eye });
+  } else {
+    base.push({ number: 3, title: "Review", icon: Eye });
+  }
+  return base;
+};
 
-export function PatternStepper({ currentStep, totalSteps }: PatternStepperProps) {
+export function PatternStepper({ currentStep, totalSteps, hasSections }: PatternStepperProps) {
+  const steps = getSteps(hasSections);
+
   return (
     <div className="w-full">
       {/* Mobile: Progress bar */}
@@ -33,7 +42,6 @@ export function PatternStepper({ currentStep, totalSteps }: PatternStepperProps)
 
       {/* Desktop: Full stepper */}
       <div className="hidden sm:flex items-center justify-between relative mb-8">
-        {/* Connecting line */}
         <div className="absolute top-5 left-0 right-0 h-0.5 bg-muted" />
         <div 
           className="absolute top-5 left-0 h-0.5 bg-primary transition-all duration-300"

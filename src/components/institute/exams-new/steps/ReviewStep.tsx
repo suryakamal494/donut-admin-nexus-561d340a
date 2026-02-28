@@ -1,7 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
 import {
   ArrowLeft,
   Check,
@@ -27,6 +26,7 @@ interface ReviewStepProps {
   totalDuration: number;
   hasSectionWiseTime: boolean;
   sections: SectionDraft[];
+  hasSections: boolean;
   hasUniformMarking: boolean;
   defaultMarksPerQuestion: number;
   hasNegativeMarking: boolean;
@@ -34,6 +34,7 @@ interface ReviewStepProps {
   hasPartialMarking: boolean;
   totalQuestions: number;
   totalMarks: number;
+  subjectQuestionCounts: Record<string, number>;
   isEditing: boolean;
   isProcessing: boolean;
   goToStep: (step: number) => void;
@@ -57,6 +58,7 @@ export function ReviewStep({
   totalDuration,
   hasSectionWiseTime,
   sections,
+  hasSections,
   hasUniformMarking,
   defaultMarksPerQuestion,
   hasNegativeMarking,
@@ -64,6 +66,7 @@ export function ReviewStep({
   hasPartialMarking,
   totalQuestions,
   totalMarks,
+  subjectQuestionCounts,
   isEditing,
   isProcessing,
   goToStep,
@@ -159,15 +162,15 @@ export function ReviewStep({
         </CardContent>
       </Card>
 
-      {/* Sections Section */}
+      {/* Duration & Marks */}
       <Card>
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
-            <CardTitle className="text-base">Sections ({sections.length})</CardTitle>
+            <CardTitle className="text-base">Duration & Marks</CardTitle>
             <Button 
               variant="ghost" 
               size="sm" 
-              onClick={() => goToStep(3)}
+              onClick={() => goToStep(2)}
               className="h-10 sm:h-8 text-xs min-w-[60px]"
             >
               <Edit className="w-4 h-4 mr-1" />
@@ -176,87 +179,18 @@ export function ReviewStep({
           </div>
         </CardHeader>
         <CardContent className="space-y-3">
-          {sections.map((section, index) => (
-            <div 
-              key={section.id} 
-              className={cn(
-                "p-3 rounded-lg bg-muted/50",
-                index > 0 && "mt-2"
-              )}
-            >
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2">
-                  <span className="font-medium">{section.name}</span>
-                  {section.isOptional && (
-                    <Badge variant="outline" className="text-xs">Optional</Badge>
-                  )}
+          {/* Per-subject breakdown */}
+          {hasFixedSubjects && subjects.length > 0 && (
+            <div className="space-y-2">
+              {subjects.map(s => (
+                <div key={s} className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">{getSubjectName(s)}</span>
+                  <span className="font-medium">{subjectQuestionCounts[s] || 0} questions</span>
                 </div>
-                {section.subjectId && (
-                  <Badge variant="secondary" className="text-xs">
-                    {getSubjectName(section.subjectId)}
-                  </Badge>
-                )}
-              </div>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
-                <div>
-                  <span className="text-muted-foreground">Questions: </span>
-                  <span className="font-medium">
-                    {section.isOptional && section.attemptLimit 
-                      ? `${section.attemptLimit}/${section.questionCount}` 
-                      : section.questionCount}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-muted-foreground">Marks: </span>
-                  <span className="font-medium">
-                    {hasUniformMarking ? defaultMarksPerQuestion : section.marksPerQuestion}
-                  </span>
-                </div>
-                {section.negativeMarks > 0 && (
-                  <div>
-                    <span className="text-muted-foreground">Negative: </span>
-                    <span className="font-medium text-destructive">−{section.negativeMarks}</span>
-                  </div>
-                )}
-                {hasSectionWiseTime && section.timeLimit && (
-                  <div>
-                    <span className="text-muted-foreground">Time: </span>
-                    <span className="font-medium">{section.timeLimit} min</span>
-                  </div>
-                )}
-              </div>
-              <div className="flex flex-wrap gap-1 mt-2">
-                {section.questionTypes.map(type => (
-                  <span 
-                    key={type} 
-                    className="text-[10px] px-1.5 py-0.5 rounded bg-background text-muted-foreground"
-                  >
-                    {questionTypeLabels[type]}
-                  </span>
-                ))}
-              </div>
+              ))}
             </div>
-          ))}
-        </CardContent>
-      </Card>
+          )}
 
-      {/* Marking Scheme Section */}
-      <Card>
-        <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-base">Marking Scheme</CardTitle>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={() => goToStep(4)}
-              className="h-10 sm:h-8 text-xs min-w-[60px]"
-            >
-              <Edit className="w-4 h-4 mr-1" />
-              Edit
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent>
           <div className="flex flex-wrap gap-3">
             {hasUniformMarking && (
               <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-muted/50">
@@ -285,6 +219,84 @@ export function ReviewStep({
           </div>
         </CardContent>
       </Card>
+
+      {/* Sections (only if enabled) */}
+      {hasSections && (
+        <Card>
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-base">Sections ({sections.length})</CardTitle>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => goToStep(3)}
+                className="h-10 sm:h-8 text-xs min-w-[60px]"
+              >
+                <Edit className="w-4 h-4 mr-1" />
+                Edit
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {sections.map((section, index) => (
+              <div 
+                key={section.id} 
+                className={cn(
+                  "p-3 rounded-lg bg-muted/50",
+                  index > 0 && "mt-2"
+                )}
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium">{section.name}</span>
+                    {section.isOptional && (
+                      <Badge variant="outline" className="text-xs">Optional</Badge>
+                    )}
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+                  <div>
+                    <span className="text-muted-foreground">Questions: </span>
+                    <span className="font-medium">
+                      {section.isOptional && section.attemptLimit 
+                        ? `${section.attemptLimit}/${section.questionCount}` 
+                        : section.questionCount}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Marks: </span>
+                    <span className="font-medium">
+                      {hasUniformMarking ? defaultMarksPerQuestion : section.marksPerQuestion}
+                    </span>
+                  </div>
+                  {section.negativeMarks > 0 && (
+                    <div>
+                      <span className="text-muted-foreground">Negative: </span>
+                      <span className="font-medium text-destructive">−{section.negativeMarks}</span>
+                    </div>
+                  )}
+                  {hasSectionWiseTime && section.timeLimit && (
+                    <div>
+                      <span className="text-muted-foreground">Time: </span>
+                      <span className="font-medium">{section.timeLimit} min</span>
+                    </div>
+                  )}
+                </div>
+                <div className="flex flex-wrap gap-1 mt-2">
+                  {section.questionTypes.map(type => (
+                    <span 
+                      key={type} 
+                      className="text-[10px] px-1.5 py-0.5 rounded bg-background text-muted-foreground"
+                    >
+                      {questionTypeLabels[type]}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Navigation */}
       <div className="flex flex-col-reverse sm:flex-row justify-between gap-3 pt-4 border-t pb-20 sm:pb-0">

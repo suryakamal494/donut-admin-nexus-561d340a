@@ -25,7 +25,6 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
@@ -38,9 +37,11 @@ import {
   GripVertical,
   FileQuestion,
   Award,
+  AlertCircle,
+  CheckCircle2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { SectionDraft, availableSubjects } from "@/hooks/usePatternBuilder";
+import { SectionDraft } from "@/hooks/usePatternBuilder";
 import { QuestionType, questionTypeLabels } from "@/data/examPatternsData";
 
 interface SectionsStepProps {
@@ -49,6 +50,7 @@ interface SectionsStepProps {
   subjects: string[];
   hasSectionWiseTime: boolean;
   hasUniformMarking: boolean;
+  perSubjectQuestionCount: number;
   addSection: () => void;
   removeSection: (id: string) => void;
   updateSection: (id: string, updates: Partial<SectionDraft>) => void;
@@ -78,8 +80,6 @@ interface SortableSectionCardProps {
   index: number;
   isExpanded: boolean;
   onToggleExpand: () => void;
-  hasFixedSubjects: boolean;
-  availableSubjectsForSection: { id: string; name: string }[];
   hasUniformMarking: boolean;
   hasSectionWiseTime: boolean;
   sectionsCount: number;
@@ -94,8 +94,6 @@ function SortableSectionCard({
   index,
   isExpanded,
   onToggleExpand,
-  hasFixedSubjects,
-  availableSubjectsForSection,
   hasUniformMarking,
   hasSectionWiseTime,
   sectionsCount,
@@ -170,45 +168,16 @@ function SortableSectionCard({
         <CollapsibleContent>
           <CardContent className="p-3 sm:p-4 pt-0 space-y-4 border-t">
             {/* Section Name */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Section Name</Label>
-                <Input
-                  value={section.name}
-                  onChange={(e) =>
-                    updateSection(section.id, { name: e.target.value })
-                  }
-                  placeholder="Section A"
-                  maxLength={50}
-                />
-              </div>
-
-              {/* Subject (if applicable) */}
-              {hasFixedSubjects && (
-                <div className="space-y-2">
-                  <Label>Subject</Label>
-                  <Select
-                    value={section.subjectId || "none"}
-                    onValueChange={(value) =>
-                      updateSection(section.id, {
-                        subjectId: value === "none" ? null : value,
-                      })
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select subject" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-popover">
-                      <SelectItem value="none">Any Subject</SelectItem>
-                      {availableSubjectsForSection.map((subject) => (
-                        <SelectItem key={subject.id} value={subject.id}>
-                          {subject.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
+            <div className="space-y-2">
+              <Label>Section Name</Label>
+              <Input
+                value={section.name}
+                onChange={(e) =>
+                  updateSection(section.id, { name: e.target.value })
+                }
+                placeholder="Section A"
+                maxLength={50}
+              />
             </div>
 
             {/* Question Count */}
@@ -384,7 +353,6 @@ function SortableSectionCard({
   );
 }
 
-// Drag overlay card (simplified version shown while dragging)
 function DragOverlayCard({ section }: { section: SectionDraft }) {
   return (
     <Card className="shadow-xl ring-2 ring-primary rotate-2 opacity-95">
@@ -421,6 +389,7 @@ export function SectionsStep({
   subjects,
   hasSectionWiseTime,
   hasUniformMarking,
+  perSubjectQuestionCount,
   addSection,
   removeSection,
   updateSection,
@@ -437,9 +406,7 @@ export function SectionsStep({
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
-      activationConstraint: {
-        distance: 8,
-      },
+      activationConstraint: { distance: 8 },
     }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
@@ -457,33 +424,18 @@ export function SectionsStep({
   const toggleQuestionType = (sectionId: string, type: QuestionType) => {
     const section = sections.find((s) => s.id === sectionId);
     if (!section) return;
-
     const newTypes = section.questionTypes.includes(type)
       ? section.questionTypes.filter((t) => t !== type)
       : [...section.questionTypes, type];
-
     updateSection(sectionId, { questionTypes: newTypes });
   };
 
-  const availableSubjectsForSection = hasFixedSubjects
-    ? availableSubjects.filter((s) => subjects.includes(s.id))
-    : availableSubjects;
-
-  // Calculate totals
-  const totalQuestions = sections.reduce((total, section) => {
-    if (section.isOptional && section.attemptLimit) {
-      return total + section.attemptLimit;
-    }
-    return total + section.questionCount;
-  }, 0);
-
-  const totalMarks = sections.reduce((total, section) => {
-    const count =
-      section.isOptional && section.attemptLimit
-        ? section.attemptLimit
-        : section.questionCount;
-    return total + count * section.marksPerQuestion;
-  }, 0);
+  // Section question total vs per-subject target
+  const sectionQuestionTotal = sections.reduce((sum, s) => sum + s.questionCount, 0);
+  const hasTarget = hasFixedSubjects && perSubjectQuestionCount > 0;
+  const remaining = hasTarget ? perSubjectQuestionCount - sectionQuestionTotal : 0;
+  const isMatched = hasTarget && sectionQuestionTotal === perSubjectQuestionCount;
+  const isExceeded = hasTarget && sectionQuestionTotal > perSubjectQuestionCount;
 
   const handleDragStart = (event: DragStartEvent) => {
     setActiveId(event.active.id as string);
@@ -492,12 +444,10 @@ export function SectionsStep({
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
     setActiveId(null);
-
     if (over && active.id !== over.id) {
       const oldIndex = sections.findIndex((s) => s.id === active.id);
       const newIndex = sections.findIndex((s) => s.id === over.id);
-      const newSections = arrayMove(sections, oldIndex, newIndex);
-      reorderSections(newSections);
+      reorderSections(arrayMove(sections, oldIndex, newIndex));
     }
   };
 
@@ -508,9 +458,53 @@ export function SectionsStep({
       <div className="space-y-1">
         <h2 className="text-xl font-semibold">Sections Configuration</h2>
         <p className="text-sm text-muted-foreground">
-          Define sections with question counts and types. Drag to reorder.
+          Define sections with question counts and types. Same structure applies to all subjects.
         </p>
       </div>
+
+      {/* Validation Banner */}
+      {hasTarget && (
+        <Card className={cn(
+          "border",
+          isMatched && "border-emerald-500/50 bg-emerald-500/5",
+          isExceeded && "border-destructive/50 bg-destructive/5",
+          !isMatched && !isExceeded && "border-primary/50 bg-primary/5"
+        )}>
+          <CardContent className="p-3 sm:p-4">
+            <div className="flex items-center gap-3">
+              {isMatched ? (
+                <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+              ) : (
+                <AlertCircle className={cn("w-5 h-5 shrink-0", isExceeded ? "text-destructive" : "text-primary")} />
+              )}
+              <div className="flex-1">
+                <p className="text-sm font-medium">
+                  Section total: {sectionQuestionTotal} / {perSubjectQuestionCount} per subject
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {isMatched
+                    ? "✓ Section questions match per-subject count"
+                    : isExceeded
+                    ? `Exceeded by ${Math.abs(remaining)} questions — reduce section counts`
+                    : `${remaining} more questions needed across sections`}
+                </p>
+              </div>
+            </div>
+            {/* Progress bar */}
+            <div className="mt-2 h-2 bg-muted rounded-full overflow-hidden">
+              <div
+                className={cn(
+                  "h-full rounded-full transition-all",
+                  isMatched && "bg-emerald-500",
+                  isExceeded && "bg-destructive",
+                  !isMatched && !isExceeded && "bg-primary"
+                )}
+                style={{ width: `${Math.min((sectionQuestionTotal / perSubjectQuestionCount) * 100, 100)}%` }}
+              />
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Summary Card */}
       <div className="grid grid-cols-3 gap-3">
@@ -522,14 +516,14 @@ export function SectionsStep({
         </Card>
         <Card className="bg-primary/5 border-primary/20">
           <CardContent className="p-3 text-center">
-            <p className="text-2xl font-bold">{totalQuestions}</p>
+            <p className="text-2xl font-bold">{sectionQuestionTotal}</p>
             <p className="text-xs text-muted-foreground">Questions</p>
           </CardContent>
         </Card>
         <Card className="bg-primary/5 border-primary/20">
           <CardContent className="p-3 text-center">
-            <p className="text-2xl font-bold">{totalMarks}</p>
-            <p className="text-xs text-muted-foreground">Marks</p>
+            <p className="text-2xl font-bold">{sections.length}</p>
+            <p className="text-xs text-muted-foreground">Types</p>
           </CardContent>
         </Card>
       </div>
@@ -554,8 +548,6 @@ export function SectionsStep({
                 index={index}
                 isExpanded={expandedSections.includes(section.id)}
                 onToggleExpand={() => toggleExpanded(section.id)}
-                hasFixedSubjects={hasFixedSubjects}
-                availableSubjectsForSection={availableSubjectsForSection}
                 hasUniformMarking={hasUniformMarking}
                 hasSectionWiseTime={hasSectionWiseTime}
                 sectionsCount={sections.length}
