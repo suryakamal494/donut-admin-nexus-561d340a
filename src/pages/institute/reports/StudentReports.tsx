@@ -4,9 +4,12 @@ import { GraduationCap, Search, X, TrendingUp, TrendingDown, Minus } from "lucid
 import { PageHeader } from "@/components/ui/page-header";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { getAllStudents, getInstituteBatchReports, type InstituteStudentSummary } from "@/data/institute/reportsData";
 import { getPerformanceColor } from "@/lib/reportColors";
+
+const STUDENTS_PER_PAGE = 20;
 
 const trendIcon = (trend: string) => {
   if (trend === "up") return <TrendingUp className="w-3 h-3 text-emerald-500" />;
@@ -21,6 +24,7 @@ const StudentReports = () => {
 
   const [search, setSearch] = useState("");
   const [batchFilter, setBatchFilter] = useState("all");
+  const [visibleCount, setVisibleCount] = useState(STUDENTS_PER_PAGE);
 
   const filtered = useMemo(() => {
     let result = allStudents;
@@ -35,6 +39,9 @@ const StudentReports = () => {
     return result.sort((a, b) => b.overallAverage - a.overallAverage);
   }, [allStudents, batchFilter, search]);
 
+  // Reset visible count when filters change
+  useMemo(() => { setVisibleCount(STUDENTS_PER_PAGE); }, [batchFilter, search]);
+
   // PI bucket summary
   const buckets = useMemo(() => {
     const m = filtered.filter(s => s.overallAverage >= 75).length;
@@ -48,6 +55,9 @@ const StudentReports = () => {
       { label: "At Risk", count: risk, color: "bg-red-500" },
     ];
   }, [filtered]);
+
+  const visible = filtered.slice(0, visibleCount);
+  const hasMore = visibleCount < filtered.length;
 
   return (
     <div className="space-y-3 max-w-7xl mx-auto pb-20 md:pb-6">
@@ -112,7 +122,7 @@ const StudentReports = () => {
         </div>
       ) : (
         <div className="space-y-1.5">
-          {filtered.map(student => {
+          {visible.map(student => {
             const color = getPerformanceColor(student.overallAverage);
             return (
               <Card
@@ -139,20 +149,37 @@ const StudentReports = () => {
                       <p className={cn("text-sm sm:text-base font-bold", color.text)}>{student.overallAverage}%</p>
                     </div>
                   </div>
-                  {/* Subject mini bars */}
-                  <div className="flex gap-1.5 mt-2">
-                    {student.subjects.map(sub => (
+                  {/* Subject mini bars — show first 5, then +N */}
+                  <div className="flex gap-1.5 mt-2 flex-wrap">
+                    {student.subjects.slice(0, 5).map(sub => (
                       <div key={sub.subjectName} className="flex items-center gap-1 text-[9px] text-muted-foreground">
                         <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: `hsl(${sub.subjectColor})` }} />
                         <span>{sub.subjectName.slice(0, 3)}</span>
                         <span className="font-bold text-foreground">{sub.average}%</span>
                       </div>
                     ))}
+                    {student.subjects.length > 5 && (
+                      <span className="text-[9px] text-muted-foreground">+{student.subjects.length - 5}</span>
+                    )}
                   </div>
                 </CardContent>
               </Card>
             );
           })}
+
+          {/* Show more */}
+          {hasMore && (
+            <div className="text-center pt-2 pb-4">
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-xs"
+                onClick={() => setVisibleCount(prev => prev + STUDENTS_PER_PAGE)}
+              >
+                Show more ({filtered.length - visibleCount} remaining)
+              </Button>
+            </div>
+          )}
         </div>
       )}
     </div>
