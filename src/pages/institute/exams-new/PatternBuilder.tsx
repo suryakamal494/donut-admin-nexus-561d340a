@@ -2,13 +2,15 @@ import { PageHeader } from "@/components/ui/page-header";
 import { usePatternBuilder } from "@/hooks/usePatternBuilder";
 import { PatternStepper } from "@/components/institute/exams-new/PatternStepper";
 import { BasicInfoStep } from "@/components/institute/exams-new/steps/BasicInfoStep";
-import { DurationStep } from "@/components/institute/exams-new/steps/DurationStep";
+import { DurationMarksStep } from "@/components/institute/exams-new/steps/DurationMarksStep";
 import { SectionsStep } from "@/components/institute/exams-new/steps/SectionsStep";
-import { MarkingStep } from "@/components/institute/exams-new/steps/MarkingStep";
 import { ReviewStep } from "@/components/institute/exams-new/steps/ReviewStep";
 
 const PatternBuilder = () => {
   const builder = usePatternBuilder();
+
+  const isReviewStep = builder.currentStep === builder.totalSteps;
+  const isSectionsStep = builder.hasSections && builder.currentStep === 3;
 
   const getStepContent = () => {
     switch (builder.currentStep) {
@@ -35,38 +37,11 @@ const PatternBuilder = () => {
         );
       case 2:
         return (
-          <DurationStep
+          <DurationMarksStep
             totalDuration={builder.totalDuration}
             setTotalDuration={builder.setTotalDuration}
             hasSectionWiseTime={builder.hasSectionWiseTime}
             setHasSectionWiseTime={builder.setHasSectionWiseTime}
-            canProceed={builder.canProceedStep2}
-            onNext={builder.nextStep}
-            onBack={builder.prevStep}
-          />
-        );
-      case 3:
-        return (
-          <SectionsStep
-            sections={builder.sections}
-            hasFixedSubjects={builder.hasFixedSubjects}
-            subjects={builder.subjects}
-            hasSectionWiseTime={builder.hasSectionWiseTime}
-            hasUniformMarking={builder.hasUniformMarking}
-            addSection={builder.addSection}
-            removeSection={builder.removeSection}
-            updateSection={builder.updateSection}
-            duplicateSection={builder.duplicateSection}
-            reorderSections={builder.reorderSections}
-            canProceed={builder.canProceedStep3}
-            onNext={builder.nextStep}
-            onBack={builder.prevStep}
-          />
-        );
-      case 4:
-        return (
-          <MarkingStep
-            sections={builder.sections}
             hasUniformMarking={builder.hasUniformMarking}
             setHasUniformMarking={builder.setHasUniformMarking}
             defaultMarksPerQuestion={builder.defaultMarksPerQuestion}
@@ -77,40 +52,75 @@ const PatternBuilder = () => {
             setDefaultNegativeMarks={builder.setDefaultNegativeMarks}
             hasPartialMarking={builder.hasPartialMarking}
             setHasPartialMarking={builder.setHasPartialMarking}
-            canProceed={builder.canProceedStep4}
+            hasFixedSubjects={builder.hasFixedSubjects}
+            subjects={builder.subjects}
+            subjectQuestionCounts={builder.subjectQuestionCounts}
+            setSubjectQuestionCount={builder.setSubjectQuestionCount}
+            hasSections={builder.hasSections}
+            setHasSections={builder.setHasSections}
+            totalQuestions={builder.totalQuestions}
+            totalMarks={builder.totalMarks}
+            canProceed={builder.canProceedStep2}
             onNext={builder.nextStep}
             onBack={builder.prevStep}
           />
         );
-      case 5:
-        return (
-          <ReviewStep
-            name={builder.name}
-            description={builder.description}
-            hasFixedSubjects={builder.hasFixedSubjects}
-            subjects={builder.subjects}
-            category={builder.category}
-            tags={builder.tags}
-            totalDuration={builder.totalDuration}
-            hasSectionWiseTime={builder.hasSectionWiseTime}
-            sections={builder.sections}
-            hasUniformMarking={builder.hasUniformMarking}
-            defaultMarksPerQuestion={builder.defaultMarksPerQuestion}
-            hasNegativeMarking={builder.hasNegativeMarking}
-            defaultNegativeMarks={builder.defaultNegativeMarks}
-            hasPartialMarking={builder.hasPartialMarking}
-            totalQuestions={builder.totalQuestions}
-            totalMarks={builder.totalMarks}
-            isEditing={builder.isEditing}
-            isProcessing={builder.isProcessing}
-            goToStep={builder.goToStep}
-            onSave={builder.handleSave}
-            onBack={builder.prevStep}
-          />
-        );
       default:
-        return null;
+        break;
     }
+
+    if (isSectionsStep) {
+      return (
+        <SectionsStep
+          sections={builder.sections}
+          hasFixedSubjects={builder.hasFixedSubjects}
+          subjects={builder.subjects}
+          hasSectionWiseTime={builder.hasSectionWiseTime}
+          hasUniformMarking={builder.hasUniformMarking}
+          perSubjectQuestionCount={builder.perSubjectQuestionCount}
+          addSection={builder.addSection}
+          removeSection={builder.removeSection}
+          updateSection={builder.updateSection}
+          duplicateSection={builder.duplicateSection}
+          reorderSections={builder.reorderSections}
+          canProceed={builder.canProceedStep3}
+          onNext={builder.nextStep}
+          onBack={builder.prevStep}
+        />
+      );
+    }
+
+    if (isReviewStep) {
+      return (
+        <ReviewStep
+          name={builder.name}
+          description={builder.description}
+          hasFixedSubjects={builder.hasFixedSubjects}
+          subjects={builder.subjects}
+          category={builder.category}
+          tags={builder.tags}
+          totalDuration={builder.totalDuration}
+          hasSectionWiseTime={builder.hasSectionWiseTime}
+          sections={builder.sections}
+          hasSections={builder.hasSections}
+          hasUniformMarking={builder.hasUniformMarking}
+          defaultMarksPerQuestion={builder.defaultMarksPerQuestion}
+          hasNegativeMarking={builder.hasNegativeMarking}
+          defaultNegativeMarks={builder.defaultNegativeMarks}
+          hasPartialMarking={builder.hasPartialMarking}
+          totalQuestions={builder.totalQuestions}
+          totalMarks={builder.totalMarks}
+          subjectQuestionCounts={builder.subjectQuestionCounts}
+          isEditing={builder.isEditing}
+          isProcessing={builder.isProcessing}
+          goToStep={builder.goToStep}
+          onSave={builder.handleSave}
+          onBack={builder.prevStep}
+        />
+      );
+    }
+
+    return null;
   };
 
   return (
@@ -126,7 +136,7 @@ const PatternBuilder = () => {
         ]}
       />
 
-      <PatternStepper currentStep={builder.currentStep} totalSteps={builder.totalSteps} />
+      <PatternStepper currentStep={builder.currentStep} totalSteps={builder.totalSteps} hasSections={builder.hasSections} />
 
       <div className="bg-card rounded-xl sm:rounded-2xl p-3 sm:p-6 lg:p-8 shadow-soft border border-border/50 max-w-xl sm:max-w-2xl lg:max-w-3xl mx-auto">
         {getStepContent()}

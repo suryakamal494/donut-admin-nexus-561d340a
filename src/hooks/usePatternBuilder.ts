@@ -36,19 +36,19 @@ export interface PatternBuilderState {
   category: ExamPattern["category"];
   tags: string[];
   
-  // Step 2: Duration
+  // Step 2: Duration & Marks
   totalDuration: number;
   hasSectionWiseTime: boolean;
-  
-  // Step 3: Sections
-  sections: SectionDraft[];
-  
-  // Step 4: Marking
   hasUniformMarking: boolean;
   defaultMarksPerQuestion: number;
   hasNegativeMarking: boolean;
   defaultNegativeMarks: number;
   hasPartialMarking: boolean;
+  subjectQuestionCounts: Record<string, number>;
+  hasSections: boolean;
+  
+  // Step 3: Sections (conditional)
+  sections: SectionDraft[];
   
   // Navigation
   currentStep: number;
@@ -98,11 +98,9 @@ export function usePatternBuilder() {
   const { patternId } = useParams<{ patternId: string }>();
   const { toast } = useToast();
   
-  // Check if editing
   const existingPattern = patternId ? getPatternById(patternId) : null;
   const isEditing = !!existingPattern;
   
-  // Initialize state
   const [state, setState] = useState<PatternBuilderState>(() => {
     if (existingPattern) {
       return {
@@ -120,6 +118,8 @@ export function usePatternBuilder() {
         hasNegativeMarking: existingPattern.hasNegativeMarking,
         defaultNegativeMarks: existingPattern.defaultNegativeMarks,
         hasPartialMarking: existingPattern.hasPartialMarking,
+        subjectQuestionCounts: {},
+        hasSections: existingPattern.sections.length > 1,
         currentStep: 1,
         isEditing: true,
         patternId: existingPattern.id,
@@ -142,6 +142,8 @@ export function usePatternBuilder() {
       hasNegativeMarking: false,
       defaultNegativeMarks: 1,
       hasPartialMarking: false,
+      subjectQuestionCounts: {},
+      hasSections: false,
       currentStep: 1,
       isEditing: false,
       patternId: null,
@@ -166,16 +168,28 @@ export function usePatternBuilder() {
       ...prev, 
       hasFixedSubjects,
       subjects: hasFixedSubjects ? prev.subjects : [],
+      subjectQuestionCounts: hasFixedSubjects ? prev.subjectQuestionCounts : {},
     }));
   }, []);
   
   const toggleSubject = useCallback((subjectId: string) => {
-    setState(prev => ({
-      ...prev,
-      subjects: prev.subjects.includes(subjectId)
+    setState(prev => {
+      const newSubjects = prev.subjects.includes(subjectId)
         ? prev.subjects.filter(s => s !== subjectId)
-        : [...prev.subjects, subjectId],
-    }));
+        : [...prev.subjects, subjectId];
+      
+      // Clean up question counts for removed subjects
+      const newCounts = { ...prev.subjectQuestionCounts };
+      if (!newSubjects.includes(subjectId)) {
+        delete newCounts[subjectId];
+      }
+      
+      return {
+        ...prev,
+        subjects: newSubjects,
+        subjectQuestionCounts: newCounts,
+      };
+    });
   }, []);
   
   const setCategory = useCallback((category: ExamPattern["category"]) => {
@@ -194,7 +208,7 @@ export function usePatternBuilder() {
   }, []);
 
   // ============================================
-  // STEP 2: DURATION
+  // STEP 2: DURATION & MARKS
   // ============================================
   
   const setTotalDuration = useCallback((totalDuration: number) => {
@@ -205,13 +219,44 @@ export function usePatternBuilder() {
     setState(prev => ({ ...prev, hasSectionWiseTime }));
   }, []);
 
+  const setHasUniformMarking = useCallback((hasUniformMarking: boolean) => {
+    setState(prev => ({ ...prev, hasUniformMarking }));
+  }, []);
+  
+  const setDefaultMarksPerQuestion = useCallback((defaultMarksPerQuestion: number) => {
+    setState(prev => ({ ...prev, defaultMarksPerQuestion }));
+  }, []);
+  
+  const setHasNegativeMarking = useCallback((hasNegativeMarking: boolean) => {
+    setState(prev => ({ ...prev, hasNegativeMarking }));
+  }, []);
+  
+  const setDefaultNegativeMarks = useCallback((defaultNegativeMarks: number) => {
+    setState(prev => ({ ...prev, defaultNegativeMarks }));
+  }, []);
+  
+  const setHasPartialMarking = useCallback((hasPartialMarking: boolean) => {
+    setState(prev => ({ ...prev, hasPartialMarking }));
+  }, []);
+
+  const setSubjectQuestionCount = useCallback((subjectId: string, count: number) => {
+    setState(prev => ({
+      ...prev,
+      subjectQuestionCounts: { ...prev.subjectQuestionCounts, [subjectId]: count },
+    }));
+  }, []);
+
+  const setHasSections = useCallback((hasSections: boolean) => {
+    setState(prev => ({ ...prev, hasSections }));
+  }, []);
+
   // ============================================
-  // STEP 3: SECTIONS
+  // STEP 3: SECTIONS (conditional)
   // ============================================
   
   const addSection = useCallback(() => {
     const sectionNumber = state.sections.length + 1;
-    const sectionLetter = String.fromCharCode(64 + sectionNumber); // A, B, C...
+    const sectionLetter = String.fromCharCode(64 + sectionNumber);
     
     setState(prev => ({
       ...prev,
@@ -260,47 +305,29 @@ export function usePatternBuilder() {
   }, [state.sections]);
 
   // ============================================
-  // STEP 4: MARKING
+  // NAVIGATION — dynamic steps
   // ============================================
   
-  const setHasUniformMarking = useCallback((hasUniformMarking: boolean) => {
-    setState(prev => ({ ...prev, hasUniformMarking }));
-  }, []);
-  
-  const setDefaultMarksPerQuestion = useCallback((defaultMarksPerQuestion: number) => {
-    setState(prev => ({ ...prev, defaultMarksPerQuestion }));
-  }, []);
-  
-  const setHasNegativeMarking = useCallback((hasNegativeMarking: boolean) => {
-    setState(prev => ({ ...prev, hasNegativeMarking }));
-  }, []);
-  
-  const setDefaultNegativeMarks = useCallback((defaultNegativeMarks: number) => {
-    setState(prev => ({ ...prev, defaultNegativeMarks }));
-  }, []);
-  
-  const setHasPartialMarking = useCallback((hasPartialMarking: boolean) => {
-    setState(prev => ({ ...prev, hasPartialMarking }));
-  }, []);
+  const totalSteps = state.hasSections ? 4 : 3;
 
-  // ============================================
-  // NAVIGATION
-  // ============================================
-  
-  const totalSteps = 5;
+  // Map logical step to actual step
+  const getActualStep = useCallback((logicalStep: number) => {
+    // Steps: 1=BasicInfo, 2=DurationMarks, 3=Sections(if enabled)|Review, 4=Review(if sections)
+    return logicalStep;
+  }, []);
   
   const goToStep = useCallback((step: number) => {
     if (step >= 1 && step <= totalSteps) {
       setState(prev => ({ ...prev, currentStep: step }));
     }
-  }, []);
+  }, [totalSteps]);
   
   const nextStep = useCallback(() => {
     setState(prev => ({
       ...prev,
       currentStep: Math.min(prev.currentStep + 1, totalSteps),
     }));
-  }, []);
+  }, [totalSteps]);
   
   const prevStep = useCallback(() => {
     setState(prev => ({
@@ -308,6 +335,47 @@ export function usePatternBuilder() {
       currentStep: Math.max(prev.currentStep - 1, 1),
     }));
   }, []);
+
+  // ============================================
+  // COMPUTED VALUES
+  // ============================================
+
+  // Per-subject question count (used when hasFixedSubjects)
+  const perSubjectQuestionCount = useMemo(() => {
+    if (!state.hasFixedSubjects || state.subjects.length === 0) return 0;
+    const firstSubject = state.subjects[0];
+    return state.subjectQuestionCounts[firstSubject] || 0;
+  }, [state.hasFixedSubjects, state.subjects, state.subjectQuestionCounts]);
+
+  const totalQuestions = useMemo(() => {
+    if (state.hasFixedSubjects && state.subjects.length > 0) {
+      return state.subjects.reduce((sum, subjectId) => {
+        return sum + (state.subjectQuestionCounts[subjectId] || 0);
+      }, 0);
+    }
+    // Fallback: sum from sections
+    return state.sections.reduce((total, section) => {
+      if (section.isOptional && section.attemptLimit) {
+        return total + section.attemptLimit;
+      }
+      return total + section.questionCount;
+    }, 0);
+  }, [state.hasFixedSubjects, state.subjects, state.subjectQuestionCounts, state.sections]);
+  
+  const totalMarks = useMemo(() => {
+    if (state.hasFixedSubjects && state.subjects.length > 0 && state.hasUniformMarking) {
+      return totalQuestions * state.defaultMarksPerQuestion;
+    }
+    return state.sections.reduce((total, section) => {
+      const marks = state.hasUniformMarking 
+        ? state.defaultMarksPerQuestion 
+        : section.marksPerQuestion;
+      const count = section.isOptional && section.attemptLimit 
+        ? section.attemptLimit 
+        : section.questionCount;
+      return total + (count * marks);
+    }, 0);
+  }, [totalQuestions, state.hasFixedSubjects, state.subjects, state.hasUniformMarking, state.defaultMarksPerQuestion, state.sections]);
 
   // ============================================
   // VALIDATION
@@ -319,49 +387,37 @@ export function usePatternBuilder() {
   }, [state.name, state.hasFixedSubjects, state.subjects]);
   
   const canProceedStep2 = useMemo(() => {
-    return state.totalDuration > 0;
-  }, [state.totalDuration]);
+    if (state.totalDuration <= 0) return false;
+    if (state.hasUniformMarking && state.defaultMarksPerQuestion <= 0) return false;
+    // If fixed subjects, at least one subject must have question count > 0
+    if (state.hasFixedSubjects && state.subjects.length > 0) {
+      const hasQuestions = state.subjects.some(s => (state.subjectQuestionCounts[s] || 0) > 0);
+      if (!hasQuestions) return false;
+    }
+    return true;
+  }, [state.totalDuration, state.hasUniformMarking, state.defaultMarksPerQuestion, state.hasFixedSubjects, state.subjects, state.subjectQuestionCounts]);
   
   const canProceedStep3 = useMemo(() => {
-    return state.sections.length > 0 && 
+    if (!state.hasSections) return true;
+    
+    const sectionsValid = state.sections.length > 0 && 
            state.sections.every(s => 
              s.name.trim().length > 0 && 
              s.questionCount > 0 && 
              s.questionTypes.length > 0
            );
-  }, [state.sections]);
-  
-  const canProceedStep4 = useMemo(() => {
-    if (state.hasUniformMarking) {
-      return state.defaultMarksPerQuestion > 0;
-    }
-    return state.sections.every(s => s.marksPerQuestion > 0);
-  }, [state.hasUniformMarking, state.defaultMarksPerQuestion, state.sections]);
+    
+    if (!sectionsValid) return false;
 
-  // ============================================
-  // COMPUTED VALUES
-  // ============================================
-  
-  const totalQuestions = useMemo(() => {
-    return state.sections.reduce((total, section) => {
-      if (section.isOptional && section.attemptLimit) {
-        return total + section.attemptLimit;
-      }
-      return total + section.questionCount;
-    }, 0);
-  }, [state.sections]);
-  
-  const totalMarks = useMemo(() => {
-    return state.sections.reduce((total, section) => {
-      const marks = state.hasUniformMarking 
-        ? state.defaultMarksPerQuestion 
-        : section.marksPerQuestion;
-      const count = section.isOptional && section.attemptLimit 
-        ? section.attemptLimit 
-        : section.questionCount;
-      return total + (count * marks);
-    }, 0);
-  }, [state.sections, state.hasUniformMarking, state.defaultMarksPerQuestion]);
+    // Validate section question totals against per-subject count
+    if (state.hasFixedSubjects && state.subjects.length > 0) {
+      const sectionTotal = state.sections.reduce((sum, s) => sum + s.questionCount, 0);
+      const targetPerSubject = state.subjectQuestionCounts[state.subjects[0]] || 0;
+      if (targetPerSubject > 0 && sectionTotal !== targetPerSubject) return false;
+    }
+
+    return true;
+  }, [state.hasSections, state.sections, state.hasFixedSubjects, state.subjects, state.subjectQuestionCounts]);
 
   // ============================================
   // SAVE / SUBMIT
@@ -370,7 +426,6 @@ export function usePatternBuilder() {
   const handleSave = useCallback(async () => {
     setState(prev => ({ ...prev, isProcessing: true }));
     
-    // Simulate save delay
     await new Promise(resolve => setTimeout(resolve, 1500));
     
     toast({
@@ -392,6 +447,7 @@ export function usePatternBuilder() {
     totalQuestions,
     totalMarks,
     existingPattern,
+    perSubjectQuestionCount,
     
     // Step 1 actions
     setName,
@@ -402,23 +458,23 @@ export function usePatternBuilder() {
     addTag,
     removeTag,
     
-    // Step 2 actions
+    // Step 2 actions (Duration & Marks)
     setTotalDuration,
     setHasSectionWiseTime,
-    
-    // Step 3 actions
-    addSection,
-    removeSection,
-    updateSection,
-    reorderSections,
-    duplicateSection,
-    
-    // Step 4 actions
     setHasUniformMarking,
     setDefaultMarksPerQuestion,
     setHasNegativeMarking,
     setDefaultNegativeMarks,
     setHasPartialMarking,
+    setSubjectQuestionCount,
+    setHasSections,
+    
+    // Step 3 actions (Sections)
+    addSection,
+    removeSection,
+    updateSection,
+    reorderSections,
+    duplicateSection,
     
     // Navigation
     goToStep,
@@ -429,7 +485,6 @@ export function usePatternBuilder() {
     canProceedStep1,
     canProceedStep2,
     canProceedStep3,
-    canProceedStep4,
     
     // Actions
     handleSave,
