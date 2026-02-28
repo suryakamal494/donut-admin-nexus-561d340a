@@ -36,7 +36,7 @@ const BatchReport = () => {
   }
 
   return (
-    <div className="space-y-4 sm:space-y-5 max-w-7xl mx-auto pb-20 md:pb-6">
+    <div className="space-y-3 max-w-7xl mx-auto pb-20 md:pb-6">
       <PageHeader
         title={`${batchInfo.className} — ${batchInfo.name}`}
         description="Chapter-wise & exam performance"
@@ -47,7 +47,7 @@ const BatchReport = () => {
         ]}
       />
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-3">
         <TabsList className="w-full sm:w-auto h-auto p-1 grid grid-cols-3 sm:flex max-w-md">
           <TabsTrigger value="chapters" className="text-xs sm:text-sm gap-1.5">
             <BookOpen className="w-3.5 h-3.5" />

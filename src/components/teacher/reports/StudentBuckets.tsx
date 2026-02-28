@@ -73,7 +73,7 @@ export const StudentBuckets = ({ buckets, onGeneratePractice }: StudentBucketsPr
             <div key={bucket.key} className={cn("rounded-xl border border-border bg-card overflow-hidden border-l-4", style.border, isEmpty && "opacity-60")}>
               <button
                 onClick={() => !isEmpty && toggle(bucket.key)}
-                className={cn("flex items-center justify-between w-full p-3.5 sm:p-4 min-h-[48px] text-left", isEmpty && "cursor-default")}
+                className={cn("flex items-center justify-between w-full p-3 min-h-[44px] text-left", isEmpty && "cursor-default")}
               >
                 <div className="flex items-center gap-2.5 flex-1 min-w-0">
                   <span className={cn("w-2.5 h-2.5 rounded-full shrink-0", style.dot)} />
@@ -86,7 +86,7 @@ export const StudentBuckets = ({ buckets, onGeneratePractice }: StudentBucketsPr
               </button>
 
               {isEmpty && (
-                <div className="px-3.5 pb-3.5 sm:px-4 sm:pb-4">
+                <div className="px-3 pb-3">
                   <p className="text-xs text-muted-foreground italic">No students in this band</p>
                 </div>
               )}
@@ -94,9 +94,9 @@ export const StudentBuckets = ({ buckets, onGeneratePractice }: StudentBucketsPr
               <AnimatePresence initial={false}>
                 {isOpen && !isEmpty && (
                   <motion.div key="content" initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.25, ease: "easeInOut" }} className="overflow-hidden">
-                    <div className="px-3.5 pb-3.5 sm:px-4 sm:pb-4 space-y-1">
+                    <div className="px-3 pb-3 space-y-1">
                       {bucket.students.map((s) => (
-                        <div key={s.id} className={cn("rounded-lg px-3 py-2.5 text-sm", style.bg)}>
+                        <div key={s.id} className={cn("rounded-lg px-3 py-2 text-sm", style.bg)}>
                           <div className="flex items-center justify-between">
                             <div className="min-w-0 flex-1">
                               <div className="flex items-center gap-1.5">
