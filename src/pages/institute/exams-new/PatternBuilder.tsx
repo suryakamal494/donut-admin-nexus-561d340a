@@ -54,12 +54,14 @@ const PatternBuilder = () => {
             setHasPartialMarking={builder.setHasPartialMarking}
             hasFixedSubjects={builder.hasFixedSubjects}
             subjects={builder.subjects}
-            subjectQuestionCounts={builder.subjectQuestionCounts}
-            setSubjectQuestionCount={builder.setSubjectQuestionCount}
+            questionsPerSubject={builder.questionsPerSubject}
+            setQuestionsPerSubject={builder.setQuestionsPerSubject}
             totalQuestionCount={builder.totalQuestionCount}
             setTotalQuestionCount={builder.setTotalQuestionCount}
             hasSections={builder.hasSections}
             setHasSections={builder.setHasSections}
+            globalQuestionType={builder.globalQuestionType}
+            setGlobalQuestionType={builder.setGlobalQuestionType}
             totalQuestions={builder.totalQuestions}
             totalMarks={builder.totalMarks}
             canProceed={builder.canProceedStep2}
