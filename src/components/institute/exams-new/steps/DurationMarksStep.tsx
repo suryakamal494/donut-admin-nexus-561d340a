@@ -102,7 +102,7 @@ export function DurationMarksStep({
         </p>
       </div>
 
-      {/* ========== DURATION ========== */}
+      {/* ========== 1. DURATION ========== */}
       <Card>
         <CardContent className="p-4 sm:p-6 space-y-6">
           <div className="flex items-center gap-4">
@@ -147,28 +147,7 @@ export function DurationMarksStep({
         </CardContent>
       </Card>
 
-      {/* Section-wise Time */}
-      <Card>
-        <CardContent className="p-4">
-          <div className="flex items-center justify-between">
-            <div className="space-y-0.5">
-              <Label htmlFor="section-time" className="text-base">
-                Section-wise Time Limits
-              </Label>
-              <p className="text-sm text-muted-foreground">
-                Allow individual time limits for each section
-              </p>
-            </div>
-            <Switch
-              id="section-time"
-              checked={hasSectionWiseTime}
-              onCheckedChange={setHasSectionWiseTime}
-            />
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* ========== QUESTIONS ========== */}
+      {/* ========== 2. QUESTIONS ========== */}
       {showPerSubject && (
         <Card>
           <CardContent className="p-4 sm:p-6 space-y-4">
@@ -241,163 +220,7 @@ export function DurationMarksStep({
         </Card>
       )}
 
-      {/* ========== MARKING SCHEME ========== */}
-
-      {/* Uniform Marking */}
-      <Card>
-        <CardContent className="p-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-primary/10">
-                <Award className="w-5 h-5 text-primary" />
-              </div>
-              <div>
-                <Label htmlFor="uniform-marking" className="text-base">
-                  Uniform Marking
-                </Label>
-                <p className="text-sm text-muted-foreground">
-                  Same marks for all questions
-                </p>
-              </div>
-            </div>
-            <Switch
-              id="uniform-marking"
-              checked={hasUniformMarking}
-              onCheckedChange={setHasUniformMarking}
-            />
-          </div>
-
-          {hasUniformMarking && (
-            <div className="mt-4 pt-4 border-t">
-              <div className="space-y-2">
-                <Label>Marks per Question</Label>
-                <div className="flex items-center gap-3">
-                  <Input
-                    type="number"
-                    value={defaultMarksPerQuestion}
-                    onChange={(e) =>
-                      setDefaultMarksPerQuestion(parseFloat(e.target.value) || 1)
-                    }
-                    className="w-24 text-center text-lg font-semibold"
-                    min={0.5}
-                    step={0.5}
-                  />
-                  <span className="text-muted-foreground">marks</span>
-                </div>
-              </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Negative Marking */}
-      <Card>
-        <CardContent className="p-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-destructive/10">
-                <Minus className="w-5 h-5 text-destructive" />
-              </div>
-              <div>
-                <Label htmlFor="negative-marking" className="text-base">
-                  Negative Marking
-                </Label>
-                <p className="text-sm text-muted-foreground">
-                  Deduct marks for wrong answers
-                </p>
-              </div>
-            </div>
-            <Switch
-              id="negative-marking"
-              checked={hasNegativeMarking}
-              onCheckedChange={setHasNegativeMarking}
-            />
-          </div>
-
-          {hasNegativeMarking && (
-            <div className="mt-4 pt-4 border-t">
-              <div className="space-y-2">
-                <Label>Negative Marks per Wrong Answer</Label>
-                <div className="flex items-center gap-3">
-                  <span className="text-destructive font-semibold">−</span>
-                  <Input
-                    type="number"
-                    value={defaultNegativeMarks}
-                    onChange={(e) =>
-                      setDefaultNegativeMarks(parseFloat(e.target.value) || 0)
-                    }
-                    className="w-24 text-center text-lg font-semibold"
-                    min={0}
-                    step={0.25}
-                  />
-                  <span className="text-muted-foreground">marks</span>
-                </div>
-              </div>
-
-              <div className="flex flex-wrap gap-2 mt-3">
-                {[0.25, 0.33, 0.5, 1].map((preset) => (
-                  <Button
-                    key={preset}
-                    type="button"
-                    variant={defaultNegativeMarks === preset ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setDefaultNegativeMarks(preset)}
-                    className="h-10 sm:h-9 min-w-[50px]"
-                  >
-                    −{preset}
-                  </Button>
-                ))}
-              </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Partial Marking */}
-      <Card>
-        <CardContent className="p-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-accent">
-                <PercentCircle className="w-5 h-5 text-accent-foreground" />
-              </div>
-              <div>
-                <Label htmlFor="partial-marking" className="text-base">
-                  Partial Marking
-                </Label>
-                <p className="text-sm text-muted-foreground">
-                  Award partial credit for multiple correct answers
-                </p>
-              </div>
-            </div>
-            <Switch
-              id="partial-marking"
-              checked={hasPartialMarking}
-              onCheckedChange={setHasPartialMarking}
-            />
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* ========== TOTALS SUMMARY ========== */}
-      <div className="grid grid-cols-2 gap-3">
-        <div className="flex items-center gap-2 p-3 rounded-lg bg-primary/5 border border-primary/20">
-          <Calculator className="w-4 h-4 text-primary" />
-          <div>
-            <p className="text-xl font-bold">{totalQuestions}</p>
-            <p className="text-xs text-muted-foreground">Total Questions</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2 p-3 rounded-lg bg-primary/5 border border-primary/20">
-          <Award className="w-4 h-4 text-primary" />
-          <div>
-            <p className="text-xl font-bold">{totalMarks}</p>
-            <p className="text-xs text-muted-foreground">Total Marks</p>
-          </div>
-        </div>
-      </div>
-
-      {/* ========== SECTION-WISE EXAM TOGGLE ========== */}
+      {/* ========== 3. SECTION-WISE EXAM TOGGLE ========== */}
       <Card>
         <CardContent className="p-4">
           <div className="flex items-center justify-between">
@@ -425,12 +248,192 @@ export function DurationMarksStep({
             <div className="mt-4 p-3 bg-muted/50 rounded-lg">
               <p className="text-sm text-muted-foreground">
                 You'll configure sections (e.g., Section A: MCQs, Section B: Numerical)
-                in the next step. The same section structure applies to all subjects.
+                in the next step. Marking is configured per question type in each section.
               </p>
             </div>
           )}
         </CardContent>
       </Card>
+
+      {/* ========== 4. SECTION-WISE TIME ========== */}
+      <Card>
+        <CardContent className="p-4">
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <Label htmlFor="section-time" className="text-base">
+                Section-wise Time Limits
+              </Label>
+              <p className="text-sm text-muted-foreground">
+                Allow individual time limits for each section
+              </p>
+            </div>
+            <Switch
+              id="section-time"
+              checked={hasSectionWiseTime}
+              onCheckedChange={setHasSectionWiseTime}
+            />
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* ========== 5. TOTALS SUMMARY ========== */}
+      <div className="grid grid-cols-2 gap-3">
+        <div className="flex items-center gap-2 p-3 rounded-lg bg-primary/5 border border-primary/20">
+          <Calculator className="w-4 h-4 text-primary" />
+          <div>
+            <p className="text-xl font-bold">{totalQuestions}</p>
+            <p className="text-xs text-muted-foreground">Total Questions</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2 p-3 rounded-lg bg-primary/5 border border-primary/20">
+          <Award className="w-4 h-4 text-primary" />
+          <div>
+            <p className="text-xl font-bold">{totalMarks}</p>
+            <p className="text-xs text-muted-foreground">Total Marks</p>
+          </div>
+        </div>
+      </div>
+
+      {/* ========== 6-8. MARKING SCHEME (only when no sections) ========== */}
+      {!hasSections && (
+        <>
+          {/* Uniform Marking */}
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-primary/10">
+                    <Award className="w-5 h-5 text-primary" />
+                  </div>
+                  <div>
+                    <Label htmlFor="uniform-marking" className="text-base">
+                      Uniform Marking
+                    </Label>
+                    <p className="text-sm text-muted-foreground">
+                      Same marks for all questions
+                    </p>
+                  </div>
+                </div>
+                <Switch
+                  id="uniform-marking"
+                  checked={hasUniformMarking}
+                  onCheckedChange={setHasUniformMarking}
+                />
+              </div>
+
+              {hasUniformMarking && (
+                <div className="mt-4 pt-4 border-t">
+                  <div className="space-y-2">
+                    <Label>Marks per Question</Label>
+                    <div className="flex items-center gap-3">
+                      <Input
+                        type="number"
+                        value={defaultMarksPerQuestion}
+                        onChange={(e) =>
+                          setDefaultMarksPerQuestion(parseFloat(e.target.value) || 1)
+                        }
+                        className="w-24 text-center text-lg font-semibold"
+                        min={0.5}
+                        step={0.5}
+                      />
+                      <span className="text-muted-foreground">marks</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Negative Marking */}
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-destructive/10">
+                    <Minus className="w-5 h-5 text-destructive" />
+                  </div>
+                  <div>
+                    <Label htmlFor="negative-marking" className="text-base">
+                      Negative Marking
+                    </Label>
+                    <p className="text-sm text-muted-foreground">
+                      Deduct marks for wrong answers
+                    </p>
+                  </div>
+                </div>
+                <Switch
+                  id="negative-marking"
+                  checked={hasNegativeMarking}
+                  onCheckedChange={setHasNegativeMarking}
+                />
+              </div>
+
+              {hasNegativeMarking && (
+                <div className="mt-4 pt-4 border-t">
+                  <div className="space-y-2">
+                    <Label>Negative Marks per Wrong Answer</Label>
+                    <div className="flex items-center gap-3">
+                      <span className="text-destructive font-semibold">−</span>
+                      <Input
+                        type="number"
+                        value={defaultNegativeMarks}
+                        onChange={(e) =>
+                          setDefaultNegativeMarks(parseFloat(e.target.value) || 0)
+                        }
+                        className="w-24 text-center text-lg font-semibold"
+                        min={0}
+                        step={0.25}
+                      />
+                      <span className="text-muted-foreground">marks</span>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap gap-2 mt-3">
+                    {[0.25, 0.33, 0.5, 1].map((preset) => (
+                      <Button
+                        key={preset}
+                        type="button"
+                        variant={defaultNegativeMarks === preset ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setDefaultNegativeMarks(preset)}
+                        className="h-10 sm:h-9 min-w-[50px]"
+                      >
+                        −{preset}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Partial Marking */}
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-accent">
+                    <PercentCircle className="w-5 h-5 text-accent-foreground" />
+                  </div>
+                  <div>
+                    <Label htmlFor="partial-marking" className="text-base">
+                      Partial Marking
+                    </Label>
+                    <p className="text-sm text-muted-foreground">
+                      Award partial credit for multiple correct answers
+                    </p>
+                  </div>
+                </div>
+                <Switch
+                  id="partial-marking"
+                  checked={hasPartialMarking}
+                  onCheckedChange={setHasPartialMarking}
+                />
+              </div>
+            </CardContent>
+          </Card>
+        </>
+      )}
 
       {/* Tips */}
       <div className="p-4 rounded-lg bg-muted/50 border">
