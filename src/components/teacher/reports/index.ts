@@ -20,3 +20,6 @@ export { WeakTopicsList } from './WeakTopicsList';
 export { InstituteQuestionsTab } from './InstituteQuestionsTab';
 export { InstituteChaptersTab } from './InstituteChaptersTab';
 export { InstituteDifficultyTab } from './InstituteDifficultyTab';
+
+// Batch Health
+export { BatchHealthCard } from './BatchHealthCard';

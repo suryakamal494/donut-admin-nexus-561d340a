@@ -306,12 +306,122 @@ const generateInstituteTests = (_batchId: string, teacherSubject: string): Insti
   });
 };
 
+
+
+
+// ── Batch Health Summary Types ──
+
+export interface BatchHealthSummary {
+  generatedAt: string;
+  overallTrend: 'improving' | 'declining' | 'stable';
+  recentExamAvg: number;
+  priorityTopics: {
+    topic: string;
+    chapter: string;
+    successRate: number;
+    trend: 'up' | 'down' | 'flat';
+    examCount: number;
+  }[];
+  studentsToCheckIn: {
+    studentId: string;
+    studentName: string;
+    reason: string;
+    avgPercentage: number;
+    trend: 'up' | 'down' | 'flat';
+  }[];
+  suggestedFocus: string;
+  atRiskCount: number;
+  weakTopicCount: number;
+}
+
+/**
+ * Generate mock batch health summary from existing batch data.
+ * In production, replaced by AI edge function `batch-health-summary`.
+ * See docs/03-teacher/reports-overview.md for prompt specification.
+ */
+export function generateMockBatchHealth(
+  chapters: ChapterReportCard[],
+  examHistory: BatchExamEntry[],
+  studentRoster: { studentName: string; studentId: string; avgPercentage: number; trend: string; piBucket: string; secondaryTags: string[] }[]
+): BatchHealthSummary {
+  // Priority topics: weak chapters with topics needing attention
+  const weakChapters = chapters
+    .filter(ch => ch.status === 'weak' || ch.avgSuccessRate < 50)
+    .sort((a, b) => a.avgSuccessRate - b.avgSuccessRate)
+    .slice(0, 3);
+
+  const priorityTopics = weakChapters.map(ch => ({
+    topic: ch.chapterName === "Thermodynamics" ? "Second Law" :
+           ch.chapterName === "Waves & Sound" ? "Doppler Effect" :
+           ch.chapterName === "Optics" ? "Wave Optics" :
+           ch.chapterName === "Gravitation" ? "Escape Velocity" :
+           ch.chapterName,
+    chapter: ch.chapterName,
+    successRate: ch.avgSuccessRate,
+    trend: (ch.avgSuccessRate < 35 ? 'down' : 'flat') as 'up' | 'down' | 'flat',
+    examCount: ch.examsCovering,
+  }));
+
+  // Students to check in: at-risk or declining
+  const atRiskStudents = studentRoster
+    .filter(s => s.piBucket === 'risk' || s.piBucket === 'reinforcement')
+    .sort((a, b) => a.avgPercentage - b.avgPercentage)
+    .slice(0, 3);
+
+  const studentsToCheckIn = atRiskStudents.map(s => ({
+    studentId: s.studentId,
+    studentName: s.studentName,
+    reason: s.piBucket === 'risk'
+      ? `At risk — ${s.avgPercentage}% average`
+      : s.secondaryTags.includes('declining')
+      ? 'Declining performance over recent exams'
+      : s.secondaryTags.includes('plateaued')
+      ? 'Plateaued — no improvement in 3+ exams'
+      : 'Needs reinforcement',
+    avgPercentage: s.avgPercentage,
+    trend: (s.trend === 'up' ? 'up' : s.trend === 'down' ? 'down' : 'flat') as 'up' | 'down' | 'flat',
+  }));
+
+  // Recent exam average
+  const recentExams = examHistory.slice(0, 5);
+  const recentExamAvg = recentExams.length > 0
+    ? Math.round(recentExams.reduce((s, e) => s + Math.round((e.classAverage / e.totalMarks) * 100), 0) / recentExams.length)
+    : 0;
+
+  // Overall trend
+  const atRiskCount = studentRoster.filter(s => s.piBucket === 'risk').length;
+  const weakTopicCount = chapters.filter(ch => ch.status === 'weak').length;
+
+  const overallTrend: 'improving' | 'declining' | 'stable' =
+    atRiskCount > 5 ? 'declining' : atRiskCount <= 2 && weakTopicCount <= 1 ? 'improving' : 'stable';
+
+  // Suggested focus
+  const focusTopic = priorityTopics[0];
+  const suggestedFocus = focusTopic
+    ? `Review ${focusTopic.topic} in ${focusTopic.chapter} — ${atRiskStudents.length} students consistently below 35% on this area.`
+    : recentExamAvg < 50
+    ? `Class average is ${recentExamAvg}%. Consider a revision session on the weakest areas before the next assessment.`
+    : `Class is performing well overall (${recentExamAvg}% avg). Focus on pushing reinforcement-band students into stable progress.`;
+
+  return {
+    generatedAt: new Date().toISOString(),
+    overallTrend,
+    recentExamAvg,
+    priorityTopics,
+    studentsToCheckIn,
+    suggestedFocus,
+    atRiskCount,
+    weakTopicCount,
+  };
+}
+
 // ── Caches ──
 
 const chapterReportsCache = new Map<string, ChapterReportCard[]>();
 const batchExamsCache = new Map<string, BatchExamEntry[]>();
 const chapterDetailCache = new Map<string, ChapterDetailReport>();
 const instituteTestsCache = new Map<string, InstituteTestEntry[]>();
+const batchHealthCache = new Map<string, BatchHealthSummary>();
 
 // ── Exports ──
 
@@ -345,4 +455,16 @@ export const getBatchInstituteTests = (batchId: string, teacherSubject: string):
     instituteTestsCache.set(key, generateInstituteTests(batchId, teacherSubject));
   }
   return instituteTestsCache.get(key)!;
+};
+
+export const getBatchHealth = (
+  batchId: string,
+  chapters: ChapterReportCard[],
+  examHistory: BatchExamEntry[],
+  studentRoster: { studentName: string; studentId: string; avgPercentage: number; trend: string; piBucket: string; secondaryTags: string[] }[]
+): BatchHealthSummary => {
+  if (!batchHealthCache.has(batchId)) {
+    batchHealthCache.set(batchId, generateMockBatchHealth(chapters, examHistory, studentRoster));
+  }
+  return batchHealthCache.get(batchId)!;
 };
