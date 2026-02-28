@@ -1,59 +1,43 @@
 
 
-## Issue Identified — Questions Tab: Flat, Monotone Question Cards
+## Issues Identified
 
-**Current state**: The `QuestionRow` component in `PracticeSessionDetail.tsx` renders questions as plain `divide-y` rows with gray "Q1" labels, black text, and two small badges. There's no visual warmth, no color on the Q number, no card boundaries, and no way to view the solution or answer options. Everything is black-and-white with thin dividers — no clear distinction between questions.
+### Issue 1 — No Collapse/Expand for Band Sections in Questions Tab
+Currently the Questions tab renders each band's questions inside a plain `Card` with no collapsible behavior. All bands are always fully visible. The Students tab already uses `Accordion` with `defaultValue` set to all bands expanded — the Questions tab should follow the same pattern.
 
-**What the reference image (your screenshot) does right**: Each question has a subtle card-like separation with warm background, colored Q numbers, topic + difficulty badges on the left, and color-coded success rates on the right. Clean, readable, well-spaced.
+**Solution**: Replace the static `Card` wrapper in the Questions tab with `Accordion` (same as Students tab). Default all bands to expanded. Teacher can collapse any band they don't need.
 
-**What's missing from current UI**:
-1. Q number has no color — just gray monospace text
-2. No solution/answer viewing capability — `QuestionResult` interface doesn't even have options or correct answer data
-3. No card-like boundaries between questions — just `divide-y`
-4. No background warmth — plain white
+### Issue 2 — No Visual Alert for Low Success Rate Questions
+All question cards currently use the same `bg-muted/20` background and band-colored border regardless of success rate. A question with 15% success looks identical to one with 90%. Teachers can't quickly scan for problem questions.
+
+**Solution**: Apply the 4-tier color system to each question card's **left border** based on `successRate`:
+- **Emerald** (≥75%): `border-l-emerald-500` — students are doing well
+- **Teal** (50–74%): `border-l-teal-500` — stable
+- **Amber** (35–49%): `border-l-amber-500` — needs attention
+- **Red** (<35%): `border-l-red-500 bg-red-500/5` — requires teacher focus, subtle red tint background
+
+This gives instant visual scanning without cluttering the UI.
 
 ---
 
-## Solution
+## Implementation
 
-### Phase 1 — Enhance Data Model + Question Card UI
+**File**: `src/pages/teacher/PracticeSessionDetail.tsx`
 
-**File: `src/data/teacher/practiceSessionDetailData.ts`**
-- Add `options: string[]` and `correctOption: number` fields to `QuestionResult` interface
-- Generate 4 mock options per question with a marked correct answer
+### Change 1 — Questions Tab: Replace Card with Accordion
+- Replace the `<Card>` per band (lines 131–144) with `<Accordion type="multiple" defaultValue={bandDetails.map(b => b.key)}>` containing `<AccordionItem>` per band
+- Same trigger style as Students tab: band dot + label + question count badge
+- Content area contains the question cards
 
-**File: `src/pages/teacher/PracticeSessionDetail.tsx`**
-- Replace `divide-y` flat list with individual card-like containers per question (subtle border, rounded, slight padding, `bg-muted/30` background)
-- Style Q number with a colored circular badge (band accent color or primary tint, e.g., `bg-primary/10 text-primary` rounded-full)
-- Add an expandable "View Solution" toggle per question using local state — clicking reveals the 4 options with the correct one highlighted in green
-- Keep topic badge + difficulty badge + success rate in current positions but ensure the success rate is color-coded (already done via `accuracyColor`)
-- Add subtle left border using band color on each question card for visual grouping
+### Change 2 — QuestionCard: Color-coded left border by success rate
+- Add a utility function `successBorderColor(pct)` returning border + background classes
+- Apply `border-l-4` + color class to each question card div
+- For <35% questions, also add a subtle red background tint (`bg-red-500/5`) to make them stand out
 
-```text
-┌─────────────────────────────────────────────────────┐
-│ ● Mastery Ready  (5 questions)                       │
-│                                                       │
-│ ┌───────────────────────────────────────────────────┐│
-│ │ [Q1] A particle moves along a straight line...    ││
-│ │   Free Fall · Medium              74% success 1/2 ││
-│ │   ▸ View Solution                                  ││
-│ └───────────────────────────────────────────────────┘│
-│ ┌───────────────────────────────────────────────────┐│
-│ │ [Q2] Derive the equation of motion...             ││
-│ │   Circular Motion · Easy          43% success 1/2 ││
-│ │   ▾ View Solution                                  ││
-│ │   A. 2as = v²-u²   ✓B. v²=u²+2as  C. ...  D. ...││
-│ └───────────────────────────────────────────────────┘│
-└─────────────────────────────────────────────────────┘
-```
-
-### Changes Summary
-
-| What | Detail |
-|------|--------|
-| Q number badge | Colored circular badge (`bg-primary/10 text-primary font-semibold rounded-full w-7 h-7 flex items-center justify-center`) |
-| Card boundaries | Each question wrapped in a div with `border rounded-lg p-3 bg-muted/20` |
-| View Solution | Collapsible section per question showing 4 options (A/B/C/D) with correct answer in green |
-| Data model | Add `options: string[]` and `correctOption: number` to `QuestionResult` |
-| Mock options | Generate 4 plausible options per question text using seeded patterns |
+| Success Rate | Left Border | Background |
+|---|---|---|
+| ≥75% | `border-l-emerald-500` | `bg-muted/20` (default) |
+| 50–74% | `border-l-teal-500` | `bg-muted/20` |
+| 35–49% | `border-l-amber-500` | `bg-amber-500/5` |
+| <35% | `border-l-red-500` | `bg-red-500/5` |
 
