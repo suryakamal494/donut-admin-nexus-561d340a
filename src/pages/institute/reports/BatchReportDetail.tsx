@@ -8,6 +8,7 @@ import BatchExamsTab from "@/components/institute/reports/BatchExamsTab";
 import BatchStudentsTab from "@/components/institute/reports/BatchStudentsTab";
 import BatchHealthSummary from "@/components/institute/reports/BatchHealthSummary";
 import SubjectComparisonChart from "@/components/institute/reports/SubjectComparisonChart";
+import BatchAIInsights from "@/components/institute/reports/BatchAIInsights";
 import { BookOpen, ClipboardList, Users } from "lucide-react";
 
 const BatchReportDetail = () => {
@@ -58,6 +59,16 @@ const BatchReportDetail = () => {
 
       {/* Batch Health Summary — executive overview */}
       <BatchHealthSummary subjects={batch.subjects} students={students} />
+
+      {/* AI Batch Insights — on-demand analysis */}
+      <BatchAIInsights
+        batchName={batch.batchName}
+        className={batch.className}
+        totalStudents={batch.totalStudents}
+        overallAverage={batch.overallAverage}
+        subjects={batch.subjects}
+        students={students}
+      />
 
       {/* Tabs — same row pattern as teacher BatchReport */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
