@@ -55,6 +55,24 @@ const SUBJECT_COLORS: Record<string, string> = {
 
 const grandTestCache = new Map<string, GrandTestData>();
 
+// ── Seeded PRNG (matches reportsData.ts) ──
+function seededRandom(seed: number): () => number {
+  let s = seed % 2147483647;
+  if (s <= 0) s += 2147483646;
+  return () => {
+    s = (s * 16807) % 2147483647;
+    return (s - 1) / 2147483646;
+  };
+}
+
+function hashString(str: string): number {
+  let hash = 5381;
+  for (let i = 0; i < str.length; i++) {
+    hash = ((hash << 5) + hash + str.charCodeAt(i)) | 0;
+  }
+  return Math.abs(hash);
+}
+
 function generateGrandTestData(
   examId: string,
   examName: string,
@@ -68,17 +86,18 @@ function generateGrandTestData(
 ): GrandTestData {
   if (grandTestCache.has(examId)) return grandTestCache.get(examId)!;
 
+  const rand = seededRandom(hashString(examId + "-grandtest"));
   const marksPerSubject = Math.round(totalMarks / subjectNames.length);
 
   const subjects: SubjectScore[] = subjectNames.map((name) => {
-    const avg = Math.round(marksPerSubject * (0.45 + Math.random() * 0.3));
+    const avg = Math.round(marksPerSubject * (0.45 + rand() * 0.3));
     return {
       subject: name,
       totalMarks: marksPerSubject,
       classAverage: avg,
-      highest: Math.min(marksPerSubject, Math.round(avg + marksPerSubject * 0.2 + Math.random() * 10)),
-      lowest: Math.max(0, Math.round(avg - marksPerSubject * 0.3 - Math.random() * 10)),
-      passPercentage: Math.round(55 + Math.random() * 30),
+      highest: Math.min(marksPerSubject, Math.round(avg + marksPerSubject * 0.2 + rand() * 10)),
+      lowest: Math.max(0, Math.round(avg - marksPerSubject * 0.3 - rand() * 10)),
+      passPercentage: Math.round(55 + rand() * 30),
       color: SUBJECT_COLORS[name] || "210 50% 50%",
     };
   });
@@ -102,7 +121,7 @@ function generateGrandTestData(
     const subjectScores = subjects.map((sub) => {
       const score = Math.max(
         0,
-        Math.min(sub.totalMarks, Math.round(sub.classAverage + (Math.random() - 0.5) * sub.totalMarks * 0.6))
+        Math.min(sub.totalMarks, Math.round(sub.classAverage + (rand() - 0.5) * sub.totalMarks * 0.6))
       );
       return { subject: sub.subject, score, max: sub.totalMarks };
     });
