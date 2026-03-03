@@ -2,7 +2,7 @@
 
 # Institute Batch Reports — Phased Enhancement Plan
 
-## Phase 1: Batch Health Summary + Subject Comparison Chart
+## Phase 1: Batch Health Summary + Subject Comparison Chart ✅
 **Pure frontend, no AI, no edge functions**
 
 ### 1A — Batch Health Summary Card
@@ -33,7 +33,7 @@ A horizontal bar chart (Recharts, already installed) showing all subjects ranked
 
 ---
 
-## Phase 2: Multi-Subject Risk Filter in Students Tab
+## Phase 2: Multi-Subject Risk Filter in Students Tab ✅
 Add a toggle/filter in `BatchStudentsTab.tsx` to surface students at risk in 2+ subjects. Shows which subjects each flagged student is struggling in. Uses existing student data — no new data generation needed.
 
 **Files:**
@@ -90,4 +90,3 @@ Phase 5  ──── after all above
 ```
 
 Phases 1–3 are pure frontend with zero backend dependency. Phase 4 introduces the AI edge function. Each phase is self-contained and testable independently.
-

@@ -1,11 +1,13 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { PageHeader } from "@/components/ui/page-header";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getInstituteBatchById, getExamsByBatch, getStudentsByBatch } from "@/data/institute/reportsData";
 import SubjectOverviewCards from "@/components/institute/reports/SubjectOverviewCards";
 import BatchExamsTab from "@/components/institute/reports/BatchExamsTab";
 import BatchStudentsTab from "@/components/institute/reports/BatchStudentsTab";
+import BatchHealthSummary from "@/components/institute/reports/BatchHealthSummary";
+import SubjectComparisonChart from "@/components/institute/reports/SubjectComparisonChart";
 import { BookOpen, ClipboardList, Users } from "lucide-react";
 
 const BatchReportDetail = () => {
@@ -54,6 +56,9 @@ const BatchReportDetail = () => {
         ]}
       />
 
+      {/* Batch Health Summary — executive overview */}
+      <BatchHealthSummary subjects={batch.subjects} students={students} />
+
       {/* Tabs — same row pattern as teacher BatchReport */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="w-full grid grid-cols-3 h-9">
@@ -74,7 +79,8 @@ const BatchReportDetail = () => {
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="subjects" className="mt-3">
+        <TabsContent value="subjects" className="mt-3 space-y-3">
+          <SubjectComparisonChart subjects={batch.subjects} />
           <SubjectOverviewCards
             subjects={batch.subjects}
             onSubjectClick={handleSubjectClick}
