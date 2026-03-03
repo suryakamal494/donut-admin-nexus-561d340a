@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { ClipboardList, Search, X } from "lucide-react";
 import { PageHeader } from "@/components/ui/page-header";
@@ -59,7 +59,7 @@ const ExamReports = () => {
 
   // Reset visible count when filters change
   const filteredKey = `${typeFilter}-${batchFilter}-${subjectFilter}-${search}`;
-  useMemo(() => { setVisibleCount(EXAMS_PAGE_SIZE); }, [filteredKey]);
+  useEffect(() => { setVisibleCount(EXAMS_PAGE_SIZE); }, [filteredKey]);
 
   const visibleExams = filtered.slice(0, visibleCount);
   const hasMore = visibleCount < filtered.length;

@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { GraduationCap, Search, X, TrendingUp, TrendingDown, Minus } from "lucide-react";
 import { PageHeader } from "@/components/ui/page-header";
@@ -40,7 +40,7 @@ const StudentReports = () => {
   }, [allStudents, batchFilter, search]);
 
   // Reset visible count when filters change
-  useMemo(() => { setVisibleCount(STUDENTS_PER_PAGE); }, [batchFilter, search]);
+  useEffect(() => { setVisibleCount(STUDENTS_PER_PAGE); }, [batchFilter, search]);
 
   // PI bucket summary
   const buckets = useMemo(() => {

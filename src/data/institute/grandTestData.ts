@@ -1,8 +1,6 @@
 // Grand Test Data — Types, seeded PRNG generator, and cache
 // Extracted from GrandTestResults.tsx for modularity
 
-import { getPerformanceColor } from "@/lib/reportColors";
-
 // ── Seeded PRNG (Park-Miller LCG + djb2 hash) ──
 
 function seededRandom(seed: number): () => number {
