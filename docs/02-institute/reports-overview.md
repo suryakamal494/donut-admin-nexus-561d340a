@@ -192,7 +192,7 @@ All generators cache results in module-level `Map` objects:
 
 Caches persist for the SPA session (no page reload). This ensures data stability across tab switches and component remounts.
 
-> ⚠ **Exception:** `generateGrandTestData()` in `GrandTestResults.tsx` and `generateExamAnalyticsForBatch()` in `examResults.ts` use **unseeded `Math.random()`**. They are cached via `Map` and `useMemo` respectively, but data will differ on remount/cache-clear.
+> ⚠ **Exception:** `generateExamAnalyticsForBatch()` in `examResults.ts` uses **unseeded `Math.random()`**. It is cached via `useMemo`, but data will differ on remount/cache-clear. `generateGrandTestData()` now uses seeded PRNG (`examId + "-grandtest"`).
 
 ### Scale Targets
 

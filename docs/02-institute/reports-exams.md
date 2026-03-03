@@ -507,7 +507,7 @@ For each of 10 questions:
 
 **Generator:** `generateGrandTestData()` — inline in `GrandTestResults.tsx`
 
-- Uses **unseeded `Math.random()`** for subject scores and student scores
+- Uses **seeded PRNG** (`seededRandom(hashString(examId + "-grandtest"))`) for deterministic subject scores and student scores
 - Cached in module-level `Map<string, GrandTestData>` keyed by `examId`
 - Cache persists for the browser session (SPA — no page reload)
 - **Risk:** If cache is cleared (e.g., hot module reload in dev), data will regenerate with different values
