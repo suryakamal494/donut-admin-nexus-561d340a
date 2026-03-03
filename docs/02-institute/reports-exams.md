@@ -541,10 +541,10 @@ For each of 10 questions:
 | Q Difficulty: Easy | `successRate > 65` | `examResults.ts` L288 |
 | Q Difficulty: Medium | `40 < successRate <= 65` | `examResults.ts` L288 |
 | Q Difficulty: Hard | `successRate <= 40` | `examResults.ts` L288 |
-| Q Accuracy Band: Reteach | `0–35%` | `QuestionGroupAccordion.tsx` L28 |
-| Q Accuracy Band: Review | `35–50%` | `QuestionGroupAccordion.tsx` L39 |
-| Q Accuracy Band: Satisfactory | `50–75%` | `QuestionGroupAccordion.tsx` L50 |
-| Q Accuracy Band: Well Understood | `75–100%` | `QuestionGroupAccordion.tsx` L61 |
+| Q Accuracy Band: Reteach | `0–35%` | `QuestionGroupAccordion.tsx` L22-27 |
+| Q Accuracy Band: Review | `35–50%` | `QuestionGroupAccordion.tsx` L35-39 |
+| Q Accuracy Band: Satisfactory | `50–75%` | `QuestionGroupAccordion.tsx` L48-52 |
+| Q Accuracy Band: Well Understood | `75–100%` | `QuestionGroupAccordion.tsx` L61-66 |
 | Grand Test: Marks Per Subject | `round(totalMarks / subjectNames.length)` | `GrandTestResults.tsx` L71 |
 | Grand Test: Subject Avg | `round(marksPerSubject × (0.45 + random() × 0.3))` | `GrandTestResults.tsx` L74 |
 | Grand Test: Subject Highest | `min(max, round(avg + max × 0.2 + random() × 10))` | `GrandTestResults.tsx` L79 |
