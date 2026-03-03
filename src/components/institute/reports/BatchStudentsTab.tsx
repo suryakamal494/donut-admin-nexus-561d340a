@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
-import { TrendingUp, TrendingDown, Minus, Search, ArrowUpDown } from "lucide-react";
+import { TrendingUp, TrendingDown, Minus, Search, ArrowUpDown, AlertTriangle } from "lucide-react";
 import { getPerformanceColor } from "@/lib/reportColors";
 import type { InstituteStudentSummary } from "@/data/institute/reportsData";
 
@@ -20,6 +20,7 @@ const BatchStudentsTab = ({ students, batchId }: BatchStudentsTabProps) => {
   const [search, setSearch] = useState("");
   const [sortKey, setSortKey] = useState<SortKey>("avg");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
+  const [multiRiskOnly, setMultiRiskOnly] = useState(false);
 
   const toggleSort = (key: SortKey) => {
     if (sortKey === key) {
@@ -40,21 +41,25 @@ const BatchStudentsTab = ({ students, batchId }: BatchStudentsTabProps) => {
           s.rollNumber.toLowerCase().includes(q)
       );
     }
+    if (multiRiskOnly) {
+      list = list.filter((s) => s.subjects.filter((sub) => sub.average < 35).length >= 2);
+    }
     return [...list].sort((a, b) => {
       const mult = sortDir === "asc" ? 1 : -1;
       if (sortKey === "name") return mult * a.studentName.localeCompare(b.studentName);
       return mult * (a.overallAverage - b.overallAverage);
     });
-  }, [students, search, sortKey, sortDir]);
+  }, [students, search, sortKey, sortDir, multiRiskOnly]);
 
   // Bucket counts
   const buckets = useMemo(() => {
-    const counts = { mastery: 0, stable: 0, reinforcement: 0, risk: 0 };
+    const counts = { mastery: 0, stable: 0, reinforcement: 0, risk: 0, multiRisk: 0 };
     students.forEach((s) => {
       if (s.overallAverage >= 75) counts.mastery++;
       else if (s.overallAverage >= 50) counts.stable++;
       else if (s.overallAverage >= 35) counts.reinforcement++;
       else counts.risk++;
+      if (s.subjects.filter((sub) => sub.average < 35).length >= 2) counts.multiRisk++;
     });
     return counts;
   }, [students]);
@@ -75,6 +80,22 @@ const BatchStudentsTab = ({ students, batchId }: BatchStudentsTabProps) => {
             <span className="font-semibold text-foreground">{b.count}</span>
           </div>
         ))}
+        {/* Multi-subject risk toggle */}
+        {buckets.multiRisk > 0 && (
+          <button
+            onClick={() => setMultiRiskOnly((v) => !v)}
+            className={cn(
+              "flex items-center gap-1 px-2.5 py-1 rounded-full text-xs flex-shrink-0 font-medium transition-colors",
+              multiRiskOnly
+                ? "bg-destructive/15 text-destructive ring-1 ring-destructive/30"
+                : "bg-muted text-muted-foreground hover:text-foreground"
+            )}
+          >
+            <AlertTriangle className="w-3 h-3" />
+            2+ Subjects
+            <span className="font-semibold">{buckets.multiRisk}</span>
+          </button>
+        )}
       </div>
 
       {/* Search + Sort controls */}
