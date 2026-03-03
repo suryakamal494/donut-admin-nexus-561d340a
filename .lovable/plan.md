@@ -1,87 +1,93 @@
 
 
-# Post-Refactoring Integrity Audit — Institute & Teacher Reports
+# Institute Batch Reports — Phased Enhancement Plan
 
-## Audit Scope
-Verified all files modified in the recent performance optimization pass to check for broken calculations, incorrect imports, anti-patterns, or altered display logic.
+## Phase 1: Batch Health Summary + Subject Comparison Chart
+**Pure frontend, no AI, no edge functions**
 
----
+### 1A — Batch Health Summary Card
+A compact executive summary card placed between the PageHeader and Tabs in `BatchReportDetail.tsx`. Collapsible (defaults collapsed on mobile). Computed entirely from existing `batch.subjects` data.
 
-## Findings
+**Content:**
+- Strongest subject (name + %) and weakest subject (name + %)
+- Trend momentum: "3 improving, 1 declining, 2 stable"
+- Multi-subject at-risk count (students at risk in 2+ subjects — computed from `getStudentsByBatch`)
+- Urgent flag if any subject dropped >5% from previous average
 
-### Issue 1: Unused Import in `grandTestData.ts` (Minor)
-**File:** `src/data/institute/grandTestData.ts`, line 4  
-`getPerformanceColor` is imported but never used in the file. It was left behind during extraction from `GrandTestResults.tsx`. The component itself imports it directly — so no broken functionality, just dead code.
-
-**Fix:** Remove the unused import.
-
----
-
-### Issue 2: `useMemo` Used as Side-Effect (Anti-Pattern) — 2 files
 **Files:**
-- `src/pages/institute/reports/ExamReports.tsx`, line 62
-- `src/pages/institute/reports/StudentReports.tsx`, line 43
-
-Both do `useMemo(() => { setVisibleCount(...); }, [deps])` — calling `setState` inside `useMemo` is a React anti-pattern. `useMemo` is for computing values, not triggering side effects. This works by accident in React 18 but may break in future versions and causes a double-render on every filter change.
-
-**Fix:** Replace with `useEffect` in both files.
-
----
-
-### Issue 3: `Math.random()` Still Used in Student Panel Data Generators (Out of Scope but Noted)
-**Files:**
-- `src/data/student/testResultsGenerator.ts` — ~15 calls
-- `src/data/student/testResults.ts` — ~8 calls
-
-These are student-facing generators, not teacher/institute. They were not in the audit scope but will cause the same flickering issue on the student panel. No action needed now — noted for a future pass.
-
----
-
-## Verified — No Issues Found
-
-| Area | Status | Detail |
-|------|--------|--------|
-| **Seeded PRNG in `reportsData.ts` (Teacher)** | Correct | All 5 generators use `seededRandom(hashString(...))` with appropriate seeds. Caches are properly keyed. |
-| **Seeded PRNG in `instituteTestDetailData.ts`** | Correct | Generator seeds from `examId + subject`. Cache keyed by `examId__subject`. |
-| **GrandTest data extraction** | Correct | Types, generator, cache all moved cleanly. `GrandTestResults.tsx` imports `generateGrandTestData` correctly. |
-| **GrandTest leaderboard "Show more"** | Correct | Initial 15, increments by 15. `hasMoreLeaderboard` logic is accurate. |
-| **ExamReports "Show more"** | Correct | Initial 20, increments by 20. Count display is accurate. |
-| **SubjectDetail `useMemo`** | Correct | `getSubjectDetail(batchId, subjectId)` is properly wrapped with `[batchId, subjectId]` deps. |
-| **Performance Index (PI) calculations** | Intact | `computeStudentPI`, `calculatePI`, `detectTrend`, `assignSecondaryTags` — all unchanged and correct. Formula: PI = 0.50×Accuracy + 0.20×Consistency + 0.15×Time + 0.15×Attempt. |
-| **4-tier color system** | Intact | `getPerformanceColor` thresholds (75/50/35) unchanged. `getStatusColor` maps correctly. |
-| **Batch health summary** | Intact | `generateMockBatchHealth` uses deterministic inputs (chapters, exams, roster) — no randomness. |
-| **Actionable insights** | Intact | `generateMockActionableInsights` derives from analytics data — no randomness. |
-| **Verdict summary** | Intact | `generateVerdictSummary` calculates from analytics — pure computation. |
-| **Institute batch reports** | Intact | Hand-written static data (not generated). Averages, trends, at-risk counts all hardcoded correctly. |
-| **Institute student generation** | Correct | Uses seeded PRNG from `batchId-students`. Cached per batch. |
-| **Institute exam generation** | Correct | Uses seeded PRNG from `batchId-exams`. Cached globally. |
-| **Exam results analytics** | Correct | Pre-generated data uses seeded PRNG. `generateExamAnalyticsForBatch` and `generateExamAnalytics` both use seeded PRNG with caching. |
-| **Documentation** | Correct | `reports-overview.md` and `reports-exams.md` accurately reflect current implementation. |
-
----
-
-## Implementation Plan
-
-### Step 1: Remove unused import in `grandTestData.ts`
-- Delete line 4: `import { getPerformanceColor } from "@/lib/reportColors";`
-
-### Step 2: Fix `useMemo` anti-pattern in `ExamReports.tsx`
-- Replace `useMemo(() => { setVisibleCount(EXAMS_PAGE_SIZE); }, [filteredKey])` with `useEffect`
-- Add `useEffect` import if not already present
-
-### Step 3: Fix `useMemo` anti-pattern in `StudentReports.tsx`
-- Replace `useMemo(() => { setVisibleCount(STUDENTS_PER_PAGE); }, [batchFilter, search])` with `useEffect`
-
----
-
-## Files to Edit (3 files)
-
-| File | Change |
+| File | Action |
 |------|--------|
-| `src/data/institute/grandTestData.ts` | Remove unused `getPerformanceColor` import |
-| `src/pages/institute/reports/ExamReports.tsx` | Replace `useMemo` side-effect with `useEffect` |
-| `src/pages/institute/reports/StudentReports.tsx` | Replace `useMemo` side-effect with `useEffect` |
+| `src/components/institute/reports/BatchHealthSummary.tsx` | New — the card component |
+| `src/pages/institute/reports/BatchReportDetail.tsx` | Add BatchHealthSummary between header and tabs |
 
-## Verdict
-The recent refactoring is clean. All calculations, color tiers, PI formulas, bucket thresholds, and data generation logic are intact and functioning as designed. The three issues found are minor cleanup items — none affect correctness of displayed data.
+---
+
+### 1B — Subject Comparison Bar Chart
+A horizontal bar chart (Recharts, already installed) showing all subjects ranked by class average, color-coded by 4-tier system. Placed at the top of the Subjects tab, above the existing cards.
+
+**Files:**
+| File | Action |
+|------|--------|
+| `src/components/institute/reports/SubjectComparisonChart.tsx` | New — Recharts horizontal bar chart |
+| `src/pages/institute/reports/BatchReportDetail.tsx` | Add chart above `SubjectOverviewCards` in subjects tab |
+
+---
+
+## Phase 2: Multi-Subject Risk Filter in Students Tab
+Add a toggle/filter in `BatchStudentsTab.tsx` to surface students at risk in 2+ subjects. Shows which subjects each flagged student is struggling in. Uses existing student data — no new data generation needed.
+
+**Files:**
+| File | Action |
+|------|--------|
+| `src/components/institute/reports/BatchStudentsTab.tsx` | Add "Multi-Subject Risk" filter pill + filtered view |
+
+---
+
+## Phase 3: Cross-Batch Chapter Comparison in SubjectDetail
+When viewing a chapter in `SubjectDetail.tsx`, show a small contextual note: "This chapter across all batches: Batch A 34%, Batch B 72%, Batch C 48%". Uses existing `getSubjectDetail()` calls for other batches with the same subject name.
+
+**Files:**
+| File | Action |
+|------|--------|
+| `src/data/institute/reportsData.ts` | Add `getCrossBatchChapterComparison(subjectName, chapterName)` helper |
+| `src/pages/institute/reports/SubjectDetail.tsx` | Add comparison note below each chapter card's stats row |
+
+---
+
+## Phase 4: AI Batch Insights (Edge Function)
+An on-demand AI analysis card (button-triggered, collapsible) that sends batch-level cross-subject data to an edge function and returns structured insights for the principal.
+
+### 4A — Edge Function
+New `analyze-batch-report` edge function. Follows the same pattern as `analyze-exam-results` (Lovable AI gateway, `google/gemini-3-flash-preview`). Input: all subject averages, trends, at-risk counts, chapter weak/strong counts. Output: 5 structured insights (priority alert, cross-subject pattern, teacher coaching suggestion, student intervention, positive signal).
+
+### 4B — Frontend Component
+`BatchAIInsights.tsx` — a collapsible card with "Generate AI Analysis" button. Displays structured insight cards after response. Placed below the Batch Health Summary in `BatchReportDetail.tsx`.
+
+**Files:**
+| File | Action |
+|------|--------|
+| `supabase/functions/analyze-batch-report/index.ts` | New edge function |
+| `supabase/config.toml` | Add `[functions.analyze-batch-report]` with `verify_jwt = false` |
+| `src/components/institute/reports/BatchAIInsights.tsx` | New — AI insights card |
+| `src/pages/institute/reports/BatchReportDetail.tsx` | Add BatchAIInsights below health summary |
+
+---
+
+## Phase 5: Documentation Update
+Update `docs/02-institute/reports-overview.md` and `.lovable/plan.md` to reflect all new components, data helpers, and the edge function.
+
+---
+
+## Dependency Order
+
+```text
+Phase 1A ──┐
+Phase 1B ──┤── no dependencies, can be done together
+Phase 2  ──┘
+Phase 3  ──── depends on nothing (uses existing data)
+Phase 4  ──── independent (edge function + component)
+Phase 5  ──── after all above
+```
+
+Phases 1–3 are pure frontend with zero backend dependency. Phase 4 introduces the AI edge function. Each phase is self-contained and testable independently.
 
