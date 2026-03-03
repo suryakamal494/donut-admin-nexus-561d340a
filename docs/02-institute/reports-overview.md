@@ -177,6 +177,13 @@ This is the **Park-Miller** minimal standard PRNG.
 | Batch students | `batchId + "-students"` |
 | Student exam history | `studentId + "-history"` |
 | Subject detail chapters | `batchId + "-" + subjectId` |
+| Teacher batch reports | `batchId + "-batch-report"` |
+| Teacher chapter reports | `batchId + "-chapter-reports"` |
+| Teacher batch exams | `batchId + "-batch-exams"` |
+| Teacher chapter detail | `chapterId + "-" + batchId + "-detail"` |
+| Teacher institute tests | `batchId + "-" + subject + "-inst-tests"` |
+| Institute test detail | `examId + "-" + subject + "-test-detail"` |
+| Grand test data | `examId + "-grandtest"` |
 
 ### Map-Based Caching
 

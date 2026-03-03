@@ -4,8 +4,11 @@ import { ClipboardList, Search, X } from "lucide-react";
 import { PageHeader } from "@/components/ui/page-header";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { getInstituteExams, getInstituteBatchReports, type InstituteExamEntry } from "@/data/institute/reportsData";
+
+const EXAMS_PAGE_SIZE = 20;
 
 type ExamFilter = "all" | "teacher" | "institute" | "grand_test";
 
@@ -31,6 +34,7 @@ const ExamReports = () => {
   const [batchFilter, setBatchFilter] = useState("all");
   const [subjectFilter, setSubjectFilter] = useState("all");
   const [search, setSearch] = useState("");
+  const [visibleCount, setVisibleCount] = useState(EXAMS_PAGE_SIZE);
 
   // Derive unique subjects
   const subjects = useMemo(() => {
@@ -52,6 +56,13 @@ const ExamReports = () => {
     }
     return result.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   }, [allExams, typeFilter, batchFilter, subjectFilter, search]);
+
+  // Reset visible count when filters change
+  const filteredKey = `${typeFilter}-${batchFilter}-${subjectFilter}-${search}`;
+  useMemo(() => { setVisibleCount(EXAMS_PAGE_SIZE); }, [filteredKey]);
+
+  const visibleExams = filtered.slice(0, visibleCount);
+  const hasMore = visibleCount < filtered.length;
 
   const handleExamClick = (exam: InstituteExamEntry) => {
     if (exam.type === "grand_test") {
@@ -146,7 +157,7 @@ const ExamReports = () => {
         </div>
       ) : (
         <div className="space-y-1.5">
-          {filtered.map(exam => {
+          {visibleExams.map(exam => {
             const badge = typeBadgeStyles[exam.type] ?? typeBadgeStyles.teacher;
             const avgPercent = Math.round((exam.classAverage / exam.totalMarks) * 100);
             return (
@@ -179,6 +190,18 @@ const ExamReports = () => {
               </Card>
             );
           })}
+          {hasMore && (
+            <div className="text-center pt-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-xs text-primary"
+                onClick={() => setVisibleCount(prev => prev + EXAMS_PAGE_SIZE)}
+              >
+                Show more ({filtered.length - visibleCount} remaining)
+              </Button>
+            </div>
+          )}
         </div>
       )}
     </div>

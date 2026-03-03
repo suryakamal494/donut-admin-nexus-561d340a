@@ -303,7 +303,7 @@ percentage = round((score / maxScore) × 100)
 ## 3. GrandTestResults (Multi-Subject)
 
 **Component:** `GrandTestResults.tsx`  
-**Data source:** `generateGrandTestData()` — inline generator with `Map` cache.
+**Data source:** `generateGrandTestData()` — extracted to `src/data/institute/grandTestData.ts`, with `Map` cache.
 
 ### Overall Summary Banner
 
@@ -474,10 +474,10 @@ For each grand test:
 **Function:** `generateExamAnalyticsForBatch()` (teacher module)
 
 ```
-totalStudents = floor(random() × 15) + 18  // 18–32 students
+totalStudents = floor(rand() × 15) + 18  // 18–32 students (seeded)
 ```
 
-> ⚠ Uses **unseeded `Math.random()`** — results are non-deterministic. Mitigated by `useMemo` in component preventing re-generation during the same mount.
+> ✅ **Data stability:** Uses **seeded PRNG** (`seededRandom(hashString(examId + "-" + batchId + "-analytics"))`) with module-level `Map` caching. Data is fully deterministic.
 
 **Question analysis generation:**
 
@@ -505,12 +505,12 @@ For each of 10 questions:
 
 ### Grand Test Data Stability
 
-**Generator:** `generateGrandTestData()` — inline in `GrandTestResults.tsx`
+**Generator:** `generateGrandTestData()` — extracted to `src/data/institute/grandTestData.ts`
 
 - Uses **seeded PRNG** (`seededRandom(hashString(examId + "-grandtest"))`) for deterministic subject scores and student scores
 - Cached in module-level `Map<string, GrandTestData>` keyed by `examId`
 - Cache persists for the browser session (SPA — no page reload)
-- **Risk:** If cache is cleared (e.g., hot module reload in dev), data will regenerate with different values
+- Leaderboard uses "Show more" pattern (initial 15, expand by 15)
 
 ---
 

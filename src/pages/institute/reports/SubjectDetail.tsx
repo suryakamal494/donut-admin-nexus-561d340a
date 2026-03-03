@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { useParams } from "react-router-dom";
 import { PageHeader } from "@/components/ui/page-header";
 import { Card, CardContent } from "@/components/ui/card";
@@ -9,7 +10,7 @@ import { getStatusColor } from "@/lib/reportColors";
 
 const SubjectDetail = () => {
   const { batchId, subjectId } = useParams<{ batchId: string; subjectId: string }>();
-  const detail = batchId && subjectId ? getSubjectDetail(batchId, subjectId) : undefined;
+  const detail = useMemo(() => batchId && subjectId ? getSubjectDetail(batchId, subjectId) : undefined, [batchId, subjectId]);
 
   if (!detail) {
     return (

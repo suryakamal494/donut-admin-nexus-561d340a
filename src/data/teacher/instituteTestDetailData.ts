@@ -1,6 +1,25 @@
 // Institute Test Detail — Mock question-wise analysis for teacher's subject
 import { mockGrandTests } from "@/data/examsData";
 
+// ── Seeded PRNG (Park-Miller LCG + djb2 hash) ──
+
+function seededRandom(seed: number): () => number {
+  let s = seed % 2147483647;
+  if (s <= 0) s += 2147483646;
+  return () => {
+    s = (s * 16807) % 2147483647;
+    return (s - 1) / 2147483646;
+  };
+}
+
+function hashString(str: string): number {
+  let hash = 5381;
+  for (let i = 0; i < str.length; i++) {
+    hash = ((hash << 5) + hash + str.charCodeAt(i)) | 0;
+  }
+  return Math.abs(hash);
+}
+
 // ── Types ──
 
 export interface InstituteQuestionAnalysis {
@@ -12,9 +31,9 @@ export interface InstituteQuestionAnalysis {
   difficulty: "easy" | "medium" | "hard";
   marks: number;
   negativeMarks: number;
-  correctPercentage: number; // % of students who got it right
-  attemptPercentage: number; // % who attempted
-  avgTimeSpent: number; // seconds
+  correctPercentage: number;
+  attemptPercentage: number;
+  avgTimeSpent: number;
   status: "strong" | "moderate" | "weak";
 }
 
@@ -78,6 +97,8 @@ export const getInstituteTestDetail = (examId: string, subject: string): Institu
   const gt = mockGrandTests.find(g => g.id === examId && g.status === "completed" && g.subjects.includes(subject));
   if (!gt) return null;
 
+  const rand = seededRandom(hashString(examId + "-" + subject + "-test-detail"));
+
   const subjectCount = gt.subjects.length;
   const totalQ = Math.round(gt.totalQuestions / subjectCount);
   const subjectMax = Math.round(gt.totalMarks / subjectCount);
@@ -87,20 +108,20 @@ export const getInstituteTestDetail = (examId: string, subject: string): Institu
   const questions: InstituteQuestionAnalysis[] = [];
   for (let i = 0; i < totalQ; i++) {
     const chPool = physicsTopicPool[i % physicsTopicPool.length];
-    const topic = chPool.topics[Math.floor(Math.random() * chPool.topics.length)];
-    const correctPct = 15 + Math.floor(Math.random() * 70);
+    const topic = chPool.topics[Math.floor(rand() * chPool.topics.length)];
+    const correctPct = 15 + Math.floor(rand() * 70);
     questions.push({
       questionId: `${examId}-q${i + 1}`,
       questionNumber: i + 1,
       chapter: chPool.chapter,
       topic,
-      type: questionTypes[Math.floor(Math.random() * questionTypes.length)],
-      difficulty: difficulties[Math.floor(Math.random() * 3)],
+      type: questionTypes[Math.floor(rand() * questionTypes.length)],
+      difficulty: difficulties[Math.floor(rand() * 3)],
       marks: marksPerQ,
       negativeMarks: gt.pattern === "neet" ? Math.round(marksPerQ / 4) : Math.round(marksPerQ / 3),
       correctPercentage: correctPct,
-      attemptPercentage: 55 + Math.floor(Math.random() * 40),
-      avgTimeSpent: 30 + Math.floor(Math.random() * 150),
+      attemptPercentage: 55 + Math.floor(rand() * 40),
+      avgTimeSpent: 30 + Math.floor(rand() * 150),
       status: correctPct >= 60 ? "strong" : correctPct >= 35 ? "moderate" : "weak",
     });
   }
@@ -130,8 +151,8 @@ export const getInstituteTestDetail = (examId: string, subject: string): Institu
     };
   });
 
-  const subjectAvg = Math.round(subjectMax * (0.35 + Math.random() * 0.35));
-  const subjectHighest = Math.round(subjectMax * (0.78 + Math.random() * 0.18));
+  const subjectAvg = Math.round(subjectMax * (0.35 + rand() * 0.35));
+  const subjectHighest = Math.round(subjectMax * (0.78 + rand() * 0.18));
 
   const result: InstituteTestDetailData = {
     examId,
@@ -144,7 +165,7 @@ export const getInstituteTestDetail = (examId: string, subject: string): Institu
     subjectHighest: Math.min(subjectHighest, subjectMax),
     totalQuestions: totalQ,
     participantCount: gt.participantCount || 0,
-    passPercentage: 45 + Math.floor(Math.random() * 40),
+    passPercentage: 45 + Math.floor(rand() * 40),
     questions,
     chapterSummary,
     difficultySummary,
