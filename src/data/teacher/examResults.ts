@@ -109,6 +109,24 @@ export const batchInfoMap: Record<string, { name: string; className: string }> =
   "batch-11a": { name: "11A", className: "Class 11" },
 };
 
+// ── Seeded PRNG (Park-Miller LCG + djb2 hash) ──
+function seededRandom(seed: number): () => number {
+  let s = seed % 2147483647;
+  if (s <= 0) s += 2147483646;
+  return () => {
+    s = (s * 16807) % 2147483647;
+    return (s - 1) / 2147483646;
+  };
+}
+
+function hashString(str: string): number {
+  let hash = 5381;
+  for (let i = 0; i < str.length; i++) {
+    hash = ((hash << 5) + hash + str.charCodeAt(i)) | 0;
+  }
+  return Math.abs(hash);
+}
+
 // ── Helpers ──
 
 export function computePerformanceBands(students: StudentResult[]): PerformanceBand[] {
@@ -167,7 +185,7 @@ export function generateVerdictSummary(
 }
 
 // Generate mock student results for a specific batch
-const generateStudentResults = (count: number, maxScore: number, batchId?: string, namePool?: string[]): StudentResult[] => {
+const generateStudentResults = (count: number, maxScore: number, rand: () => number, batchId?: string, namePool?: string[]): StudentResult[] => {
   const results: StudentResult[] = [];
   const defaultNames = [
     "Aarav Sharma", "Priya Patel", "Rohan Kumar", "Sneha Singh", "Arjun Reddy",
@@ -179,8 +197,8 @@ const generateStudentResults = (count: number, maxScore: number, batchId?: strin
   const names = namePool || defaultNames;
 
   for (let i = 0; i < count; i++) {
-    const score = Math.floor(Math.random() * (maxScore * 0.6)) + Math.floor(maxScore * 0.3);
-    const timeTaken = Math.floor(Math.random() * 30) + 30;
+    const score = Math.floor(rand() * (maxScore * 0.6)) + Math.floor(maxScore * 0.3);
+    const timeTaken = Math.floor(rand() * 30) + 30;
     
     results.push({
       id: `result-${batchId || 'default'}-${i + 1}`,
@@ -192,7 +210,7 @@ const generateStudentResults = (count: number, maxScore: number, batchId?: strin
       percentage: Math.round((score / maxScore) * 100),
       rank: 0,
       timeTaken,
-      submittedAt: new Date(Date.now() - Math.random() * 86400000).toISOString(),
+      submittedAt: new Date(Date.now() - rand() * 86400000).toISOString(),
       batchId,
       questionWiseResults: [],
     });
@@ -257,7 +275,7 @@ const fallbackOptions = [
 ];
 
 // Generate question analysis
-const generateQuestionAnalysis = (totalStudents: number, topics?: { topic: string; subject: string }[]): QuestionAnalysis[] => {
+const generateQuestionAnalysis = (totalStudents: number, rand: () => number, topics?: { topic: string; subject: string }[]): QuestionAnalysis[] => {
   const defaultTopics = [
     { topic: "Kinematics", subject: "Physics" },
     { topic: "Newton's Laws", subject: "Physics" },
@@ -271,9 +289,9 @@ const generateQuestionAnalysis = (totalStudents: number, topics?: { topic: strin
 
   const topicList = topics || defaultTopics;
   return topicList.slice(0, Math.min(10, topicList.length)).map((t, i) => {
-    const successRate = Math.floor(Math.random() * 70) + 15;
+    const successRate = Math.floor(rand() * 70) + 15;
     const correct = Math.round(totalStudents * successRate / 100);
-    const unattempted = Math.floor(Math.random() * 4);
+    const unattempted = Math.floor(rand() * 4);
     const incorrect = totalStudents - correct - unattempted;
     return {
       questionId: `q${i + 1}`,
@@ -283,7 +301,7 @@ const generateQuestionAnalysis = (totalStudents: number, topics?: { topic: strin
       correctAttempts: correct,
       incorrectAttempts: Math.max(0, incorrect),
       unattempted,
-      averageTime: Math.floor(Math.random() * 80) + 30,
+      averageTime: Math.floor(rand() * 80) + 30,
       successRate,
       difficulty: successRate > 65 ? 'easy' as const : successRate > 40 ? 'medium' as const : 'hard' as const,
       questionText: fallbackQuestionTexts[i % fallbackQuestionTexts.length],
@@ -334,7 +352,7 @@ function buildAnalyticsFromStudents(
     averageScore,
     highestScore,
     lowestScore,
-    averageTime: Math.floor(Math.random() * 30) + 30,
+    averageTime: 45, // deterministic default
     passPercentage: attemptedCount > 0 ? Math.round((passCount / attemptedCount) * 100) : 0,
     scoreDistribution,
     questionAnalysis,
@@ -360,10 +378,13 @@ const opticsTopics = [
 ];
 
 // exam-3 multi-batch data
-const exam3_batch10a_students = generateStudentResults(25, 40, "batch-10a");
-const exam3_batch10b_students = generateStudentResults(22, 40, "batch-10b", batchBNames);
-const exam3_batch10a_questions = generateQuestionAnalysis(25, opticsTopics);
-const exam3_batch10b_questions = generateQuestionAnalysis(22, opticsTopics);
+const rand_e3_10a = seededRandom(hashString("exam-3-batch-10a"));
+const exam3_batch10a_students = generateStudentResults(25, 40, rand_e3_10a, "batch-10a");
+const exam3_batch10a_questions = generateQuestionAnalysis(25, rand_e3_10a, opticsTopics);
+
+const rand_e3_10b = seededRandom(hashString("exam-3-batch-10b"));
+const exam3_batch10b_students = generateStudentResults(22, 40, rand_e3_10b, "batch-10b", batchBNames);
+const exam3_batch10b_questions = generateQuestionAnalysis(22, rand_e3_10b, opticsTopics);
 
 // exam-7 tri-batch data
 const wavesTopics = [
@@ -376,17 +397,22 @@ const wavesTopics = [
   { topic: "Beats", subject: "Physics" },
   { topic: "Intensity", subject: "Physics" },
 ];
-const exam7_batch10a_students = generateStudentResults(25, 80, "batch-10a");
-const exam7_batch10b_students = generateStudentResults(22, 80, "batch-10b", batchBNames);
-const exam7_batch11a_students = generateStudentResults(28, 80, "batch-11a", batch11ANames);
+const rand_e7_10a = seededRandom(hashString("exam-7-batch-10a"));
+const exam7_batch10a_students = generateStudentResults(25, 80, rand_e7_10a, "batch-10a");
+
+const rand_e7_10b = seededRandom(hashString("exam-7-batch-10b"));
+const exam7_batch10b_students = generateStudentResults(22, 80, rand_e7_10b, "batch-10b", batchBNames);
+
+const rand_e7_11a = seededRandom(hashString("exam-7-batch-11a"));
+const exam7_batch11a_students = generateStudentResults(28, 80, rand_e7_11a, "batch-11a", batch11ANames);
 
 // Store batch-level analytics keyed by "examId-batchId"
 export const batchExamAnalyticsData: Record<string, ExamAnalytics> = {
   "exam-3-batch-10a": buildAnalyticsFromStudents("exam-3", "Optics Chapter Quiz", exam3_batch10a_students, exam3_batch10a_questions, 40),
   "exam-3-batch-10b": buildAnalyticsFromStudents("exam-3", "Optics Chapter Quiz", exam3_batch10b_students, exam3_batch10b_questions, 40),
-  "exam-7-batch-10a": buildAnalyticsFromStudents("exam-7", "Waves & Sound Test", exam7_batch10a_students, generateQuestionAnalysis(25, wavesTopics), 80),
-  "exam-7-batch-10b": buildAnalyticsFromStudents("exam-7", "Waves & Sound Test", exam7_batch10b_students, generateQuestionAnalysis(22, wavesTopics), 80),
-  "exam-7-batch-11a": buildAnalyticsFromStudents("exam-7", "Waves & Sound Test", exam7_batch11a_students, generateQuestionAnalysis(28, wavesTopics), 80),
+  "exam-7-batch-10a": buildAnalyticsFromStudents("exam-7", "Waves & Sound Test", exam7_batch10a_students, generateQuestionAnalysis(25, rand_e7_10a, wavesTopics), 80),
+  "exam-7-batch-10b": buildAnalyticsFromStudents("exam-7", "Waves & Sound Test", exam7_batch10b_students, generateQuestionAnalysis(22, rand_e7_10b, wavesTopics), 80),
+  "exam-7-batch-11a": buildAnalyticsFromStudents("exam-7", "Waves & Sound Test", exam7_batch11a_students, generateQuestionAnalysis(28, rand_e7_11a, wavesTopics), 80),
 };
 
 // Legacy combined analytics (kept for backwards compat)
@@ -523,17 +549,30 @@ export function generateMockActionableInsights(
   return insights;
 }
 
+// Module-level cache for on-demand generated analytics
+const analyticsCache = new Map<string, ExamAnalytics>();
+
 // Generate analytics for any exam (for demo purposes)
 export const generateExamAnalytics = (examId: string, examName: string, totalMarks: number): ExamAnalytics => {
-  const totalStudents = Math.floor(Math.random() * 20) + 20;
-  const allStudents = generateStudentResults(totalStudents, totalMarks);
-  return buildAnalyticsFromStudents(examId, examName, allStudents, generateQuestionAnalysis(totalStudents), totalMarks);
+  const cacheKey = `gen-${examId}`;
+  if (analyticsCache.has(cacheKey)) return analyticsCache.get(cacheKey)!;
+  const rand = seededRandom(hashString(examId + "-analytics"));
+  const totalStudents = Math.floor(rand() * 20) + 20;
+  const allStudents = generateStudentResults(totalStudents, totalMarks, rand);
+  const result = buildAnalyticsFromStudents(examId, examName, allStudents, generateQuestionAnalysis(totalStudents, rand), totalMarks);
+  analyticsCache.set(cacheKey, result);
+  return result;
 };
 
 // Generate analytics for a specific batch (for demo — on-demand)
 export const generateExamAnalyticsForBatch = (examId: string, examName: string, totalMarks: number, batchId: string): ExamAnalytics => {
-  const totalStudents = Math.floor(Math.random() * 15) + 18;
+  const cacheKey = `gen-${examId}-${batchId}`;
+  if (analyticsCache.has(cacheKey)) return analyticsCache.get(cacheKey)!;
+  const rand = seededRandom(hashString(`${examId}-${batchId}-analytics`));
+  const totalStudents = Math.floor(rand() * 15) + 18;
   const namePool = batchId === "batch-10b" ? batchBNames : batchId === "batch-11a" ? batch11ANames : undefined;
-  const allStudents = generateStudentResults(totalStudents, totalMarks, batchId, namePool);
-  return buildAnalyticsFromStudents(examId, examName, allStudents, generateQuestionAnalysis(totalStudents), totalMarks);
+  const allStudents = generateStudentResults(totalStudents, totalMarks, rand, batchId, namePool);
+  const result = buildAnalyticsFromStudents(examId, examName, allStudents, generateQuestionAnalysis(totalStudents, rand), totalMarks);
+  analyticsCache.set(cacheKey, result);
+  return result;
 };

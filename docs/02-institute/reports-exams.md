@@ -296,7 +296,7 @@ score = floor(random() × maxScore × 0.6) + floor(maxScore × 0.3)
 percentage = round((score / maxScore) × 100)
 ```
 
-> ⚠ **Data stability note:** `generateExamAnalyticsForBatch()` uses **unseeded `Math.random()`**. Student data is regenerated on each call. Stability depends on the component's `useMemo` caching — data remains consistent within a single mount but may change on remount.
+> ✅ **Data stability:** `generateExamAnalyticsForBatch()` now uses **seeded PRNG** (`seededRandom(hashString(examId + "-" + batchId + "-analytics"))`) with module-level `Map` caching. Data is fully deterministic and stable across remounts.
 
 ---
 
