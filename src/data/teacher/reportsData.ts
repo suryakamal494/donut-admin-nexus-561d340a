@@ -6,6 +6,25 @@ import { teacherExams } from "./exams";
 import { mockGrandTests } from "@/data/examsData";
 import { computeStudentPI, type ExamHistoryEntry, type SecondaryTag, type Trend } from "@/lib/performanceIndex";
 
+// ── Seeded PRNG (Park-Miller LCG + djb2 hash) ──
+
+function seededRandom(seed: number): () => number {
+  let s = seed % 2147483647;
+  if (s <= 0) s += 2147483646;
+  return () => {
+    s = (s * 16807) % 2147483647;
+    return (s - 1) / 2147483646;
+  };
+}
+
+function hashString(str: string): number {
+  let hash = 5381;
+  for (let i = 0; i < str.length; i++) {
+    hash = ((hash << 5) + hash + str.charCodeAt(i)) | 0;
+  }
+  return Math.abs(hash);
+}
+
 // ── Types ──
 
 export interface BatchReportCard {
@@ -100,11 +119,12 @@ export interface ChapterExamBreakdown {
 const generateBatchReports = (): BatchReportCard[] => {
   const batches = Object.entries(batchInfoMap);
   return batches.map(([batchId, info]) => {
+    const rand = seededRandom(hashString(batchId + "-batch-report"));
     const batchExams = teacherExams.filter(
       (e) => e.batchIds.includes(batchId) && e.status === "completed"
     );
-    const classAvg = 45 + Math.floor(Math.random() * 30);
-    const prevAvg = classAvg + (Math.random() > 0.5 ? -5 : 5) * Math.round(Math.random() * 3);
+    const classAvg = 45 + Math.floor(rand() * 30);
+    const prevAvg = classAvg + (rand() > 0.5 ? -5 : 5) * Math.round(rand() * 3);
     return {
       batchId,
       batchName: info.name,
@@ -113,8 +133,8 @@ const generateBatchReports = (): BatchReportCard[] => {
       classAverage: classAvg,
       previousAverage: prevAvg,
       trend: classAvg > prevAvg ? "up" : classAvg < prevAvg ? "down" : "stable",
-      totalStudents: 20 + Math.floor(Math.random() * 15),
-      atRiskCount: Math.floor(Math.random() * 6),
+      totalStudents: 20 + Math.floor(rand() * 15),
+      atRiskCount: Math.floor(rand() * 6),
     };
   });
 };
@@ -133,14 +153,15 @@ const physicsChapters = [
 ];
 
 const generateChapterReports = (batchId: string): ChapterReportCard[] => {
+  const rand = seededRandom(hashString(batchId + "-chapter-reports"));
   return physicsChapters.map((ch) => {
-    const avgSuccess = 25 + Math.floor(Math.random() * 55);
-    const weakCount = ch.topics.filter(() => Math.random() < 0.3).length;
+    const avgSuccess = 25 + Math.floor(rand() * 55);
+    const weakCount = ch.topics.filter(() => rand() < 0.3).length;
     return {
       chapterId: ch.id,
       chapterName: ch.name,
       subject: "Physics",
-      examsCovering: 1 + Math.floor(Math.random() * 4),
+      examsCovering: 1 + Math.floor(rand() * 4),
       avgSuccessRate: avgSuccess,
       topicCount: ch.topics.length,
       weakTopicCount: weakCount,
@@ -150,6 +171,7 @@ const generateChapterReports = (batchId: string): ChapterReportCard[] => {
 };
 
 const generateBatchExams = (batchId: string): BatchExamEntry[] => {
+  const rand = seededRandom(hashString(batchId + "-batch-exams"));
   const batchExams = teacherExams.filter(
     (e) => e.batchIds.includes(batchId) && e.status === "completed"
   );
@@ -158,26 +180,27 @@ const generateBatchExams = (batchId: string): BatchExamEntry[] => {
     examName: exam.name,
     date: exam.updatedAt,
     totalMarks: exam.totalMarks,
-    classAverage: Math.round(exam.totalMarks * (0.4 + Math.random() * 0.35)),
-    highestScore: Math.round(exam.totalMarks * (0.75 + Math.random() * 0.2)),
-    totalStudents: 20 + Math.floor(Math.random() * 10),
-    passPercentage: 30 + Math.floor(Math.random() * 60),
+    classAverage: Math.round(exam.totalMarks * (0.4 + rand() * 0.35)),
+    highestScore: Math.round(exam.totalMarks * (0.75 + rand() * 0.2)),
+    totalStudents: 20 + Math.floor(rand() * 10),
+    passPercentage: 30 + Math.floor(rand() * 60),
   }));
 };
 
 const generateChapterDetail = (chapterId: string, batchId: string): ChapterDetailReport => {
   const chapter = physicsChapters.find((c) => c.id === chapterId)!;
   const batchInfo = batchInfoMap[batchId];
+  const rand = seededRandom(hashString(chapterId + "-" + batchId + "-detail"));
 
   const topics: ChapterTopicAnalysis[] = chapter.topics.map((t, i) => {
-    const sr = 20 + Math.floor(Math.random() * 65);
+    const sr = 20 + Math.floor(rand() * 65);
     return {
       topicId: `${chapterId}-t${i}`,
       topicName: t,
-      questionsAsked: 2 + Math.floor(Math.random() * 8),
+      questionsAsked: 2 + Math.floor(rand() * 8),
       avgSuccessRate: sr,
       status: sr >= 65 ? "strong" : sr >= 40 ? "moderate" : "weak",
-      examsAppeared: 1 + Math.floor(Math.random() * 3),
+      examsAppeared: 1 + Math.floor(rand() * 3),
     };
   });
 
@@ -188,8 +211,8 @@ const generateChapterDetail = (chapterId: string, batchId: string): ChapterDetai
     examId: exam.id,
     examName: exam.name,
     date: exam.updatedAt,
-    questionsFromChapter: 2 + Math.floor(Math.random() * 5),
-    avgSuccessRate: 30 + Math.floor(Math.random() * 50),
+    questionsFromChapter: 2 + Math.floor(rand() * 5),
+    avgSuccessRate: 30 + Math.floor(rand() * 50),
   }));
 
   const overallSuccess = Math.round(topics.reduce((s, t) => s + t.avgSuccessRate, 0) / topics.length);
@@ -203,16 +226,16 @@ const generateChapterDetail = (chapterId: string, batchId: string): ChapterDetai
     "Amit Tiwari", "Simran Kaur", "Nikhil Saxena", "Tanvi Kulkarni", "Deepak Yadav",
   ];
 
-  const allStudents: ChapterStudentEntry[] = studentNames.slice(0, 20 + Math.floor(Math.random() * 5)).map((name, i) => {
-    const numExams = 1 + Math.floor(Math.random() * examBreakdown.length + 1);
+  const allStudents: ChapterStudentEntry[] = studentNames.slice(0, 20 + Math.floor(rand() * 5)).map((name, i) => {
+    const numExams = 1 + Math.floor(rand() * examBreakdown.length + 1);
     
     // Generate mock exam history
     const examHistory: ExamHistoryEntry[] = Array.from({ length: numExams }, (_, j) => ({
       examId: examBreakdown[j % examBreakdown.length]?.examId || `mock-exam-${j}`,
-      percentage: Math.round(10 + Math.random() * 85),
+      percentage: Math.round(10 + rand() * 85),
       date: examBreakdown[j % examBreakdown.length]?.date || `2025-0${j + 1}-15`,
-      timeEfficiency: Math.round(25 + Math.random() * 70),
-      attemptRate: Math.round(40 + Math.random() * 60),
+      timeEfficiency: Math.round(25 + rand() * 70),
+      attemptRate: Math.round(40 + rand() * 60),
     }));
 
     const piResult = computeStudentPI(examHistory);
@@ -281,6 +304,7 @@ export interface InstituteTestEntry {
 // ── Institute Test Generator ──
 
 const generateInstituteTests = (_batchId: string, teacherSubject: string): InstituteTestEntry[] => {
+  const rand = seededRandom(hashString(_batchId + "-" + teacherSubject + "-inst-tests"));
   const completed = mockGrandTests.filter(
     (gt) => gt.status === "completed" && gt.subjects.includes(teacherSubject)
   );
@@ -288,8 +312,8 @@ const generateInstituteTests = (_batchId: string, teacherSubject: string): Insti
   return completed.map((gt) => {
     const subjectCount = gt.subjects.length;
     const subjectMax = Math.round(gt.totalMarks / subjectCount);
-    const subjectAvg = Math.round(subjectMax * (0.35 + Math.random() * 0.35));
-    const subjectHighest = Math.round(subjectMax * (0.75 + Math.random() * 0.2));
+    const subjectAvg = Math.round(subjectMax * (0.35 + rand() * 0.35));
+    const subjectHighest = Math.round(subjectMax * (0.75 + rand() * 0.2));
     return {
       examId: gt.id,
       examName: gt.name,
@@ -300,7 +324,7 @@ const generateInstituteTests = (_batchId: string, teacherSubject: string): Insti
       subjectMaxMarks: subjectMax,
       subjectAvgScore: subjectAvg,
       subjectHighest: Math.min(subjectHighest, subjectMax),
-      passPercentage: 30 + Math.floor(Math.random() * 60),
+      passPercentage: 30 + Math.floor(rand() * 60),
       participantCount: gt.participantCount || 0,
     };
   });
