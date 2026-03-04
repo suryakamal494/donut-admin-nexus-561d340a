@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useRef, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, GraduationCap, TrendingUp, TrendingDown, Minus, BookOpen, ClipboardList, AlertTriangle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,6 +9,8 @@ import { cn } from "@/lib/utils";
 import { getStudentById, getStudentExamHistory, type InstituteStudentSummary } from "@/data/institute/reportsData";
 import { getPerformanceColor } from "@/lib/reportColors";
 import { motion } from "framer-motion";
+import StudentReportCard from "@/components/institute/reports/export/StudentReportCard";
+import ExportDropdown from "@/components/institute/reports/export/ExportDropdown";
 
 const trendIcon = (trend: string, size = "w-3.5 h-3.5") => {
   if (trend === "up") return <TrendingUp className={cn(size, "text-emerald-500")} />;
