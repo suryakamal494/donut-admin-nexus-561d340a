@@ -43,50 +43,39 @@ Add a toggle/filter in `BatchStudentsTab.tsx` to surface students at risk in 2+ 
 
 ---
 
-## Phase 3: Cross-Batch Chapter Comparison in SubjectDetail
-When viewing a chapter in `SubjectDetail.tsx`, show a small contextual note: "This chapter across all batches: Batch A 34%, Batch B 72%, Batch C 48%". Uses existing `getSubjectDetail()` calls for other batches with the same subject name.
+## Phase 3: Cross-Batch Chapter Comparison in SubjectDetail ✅
+When viewing a chapter in `SubjectDetail.tsx`, show a compact contextual note: "Other batches: 10A 34% · 10B 72% · 10C 48%". Uses `getCrossBatchChapterComparison()` helper.
 
 **Files:**
 | File | Action |
 |------|--------|
-| `src/data/institute/reportsData.ts` | Add `getCrossBatchChapterComparison(subjectName, chapterName)` helper |
-| `src/pages/institute/reports/SubjectDetail.tsx` | Add comparison note below each chapter card's stats row |
+| `src/data/institute/reportsData.ts` | Added `getCrossBatchChapterComparison(subjectName, chapterName, excludeBatchId)` helper |
+| `src/pages/institute/reports/SubjectDetail.tsx` | Added `CrossBatchLine` inline component below each chapter card's stats row |
 
 ---
 
-## Phase 4: AI Batch Insights (Edge Function)
+## Phase 4: AI Batch Insights (Edge Function) ✅
 An on-demand AI analysis card (button-triggered, collapsible) that sends batch-level cross-subject data to an edge function and returns structured insights for the principal.
 
-### 4A — Edge Function
-New `analyze-batch-report` edge function. Follows the same pattern as `analyze-exam-results` (Lovable AI gateway, `google/gemini-3-flash-preview`). Input: all subject averages, trends, at-risk counts, chapter weak/strong counts. Output: 5 structured insights (priority alert, cross-subject pattern, teacher coaching suggestion, student intervention, positive signal).
+**Files:**
+| File | Action |
+|------|--------|
+| `supabase/functions/analyze-batch-report/index.ts` | Edge function using Lovable AI gateway |
+| `src/components/institute/reports/BatchAIInsights.tsx` | AI insights card with Generate/Regenerate |
+| `src/pages/institute/reports/BatchReportDetail.tsx` | Added below health summary |
 
-### 4B — Frontend Component
-`BatchAIInsights.tsx` — a collapsible card with "Generate AI Analysis" button. Displays structured insight cards after response. Placed below the Batch Health Summary in `BatchReportDetail.tsx`.
+---
+
+## Phase 5: Institute-Wide Subject Health on Landing Page ✅
+A compact, collapsible section on `ReportsLanding.tsx` showing each subject's average across all batches, sorted worst-to-best, with bar visualization and min-max spread.
 
 **Files:**
 | File | Action |
 |------|--------|
-| `supabase/functions/analyze-batch-report/index.ts` | New edge function |
-| `supabase/config.toml` | Add `[functions.analyze-batch-report]` with `verify_jwt = false` |
-| `src/components/institute/reports/BatchAIInsights.tsx` | New — AI insights card |
-| `src/pages/institute/reports/BatchReportDetail.tsx` | Add BatchAIInsights below health summary |
+| `src/components/institute/reports/InstituteSubjectHealth.tsx` | New — collapsible subject health rows with performance bars |
+| `src/pages/institute/reports/ReportsLanding.tsx` | Added between stats bar and section cards |
 
 ---
 
-## Phase 5: Documentation Update
-Update `docs/02-institute/reports-overview.md` and `.lovable/plan.md` to reflect all new components, data helpers, and the edge function.
-
----
-
-## Dependency Order
-
-```text
-Phase 1A ──┐
-Phase 1B ──┤── no dependencies, can be done together
-Phase 2  ──┘
-Phase 3  ──── depends on nothing (uses existing data)
-Phase 4  ──── independent (edge function + component)
-Phase 5  ──── after all above
-```
-
-Phases 1–3 are pure frontend with zero backend dependency. Phase 4 introduces the AI edge function. Each phase is self-contained and testable independently.
+## Phase 6: Documentation Update ✅
+Updated plan.md to reflect all completed phases.
