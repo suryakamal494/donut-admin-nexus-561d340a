@@ -15,7 +15,7 @@ interface PageHeaderProps {
 
 const PageHeader = ({ title, description, breadcrumbs, actions }: PageHeaderProps) => {
   return (
-    <div className="mb-4 md:mb-6 space-y-2">
+    <div className="mb-2 md:mb-4 space-y-2">
       {breadcrumbs && breadcrumbs.length > 0 && (
         <nav className="flex items-center gap-1 text-xs md:text-sm text-muted-foreground overflow-x-auto">
           {breadcrumbs.map((crumb, index) => (

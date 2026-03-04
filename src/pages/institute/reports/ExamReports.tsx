@@ -73,7 +73,7 @@ const ExamReports = () => {
   };
 
   return (
-    <div className="space-y-3 max-w-7xl mx-auto pb-20 md:pb-6">
+    <div className="space-y-3 max-w-7xl mx-auto pb-6">
       <PageHeader
         title="Exam Reports"
         description={`${filtered.length} exam${filtered.length !== 1 ? "s" : ""} across all batches`}
@@ -110,7 +110,7 @@ const ExamReports = () => {
               key={chip.key}
               onClick={() => setTypeFilter(chip.key)}
               className={cn(
-                "px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all flex-shrink-0",
+                "px-3 py-2 sm:py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all flex-shrink-0",
                 typeFilter === chip.key
                   ? "bg-primary text-primary-foreground shadow-sm"
                   : "bg-muted text-muted-foreground hover:bg-muted/80"
@@ -128,7 +128,7 @@ const ExamReports = () => {
         <select
           value={batchFilter}
           onChange={e => setBatchFilter(e.target.value)}
-          className="h-8 px-2 rounded-md border border-input bg-background text-xs flex-shrink-0"
+          className="h-10 sm:h-8 px-2 rounded-md border border-input bg-background text-xs flex-shrink-0"
         >
           <option value="all">All Batches</option>
           {batches.map(b => (
@@ -140,7 +140,7 @@ const ExamReports = () => {
         <select
           value={subjectFilter}
           onChange={e => setSubjectFilter(e.target.value)}
-          className="h-8 px-2 rounded-md border border-input bg-background text-xs flex-shrink-0"
+          className="h-10 sm:h-8 px-2 rounded-md border border-input bg-background text-xs flex-shrink-0"
         >
           <option value="all">All Subjects</option>
           {subjects.map(s => (

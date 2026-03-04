@@ -97,7 +97,7 @@ const InstituteSubjectHealth = () => {
                     />
 
                     {/* Subject name */}
-                    <span className="text-xs font-medium text-foreground min-w-[80px] sm:min-w-[100px] truncate">
+                    <span className="text-xs font-medium text-foreground min-w-[60px] sm:min-w-[100px] truncate">
                       {sub.name}
                     </span>
 

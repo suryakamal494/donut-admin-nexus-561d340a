@@ -18,19 +18,27 @@ const CrossBatchLine = ({ subjectName, chapterName, currentBatchId }: {
   );
   if (entries.length === 0) return null;
 
+  const MAX_MOBILE = 3;
+  const isManyEntries = entries.length > MAX_MOBILE;
+
   return (
     <div className="flex items-center gap-1.5 flex-wrap mt-1.5 pt-1.5 border-t border-border/30">
       <GitCompareArrows className="w-3 h-3 text-muted-foreground flex-shrink-0" />
       <span className="text-[10px] text-muted-foreground">Other batches:</span>
-      {entries.map((e) => {
+      {entries.map((e, i) => {
         const c = getPerformanceColor(e.avgSuccessRate);
+        // On mobile, cap at 3 entries
+        const hiddenOnMobile = isManyEntries && i >= MAX_MOBILE;
         return (
-          <span key={e.batchId} className="text-[10px] flex items-center gap-0.5">
+          <span key={e.batchId} className={cn("text-[10px] flex items-center gap-0.5", hiddenOnMobile && "hidden sm:flex")}>
             <span className="text-muted-foreground">{e.batchName.replace("Class ", "").replace(" Batch ", "")}</span>
             <span className={cn("font-semibold", c.text)}>{e.avgSuccessRate}%</span>
           </span>
         );
       })}
+      {isManyEntries && (
+        <span className="text-[10px] text-muted-foreground sm:hidden">+{entries.length - MAX_MOBILE} more</span>
+      )}
     </div>
   );
 };
@@ -51,7 +59,7 @@ const SubjectDetail = () => {
   const weakCount = detail.chapters.filter(c => c.status === "weak").length;
 
   return (
-    <div className="space-y-3 max-w-7xl mx-auto pb-20 md:pb-6">
+    <div className="space-y-3 max-w-7xl mx-auto pb-6">
       <PageHeader
         title={detail.subjectName}
         description={

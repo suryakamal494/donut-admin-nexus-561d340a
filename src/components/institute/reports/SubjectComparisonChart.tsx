@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, Cell, ResponsiveContainer, LabelList } from "recharts";
+import { useIsMobile } from "@/hooks/use-mobile";
 import type { SubjectSummary } from "@/data/institute/reportsData";
 
 interface SubjectComparisonChartProps {
@@ -15,17 +16,21 @@ const getTierColor = (avg: number): string => {
 };
 
 const SubjectComparisonChart = ({ subjects }: SubjectComparisonChartProps) => {
+  const isMobile = useIsMobile();
+  const truncLen = isMobile ? 5 : 8;
+  const yAxisWidth = isMobile ? 50 : 70;
+
   const data = useMemo(
     () =>
       [...subjects]
         .sort((a, b) => b.classAverage - a.classAverage)
         .map((s) => ({
-          name: s.subjectName.length > 8 ? s.subjectName.slice(0, 7) + "…" : s.subjectName,
+          name: s.subjectName.length > truncLen ? s.subjectName.slice(0, truncLen - 1) + "…" : s.subjectName,
           fullName: s.subjectName,
           avg: s.classAverage,
           color: getTierColor(s.classAverage),
         })),
-    [subjects]
+    [subjects, truncLen]
   );
 
   if (subjects.length === 0) return null;
@@ -40,7 +45,7 @@ const SubjectComparisonChart = ({ subjects }: SubjectComparisonChartProps) => {
             <YAxis
               type="category"
               dataKey="name"
-              width={70}
+              width={yAxisWidth}
               tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
               axisLine={false}
               tickLine={false}

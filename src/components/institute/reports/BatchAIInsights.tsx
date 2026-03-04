@@ -49,7 +49,7 @@ const SEVERITY_ICON_COLOR: Record<string, string> = {
 const BatchAIInsights = ({ batchName, className, totalStudents, overallAverage, subjects, students }: BatchAIInsightsProps) => {
   const [insights, setInsights] = useState<BatchInsight[] | null>(null);
   const [loading, setLoading] = useState(false);
-  const [expanded, setExpanded] = useState(true);
+  const [expanded, setExpanded] = useState(() => window.innerWidth >= 768);
 
   const multiRiskCount = students.filter(
     (s) => s.subjects.filter((sub) => sub.average < 35).length >= 2
