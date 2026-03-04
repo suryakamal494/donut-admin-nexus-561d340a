@@ -128,6 +128,13 @@ const SubjectDetail = () => {
                       </>
                     )}
                   </div>
+
+                  {/* Cross-batch comparison */}
+                  <CrossBatchLine
+                    subjectName={detail.subjectName}
+                    chapterName={chapter.chapterName}
+                    currentBatchId={detail.batchId}
+                  />
                 </CardContent>
               </Card>
             </motion.div>
