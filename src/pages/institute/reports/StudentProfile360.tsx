@@ -47,6 +47,8 @@ const StudentProfile360 = () => {
   const student = useMemo(() => getStudentById(studentId || ""), [studentId]);
   const examHistory = useMemo(() => (student ? getStudentExamHistory(student) : []), [student]);
   const weakSpots = useMemo(() => (student ? getWeakSpots(student) : []), [student]);
+  const reportCardRef = useRef<HTMLDivElement>(null);
+  const getReportElement = useCallback(() => reportCardRef.current, []);
 
   if (!student) {
     return (
@@ -74,6 +76,12 @@ const StudentProfile360 = () => {
           { label: "Students", href: "/institute/reports/students" },
           { label: student.studentName },
         ]}
+        actions={
+          <ExportDropdown
+            getElement={getReportElement}
+            filename={`Report-${student.studentName.replace(/\s+/g, "-")}`}
+          />
+        }
       />
 
       {/* Profile Header Card */}
