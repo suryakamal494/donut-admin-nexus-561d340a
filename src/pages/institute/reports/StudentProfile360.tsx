@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useRef, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, GraduationCap, TrendingUp, TrendingDown, Minus, BookOpen, ClipboardList, AlertTriangle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,6 +9,8 @@ import { cn } from "@/lib/utils";
 import { getStudentById, getStudentExamHistory, type InstituteStudentSummary } from "@/data/institute/reportsData";
 import { getPerformanceColor } from "@/lib/reportColors";
 import { motion } from "framer-motion";
+import StudentReportCard from "@/components/institute/reports/export/StudentReportCard";
+import ExportDropdown from "@/components/institute/reports/export/ExportDropdown";
 
 const trendIcon = (trend: string, size = "w-3.5 h-3.5") => {
   if (trend === "up") return <TrendingUp className={cn(size, "text-emerald-500")} />;
@@ -45,6 +47,8 @@ const StudentProfile360 = () => {
   const student = useMemo(() => getStudentById(studentId || ""), [studentId]);
   const examHistory = useMemo(() => (student ? getStudentExamHistory(student) : []), [student]);
   const weakSpots = useMemo(() => (student ? getWeakSpots(student) : []), [student]);
+  const reportCardRef = useRef<HTMLDivElement>(null);
+  const getReportElement = useCallback(() => reportCardRef.current, []);
 
   if (!student) {
     return (
@@ -72,6 +76,12 @@ const StudentProfile360 = () => {
           { label: "Students", href: "/institute/reports/students" },
           { label: student.studentName },
         ]}
+        actions={
+          <ExportDropdown
+            getElement={getReportElement}
+            filename={`Report-${student.studentName.replace(/\s+/g, "-")}`}
+          />
+        }
       />
 
       {/* Profile Header Card */}
@@ -247,6 +257,11 @@ const StudentProfile360 = () => {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Hidden printable report card */}
+      <div style={{ position: "absolute", left: "-9999px", top: 0 }}>
+        <StudentReportCard ref={reportCardRef} student={student} />
+      </div>
     </div>
   );
 };
