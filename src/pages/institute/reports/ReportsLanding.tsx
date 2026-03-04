@@ -4,6 +4,7 @@ import { PageHeader } from "@/components/ui/page-header";
 import { motion } from "framer-motion";
 import { Layers, ClipboardList, Users, ChevronRight, TrendingUp, FileText, UserCheck } from "lucide-react";
 import { getInstituteBatchReports, getInstituteExams } from "@/data/institute/reportsData";
+import InstituteSubjectHealth from "@/components/institute/reports/InstituteSubjectHealth";
 
 const reportSections = [
   {
@@ -76,6 +77,9 @@ const ReportsLanding = () => {
           </Card>
         ))}
       </div>
+
+      {/* Institute-Wide Subject Health */}
+      <InstituteSubjectHealth />
 
       {/* Report Section Cards */}
       <div className="grid gap-3 sm:grid-cols-3">

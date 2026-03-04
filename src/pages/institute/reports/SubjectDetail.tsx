@@ -4,9 +4,36 @@ import { PageHeader } from "@/components/ui/page-header";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
-import { User, BookOpen, AlertTriangle, CheckCircle2, TrendingUp, TrendingDown, Minus } from "lucide-react";
-import { getSubjectDetail } from "@/data/institute/reportsData";
-import { getStatusColor } from "@/lib/reportColors";
+import { User, BookOpen, AlertTriangle, CheckCircle2, TrendingUp, TrendingDown, Minus, GitCompareArrows } from "lucide-react";
+import { getSubjectDetail, getCrossBatchChapterComparison } from "@/data/institute/reportsData";
+import { getStatusColor, getPerformanceColor } from "@/lib/reportColors";
+
+/** Compact cross-batch comparison line for a chapter */
+const CrossBatchLine = ({ subjectName, chapterName, currentBatchId }: {
+  subjectName: string; chapterName: string; currentBatchId: string;
+}) => {
+  const entries = useMemo(
+    () => getCrossBatchChapterComparison(subjectName, chapterName, currentBatchId),
+    [subjectName, chapterName, currentBatchId]
+  );
+  if (entries.length === 0) return null;
+
+  return (
+    <div className="flex items-center gap-1.5 flex-wrap mt-1.5 pt-1.5 border-t border-border/30">
+      <GitCompareArrows className="w-3 h-3 text-muted-foreground flex-shrink-0" />
+      <span className="text-[10px] text-muted-foreground">Other batches:</span>
+      {entries.map((e) => {
+        const c = getPerformanceColor(e.avgSuccessRate);
+        return (
+          <span key={e.batchId} className="text-[10px] flex items-center gap-0.5">
+            <span className="text-muted-foreground">{e.batchName.replace("Class ", "").replace(" Batch ", "")}</span>
+            <span className={cn("font-semibold", c.text)}>{e.avgSuccessRate}%</span>
+          </span>
+        );
+      })}
+    </div>
+  );
+};
 
 const SubjectDetail = () => {
   const { batchId, subjectId } = useParams<{ batchId: string; subjectId: string }>();
@@ -128,6 +155,13 @@ const SubjectDetail = () => {
                       </>
                     )}
                   </div>
+
+                  {/* Cross-batch comparison */}
+                  <CrossBatchLine
+                    subjectName={detail.subjectName}
+                    chapterName={chapter.chapterName}
+                    currentBatchId={detail.batchId}
+                  />
                 </CardContent>
               </Card>
             </motion.div>
