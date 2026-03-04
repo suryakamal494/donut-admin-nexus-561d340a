@@ -257,6 +257,11 @@ const StudentProfile360 = () => {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Hidden printable report card */}
+      <div style={{ position: "absolute", left: "-9999px", top: 0 }}>
+        <StudentReportCard ref={reportCardRef} student={student} />
+      </div>
     </div>
   );
 };
