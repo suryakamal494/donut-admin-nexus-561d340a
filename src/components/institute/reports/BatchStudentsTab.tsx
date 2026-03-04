@@ -112,7 +112,7 @@ const BatchStudentsTab = ({ students, batchId }: BatchStudentsTabProps) => {
         <button
           onClick={() => toggleSort("name")}
           className={cn(
-            "flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors",
+            "flex items-center gap-1 px-3 py-2 sm:px-2.5 sm:py-1.5 rounded-lg text-xs font-medium transition-colors min-h-[44px] sm:min-h-0",
             sortKey === "name" ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground hover:text-foreground"
           )}
         >
@@ -122,7 +122,7 @@ const BatchStudentsTab = ({ students, batchId }: BatchStudentsTabProps) => {
         <button
           onClick={() => toggleSort("avg")}
           className={cn(
-            "flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors",
+            "flex items-center gap-1 px-3 py-2 sm:px-2.5 sm:py-1.5 rounded-lg text-xs font-medium transition-colors min-h-[44px] sm:min-h-0",
             sortKey === "avg" ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground hover:text-foreground"
           )}
         >

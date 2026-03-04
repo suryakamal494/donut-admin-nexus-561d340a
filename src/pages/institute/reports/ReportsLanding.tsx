@@ -49,7 +49,7 @@ const ReportsLanding = () => {
   const totalAtRisk = batches.reduce((s, b) => s + b.atRiskCount, 0);
 
   return (
-    <div className="space-y-4 max-w-7xl mx-auto pb-20 md:pb-6">
+    <div className="space-y-3 max-w-7xl mx-auto pb-6">
       <PageHeader
         title="Reports"
         description="Academic performance insights across your institute"

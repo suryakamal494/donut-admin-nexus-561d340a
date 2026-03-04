@@ -34,7 +34,7 @@ const BatchReportDetail = () => {
   };
 
   return (
-    <div className="space-y-3 max-w-7xl mx-auto pb-20 md:pb-6">
+    <div className="space-y-3 max-w-7xl mx-auto pb-6">
       {/* Compact header with inline stats */}
       <PageHeader
         title={`${batch.className} — ${batch.batchName}`}

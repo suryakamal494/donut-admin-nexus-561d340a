@@ -62,7 +62,7 @@ const StudentProfile360 = () => {
   const overallColor = getPerformanceColor(student.overallAverage);
 
   return (
-    <div className="space-y-3 max-w-7xl mx-auto pb-20 md:pb-6">
+    <div className="space-y-3 max-w-7xl mx-auto pb-6">
       <PageHeader
         title={student.studentName}
         description={`${student.rollNumber} · ${student.batchName}`}
@@ -84,7 +84,7 @@ const StudentProfile360 = () => {
                 <p className="text-xs text-muted-foreground">{student.rollNumber} · {student.batchName}</p>
               </div>
               <div className="text-right">
-                <p className={cn("text-2xl font-bold", overallColor.text)}>{student.overallAverage}%</p>
+                <p className={cn("text-xl sm:text-2xl font-bold", overallColor.text)}>{student.overallAverage}%</p>
                 <div className="flex items-center gap-1 justify-end">
                   {trendIcon(student.trend)}
                   <span className="text-[10px] text-muted-foreground">{trendLabel(student.trend)}</span>

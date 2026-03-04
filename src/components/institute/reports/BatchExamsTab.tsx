@@ -49,7 +49,7 @@ const BatchExamsTab = ({ exams }: BatchExamsTabProps) => {
               key={chip.key}
               onClick={() => setFilter(chip.key)}
               className={cn(
-                "px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all flex-shrink-0",
+                "px-3 py-2 sm:py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all flex-shrink-0",
                 filter === chip.key
                   ? "bg-primary text-primary-foreground shadow-sm"
                   : "bg-muted text-muted-foreground hover:bg-muted/80"

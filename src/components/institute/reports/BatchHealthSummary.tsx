@@ -116,11 +116,17 @@ const BatchHealthSummary = ({ subjects, students }: BatchHealthSummaryProps) => 
             <div className="bg-destructive/5 border border-destructive/20 rounded-lg p-2">
               <p className="text-[10px] font-semibold text-destructive mb-1">⚠ Subjects dropped &gt;5% from previous</p>
               <div className="flex flex-wrap gap-1.5">
-                {health.urgentSubjects.map((s) => (
-                  <span key={s.subjectId} className="text-[10px] bg-destructive/10 text-destructive px-2 py-0.5 rounded-full font-medium">
-                    {s.subjectName}: {s.previousAverage}% → {s.classAverage}% ({s.previousAverage - s.classAverage > 0 ? `-${s.previousAverage - s.classAverage}` : `+${s.classAverage - s.previousAverage}`}%)
-                  </span>
-                ))}
+                {health.urgentSubjects.map((s) => {
+                  const diff = s.previousAverage - s.classAverage;
+                  const shortName = s.subjectName.length > 6 ? s.subjectName.slice(0, 5) + "…" : s.subjectName;
+                  return (
+                    <span key={s.subjectId} className="text-[10px] bg-destructive/10 text-destructive px-2 py-0.5 rounded-full font-medium">
+                      <span className="hidden sm:inline">{s.subjectName}: {s.previousAverage}% → {s.classAverage}%</span>
+                      <span className="sm:hidden">{shortName}: {s.previousAverage}→{s.classAverage}</span>
+                      {" "}({diff > 0 ? `-${diff}` : `+${Math.abs(diff)}`}%)
+                    </span>
+                  );
+                })}
               </div>
             </div>
           )}

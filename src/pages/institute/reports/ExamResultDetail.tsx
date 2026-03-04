@@ -82,7 +82,7 @@ const ExamResultDetail = () => {
   }));
 
   return (
-    <div className="space-y-3 max-w-7xl mx-auto pb-20 md:pb-6">
+    <div className="space-y-3 max-w-7xl mx-auto pb-6">
       <PageHeader
         title={examEntry.examName}
         description={`${examEntry.batchName} · ${examEntry.subject} · ${new Date(examEntry.date).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}`}
@@ -95,7 +95,7 @@ const ExamResultDetail = () => {
       />
 
       <Tabs defaultValue="insights" className="space-y-3">
-        <TabsList className="w-full sm:w-auto h-auto p-1 grid grid-cols-4 sm:flex">
+        <TabsList className="w-full sm:w-auto h-auto p-1 grid grid-cols-2 sm:grid-cols-4 sm:flex">
           <TabsTrigger value="insights" className="text-xs sm:text-sm">Insights</TabsTrigger>
           <TabsTrigger value="analytics" className="text-xs sm:text-sm">Analytics</TabsTrigger>
           <TabsTrigger value="questions" className="text-xs sm:text-sm">Questions</TabsTrigger>

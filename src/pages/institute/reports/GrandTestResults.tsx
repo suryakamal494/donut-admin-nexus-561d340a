@@ -73,7 +73,7 @@ const GrandTestResults = () => {
   const hasMoreLeaderboard = leaderboardLimit < data.leaderboard.length;
 
   return (
-    <div className="space-y-3 max-w-7xl mx-auto pb-20 md:pb-6">
+    <div className="space-y-3 max-w-7xl mx-auto pb-6">
       <PageHeader
         title={data.examName}
         description={`${data.batchName} · ${new Date(data.date).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })} · ${data.totalStudents} students`}
@@ -98,7 +98,7 @@ const GrandTestResults = () => {
           </div>
           <Trophy className="w-8 h-8 text-white/60" />
         </div>
-        <div className="flex gap-4 text-xs text-white/90">
+        <div className="flex gap-3 sm:gap-4 text-xs text-white/90 flex-wrap">
           <span>Highest: {data.highest}/{data.totalMarks}</span>
           <span>Lowest: {data.lowest}/{data.totalMarks}</span>
           <span>{data.passPercentage}% pass</span>
@@ -195,12 +195,14 @@ const GrandTestResults = () => {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-xs sm:text-sm font-semibold text-foreground truncate">{student.name}</p>
-                      <div className="flex gap-2 text-[10px] text-muted-foreground">
+                        <div className="flex gap-2 text-[10px] text-muted-foreground flex-wrap">
                         <span>{student.rollNumber}</span>
-                        <span>·</span>
-                        {student.subjectScores.map((ss) => (
-                          <span key={ss.subject}>{ss.subject.slice(0, 3)}: {ss.score}</span>
-                        ))}
+                        <span className="hidden sm:inline">·</span>
+                        <span className="hidden sm:flex gap-2">
+                          {student.subjectScores.map((ss) => (
+                            <span key={ss.subject}>{ss.subject.slice(0, 3)}: {ss.score}</span>
+                          ))}
+                        </span>
                       </div>
                     </div>
                     <div className="text-right flex-shrink-0">
@@ -237,7 +239,7 @@ const GrandTestResults = () => {
                       </span>
                       <div className="flex-1 min-w-0">
                         <p className="text-xs sm:text-sm font-medium text-foreground truncate">{student.name}</p>
-                        <div className="flex gap-1.5 mt-0.5">
+                        <div className="hidden sm:flex gap-1.5 mt-0.5">
                           {student.subjectScores.map((ss) => {
                             const sPct = Math.round((ss.score / ss.max) * 100);
                             const sColor = getPerformanceColor(sPct);
@@ -282,7 +284,7 @@ const GrandTestResults = () => {
                 key={sub.subject}
                 onClick={() => setSelectedSubject(selectedSubject === sub.subject ? null : sub.subject)}
                 className={cn(
-                  "px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all flex-shrink-0",
+                  "px-3 py-2 sm:py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all flex-shrink-0",
                   selectedSubject === sub.subject
                     ? "text-white shadow-sm"
                     : "bg-muted text-muted-foreground hover:bg-muted/80"

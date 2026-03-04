@@ -60,7 +60,7 @@ const StudentReports = () => {
   const hasMore = visibleCount < filtered.length;
 
   return (
-    <div className="space-y-3 max-w-7xl mx-auto pb-20 md:pb-6">
+    <div className="space-y-3 max-w-7xl mx-auto pb-6">
       <PageHeader
         title="Student Reports"
         description={`${filtered.length} student${filtered.length !== 1 ? "s" : ""} across all batches`}
@@ -92,7 +92,7 @@ const StudentReports = () => {
         <select
           value={batchFilter}
           onChange={e => setBatchFilter(e.target.value)}
-          className="h-8 px-2 rounded-md border border-input bg-background text-xs"
+          className="h-10 sm:h-8 px-2 rounded-md border border-input bg-background text-xs"
         >
           <option value="all">All Batches</option>
           {batches.map(b => (
