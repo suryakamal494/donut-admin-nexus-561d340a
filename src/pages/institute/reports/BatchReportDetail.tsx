@@ -17,8 +17,12 @@ const BatchReportDetail = () => {
   const { batchId } = useParams<{ batchId: string }>();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("subjects");
+  const batchSummaryRef = useRef<HTMLDivElement>(null);
+  const getBatchSummaryElement = useCallback(() => batchSummaryRef.current, []);
 
   const batch = batchId ? getInstituteBatchById(batchId) : undefined;
+  const exams = batch ? getExamsByBatch(batch.batchId) : [];
+  const students = batch ? getStudentsByBatch(batch.batchId) : [];
 
   if (!batch) {
     return (
@@ -27,11 +31,6 @@ const BatchReportDetail = () => {
       </div>
     );
   }
-
-  const exams = getExamsByBatch(batch.batchId);
-  const students = getStudentsByBatch(batch.batchId);
-  const batchSummaryRef = useRef<HTMLDivElement>(null);
-  const getBatchSummaryElement = useCallback(() => batchSummaryRef.current, []);
 
   const handleSubjectClick = (subjectId: string) => {
     navigate(`/institute/reports/batches/${batch.batchId}/subjects/${subjectId}`);
