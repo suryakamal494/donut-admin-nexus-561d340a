@@ -530,3 +530,47 @@ export function getSubjectDetail(batchId: string, subjectId: string): SubjectDet
   subjectDetailCache.set(key, detail);
   return detail;
 }
+
+// ── Cross-Batch Chapter Comparison ──
+
+export interface CrossBatchChapterEntry {
+  batchName: string;
+  batchId: string;
+  avgSuccessRate: number;
+}
+
+/**
+ * For a given subject name and chapter name, find the same chapter's
+ * performance across all batches that teach that subject.
+ * Returns entries sorted by avgSuccessRate ascending (worst first).
+ */
+export function getCrossBatchChapterComparison(
+  subjectName: string,
+  chapterName: string,
+  excludeBatchId?: string
+): CrossBatchChapterEntry[] {
+  const batches = getInstituteBatchReports();
+  const results: CrossBatchChapterEntry[] = [];
+
+  for (const batch of batches) {
+    const subject = batch.subjects.find(s => s.subjectName === subjectName);
+    if (!subject) continue;
+
+    const detail = getSubjectDetail(batch.batchId, subject.subjectId);
+    if (!detail) continue;
+
+    const chapter = detail.chapters.find(c => c.chapterName === chapterName);
+    if (!chapter) continue;
+
+    if (batch.batchId === excludeBatchId) continue;
+
+    results.push({
+      batchName: `${batch.className} ${batch.batchName}`,
+      batchId: batch.batchId,
+      avgSuccessRate: chapter.avgSuccessRate,
+    });
+  }
+
+  results.sort((a, b) => a.avgSuccessRate - b.avgSuccessRate);
+  return results;
+}

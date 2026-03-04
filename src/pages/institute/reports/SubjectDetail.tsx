@@ -4,9 +4,9 @@ import { PageHeader } from "@/components/ui/page-header";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
-import { User, BookOpen, AlertTriangle, CheckCircle2, TrendingUp, TrendingDown, Minus } from "lucide-react";
-import { getSubjectDetail } from "@/data/institute/reportsData";
-import { getStatusColor } from "@/lib/reportColors";
+import { User, BookOpen, AlertTriangle, CheckCircle2, TrendingUp, TrendingDown, Minus, GitCompareArrows } from "lucide-react";
+import { getSubjectDetail, getCrossBatchChapterComparison } from "@/data/institute/reportsData";
+import { getStatusColor, getPerformanceColor } from "@/lib/reportColors";
 
 const SubjectDetail = () => {
   const { batchId, subjectId } = useParams<{ batchId: string; subjectId: string }>();
