@@ -1,5 +1,5 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useCallback } from "react";
 import { PageHeader } from "@/components/ui/page-header";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getInstituteBatchById, getExamsByBatch, getStudentsByBatch } from "@/data/institute/reportsData";
@@ -9,6 +9,8 @@ import BatchStudentsTab from "@/components/institute/reports/BatchStudentsTab";
 import BatchHealthSummary from "@/components/institute/reports/BatchHealthSummary";
 import SubjectComparisonChart from "@/components/institute/reports/SubjectComparisonChart";
 import BatchAIInsights from "@/components/institute/reports/BatchAIInsights";
+import BatchSummaryCard from "@/components/institute/reports/export/BatchSummaryCard";
+import ExportDropdown from "@/components/institute/reports/export/ExportDropdown";
 import { BookOpen, ClipboardList, Users } from "lucide-react";
 
 const BatchReportDetail = () => {
@@ -28,6 +30,8 @@ const BatchReportDetail = () => {
 
   const exams = getExamsByBatch(batch.batchId);
   const students = getStudentsByBatch(batch.batchId);
+  const batchSummaryRef = useRef<HTMLDivElement>(null);
+  const getBatchSummaryElement = useCallback(() => batchSummaryRef.current, []);
 
   const handleSubjectClick = (subjectId: string) => {
     navigate(`/institute/reports/batches/${batch.batchId}/subjects/${subjectId}`);
@@ -55,6 +59,12 @@ const BatchReportDetail = () => {
           { label: "Batches", href: "/institute/reports/batches" },
           { label: `${batch.className} ${batch.batchName}` },
         ]}
+        actions={
+          <ExportDropdown
+            getElement={getBatchSummaryElement}
+            filename={`Batch-Summary-${batch.className}-${batch.batchName}`.replace(/\s+/g, "-")}
+          />
+        }
       />
 
       {/* Batch Health Summary — executive overview */}
@@ -106,6 +116,20 @@ const BatchReportDetail = () => {
           <BatchStudentsTab students={students} batchId={batch.batchId} />
         </TabsContent>
       </Tabs>
+
+      {/* Hidden printable batch summary */}
+      <div style={{ position: "absolute", left: "-9999px", top: 0 }}>
+        <BatchSummaryCard
+          ref={batchSummaryRef}
+          className={batch.className}
+          batchName={batch.batchName}
+          overallAverage={batch.overallAverage}
+          totalStudents={batch.totalStudents}
+          totalExams={batch.totalExams}
+          subjects={batch.subjects}
+          students={students}
+        />
+      </div>
     </div>
   );
 };
