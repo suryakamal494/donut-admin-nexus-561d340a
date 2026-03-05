@@ -117,7 +117,7 @@ export const BatchHealthCard = ({ health, batchId, onNavigateToChapter, onNaviga
                       {health.priorityTopics.map((topic, i) => (
                         <button
                           key={i}
-                          onClick={() => onNavigateToChapter?.(topic.chapter)}
+                          onClick={() => onNavigateToChapter?.(topic.chapterId)}
                           className="w-full flex items-center justify-between rounded-lg bg-muted/50 hover:bg-muted/80 transition-colors px-3 py-2 text-left"
                         >
                           <div className="min-w-0">

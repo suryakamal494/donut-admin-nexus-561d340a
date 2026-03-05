@@ -342,6 +342,7 @@ export interface BatchHealthSummary {
   priorityTopics: {
     topic: string;
     chapter: string;
+    chapterId: string;
     successRate: number;
     trend: 'up' | 'down' | 'flat';
     examCount: number;
@@ -381,6 +382,7 @@ export function generateMockBatchHealth(
            ch.chapterName === "Gravitation" ? "Escape Velocity" :
            ch.chapterName,
     chapter: ch.chapterName,
+    chapterId: ch.chapterId,
     successRate: ch.avgSuccessRate,
     trend: (ch.avgSuccessRate < 35 ? 'down' : 'flat') as 'up' | 'down' | 'flat',
     examCount: ch.examsCovering,
