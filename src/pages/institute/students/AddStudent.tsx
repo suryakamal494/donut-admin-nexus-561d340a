@@ -261,6 +261,8 @@ const AddStudent = () => {
     return true;
   };
 
+  const returnTo = searchParams.get("returnTo");
+
   const handleSubmit = () => {
     if (!selectedBatchId) {
       toast.error("Please select a batch");
@@ -276,7 +278,7 @@ const AddStudent = () => {
     } else {
       toast.success(`${formData.name} added to ${selectedBatch?.className} - ${selectedBatch?.name}`);
     }
-    navigate("/institute/students");
+    navigate(returnTo || "/institute/students");
   };
 
   const parseData = (data: string) => {

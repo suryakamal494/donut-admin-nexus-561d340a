@@ -13,6 +13,7 @@ import {
   UserPlus,
   FileText,
   BookMarked,
+  Pencil,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -22,11 +23,13 @@ import { SubjectBadge } from "@/components/subject";
 import { batches, teachers, students, availableSubjects, instituteExams, assignedTracks } from "@/data/instituteData";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { AssignCourseDialog } from "@/components/institute/batches/AssignCourseDialog";
+import { AssignTeacherDialog } from "@/components/institute/batches/AssignTeacherDialog";
 
 const BatchDashboard = () => {
   const { batchId } = useParams();
   const navigate = useNavigate();
   const [assignCourseOpen, setAssignCourseOpen] = useState(false);
+  const [assignTeacherOpen, setAssignTeacherOpen] = useState(false);
   const [batchCourses, setBatchCourses] = useState<string[]>([]);
 
   const batch = batches.find((b) => b.id === batchId);
@@ -62,7 +65,7 @@ const BatchDashboard = () => {
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 pb-24">
       <PageHeader
         title={`${batch.className} - ${batch.name}`}
         description={`Manage students, teachers, timetable, and tests for this batch. Academic Year: ${batch.academicYear}`}
@@ -143,14 +146,18 @@ const BatchDashboard = () => {
           <div className="flex flex-wrap gap-3">
             <Button
               variant="outline"
-              onClick={() => navigate(`/institute/students/add?batchId=${batchId}`)}
+              onClick={() =>
+                navigate(
+                  `/institute/students/add?batchId=${batchId}&returnTo=/institute/batches/${batchId}`
+                )
+              }
             >
               <UserPlus className="h-4 w-4 mr-2" />
               Add Students
             </Button>
             <Button
               variant="outline"
-              onClick={() => navigate("/institute/teachers/create")}
+              onClick={() => setAssignTeacherOpen(true)}
             >
               <GraduationCap className="h-4 w-4 mr-2" />
               Assign Teacher
@@ -275,7 +282,11 @@ const BatchDashboard = () => {
                 <Button
                   size="sm"
                   variant="outline"
-                  onClick={() => navigate(`/institute/students/add?batchId=${batchId}`)}
+                  onClick={() =>
+                    navigate(
+                      `/institute/students/add?batchId=${batchId}&returnTo=/institute/batches/${batchId}`
+                    )
+                  }
                 >
                   <Plus className="h-4 w-4 mr-1" />
                   Add Students
@@ -406,6 +417,27 @@ const BatchDashboard = () => {
         </Card>
       )}
 
+      {/* Sticky Bottom Action Bar */}
+      <div className="fixed bottom-0 left-0 right-0 z-40 border-t bg-background/95 backdrop-blur-sm supports-[backdrop-filter]:bg-background/80 p-3 md:pl-[calc(16rem+1.5rem)] md:pr-6">
+        <div className="flex gap-3 max-w-screen-xl mx-auto">
+          <Button
+            variant="outline"
+            className="flex-1"
+            onClick={() => setAssignCourseOpen(true)}
+          >
+            <BookMarked className="h-4 w-4 mr-2" />
+            Assign Courses
+          </Button>
+          <Button
+            className="flex-1"
+            onClick={() => navigate(`/institute/batches/${batchId}/edit`)}
+          >
+            <Pencil className="h-4 w-4 mr-2" />
+            Edit Batch
+          </Button>
+        </div>
+      </div>
+
       {/* Assign Course Dialog */}
       <AssignCourseDialog
         open={assignCourseOpen}
@@ -413,6 +445,15 @@ const BatchDashboard = () => {
         batchName={`${batch.className} - ${batch.name}`}
         currentCourses={batchCourses}
         onSave={(courses) => setBatchCourses(courses)}
+      />
+
+      {/* Assign Teacher Dialog */}
+      <AssignTeacherDialog
+        open={assignTeacherOpen}
+        onOpenChange={setAssignTeacherOpen}
+        batchId={batchId!}
+        batchName={`${batch.className} - ${batch.name}`}
+        subjects={batch.subjects}
       />
     </div>
   );
