@@ -417,25 +417,25 @@ const BatchDashboard = () => {
         </Card>
       )}
 
-      {/* Sticky Bottom Action Bar */}
-      <div className="fixed bottom-0 left-0 right-0 z-40 border-t bg-background/95 backdrop-blur-sm supports-[backdrop-filter]:bg-background/80 p-3 md:pl-[calc(16rem+1.5rem)] md:pr-6">
-        <div className="flex gap-3 max-w-screen-xl mx-auto">
-          <Button
-            variant="outline"
-            className="flex-1"
-            onClick={() => setAssignCourseOpen(true)}
-          >
-            <BookMarked className="h-4 w-4 mr-2" />
-            Assign Courses
-          </Button>
-          <Button
-            className="flex-1"
-            onClick={() => navigate(`/institute/batches/${batchId}/edit`)}
-          >
-            <Pencil className="h-4 w-4 mr-2" />
-            Edit Batch
-          </Button>
-        </div>
+      {/* Sticky Floating Action Buttons */}
+      <div className="fixed bottom-20 md:bottom-6 right-4 md:right-8 z-40 flex gap-2">
+        <Button
+          variant="outline"
+          size="sm"
+          className="shadow-lg bg-background/95 backdrop-blur-sm"
+          onClick={() => setAssignCourseOpen(true)}
+        >
+          <BookMarked className="h-4 w-4 mr-1.5" />
+          Assign Courses
+        </Button>
+        <Button
+          size="sm"
+          className="shadow-lg"
+          onClick={() => navigate(`/institute/batches/${batchId}/edit`)}
+        >
+          <Pencil className="h-4 w-4 mr-1.5" />
+          Edit Batch
+        </Button>
       </div>
 
       {/* Assign Course Dialog */}
