@@ -1,50 +1,81 @@
 
 
-## Understanding Your Pain Points
+# Institute Batch Reports — Phased Enhancement Plan
 
-Here's what I understood from your request — three specific issues on the **Batch Dashboard** (`/institute/batches/batch-6a`):
+## Phase 1: Batch Health Summary + Subject Comparison Chart ✅
+**Pure frontend, no AI, no edge functions**
 
-### Problem 1: "Assign Courses" and "Edit Batch" buttons scroll away
-The action buttons at the bottom of the page scroll with the content. When you're scrolling through subjects, students, and tests, you lose access to these key actions. You want them **fixed/sticky at the bottom** of the screen so they're always accessible.
+### 1A — Batch Health Summary Card
+A compact executive summary card placed between the PageHeader and Tabs in `BatchReportDetail.tsx`. Collapsible (defaults collapsed on mobile). Computed entirely from existing `batch.subjects` data.
 
-### Problem 2: "Assign Teacher" quick action navigates away instead of inline assignment
-Currently clicking "Assign Teacher" takes you to the teacher creation page (`/institute/teachers/create`), which is wrong. You want:
-1. A popup/dialog opens
-2. First, you select a **subject** from the batch's subjects
-3. Then, it shows **teachers who teach that subject**
-4. You select a teacher and assign them to that subject for this batch
-5. All done inline without leaving the page
+**Content:**
+- Strongest subject (name + %) and weakest subject (name + %)
+- Trend momentum: "3 improving, 1 declining, 2 stable"
+- Multi-subject at-risk count (students at risk in 2+ subjects — computed from `getStudentsByBatch`)
+- Urgent flag if any subject dropped >5% from previous average
 
-### Problem 3: "Add Student" quick action doesn't go to the right page
-Currently it navigates to `/institute/students/add?batchId=...` which is correct, but you want to ensure:
-1. It goes directly to the **manual add student** tab (not bulk upload)
-2. The batch is **pre-selected and locked** so the user knows they're adding to this specific batch
-3. After saving, the user is **redirected back to this batch dashboard** (not the general students page)
+**Files:**
+| File | Action |
+|------|--------|
+| `src/components/institute/reports/BatchHealthSummary.tsx` | New — the card component |
+| `src/pages/institute/reports/BatchReportDetail.tsx` | Add BatchHealthSummary between header and tabs |
 
 ---
 
-## Implementation Plan
+### 1B — Subject Comparison Bar Chart
+A horizontal bar chart (Recharts, already installed) showing all subjects ranked by class average, color-coded by 4-tier system. Placed at the top of the Subjects tab, above the existing cards.
 
-### 1. Sticky Bottom Action Bar
-- Extract the "Assign Courses" button and an "Edit Batch" button into a **fixed bottom bar** (`fixed bottom-0 left-0 right-0`)
-- The bar will have a subtle top border and background blur, always visible
-- Add `pb-16` padding to the main content so it doesn't get hidden behind the bar
-- On mobile, the bar will be full-width with two equal buttons
+**Files:**
+| File | Action |
+|------|--------|
+| `src/components/institute/reports/SubjectComparisonChart.tsx` | New — Recharts horizontal bar chart |
+| `src/pages/institute/reports/BatchReportDetail.tsx` | Add chart above `SubjectOverviewCards` in subjects tab |
 
-### 2. Assign Teacher Dialog (new component)
-Create `src/components/institute/batches/AssignTeacherDialog.tsx`:
-- **Step 1 — Select Subject**: Show the batch's subjects as selectable cards/list
-- **Step 2 — Select Teacher**: Filter teachers from `instituteData` whose `subjects` array includes the selected subject. Show them as selectable cards with name and current assignments
-- **Confirm**: Assign the teacher to that subject for this batch, show success toast, close dialog
-- Uses the existing `ResponsiveDialog` component (drawer on mobile, dialog on desktop)
+---
 
-### 3. Fix "Add Student" Navigation
-- Update the "Add Students" quick action to navigate to `/institute/students/add?batchId=${batchId}&returnTo=/institute/batches/${batchId}`
-- In `AddStudent.tsx`: read the `returnTo` query param and use it for the "Back" button and post-save redirect
-- Ensure the "manual" tab is the default (it already is) and the batch selector is pre-filled (it already reads `batchId` from query params)
+## Phase 2: Multi-Subject Risk Filter in Students Tab ✅
+Add a toggle/filter in `BatchStudentsTab.tsx` to surface students at risk in 2+ subjects. Shows which subjects each flagged student is struggling in. Uses existing student data — no new data generation needed.
 
-### Files to modify:
-1. **`src/pages/institute/batches/BatchDashboard.tsx`** — Add sticky bottom bar, update quick action handlers, add AssignTeacherDialog
-2. **`src/components/institute/batches/AssignTeacherDialog.tsx`** — New component for inline teacher assignment
-3. **`src/pages/institute/students/AddStudent.tsx`** — Add `returnTo` support for post-save redirect back to batch
+**Files:**
+| File | Action |
+|------|--------|
+| `src/components/institute/reports/BatchStudentsTab.tsx` | Add "Multi-Subject Risk" filter pill + filtered view |
 
+---
+
+## Phase 3: Cross-Batch Chapter Comparison in SubjectDetail ✅
+When viewing a chapter in `SubjectDetail.tsx`, show a compact contextual note: "Other batches: 10A 34% · 10B 72% · 10C 48%". Uses `getCrossBatchChapterComparison()` helper.
+
+**Files:**
+| File | Action |
+|------|--------|
+| `src/data/institute/reportsData.ts` | Added `getCrossBatchChapterComparison(subjectName, chapterName, excludeBatchId)` helper |
+| `src/pages/institute/reports/SubjectDetail.tsx` | Added `CrossBatchLine` inline component below each chapter card's stats row |
+
+---
+
+## Phase 4: AI Batch Insights (Edge Function) ✅
+An on-demand AI analysis card (button-triggered, collapsible) that sends batch-level cross-subject data to an edge function and returns structured insights for the principal.
+
+**Files:**
+| File | Action |
+|------|--------|
+| `supabase/functions/analyze-batch-report/index.ts` | Edge function using Lovable AI gateway |
+| `src/components/institute/reports/BatchAIInsights.tsx` | AI insights card with Generate/Regenerate |
+| `src/pages/institute/reports/BatchReportDetail.tsx` | Added below health summary |
+
+---
+
+## Phase 5: Institute-Wide Subject Health on Landing Page ✅
+A compact, collapsible section on `ReportsLanding.tsx` showing each subject's average across all batches, sorted worst-to-best, with bar visualization and min-max spread.
+
+**Files:**
+| File | Action |
+|------|--------|
+| `src/components/institute/reports/InstituteSubjectHealth.tsx` | New — collapsible subject health rows with performance bars |
+| `src/pages/institute/reports/ReportsLanding.tsx` | Added between stats bar and section cards |
+
+---
+
+## Phase 6: Documentation Update ✅
+Updated plan.md to reflect all completed phases.

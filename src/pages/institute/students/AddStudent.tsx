@@ -261,6 +261,8 @@ const AddStudent = () => {
     return true;
   };
 
+  const returnTo = searchParams.get("returnTo");
+
   const handleSubmit = () => {
     if (!selectedBatchId) {
       toast.error("Please select a batch");
@@ -276,7 +278,7 @@ const AddStudent = () => {
     } else {
       toast.success(`${formData.name} added to ${selectedBatch?.className} - ${selectedBatch?.name}`);
     }
-    navigate("/institute/students");
+    navigate(returnTo || "/institute/students");
   };
 
   const parseData = (data: string) => {
@@ -344,7 +346,7 @@ const AddStudent = () => {
       toast.success(
         `Added ${validStudents.length} students to ${selectedBatch?.className} - ${selectedBatch?.name}`
       );
-      navigate("/institute/students");
+      navigate(returnTo || "/institute/students");
     }, 1500);
   };
 
@@ -813,7 +815,7 @@ const AddStudent = () => {
         <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 p-4 sm:p-6 border-t bg-muted/30">
           <Button
             variant="outline"
-            onClick={() => navigate("/institute/students")}
+            onClick={() => navigate(returnTo || "/institute/students")}
             className="w-full sm:w-auto"
           >
             Cancel
@@ -846,7 +848,7 @@ const AddStudent = () => {
           : "Add students one by one or upload multiple students at once using copy-paste."
         }
         actions={
-          <Button variant="outline" onClick={() => navigate("/institute/students")}>
+          <Button variant="outline" onClick={() => navigate(returnTo || "/institute/students")}>
             <ChevronLeft className="h-4 w-4 mr-2" />
             <span className="hidden sm:inline">Back to Students</span>
             <span className="sm:hidden">Back</span>
