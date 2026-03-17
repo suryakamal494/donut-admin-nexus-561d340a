@@ -35,7 +35,7 @@ export const AnnotationCanvas = forwardRef<AnnotationCanvasRef, AnnotationCanvas
     const isDrawingShapeRef = useRef(false);
     const startPointRef = useRef<{ x: number; y: number } | null>(null);
     const currentShapeRef = useRef<FabricObject | null>(null);
-    const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     // Cleanup timeout on unmount
     useEffect(() => {
