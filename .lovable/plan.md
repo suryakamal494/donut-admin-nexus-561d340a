@@ -1,81 +1,43 @@
 
 
-# Institute Batch Reports — Phased Enhancement Plan
+# Corrected Developer Guide — AI Question Generation
 
-## Phase 1: Batch Health Summary + Subject Comparison Chart ✅
-**Pure frontend, no AI, no edge functions**
+## What's Being Done
 
-### 1A — Batch Health Summary Card
-A compact executive summary card placed between the PageHeader and Tabs in `BatchReportDetail.tsx`. Collapsible (defaults collapsed on mobile). Computed entirely from existing `batch.subjects` data.
+Regenerating the developer guide document (`AI_Question_Generation_Developer_Guide.md`) with all 6 audit issues fixed:
 
-**Content:**
-- Strongest subject (name + %) and weakest subject (name + %)
-- Trend momentum: "3 improving, 1 declining, 2 stable"
-- Multi-subject at-risk count (students at risk in 2+ subjects — computed from `getStudentsByBatch`)
-- Urgent flag if any subject dropped >5% from previous average
+### 🔴 Critical Fixes (3)
 
-**Files:**
-| File | Action |
-|------|--------|
-| `src/components/institute/reports/BatchHealthSummary.tsx` | New — the card component |
-| `src/pages/institute/reports/BatchReportDetail.tsx` | Add BatchHealthSummary between header and tabs |
+1. **Deno dynamic import → static import**: The `import()` inside the switch case will fail in Deno. Will show a static `import` at the top of `assessment-ai/index.ts`.
 
----
+2. **`req.body` access pattern → destructure from parsed body**: The existing edge function already does `const { action, topic, ... } = await req.json()`. The guide will show the new fields (`curriculum`, `classLevel`, `difficulties`, `cognitiveTypes`, `topics`, `questionTypes`) destructured from the same parsed body — not accessed via `req.body`.
 
-### 1B — Subject Comparison Bar Chart
-A horizontal bar chart (Recharts, already installed) showing all subjects ranked by class average, color-coded by 4-tier system. Placed at the top of the Subjects tab, above the existing cards.
+3. **Empty array guard**: Add fallback defaults at the top of `buildQuestionGenerationPrompt()`:
+   ```
+   if (!difficulties.length) difficulties = ["medium"];
+   if (!cognitiveTypes.length) cognitiveTypes = ["conceptual"];
+   ```
 
-**Files:**
-| File | Action |
-|------|--------|
-| `src/components/institute/reports/SubjectComparisonChart.tsx` | New — Recharts horizontal bar chart |
-| `src/pages/institute/reports/BatchReportDetail.tsx` | Add chart above `SubjectOverviewCards` in subjects tab |
+### 🟡 Important Fixes (3)
 
----
+4. **Metadata self-reporting → server-side computation**: Instead of asking the AI to fill `difficultyDistribution` in the response, compute it server-side by counting the `difficulty` field across the returned questions array after parsing.
 
-## Phase 2: Multi-Subject Risk Filter in Students Tab ✅
-Add a toggle/filter in `BatchStudentsTab.tsx` to surface students at risk in 2+ subjects. Shows which subjects each flagged student is struggling in. Uses existing student data — no new data generation needed.
+5. **SuperAdmin review route confirmed**: The route `/superadmin/questions/review` exists (`ReviewQuestions.tsx`) but currently reads from mock data, not from navigation state. The guide will instruct the developer to either (a) pass generated questions via `navigate` state and read them in `ReviewQuestions`, or (b) render results inline on the AI page (safer default — the Institute page already does this).
 
-**Files:**
-| File | Action |
-|------|--------|
-| `src/components/institute/reports/BatchStudentsTab.tsx` | Add "Multi-Subject Risk" filter pill + filtered view |
+6. **Timeout guard**: Add an `AbortController` with 30s timeout on the frontend `supabase.functions.invoke` calls, and a loading state timeout fallback.
 
----
+### Document Structure
 
-## Phase 3: Cross-Batch Chapter Comparison in SubjectDetail ✅
-When viewing a chapter in `SubjectDetail.tsx`, show a compact contextual note: "Other batches: 10A 34% · 10B 72% · 10C 48%". Uses `getCrossBatchChapterComparison()` helper.
+The regenerated guide will have these sections:
+1. Problem Statement (unchanged)
+2. Architecture Overview (unchanged)
+3. File 1: `prompt-definitions.ts` (unchanged)
+4. File 2: `prompt-builder.ts` — with empty array guards added
+5. File 3: `assessment-ai/index.ts` — with static import, proper destructuring from parsed body, and server-side metadata computation
+6. File 4-5: Frontend wiring — with timeout guard and inline results rendering recommendation
+7. Full assembled prompt example (unchanged)
+8. Testing curl command (unchanged)
+9. **NEW Section**: Audit checklist — a table of all 6 issues and their fixes for developer reference
 
-**Files:**
-| File | Action |
-|------|--------|
-| `src/data/institute/reportsData.ts` | Added `getCrossBatchChapterComparison(subjectName, chapterName, excludeBatchId)` helper |
-| `src/pages/institute/reports/SubjectDetail.tsx` | Added `CrossBatchLine` inline component below each chapter card's stats row |
+No codebase changes — this is a document-only task written to `/mnt/documents/AI_Question_Generation_Developer_Guide_v2.md`.
 
----
-
-## Phase 4: AI Batch Insights (Edge Function) ✅
-An on-demand AI analysis card (button-triggered, collapsible) that sends batch-level cross-subject data to an edge function and returns structured insights for the principal.
-
-**Files:**
-| File | Action |
-|------|--------|
-| `supabase/functions/analyze-batch-report/index.ts` | Edge function using Lovable AI gateway |
-| `src/components/institute/reports/BatchAIInsights.tsx` | AI insights card with Generate/Regenerate |
-| `src/pages/institute/reports/BatchReportDetail.tsx` | Added below health summary |
-
----
-
-## Phase 5: Institute-Wide Subject Health on Landing Page ✅
-A compact, collapsible section on `ReportsLanding.tsx` showing each subject's average across all batches, sorted worst-to-best, with bar visualization and min-max spread.
-
-**Files:**
-| File | Action |
-|------|--------|
-| `src/components/institute/reports/InstituteSubjectHealth.tsx` | New — collapsible subject health rows with performance bars |
-| `src/pages/institute/reports/ReportsLanding.tsx` | Added between stats bar and section cards |
-
----
-
-## Phase 6: Documentation Update ✅
-Updated plan.md to reflect all completed phases.
