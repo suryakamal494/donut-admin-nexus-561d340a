@@ -68,7 +68,7 @@ export function SortableChapterCell({
   });
 
   // Long press state
-  const longPressTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [isLongPressing, setIsLongPressing] = useState(false);
   const touchStartPosRef = useRef<{ x: number; y: number } | null>(null);
 

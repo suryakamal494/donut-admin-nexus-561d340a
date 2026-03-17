@@ -31,7 +31,7 @@ const STORAGE_KEY_PREFIX = "test_session_";
 const SESSION_EXPIRY_MS = 24 * 60 * 60 * 1000; // 24 hours
 
 export const useTestSessionPersistence = (testId: string | undefined) => {
-  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Get storage key for this test
   const getStorageKey = useCallback(() => {
