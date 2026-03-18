@@ -1,81 +1,73 @@
 
+Docs mobile audit summary:
 
-# Institute Batch Reports — Phased Enhancement Plan
+- The main problem is in the docs shell itself, not the markdown files. The docs area is currently built with a fixed-height wrapper (`h-[calc(100vh-7rem)]`) plus nested Radix `ScrollArea` containers. On mobile, that combination is very likely causing the “cannot scroll the docs” behavior.
+- The header is also desktop-first: menu, title, home link, and search all compete in one row, which will get cramped on narrow screens.
+- Markdown rendering is only partially mobile-safe today. Tables and code blocks already have horizontal overflow, but the overall reading layout, spacing, and long-content handling still need a mobile pass.
 
-## Phase 1: Batch Health Summary + Subject Comparison Chart ✅
-**Pure frontend, no AI, no edge functions**
+Implementation plan:
 
-### 1A — Batch Health Summary Card
-A compact executive summary card placed between the PageHeader and Tabs in `BatchReportDetail.tsx`. Collapsible (defaults collapsed on mobile). Computed entirely from existing `batch.subjects` data.
+1. Fix the docs page layout so mobile scrolling works reliably
+   - Update `src/components/docs/DocsLayout.tsx`
+   - Replace the current fixed viewport-height math with a true flex layout using `min-h-dvh` / `min-h-0`
+   - Remove the hard-coded content height wrapper and let the content area own scrolling properly
+   - Keep the sticky header, but make the document region a valid mobile scroll container
 
-**Content:**
-- Strongest subject (name + %) and weakest subject (name + %)
-- Trend momentum: "3 improving, 1 declining, 2 stable"
-- Multi-subject at-risk count (students at risk in 2+ subjects — computed from `getStudentsByBatch`)
-- Urgent flag if any subject dropped >5% from previous average
+2. Stop relying on nested custom `ScrollArea` for the main reading surface
+   - Update `src/components/docs/DocsViewer.tsx` and `src/pages/docs/DocsIndex.tsx`
+   - Switch the main docs content to native `overflow-y-auto` scrolling, especially on mobile
+   - Keep horizontal scrolling for wide content like tables, code blocks, and ASCII diagrams
+   - This is the safest and most robust fix for touch scrolling issues
 
-**Files:**
-| File | Action |
-|------|--------|
-| `src/components/institute/reports/BatchHealthSummary.tsx` | New — the card component |
-| `src/pages/institute/reports/BatchReportDetail.tsx` | Add BatchHealthSummary between header and tabs |
+3. Rework the docs header for mobile
+   - Update `src/components/docs/DocsLayout.tsx` and `src/components/docs/DocsSearch.tsx`
+   - Move to a mobile-friendly 2-row header or compact search behavior
+   - Prevent the title/search area from squeezing or overflowing on 320–390px widths
+   - Keep breadcrumbs horizontally scrollable without widening the page
 
----
+4. Harden markdown rendering for narrow screens
+   - Update `src/components/docs/DocsViewer.tsx`
+   - Improve mobile padding, prose sizing, word breaking, and spacing
+   - Ensure images, long inline text, and fenced diagrams stay readable
+   - Preserve horizontal scroll where needed instead of forcing bad wraps
 
-### 1B — Subject Comparison Bar Chart
-A horizontal bar chart (Recharts, already installed) showing all subjects ranked by class average, color-coded by 4-tier system. Placed at the top of the Subjects tab, above the existing cards.
+5. Tighten mobile drawer/sidebar behavior
+   - Update `src/components/docs/DocsLayout.tsx` and `src/components/docs/DocsSidebar.tsx`
+   - Ensure the sidebar sheet has its own reliable vertical scroll
+   - Slightly refine width/padding for smaller devices
+   - Make sure opening/closing the drawer does not interfere with document scrolling
 
-**Files:**
-| File | Action |
-|------|--------|
-| `src/components/institute/reports/SubjectComparisonChart.tsx` | New — Recharts horizontal bar chart |
-| `src/pages/institute/reports/BatchReportDetail.tsx` | Add chart above `SubjectOverviewCards` in subjects tab |
+6. Run a full docs mobile QA audit after the fix
+   Routes to verify:
+   - `/docs`
+   - `/docs/06-testing-scenarios/inter-login-tests/curriculum-scope-qa`
+   - `/docs/07-technical/responsive-design`
+   - at least one page with nested navigation from another major section
 
----
+   Breakpoints:
+   - 320x568
+   - 375x812
+   - 390x844
+   - 768x1024
 
-## Phase 2: Multi-Subject Risk Filter in Students Tab ✅
-Add a toggle/filter in `BatchStudentsTab.tsx` to surface students at risk in 2+ subjects. Shows which subjects each flagged student is struggling in. Uses existing student data — no new data generation needed.
+   What will be checked:
+   - long docs vertically scroll on mobile
+   - tables/code/ASCII diagrams horizontally scroll without breaking layout
+   - header, breadcrumbs, and search stay usable
+   - sidebar drawer scrolls correctly
+   - no dead space, clipping, or `100vh` issues
+   - docs index cards and quick links remain readable on small screens
 
-**Files:**
-| File | Action |
-|------|--------|
-| `src/components/institute/reports/BatchStudentsTab.tsx` | Add "Multi-Subject Risk" filter pill + filtered view |
+Files likely involved:
+- `src/components/docs/DocsLayout.tsx`
+- `src/components/docs/DocsViewer.tsx`
+- `src/pages/docs/DocsIndex.tsx`
+- `src/components/docs/DocsSearch.tsx`
+- `src/components/docs/DocsSidebar.tsx`
+- possibly `src/components/ui/scroll-area.tsx` if a small touch-scroll improvement is still needed after the main refactor
 
----
-
-## Phase 3: Cross-Batch Chapter Comparison in SubjectDetail ✅
-When viewing a chapter in `SubjectDetail.tsx`, show a compact contextual note: "Other batches: 10A 34% · 10B 72% · 10C 48%". Uses `getCrossBatchChapterComparison()` helper.
-
-**Files:**
-| File | Action |
-|------|--------|
-| `src/data/institute/reportsData.ts` | Added `getCrossBatchChapterComparison(subjectName, chapterName, excludeBatchId)` helper |
-| `src/pages/institute/reports/SubjectDetail.tsx` | Added `CrossBatchLine` inline component below each chapter card's stats row |
-
----
-
-## Phase 4: AI Batch Insights (Edge Function) ✅
-An on-demand AI analysis card (button-triggered, collapsible) that sends batch-level cross-subject data to an edge function and returns structured insights for the principal.
-
-**Files:**
-| File | Action |
-|------|--------|
-| `supabase/functions/analyze-batch-report/index.ts` | Edge function using Lovable AI gateway |
-| `src/components/institute/reports/BatchAIInsights.tsx` | AI insights card with Generate/Regenerate |
-| `src/pages/institute/reports/BatchReportDetail.tsx` | Added below health summary |
-
----
-
-## Phase 5: Institute-Wide Subject Health on Landing Page ✅
-A compact, collapsible section on `ReportsLanding.tsx` showing each subject's average across all batches, sorted worst-to-best, with bar visualization and min-max spread.
-
-**Files:**
-| File | Action |
-|------|--------|
-| `src/components/institute/reports/InstituteSubjectHealth.tsx` | New — collapsible subject health rows with performance bars |
-| `src/pages/institute/reports/ReportsLanding.tsx` | Added between stats bar and section cards |
-
----
-
-## Phase 6: Documentation Update ✅
-Updated plan.md to reflect all completed phases.
+Expected result:
+- The docs become properly mobile-readable
+- Touch scrolling works on long documents
+- Wide content stays accessible without breaking the viewport
+- Desktop behavior stays intact while mobile gets a much more reliable reading experience
