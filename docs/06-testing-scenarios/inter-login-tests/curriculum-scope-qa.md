@@ -4,6 +4,55 @@
 
 ---
 
+## Before You Begin
+
+> **New to the platform?** Read this section first. It defines key terms used throughout the test scenarios and tells you where to find each feature in the UI. If you're already familiar with the platform's domain model and navigation, skip ahead to the next section.
+
+### Domain Glossary
+
+| Term | What It Means | Example |
+|------|---------------|---------|
+| **Curriculum** | A national or state education board that defines the academic structure (classes, subjects, chapters, topics). The platform supports multiple curriculums per institute. | CBSE, ICSE, Telangana State Board |
+| **Course** | A competitive exam or specialised learning track that pulls chapters from one or more curriculums and may also have its own exclusive chapters. Courses are curriculum-agnostic containers. | JEE Mains, NEET Foundation, Math Olympiad |
+| **Track** | The umbrella term the platform uses in the UI for both Curriculums and Courses. When you see "Track" in the interface, it could be either. | CBSE track, JEE track |
+| **Class** | A grade or year level within a curriculum (e.g., Class 10, Class 12). Courses do not have classes — they span across class levels. | Class 10 under CBSE |
+| **Subject** | An academic discipline within a class or course. Subjects are always scoped to a specific curriculum-class combination or to a course. | Physics in CBSE Class 11, Chemistry in JEE Mains |
+| **Chapter** | A unit of content within a subject. Chapters can be *curriculum-owned* (belong to the curriculum tree) or *course-owned* (exclusive to a specific course). | "Laws of Motion" in CBSE Physics, "JEE Problem Strategies" (course-exclusive) |
+| **Topic** | The most granular content unit, nested within a chapter. Topics are what students actually study and get tested on. | "Newton's Third Law" inside the "Laws of Motion" chapter |
+| **Batch** | A group of students studying together under a specific curriculum or course, with assigned subjects and teachers. Think of it as a "section" or "class section." | "10-A CBSE Science" — Class 10, CBSE, Physics + Chemistry + Maths |
+| **Content Classification** | The tagging system used when creating questions, content, or exams. Every piece of content must be tagged to a specific curriculum/course → class → subject → chapter → topic chain. | A physics question tagged as CBSE → Class 11 → Physics → Laws of Motion → Newton's Third Law |
+| **Mapped Chapter** | A curriculum chapter that has been linked to a course. The chapter lives in the curriculum tree but is also accessible within the course context. ~80% of course content comes from mapped chapters. | "Electric Charges" from CBSE Class 12 Physics mapped into JEE Mains Physics |
+| **Course-Owned Chapter** | A chapter created exclusively for a course — it does not exist in any curriculum tree. ~20% of course content is typically course-exclusive. | "JEE Problem Strategies" — only exists inside JEE Mains |
+| **Learning DNA** | The platform's model for understanding each student's cognitive profile — their strengths, weaknesses, learning pace, and gap areas — built from exam performance, homework, and engagement data. | A student's Learning DNA might show they struggle with "application" type questions in Thermodynamics |
+
+### Where to Find Things in the UI
+
+| Feature | Portal | Navigation Path |
+|---------|--------|-----------------|
+| Curriculum Management | SuperAdmin | Sidebar → Master Data → Curriculum tab |
+| Course Management | SuperAdmin | Sidebar → Master Data → Courses tab |
+| Master Data (read-only) | Institute | Sidebar → Master Data |
+| Batch Management | Institute | Sidebar → Batches |
+| Teacher Management | Institute | Sidebar → Teachers |
+| Exam Creation | Teacher | Sidebar → Exams → Create Exam |
+| Question Bank | SuperAdmin / Teacher | Sidebar → Question Bank |
+| Content Library | SuperAdmin / Teacher | Sidebar → Content Library |
+| Homework | Teacher | Sidebar → Homework |
+| Student Dashboard | Student | Home → My Subjects |
+| Lesson Plans | Teacher | Sidebar → Lesson Plans |
+| Reports | Institute / Teacher | Sidebar → Reports |
+
+### Prerequisites for Testing
+
+Before executing any test scenario in this document, ensure you have:
+
+1. **Test accounts** for all four portals — SuperAdmin, Institute Admin, Teacher, and Student. Each scenario specifies which portal to use.
+2. **Pre-configured test data** — At minimum, one institute with at least two curriculums (e.g., CBSE and ICSE) and one course (e.g., JEE Mains) assigned.
+3. **Familiarity with the Master Data docs** — Read [Institute Master Data](../../02-institute/master-data.md) to understand the 3-panel curriculum view and 2-panel course view before testing content classification scenarios.
+4. **Understanding of the data chain** — The next section ("How the Platform Links Everything Together") explains how institute → batch → teacher → student scoping works. Read it carefully — every scenario in this document tests some aspect of this chain.
+
+---
+
 ## How the Platform Links Everything Together
 
 The platform's data model is built around a chain of ownership and filtering. Every entity downstream inherits and narrows the scope set by the entity above it. Nothing in the platform exists in isolation — a student's experience is ultimately shaped by decisions made at the institute level, filtered through the batch and teacher layers.
