@@ -14,7 +14,6 @@
 |------|---------------|---------|
 | **Curriculum** | A national or state education board that defines the academic structure (classes, subjects, chapters, topics). The platform supports multiple curriculums per institute. | CBSE, ICSE, Telangana State Board |
 | **Course** | A competitive exam or specialised learning track that pulls chapters from one or more curriculums and may also have its own exclusive chapters. Courses are curriculum-agnostic containers. | JEE Mains, NEET Foundation, Math Olympiad |
-| **Track** | The umbrella term the platform uses in the UI for both Curriculums and Courses. When you see "Track" in the interface, it could be either. | CBSE track, JEE track |
 | **Class** | A grade or year level within a curriculum (e.g., Class 10, Class 12). Courses do not have classes — they span across class levels. | Class 10 under CBSE |
 | **Subject** | An academic discipline within a class or course. Subjects are always scoped to a specific curriculum-class combination or to a course. | Physics in CBSE Class 11, Chemistry in JEE Mains |
 | **Chapter** | A unit of content within a subject. Chapters can be *curriculum-owned* (belong to the curriculum tree) or *course-owned* (exclusive to a specific course). | "Laws of Motion" in CBSE Physics, "JEE Problem Strategies" (course-exclusive) |
