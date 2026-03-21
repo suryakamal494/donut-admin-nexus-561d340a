@@ -197,6 +197,7 @@ export const docsNavigation: DocSection[] = [
           { title: "Question Bank Tests", path: "06-testing-scenarios/inter-login-tests/question-bank-tests" },
           { title: "Roles & Access Tests", path: "06-testing-scenarios/inter-login-tests/roles-access-tests" },
           { title: "Curriculum Scope QA", path: "06-testing-scenarios/inter-login-tests/curriculum-scope-qa" },
+          { title: "Course Scope QA", path: "06-testing-scenarios/inter-login-tests/course-scope-qa" },
         ],
       },
     ],

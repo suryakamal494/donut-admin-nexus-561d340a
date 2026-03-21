@@ -100,6 +100,8 @@ Here is the chain:
 
 **Every dropdown, every filter, every assignment in the platform is constrained by curriculum + subject ownership.** If an entity doesn't own a curriculum, nothing from that curriculum should ever appear — not in dropdowns, not in chapter lists, not in batch assignment options. This is the single most important thing to verify.
 
+> **Note:** This rule applies equally to **courses**. When a course is selected, only that course's chapters (mapped + course-only) should appear. For detailed course-specific scenarios, see the [Course Builder & Course Filtering QA](./course-scope-qa.md).
+
 ---
 
 ## Entity Relationship Model
@@ -211,6 +213,8 @@ Each scenario below describes a situation and what the expected platform behavio
 ---
 
 ### A. Batch Creation Scenarios
+
+> **Note on Courses:** Courses (JEE, NEET, Olympiad) are **class-agnostic** — when a class is selected during batch creation, all institute courses appear regardless of the class. Only curriculums filter by class. For full course-specific batch creation scenarios, see the [Course Builder QA — Group D](./course-scope-qa.md#d-batch-creation-with-courses-institute).
 
 **A1 — Single Curriculum, Few Subjects**
 An institute with CBSE and ICSE creates a batch assigned to only CBSE, with Math, Physics, and Chemistry as subjects. The batch should never display ICSE subjects anywhere. Students added to this batch should see exactly three subjects — no more, no less.
@@ -371,6 +375,12 @@ The platform is working correctly when:
 3. **Edits cascade immediately.** When a curriculum is added or removed from any entity, all downstream filters update without requiring manual intervention.
 4. **Dropdowns are honest.** Every dropdown in every form — curriculum, subject, chapter, topic, batch assignment — shows only what the current user has access to. If a dropdown shows something it shouldn't, that's a bug.
 5. **Existing data survives edits.** When a curriculum is removed from a batch mid-year, existing test results and progress data should be handled gracefully — either preserved in history or explicitly cleaned up, never silently lost.
+
+---
+
+## Related Documents
+
+- **Course-specific filtering & Course Builder scenarios:** [Course Builder & Course Filtering QA](./course-scope-qa.md) — covers course chapter isolation, exam creation with courses, batch creation with class-agnostic courses, and known filtering bugs.
 
 ---
 
