@@ -1,43 +1,68 @@
 
 
-## Plan: Merge Missing Scenarios from DOCX into Course Scope QA
+## Plan: Split Course Scope QA into Two Documents
 
-### Audit Summary
+### Overview
 
-**Our platform doc** has 6 groups (A–F) with 46 scenarios + 6 Known Bug Patterns.
-**The DOCX** has 8 groups (A–H) with ~25 scenarios + a summary table.
+Split the current 593-line `course-scope-qa.md` into two focused documents, each under 300 lines. No scenarios are changed — only reorganized. Navigation updated to show both documents.
 
-Our doc is significantly more comprehensive overall. However, the DOCX contains **4 scenario types we don't have**:
+### Document 1: `course-chapter-filtering-qa.md`
+**Theme:** "Does the course show the right chapters in filters?"
 
-| What's Missing | DOCX Location | Why It's Interesting |
-|---|---|---|
-| **Institute Question Bank Isolation** — questions are invisible between institutes; SA pushes down but institutes never push up or sideways; teachers see only their assigned subjects' questions within their own institute bank | E2, E3, E4 | Entirely absent from our doc — a real isolation concern |
-| **Multi-subject switching within same course** — selecting Physics then Chemistry within JEE must completely replace the chapter list, not append | A3 | Our doc tests course-level switching but not subject-level within a course |
-| **Question permanence under Course-Only Chapter** — a question created under a course-only chapter must never surface when browsing under any curriculum, even later | B4 | Our B8 tests the filter; this tests the question record itself post-creation |
-| **Known defect verification targets** (H1–H3) — specific current-build bugs to confirm fixed/still-present: curriculum chapter bleed at institute level, course chapter bleed in teacher test, class selector re-filtering | H1, H2, H3 | More actionable than our "Known Bug Patterns" — explicitly says "verify if still broken" |
+Contents (moved from current doc):
+- Before You Begin: full glossary table, "How Courses Differ from Curriculums" table, UI Location Reference (filtered to relevant rows), Prerequisites
+- How the Course Builder Works: two-source diagram, Golden Rule, "What This Means in Practice" table
+- Group A — Course Builder Verification (A1–A9)
+- Group B — Question Bank Chapter Filtering (B1–B10)
+- Group C — Exam Creation Chapter Filtering (C1–C8)
+- "What Working Correctly Looks Like" summary (points 1–4, 6, 9 from current summary)
+- Known Bug Patterns 1–3 (Cross-Curriculum Bleed, Course-Only in Curriculum Context, Class Filter Override)
+- Active Defect Targets H1–H3
+- Cross-References section linking to Doc 2 and Curriculum Scope QA
 
-Everything else in the DOCX is already covered (often in more detail) by our existing scenarios.
+**27 scenarios + 3 defect checks**
 
----
+### Document 2: `course-assignment-scope-qa.md`
+**Theme:** "Does the course reach the right batches, teachers, and students?"
 
-### Implementation
+Contents (moved from current doc):
+- Before You Begin: short intro referencing Doc 1 for glossary, adds assignment-specific terms (Batch-Course linking, Teacher-Course assignment, class-agnostic in batch context)
+- How Courses Flow Through the Platform: chain diagram (SA → Institute → Batch/Teacher → Exam), filtering logic diagram for teacher test creation
+- Group D — Batch Creation with Courses (D1–D7)
+- Group E — Exam Assignment Filtering (E1–E7)
+- Group F — Teacher Scope with Courses (F1–F7)
+- Group G — Institute Question Bank Isolation (G1–G3)
+- "What Working Correctly Looks Like" summary (points 5, 7, 8 from current summary)
+- Quick Reference Matrix (full matrix stays here as it covers assignment rules)
+- Filtering Rules Quick Check table
+- Known Bug Patterns 4–6 (Wrong Batch Assignment, Subject Merging, Teacher Sees All Courses)
+- Cross-References section linking to Doc 1 and Curriculum Scope QA
 
-**File:** `docs/06-testing-scenarios/inter-login-tests/course-scope-qa.md`
+**24 scenarios**
 
-**Changes (additions only — no existing scenarios modified):**
+### Navigation Update
 
-1. **Add scenario A9** (after A8) — "Multi-Subject Switching Within Same Course": switching subjects within a course completely replaces the chapter list with no carry-over.
+**File:** `src/data/docsNavigation.ts`
 
-2. **Add scenario B10** (after B9) — "Question Created Under Course-Only Chapter Stays Scoped": a question tagged to a course-only chapter must never appear when browsing under any curriculum, even after the question is saved and time has passed. This is a post-creation searchability test.
+Replace the single "Course Scope QA" entry with two entries:
+```
+{ title: "Course Filtering QA", path: "06-testing-scenarios/inter-login-tests/course-chapter-filtering-qa" },
+{ title: "Course Assignment QA", path: "06-testing-scenarios/inter-login-tests/course-assignment-scope-qa" },
+```
 
-3. **Add new Group G — Institute Question Bank Isolation** (after F, before Quick Reference Matrix) with 3 scenarios:
-   - G1: Questions created by Institute A are invisible to Institute B
-   - G2: SA questions flow down to institutes; institute questions never flow up to SA
-   - G3: Teacher within an institute sees only questions for their assigned subjects, not the full institute bank
+### File Changes
 
-4. **Rename existing "Known Bug Patterns" section to "Known Bug Patterns & Active Defect Checks"** and add 3 specific verification targets (from DOCX H1–H3) as a sub-section called "Active Defect Verification Targets" — these tell the tester to confirm whether each specific defect is still present or resolved.
+| Action | File |
+|--------|------|
+| Create | `docs/06-testing-scenarios/inter-login-tests/course-chapter-filtering-qa.md` |
+| Create | `docs/06-testing-scenarios/inter-login-tests/course-assignment-scope-qa.md` |
+| Delete | `docs/06-testing-scenarios/inter-login-tests/course-scope-qa.md` |
+| Edit | `src/data/docsNavigation.ts` — update nav entries |
+| Edit | `docs/06-testing-scenarios/inter-login-tests/curriculum-scope-qa.md` — update cross-reference links to point to the two new docs |
 
-5. **Update the summary table in Quick Reference Matrix** to include the new Institute Q.Bank row.
-
-No existing scenarios are renumbered or modified. Total scenarios after changes: 46 + 4 new = 50, plus 3 defect verification targets.
+### What Does NOT Change
+- Zero scenario text is modified — all A1–G3 scenarios move as-is
+- No renumbering of scenario IDs
+- Bug patterns and defect targets move verbatim
+- Quick Reference Matrix content unchanged
 
