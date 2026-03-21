@@ -214,6 +214,8 @@ Each scenario below describes a situation and what the expected platform behavio
 
 ### A. Batch Creation Scenarios
 
+> **Note on Courses:** Courses (JEE, NEET, Olympiad) are **class-agnostic** — when a class is selected during batch creation, all institute courses appear regardless of the class. Only curriculums filter by class. For full course-specific batch creation scenarios, see the [Course Builder QA — Group D](./course-scope-qa.md#d-batch-creation-with-courses-institute).
+
 **A1 — Single Curriculum, Few Subjects**
 An institute with CBSE and ICSE creates a batch assigned to only CBSE, with Math, Physics, and Chemistry as subjects. The batch should never display ICSE subjects anywhere. Students added to this batch should see exactly three subjects — no more, no less.
 
