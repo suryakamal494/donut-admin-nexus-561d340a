@@ -61,7 +61,7 @@ export function DocsLayout() {
           {/* Mobile menu */}
           <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="lg:hidden shrink-0 h-9 w-9">
+              <Button variant="ghost" size="icon" className="md:hidden shrink-0 h-9 w-9">
                 <Menu className="h-5 w-5" />
                 <span className="sr-only">Toggle menu</span>
               </Button>
@@ -103,7 +103,7 @@ export function DocsLayout() {
         </div>
 
         {/* Breadcrumbs */}
-        <div className="flex items-center gap-1 px-3 md:px-6 pb-2 overflow-x-auto scrollbar-hide text-xs md:text-sm lg:hidden">
+        <div className="flex items-center gap-1 px-3 md:px-6 pb-2 overflow-x-auto scrollbar-hide text-xs md:text-sm md:hidden">
           {breadcrumbs.map((crumb, index) => (
             <div key={`mobile-${index}-${crumb.path}`} className="flex items-center gap-1 shrink-0">
               {index > 0 && (
@@ -128,14 +128,14 @@ export function DocsLayout() {
       {/* Main content area - flex-1 with min-h-0 to enable child scrolling */}
       <div className="flex flex-1 min-h-0">
         {/* Desktop sidebar */}
-        <aside className="hidden lg:flex lg:flex-col w-72 border-r border-border shrink-0 min-h-0">
+        <aside className="hidden md:flex md:flex-col w-72 border-r border-border shrink-0 min-h-0">
           <DocsSidebar className="flex-1 min-h-0" />
         </aside>
 
         {/* Content area */}
         <main className="flex-1 min-w-0 flex flex-col min-h-0">
           {/* Desktop breadcrumbs */}
-          <div className="hidden lg:flex items-center gap-1 px-6 py-3 border-b border-border text-sm shrink-0">
+          <div className="hidden md:flex items-center gap-1 px-6 py-3 border-b border-border text-sm shrink-0">
             {breadcrumbs.map((crumb, index) => (
               <div key={`desktop-${index}-${crumb.path}`} className="flex items-center gap-1">
                 {index > 0 && (
