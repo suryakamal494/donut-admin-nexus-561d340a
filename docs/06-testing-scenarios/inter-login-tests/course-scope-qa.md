@@ -265,6 +265,9 @@ A course is built entirely from mapped chapters (100% from curriculums, 0% cours
 **A8 — Course with Only Course-Only Chapters**
 A course is built with zero mapped chapters and only course-only chapters. This is an edge case but should work. The course's chapter list should show only the course-only chapters. No curriculum content should appear.
 
+**A9 — Multi-Subject Switching Within Same Course**
+A course (e.g., JEE Mains) has multiple subjects: Physics, Chemistry, Mathematics. SuperAdmin (or any user with access) views the course's chapter list and selects "Physics" — only JEE Physics chapters appear. They switch to "Chemistry" — the entire chapter list is replaced with JEE Chemistry chapters. No Physics chapters should linger or append to the Chemistry list. This tests that subject-level switching within a single course is a full replacement, not an accumulation.
+
 ---
 
 ### B. Question Bank Chapter Filtering (SuperAdmin, Institute, Teacher)
