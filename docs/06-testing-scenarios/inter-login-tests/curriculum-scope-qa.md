@@ -380,7 +380,8 @@ The platform is working correctly when:
 
 ## Related Documents
 
-- **Course-specific filtering & Course Builder scenarios:** [Course Builder & Course Filtering QA](./course-scope-qa.md) — covers course chapter isolation, exam creation with courses, batch creation with class-agnostic courses, and known filtering bugs.
+- **Course chapter filtering & Course Builder scenarios:** [Course Chapter Filtering QA](./course-chapter-filtering-qa.md) — covers course chapter isolation, question bank filters, exam creation filters, and known filtering bugs.
+- **Course assignment, batch creation, teacher scope:** [Course Assignment & Scope QA](./course-assignment-scope-qa.md) — covers batch creation with courses, exam assignment filtering, teacher scope, and institute question bank isolation.
 
 ---
 
