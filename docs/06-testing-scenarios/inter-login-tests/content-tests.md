@@ -311,4 +311,4 @@ Test that visibility changes (adding/removing curricula) propagate correctly to 
 
 ---
 
-*Last Updated: January 2025*
+*Last Updated: March 2025*
