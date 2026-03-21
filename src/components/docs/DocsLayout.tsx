@@ -61,7 +61,7 @@ export function DocsLayout() {
           {/* Mobile menu */}
           <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="lg:hidden shrink-0 h-9 w-9">
+              <Button variant="ghost" size="icon" className="md:hidden shrink-0 h-9 w-9">
                 <Menu className="h-5 w-5" />
                 <span className="sr-only">Toggle menu</span>
               </Button>
