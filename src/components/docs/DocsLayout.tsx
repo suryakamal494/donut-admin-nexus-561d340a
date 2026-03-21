@@ -103,7 +103,7 @@ export function DocsLayout() {
         </div>
 
         {/* Breadcrumbs */}
-        <div className="flex items-center gap-1 px-3 md:px-6 pb-2 overflow-x-auto scrollbar-hide text-xs md:text-sm lg:hidden">
+        <div className="flex items-center gap-1 px-3 md:px-6 pb-2 overflow-x-auto scrollbar-hide text-xs md:text-sm md:hidden">
           {breadcrumbs.map((crumb, index) => (
             <div key={`mobile-${index}-${crumb.path}`} className="flex items-center gap-1 shrink-0">
               {index > 0 && (
