@@ -520,7 +520,7 @@ An institute has two teachers: Teacher X (JEE Physics) and Teacher Y (JEE Chemis
 
 ---
 
-## Known Bug Patterns
+## Known Bug Patterns & Active Defect Checks
 
 These are the specific bug patterns that this document's scenarios are designed to catch. When testing, actively look for these:
 
@@ -532,7 +532,7 @@ These are the specific bug patterns that this document's scenarios are designed 
 ### 2. Course-Only Chapters in Curriculum Context
 **Symptom:** Selecting CBSE (a curriculum) shows course-only chapters like "JEE Problem Strategies."
 **Root Cause:** The query doesn't distinguish between curriculum-owned chapters and course-only chapters.
-**Where to Test:** Question Bank (B2, B5, B8), Exam Creation (C2)
+**Where to Test:** Question Bank (B2, B5, B8, B10), Exam Creation (C2)
 
 ### 3. Class Filter Overriding Course Scope
 **Symptom:** Teacher selects JEE Mains, then selects "Class 10" for difficulty. The chapter list switches from JEE chapters to CBSE Class 10 chapters.
@@ -553,6 +553,31 @@ These are the specific bug patterns that this document's scenarios are designed 
 **Symptom:** A teacher assigned to JEE only sees CBSE and NEET in their course dropdown during test creation.
 **Root Cause:** The course dropdown queries institute-level assignments instead of teacher-level assignments.
 **Where to Test:** Teacher Scope (F1, F3, F5)
+
+### Active Defect Verification Targets
+
+These are specific defects observed in the current build. During each test cycle, explicitly verify whether each defect is **still present** or **resolved**. Mark status and build version.
+
+**H1 — Curriculum Chapter Bleed at Institute Level**
+**Defect:** When an Institute admin selects a specific curriculum (e.g., ICSE) in the question bank, chapters from other curriculums (CBSE) and/or course-only chapters appear in the chapter list.
+**Steps to Reproduce:** Log in as Institute → Question Bank → Select ICSE → Check chapter list.
+**Expected:** Only ICSE chapters. **Observed (when broken):** CBSE chapters and/or JEE course-only chapters also appear.
+**Status:** ☐ Still present / ☐ Resolved — Build: ___________
+**Related Scenarios:** B4, B5, B7
+
+**H2 — Course Chapter Bleed in Teacher Test Creation**
+**Defect:** When a Teacher selects a course (e.g., JEE Mains) during test creation, chapters from curriculums not mapped to JEE appear in the chapter selection step.
+**Steps to Reproduce:** Log in as Teacher → Exams → Create → Select JEE Mains → Select subject → View chapter list.
+**Expected:** Only JEE Mains chapters for the selected subject. **Observed (when broken):** All CBSE chapters for that subject appear alongside JEE chapters.
+**Status:** ☐ Still present / ☐ Resolved — Build: ___________
+**Related Scenarios:** C5, C7, F1, F2
+
+**H3 — Class Selector Re-Filtering Chapters**
+**Defect:** When a Teacher has a course selected (e.g., JEE Mains) and changes the Class dropdown in the question generation step, the chapter list switches from course chapters to curriculum chapters for that class.
+**Steps to Reproduce:** Log in as Teacher → Exams → Create → Select JEE Mains → Go to question step → Change Class dropdown from "Class 11" to "Class 10" → Observe chapter list.
+**Expected:** Chapter list remains JEE Mains chapters (class is difficulty only). **Observed (when broken):** Chapter list switches to CBSE Class 10 chapters.
+**Status:** ☐ Still present / ☐ Resolved — Build: ___________
+**Related Scenarios:** C6
 
 ---
 
