@@ -304,19 +304,132 @@ A chapter like "Thermodynamics" exists in CBSE Class 11 Physics and is also mapp
 
 ---
 
-## What "Working Correctly" Looks Like — Summary (Phase 1)
+### C. Exam Creation Chapter Filtering (SuperAdmin, Institute, Teacher)
 
-For the scenarios covered in this phase (Course Builder + Question Bank filtering), the platform is working correctly when:
+These scenarios verify that when creating an exam under a course, the chapter/topic selection is correctly scoped to that course — and that the class filter in the teacher's question step behaves as a difficulty selector, not a scope changer.
+
+**C1 — SuperAdmin Creates Exam Under Course**
+SuperAdmin creates an exam and selects JEE Mains as the course. In the chapter/topic selection step, only JEE Mains chapters (mapped + course-only) should appear. CBSE chapters not mapped to JEE should be absent. NEET chapters should be absent.
+
+**C2 — SuperAdmin Creates Exam Under Curriculum**
+SuperAdmin creates an exam and selects CBSE Class 11 Physics. Only CBSE Class 11 Physics chapters should appear. No JEE course-only chapters, no NEET chapters. Even if some CBSE chapters are also mapped into JEE, they appear here because they are CBSE chapters — not because of any course.
+
+**C3 — SuperAdmin Switches Between Course and Curriculum Mid-Creation**
+SuperAdmin starts creating an exam under JEE Mains, sees JEE chapters. Then goes back and switches to CBSE. The chapter list should completely swap — no JEE chapters should remain. This tests that the filter resets cleanly on selection change.
+
+**C4 — Institute Creates Exam Under Course**
+Institute admin creates an exam and selects an assigned course. The same filtering rules as SuperAdmin apply: only that course's chapters are shown. The institute should not see chapters from courses not assigned to them.
+
+**C5 — Teacher Creates Quick Test Under Course**
+Teacher selects JEE Mains in the exam creation flow. Only JEE Mains chapters appear for the teacher's assigned subjects. If the teacher has JEE Mains Physics, only JEE Mains Physics chapters should be in the list — not JEE Mains Chemistry, not CBSE Physics.
+
+**C6 — Teacher: Class Filter is Difficulty, NOT Scope**
+This is the critical scenario for the class filter bug. A teacher selects JEE Mains as the course. In the question generation step, there is a class dropdown (e.g., Class 10, Class 11, Class 12). The teacher selects "Class 10."
+
+Expected behavior:
+- The chapter list remains JEE Mains chapters (mapped + course-only)
+- The class selection tells the system "generate questions at Class 10 difficulty level"
+- CBSE Class 10 chapters do NOT replace the JEE chapter list
+
+Bug behavior (what should NOT happen):
+- Selecting Class 10 switches the chapter list to CBSE Class 10 chapters
+- JEE course-only chapters disappear because "Class 10" has no course-only chapters
+- The chapter list becomes a mix of JEE and Class 10 curriculum chapters
+
+**C7 — Teacher: Subject Filter Within Course**
+Teacher has JEE Mains with both Physics and Chemistry. When creating a test under JEE, selecting Physics as the subject should show only JEE Physics chapters. Switching to Chemistry should show only JEE Chemistry chapters. At no point should Physics and Chemistry chapters appear together (unless multi-subject test is being created and both are selected).
+
+**C8 — Exam Creation with Course-Only Chapters**
+When creating an exam under JEE Mains, course-only chapters like "JEE Problem Strategies" should appear in the chapter list alongside mapped chapters. The teacher should be able to create questions tagged to these course-only chapters. When creating an exam under CBSE, these course-only chapters must NOT appear.
+
+---
+
+### D. Batch Creation with Courses (Institute)
+
+These scenarios test how courses behave during batch creation — specifically the class-agnostic nature of courses and the separate display of course subjects vs. curriculum subjects.
+
+**D1 — Class Selected: All Courses Shown (Class-Agnostic)**
+Institute creates a new batch and selects "Class 10" in the first step. In the curriculum/course assignment step:
+- **Curriculums:** Only curriculums that have Class 10 are shown (e.g., CBSE Class 10, ICSE Class 10). Curriculums without Class 10 are hidden.
+- **Courses:** ALL courses assigned to the institute are shown (JEE Mains, NEET, Olympiad, etc.) regardless of the selected class, because courses are class-agnostic.
+
+**D2 — Course Subjects Displayed Separately from Curriculum Subjects**
+A batch is assigned CBSE (curriculum) and JEE Mains (course). In the subject selection step, the subjects should be displayed under separate headers:
+- **CBSE:** Physics, Chemistry, Mathematics, Biology, ...
+- **JEE Mains:** Physics, Chemistry, Mathematics, ...
+
+The institute can independently select different subjects for each. The subjects should NOT be merged into a single flat list.
+
+**D3 — Batch with Only Course, No Curriculum**
+An institute creates a batch assigned to JEE Mains only (no CBSE, no ICSE). Subject selection should show only JEE Mains subjects. Downstream: the batch should only have JEE content. Teachers assigned to this batch need JEE in their scope. Students see only JEE subjects.
+
+**D4 — Batch with Curriculum and Course**
+A batch has both CBSE Class 11 and JEE Mains. Both sets of subjects are shown separately during creation. After creation:
+- The batch has two distinct scope contexts: CBSE and JEE
+- Teachers need either CBSE or JEE in their scope to be linked
+- Students see subjects from both, labeled by source
+- Exams created under CBSE can be assigned to this batch (it has CBSE)
+- Exams created under JEE can also be assigned (it has JEE)
+
+**D5 — Multiple Courses in One Batch**
+A batch is assigned JEE Mains and NEET. Each course's subjects should be listed independently in the creation flow. After creation, the batch has two course contexts. Exams under JEE can be assigned. Exams under NEET can also be assigned. But a JEE exam cannot be assigned just because the batch has NEET — the specific course must match.
+
+**D6 — Batch with Multiple Curriculums and Multiple Courses**
+Stress test: a batch has CBSE, ICSE, JEE Mains, and NEET. All four should have their subjects listed separately during creation. This is the maximum-complexity scenario — every downstream filter must correctly scope to the selected curriculum/course without cross-contamination.
+
+**D7 — Course Subjects Not Duplicated with Curriculum Subjects**
+JEE Mains has "Physics" and CBSE also has "Physics." These are separate entities — JEE Physics chapters differ from CBSE Physics chapters. In batch creation, Physics should appear under both headers but should not be merged or deduplicated into a single "Physics" entry. Each is scoped to its own curriculum/course.
+
+---
+
+### E. Exam Assignment Filtering
+
+These scenarios verify that when an exam is created under a specific course or curriculum, it can only be assigned to batches that have that specific course or curriculum.
+
+**E1 — JEE Exam → Only JEE Batches**
+An exam is created under JEE Mains. When assigning this exam to batches, only batches that have JEE Mains assigned should appear in the batch list. Batches with only CBSE or only NEET should NOT appear, even if they belong to the same institute.
+
+**E2 — CBSE Exam → NOT Assignable to JEE-Only Batches**
+An exam is created under CBSE curriculum. A batch that has only JEE Mains (no CBSE) should NOT appear in the assignment list. A batch that has both CBSE and JEE should appear (because it has CBSE).
+
+**E3 — Teacher Exam → Only Teacher's Batches with Matching Course**
+A teacher creates a JEE Mains exam. The batch assignment list should show only batches that:
+1. Have JEE Mains as a course
+2. Are assigned to this teacher
+3. Have the exam's subject(s)
+All three conditions must be met simultaneously.
+
+**E4 — Institute Exam → Same Course-Match Rule**
+Institute admin creates an exam under NEET. The batch list should show only batches with NEET. The institute admin sees more batches than a teacher would (all institute batches with NEET, not just one teacher's), but the course-match rule is identical.
+
+**E5 — SuperAdmin Grand Test Under Course**
+SuperAdmin creates a grand test tagged to JEE Mains. When this test is distributed, only institutes with JEE assigned should receive it, and within those institutes, only batches with JEE should have the test assignable.
+
+**E6 — Exam for Course-Only Chapter → Same Assignment Rules**
+An exam is created under JEE Mains and its questions are tagged to a course-only chapter ("JEE Problem Strategies"). The assignment rules don't change — the exam is under JEE, so only JEE batches are eligible. The fact that the chapter is course-only vs. mapped doesn't affect batch assignment.
+
+**E7 — Multi-Subject Exam: Batch Must Have All Subjects**
+An exam under JEE Mains covers both Physics and Chemistry. Only batches that have JEE Mains with BOTH Physics and Chemistry should appear in the assignment list. A batch with JEE + Physics only should NOT be eligible (it's missing Chemistry).
+
+---
+
+## What "Working Correctly" Looks Like — Summary
+
+The platform is working correctly when:
 
 1. **Course Builder accurately reflects the combined chapter list.** Mapped chapters from selected curriculums + course-only chapters, nothing more.
 2. **Selecting a course in any filter shows ONLY that course's chapters.** No chapters from other courses, no chapters from curriculums that aren't mapped to the course.
 3. **Selecting a curriculum never shows course-only chapters.** Course-only chapters are exclusive to their parent course.
 4. **Switching between course and curriculum in filters completely swaps the chapter tree.** No lingering data from the previous selection.
 5. **Teacher scope applies on top of course filtering.** A teacher sees only courses and subjects assigned to them, further narrowed by the selected course.
+6. **Class filter in exam creation is a difficulty selector, not a scope changer.** Selecting a class does not switch the chapter tree away from the selected course.
+7. **Batch creation shows courses as class-agnostic.** All institute courses appear regardless of the selected class; curriculum subjects and course subjects are displayed separately.
+8. **Exam assignment matches the exam's course/curriculum to the batch's course/curriculum.** No cross-assignment between unrelated courses.
+9. **No data leaks between courses.** JEE chapters never appear in NEET context. NEET chapters never appear in CBSE context. Every filter is watertight.
 
 ---
 
-> **Next:** Phase 2 will add scenarios for Exam Creation Chapter Filtering (Group C), Batch Creation with Courses (Group D), and Exam Assignment Filtering (Group E). Phase 3 will add Teacher Scope scenarios (Group F), the Quick Reference Matrix, and Known Bug Patterns.
+> **Next:** Phase 3 will add Teacher Scope with Courses (Group F), the Quick Reference Matrix, and Known Bug Patterns section. It will also add small cross-reference notes to the Curriculum Scope QA document.
 
 ---
 
