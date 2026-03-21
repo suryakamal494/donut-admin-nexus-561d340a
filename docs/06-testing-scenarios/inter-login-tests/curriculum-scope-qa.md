@@ -378,4 +378,10 @@ The platform is working correctly when:
 
 ---
 
+## Related Documents
+
+- **Course-specific filtering & Course Builder scenarios:** [Course Builder & Course Filtering QA](./course-scope-qa.md) — covers course chapter isolation, exam creation with courses, batch creation with class-agnostic courses, and known filtering bugs.
+
+---
+
 *Last Updated: March 2025*
