@@ -36,8 +36,9 @@ function NavItem({
   if (hasChildren) {
     return (
       <Collapsible open={isOpen} onOpenChange={setIsOpen}>
-        <CollapsibleTrigger className="w-full">
-          <div
+        <CollapsibleTrigger asChild>
+          <button
+            type="button"
             className={cn(
               "flex items-center justify-between w-full px-3 py-2 text-sm rounded-md transition-colors min-h-[40px]",
               "hover:bg-accent/50 text-foreground/80 hover:text-foreground",
@@ -50,7 +51,7 @@ function NavItem({
             ) : (
               <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
             )}
-          </div>
+          </button>
         </CollapsibleTrigger>
         <CollapsibleContent>
           <div className="ml-2 border-l border-border pl-2">

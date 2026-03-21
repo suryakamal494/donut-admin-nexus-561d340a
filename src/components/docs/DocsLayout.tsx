@@ -135,7 +135,7 @@ export function DocsLayout() {
         {/* Content area */}
         <main className="flex-1 min-w-0 flex flex-col min-h-0">
           {/* Desktop breadcrumbs */}
-          <div className="hidden lg:flex items-center gap-1 px-6 py-3 border-b border-border text-sm shrink-0">
+          <div className="hidden md:flex items-center gap-1 px-6 py-3 border-b border-border text-sm shrink-0">
             {breadcrumbs.map((crumb, index) => (
               <div key={`desktop-${index}-${crumb.path}`} className="flex items-center gap-1">
                 {index > 0 && (
