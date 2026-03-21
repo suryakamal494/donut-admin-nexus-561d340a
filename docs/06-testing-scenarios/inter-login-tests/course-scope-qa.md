@@ -478,6 +478,21 @@ A teacher has JEE Mains with Physics only. The teacher creates a Physics test un
 
 ---
 
+### G. Institute Question Bank Isolation
+
+These scenarios verify that questions created by one institute are invisible to other institutes, that SuperAdmin questions flow downward but never upward, and that teachers within an institute are further scoped to their assigned subjects.
+
+**G1 — Cross-Institute Question Invisibility**
+Institute A creates a question under JEE Mains Physics, tagged to a specific chapter. Log in as Institute B (which also has JEE Mains Physics assigned). Browse the question bank under JEE Mains Physics — Institute A's question must NOT appear. Each institute's question bank is completely isolated; there is no cross-institute question sharing, even when both institutes have identical course and subject assignments.
+
+**G2 — SuperAdmin Questions Flow Down, Institute Questions Do Not Flow Up**
+SuperAdmin creates a question under JEE Mains Physics. Institute A opens the question bank under JEE Mains Physics — the SuperAdmin's question should be visible (pushed down). Now Institute A creates their own question under the same course/subject/chapter. Log in as SuperAdmin and browse the same chapter — Institute A's question must NOT appear in the SuperAdmin's question bank. The flow is strictly one-directional: SuperAdmin → Institute, never Institute → SuperAdmin.
+
+**G3 — Teacher Sees Only Their Subject's Questions Within Institute Bank**
+An institute has two teachers: Teacher X (JEE Physics) and Teacher Y (JEE Chemistry). Teacher X opens the question bank — they should see only JEE Physics questions from their institute's bank plus any SuperAdmin JEE Physics questions pushed down. They must NOT see JEE Chemistry questions, even though both teachers belong to the same institute. This verifies that teacher-level subject scoping is applied on top of institute-level isolation.
+
+---
+
 ## Quick Reference Matrix
 
 | Entity | Course Constraint | Subject Constraint | Chapter Source |
