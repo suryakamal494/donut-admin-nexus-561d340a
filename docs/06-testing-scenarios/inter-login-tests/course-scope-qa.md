@@ -504,6 +504,7 @@ An institute has two teachers: Teacher X (JEE Physics) and Teacher Y (JEE Chemis
 | **Student** | Inherited from batch | Inherited from batch | Sees batch's course subjects and chapters |
 | **Exam/Test** | Scoped to selected course | Scoped to selected subject(s) | Chapters from selected course only |
 | **Question Bank** | Filtered by selected course | Filtered by selected subject | Chapters from selected course only |
+| **Institute Q.Bank** | Isolated per institute; SA flows down only | Teacher sees only assigned subjects | No cross-institute visibility |
 | **Batch Assignment** | Must match exam's course | Must match exam's subject(s) | N/A |
 
 ### Filtering Rules Quick Check
