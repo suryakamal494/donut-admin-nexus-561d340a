@@ -100,7 +100,7 @@ Here is the chain:
 
 **Every dropdown, every filter, every assignment in the platform is constrained by curriculum + subject ownership.** If an entity doesn't own a curriculum, nothing from that curriculum should ever appear — not in dropdowns, not in chapter lists, not in batch assignment options. This is the single most important thing to verify.
 
-> **Note:** This rule applies equally to **courses**. When a course is selected, only that course's chapters (mapped + course-only) should appear. For detailed course-specific scenarios, see the [Course Builder & Course Filtering QA](./course-scope-qa.md).
+> **Note:** This rule applies equally to **courses**. When a course is selected, only that course's chapters (mapped + course-only) should appear. For detailed course-specific scenarios, see the [Course Chapter Filtering QA](./course-chapter-filtering-qa.md) and [Course Assignment & Scope QA](./course-assignment-scope-qa.md).
 
 ---
 
