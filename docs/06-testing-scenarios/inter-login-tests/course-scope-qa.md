@@ -305,6 +305,9 @@ A course-only chapter (e.g., "JEE Problem Strategies") should appear ONLY when J
 **B9 — Overlapping Mapped Chapters**
 A chapter like "Thermodynamics" exists in CBSE Class 11 Physics and is also mapped into both JEE Mains and NEET. When JEE is selected, it appears. When NEET is selected, it appears. When CBSE is selected, it appears (because it's a CBSE chapter natively). But in each case, the chapter appears because of the current selection — not because it happens to be shared. Verify that selecting JEE doesn't accidentally also show NEET's version or CBSE chapters that aren't mapped to JEE.
 
+**B10 — Question Created Under Course-Only Chapter Stays Scoped**
+A SuperAdmin or Institute admin creates a question and tags it to a course-only chapter (e.g., "JEE Problem Strategies" under JEE Mains). After saving the question, browse the question bank under CBSE curriculum. The question must NOT appear — even though it exists in the database, it was tagged to a course-only chapter and should never surface in a curriculum context. This is a **post-creation searchability test**: the question is saved, time passes, and it still does not leak into curriculum browsing. Repeat the check under ICSE and any other curriculum — zero results for this question outside of JEE Mains.
+
 ---
 
 ### C. Exam Creation Chapter Filtering (SuperAdmin, Institute, Teacher)
