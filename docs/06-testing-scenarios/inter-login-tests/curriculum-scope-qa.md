@@ -100,7 +100,7 @@ Here is the chain:
 
 **Every dropdown, every filter, every assignment in the platform is constrained by curriculum + subject ownership.** If an entity doesn't own a curriculum, nothing from that curriculum should ever appear — not in dropdowns, not in chapter lists, not in batch assignment options. This is the single most important thing to verify.
 
-> **Note:** This rule applies equally to **courses**. When a course is selected, only that course's chapters (mapped + course-only) should appear. For detailed course-specific scenarios, see the [Course Builder & Course Filtering QA](./course-scope-qa.md).
+> **Note:** This rule applies equally to **courses**. When a course is selected, only that course's chapters (mapped + course-only) should appear. For detailed course-specific scenarios, see the [Course Chapter Filtering QA](./course-chapter-filtering-qa.md) and [Course Assignment & Scope QA](./course-assignment-scope-qa.md).
 
 ---
 
@@ -214,7 +214,7 @@ Each scenario below describes a situation and what the expected platform behavio
 
 ### A. Batch Creation Scenarios
 
-> **Note on Courses:** Courses (JEE, NEET, Olympiad) are **class-agnostic** — when a class is selected during batch creation, all institute courses appear regardless of the class. Only curriculums filter by class. For full course-specific batch creation scenarios, see the [Course Builder QA — Group D](./course-scope-qa.md#d-batch-creation-with-courses-institute).
+> **Note on Courses:** Courses (JEE, NEET, Olympiad) are **class-agnostic** — when a class is selected during batch creation, all institute courses appear regardless of the class. Only curriculums filter by class. For full course-specific batch creation scenarios, see the [Course Assignment QA — Group D](./course-assignment-scope-qa.md#d-batch-creation-with-courses-institute).
 
 **A1 — Single Curriculum, Few Subjects**
 An institute with CBSE and ICSE creates a batch assigned to only CBSE, with Math, Physics, and Chemistry as subjects. The batch should never display ICSE subjects anywhere. Students added to this batch should see exactly three subjects — no more, no less.
@@ -380,7 +380,8 @@ The platform is working correctly when:
 
 ## Related Documents
 
-- **Course-specific filtering & Course Builder scenarios:** [Course Builder & Course Filtering QA](./course-scope-qa.md) — covers course chapter isolation, exam creation with courses, batch creation with class-agnostic courses, and known filtering bugs.
+- **Course chapter filtering & Course Builder scenarios:** [Course Chapter Filtering QA](./course-chapter-filtering-qa.md) — covers course chapter isolation, question bank filters, exam creation filters, and known filtering bugs.
+- **Course assignment, batch creation, teacher scope:** [Course Assignment & Scope QA](./course-assignment-scope-qa.md) — covers batch creation with courses, exam assignment filtering, teacher scope, and institute question bank isolation.
 
 ---
 
