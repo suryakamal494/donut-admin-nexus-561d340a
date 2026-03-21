@@ -128,7 +128,7 @@ export function DocsLayout() {
       {/* Main content area - flex-1 with min-h-0 to enable child scrolling */}
       <div className="flex flex-1 min-h-0">
         {/* Desktop sidebar */}
-        <aside className="hidden lg:flex lg:flex-col w-72 border-r border-border shrink-0 min-h-0">
+        <aside className="hidden md:flex md:flex-col w-72 border-r border-border shrink-0 min-h-0">
           <DocsSidebar className="flex-1 min-h-0" />
         </aside>
 
