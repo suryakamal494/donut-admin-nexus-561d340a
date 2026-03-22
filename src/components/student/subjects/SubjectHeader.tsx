@@ -20,10 +20,6 @@ const SubjectHeader = ({
   subject,
   chaptersCompleted,
   chaptersTotal,
-  curricula,
-  activeCurriculum,
-  onCurriculumSwitch,
-  autoSelectedReason,
 }: SubjectHeaderProps) => {
   const navigate = useNavigate();
   const Icon = getSubjectIcon(subject.icon);
