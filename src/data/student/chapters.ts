@@ -22,14 +22,23 @@ export interface StudentChapter {
   curriculumId?: string;
 }
 
-// Mathematics Chapters
+// Mathematics Chapters — CBSE
 const mathChapters: StudentChapter[] = [
-  { id: "math-ch1", subjectId: "math", name: "Number Systems", order: 1, progress: 100, state: "completed", hasAIPath: false, topicsTotal: 4, topicsCompleted: 4 },
-  { id: "math-ch2", subjectId: "math", name: "Polynomials", order: 2, progress: 100, state: "mastered", hasAIPath: false, topicsTotal: 5, topicsCompleted: 5 },
-  { id: "math-ch3", subjectId: "math", name: "Quadratic Equations", order: 3, progress: 55, state: "in-progress", hasAIPath: true, topicsTotal: 6, topicsCompleted: 3 },
-  { id: "math-ch4", subjectId: "math", name: "Arithmetic Progressions", order: 4, progress: 30, state: "struggling", hasAIPath: true, topicsTotal: 4, topicsCompleted: 1 },
-  { id: "math-ch5", subjectId: "math", name: "Triangles", order: 5, progress: 0, state: "not-started", hasAIPath: false, topicsTotal: 5, topicsCompleted: 0 },
-  { id: "math-ch6", subjectId: "math", name: "Coordinate Geometry", order: 6, progress: 0, state: "not-started", hasAIPath: false, topicsTotal: 4, topicsCompleted: 0 },
+  { id: "math-ch1", subjectId: "math", name: "Number Systems", order: 1, progress: 100, state: "completed", hasAIPath: false, topicsTotal: 4, topicsCompleted: 4, curriculumId: "CBSE" },
+  { id: "math-ch2", subjectId: "math", name: "Polynomials", order: 2, progress: 100, state: "mastered", hasAIPath: false, topicsTotal: 5, topicsCompleted: 5, curriculumId: "CBSE" },
+  { id: "math-ch3", subjectId: "math", name: "Quadratic Equations", order: 3, progress: 55, state: "in-progress", hasAIPath: true, topicsTotal: 6, topicsCompleted: 3, curriculumId: "CBSE" },
+  { id: "math-ch4", subjectId: "math", name: "Arithmetic Progressions", order: 4, progress: 30, state: "struggling", hasAIPath: true, topicsTotal: 4, topicsCompleted: 1, curriculumId: "CBSE" },
+  { id: "math-ch5", subjectId: "math", name: "Triangles", order: 5, progress: 0, state: "not-started", hasAIPath: false, topicsTotal: 5, topicsCompleted: 0, curriculumId: "CBSE" },
+  { id: "math-ch6", subjectId: "math", name: "Coordinate Geometry", order: 6, progress: 0, state: "not-started", hasAIPath: false, topicsTotal: 4, topicsCompleted: 0, curriculumId: "CBSE" },
+];
+
+// Mathematics Chapters — JEE Mains
+const mathJeeChapters: StudentChapter[] = [
+  { id: "math-jee-ch1", subjectId: "math", name: "Complex Numbers & Quadratic Equations", order: 1, progress: 80, state: "on-track", hasAIPath: false, topicsTotal: 6, topicsCompleted: 5, curriculumId: "JEE Mains" },
+  { id: "math-jee-ch2", subjectId: "math", name: "Matrices & Determinants", order: 2, progress: 45, state: "in-progress", hasAIPath: true, topicsTotal: 5, topicsCompleted: 2, curriculumId: "JEE Mains" },
+  { id: "math-jee-ch3", subjectId: "math", name: "Permutations & Combinations", order: 3, progress: 20, state: "in-progress", hasAIPath: true, topicsTotal: 4, topicsCompleted: 1, curriculumId: "JEE Mains" },
+  { id: "math-jee-ch4", subjectId: "math", name: "Binomial Theorem", order: 4, progress: 0, state: "not-started", hasAIPath: false, topicsTotal: 3, topicsCompleted: 0, curriculumId: "JEE Mains" },
+  { id: "math-jee-ch5", subjectId: "math", name: "Sequences & Series", order: 5, progress: 0, state: "not-started", hasAIPath: false, topicsTotal: 5, topicsCompleted: 0, curriculumId: "JEE Mains" },
 ];
 
 // Physics Chapters
