@@ -18,6 +18,8 @@ export interface StudentChapter {
   hasAIPath: boolean;
   topicsTotal: number;
   topicsCompleted: number;
+  /** Curriculum this chapter belongs to. Undefined = default/single curriculum. */
+  curriculumId?: string;
 }
 
 // Mathematics Chapters
