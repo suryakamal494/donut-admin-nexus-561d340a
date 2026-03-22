@@ -17,6 +17,10 @@ export interface StudentSubject {
   color: string;
   chaptersTotal: number;
   chaptersCompleted: number;
+  /** Available curricula for this subject. If length <= 1, no switcher is shown. */
+  curricula?: string[];
+  /** Per-curriculum pending work flags. Only relevant when curricula.length > 1. */
+  pendingWork?: Record<string, boolean>;
 }
 
 export const studentSubjects: StudentSubject[] = [
