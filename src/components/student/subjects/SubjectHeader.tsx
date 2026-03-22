@@ -102,16 +102,6 @@ const SubjectHeader = ({
             </div>
           </div>
 
-          {/* Curriculum Switcher — only when multi-curriculum */}
-          {curricula && curricula.length > 1 && activeCurriculum && onCurriculumSwitch && (
-            <CurriculumSwitcher
-              curricula={curricula}
-              activeCurriculum={activeCurriculum}
-              onSwitch={onCurriculumSwitch}
-              autoSelectedReason={autoSelectedReason}
-              className="mt-4"
-            />
-          )}
         </div>
       </div>
     </div>
