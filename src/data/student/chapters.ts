@@ -41,13 +41,21 @@ const mathJeeChapters: StudentChapter[] = [
   { id: "math-jee-ch5", subjectId: "math", name: "Sequences & Series", order: 5, progress: 0, state: "not-started", hasAIPath: false, topicsTotal: 5, topicsCompleted: 0, curriculumId: "JEE Mains" },
 ];
 
-// Physics Chapters
+// Physics Chapters — CBSE
 const physicsChapters: StudentChapter[] = [
-  { id: "physics-ch1", subjectId: "physics", name: "Motion", order: 1, progress: 100, state: "completed", hasAIPath: false, topicsTotal: 5, topicsCompleted: 5 },
-  { id: "physics-ch2", subjectId: "physics", name: "Force and Laws of Motion", order: 2, progress: 35, state: "in-progress", hasAIPath: true, topicsTotal: 6, topicsCompleted: 2 },
-  { id: "physics-ch3", subjectId: "physics", name: "Gravitation", order: 3, progress: 0, state: "not-started", hasAIPath: false, topicsTotal: 4, topicsCompleted: 0 },
-  { id: "physics-ch4", subjectId: "physics", name: "Work and Energy", order: 4, progress: 0, state: "not-started", hasAIPath: false, topicsTotal: 5, topicsCompleted: 0 },
-  { id: "physics-ch5", subjectId: "physics", name: "Sound", order: 5, progress: 0, state: "not-started", hasAIPath: false, topicsTotal: 4, topicsCompleted: 0 },
+  { id: "physics-ch1", subjectId: "physics", name: "Motion", order: 1, progress: 100, state: "completed", hasAIPath: false, topicsTotal: 5, topicsCompleted: 5, curriculumId: "CBSE" },
+  { id: "physics-ch2", subjectId: "physics", name: "Force and Laws of Motion", order: 2, progress: 35, state: "in-progress", hasAIPath: true, topicsTotal: 6, topicsCompleted: 2, curriculumId: "CBSE" },
+  { id: "physics-ch3", subjectId: "physics", name: "Gravitation", order: 3, progress: 0, state: "not-started", hasAIPath: false, topicsTotal: 4, topicsCompleted: 0, curriculumId: "CBSE" },
+  { id: "physics-ch4", subjectId: "physics", name: "Work and Energy", order: 4, progress: 0, state: "not-started", hasAIPath: false, topicsTotal: 5, topicsCompleted: 0, curriculumId: "CBSE" },
+  { id: "physics-ch5", subjectId: "physics", name: "Sound", order: 5, progress: 0, state: "not-started", hasAIPath: false, topicsTotal: 4, topicsCompleted: 0, curriculumId: "CBSE" },
+];
+
+// Physics Chapters — JEE Mains
+const physicsJeeChapters: StudentChapter[] = [
+  { id: "physics-jee-ch1", subjectId: "physics", name: "Kinematics", order: 1, progress: 60, state: "on-track", hasAIPath: false, topicsTotal: 5, topicsCompleted: 3, curriculumId: "JEE Mains" },
+  { id: "physics-jee-ch2", subjectId: "physics", name: "Newton's Laws & Friction", order: 2, progress: 30, state: "in-progress", hasAIPath: true, topicsTotal: 6, topicsCompleted: 2, curriculumId: "JEE Mains" },
+  { id: "physics-jee-ch3", subjectId: "physics", name: "Work, Power & Energy", order: 3, progress: 0, state: "not-started", hasAIPath: false, topicsTotal: 4, topicsCompleted: 0, curriculumId: "JEE Mains" },
+  { id: "physics-jee-ch4", subjectId: "physics", name: "Rotational Mechanics", order: 4, progress: 0, state: "not-started", hasAIPath: false, topicsTotal: 7, topicsCompleted: 0, curriculumId: "JEE Mains" },
 ];
 
 // Chemistry Chapters
