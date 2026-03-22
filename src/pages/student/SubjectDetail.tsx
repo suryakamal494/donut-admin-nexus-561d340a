@@ -7,6 +7,8 @@ import { BookOpen } from "lucide-react";
 import { studentSubjects } from "@/data/student";
 import { getChaptersBySubject } from "@/data/student/chapters";
 import { SubjectHeader, ChapterCard } from "@/components/student/subjects";
+import CurriculumSwitcher from "@/components/student/subjects/CurriculumSwitcher";
+import CurriculumOnboardingTooltip from "@/components/student/subjects/CurriculumOnboardingTooltip";
 import { useCurriculumSelection } from "@/hooks/useCurriculumSelection";
 
 const StudentSubjectDetail = () => {
@@ -58,11 +60,20 @@ const StudentSubjectDetail = () => {
         subject={subject}
         chaptersCompleted={isMultiCurriculum ? chaptersCompleted : undefined}
         chaptersTotal={isMultiCurriculum ? chaptersTotal : undefined}
-        curricula={isMultiCurriculum ? curricula : undefined}
-        activeCurriculum={isMultiCurriculum ? activeCurriculum : undefined}
-        onCurriculumSwitch={isMultiCurriculum ? switchCurriculum : undefined}
-        autoSelectedReason={isMultiCurriculum ? autoSelectedReason : undefined}
       />
+
+      {/* Curriculum Switcher — below the header for visibility */}
+      {isMultiCurriculum && activeCurriculum && (
+        <div className="mt-4 mb-2">
+          <CurriculumSwitcher
+            curricula={curricula}
+            activeCurriculum={activeCurriculum}
+            onSwitch={switchCurriculum}
+            autoSelectedReason={autoSelectedReason}
+          />
+          <CurriculumOnboardingTooltip className="mt-2" />
+        </div>
+      )}
 
       {/* Chapters Section */}
       <div className="mt-6">

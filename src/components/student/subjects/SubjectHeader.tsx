@@ -6,7 +6,6 @@ import { ArrowLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { StudentSubject } from "@/data/student/subjects";
 import SubjectBackgroundPattern from "./SubjectBackgroundPattern";
-import CurriculumSwitcher from "./CurriculumSwitcher";
 import { getSubjectColors, getSubjectIcon, getSubjectPattern } from "@/components/student/shared/subjectColors";
 
 interface SubjectHeaderProps {
@@ -14,21 +13,12 @@ interface SubjectHeaderProps {
   /** Override chapter stats when curriculum-filtered */
   chaptersCompleted?: number;
   chaptersTotal?: number;
-  /** Curriculum switcher props — only passed when multi-curriculum */
-  curricula?: string[];
-  activeCurriculum?: string;
-  onCurriculumSwitch?: (curriculum: string) => void;
-  autoSelectedReason?: string | null;
 }
 
 const SubjectHeader = ({
   subject,
   chaptersCompleted,
   chaptersTotal,
-  curricula,
-  activeCurriculum,
-  onCurriculumSwitch,
-  autoSelectedReason,
 }: SubjectHeaderProps) => {
   const navigate = useNavigate();
   const Icon = getSubjectIcon(subject.icon);
@@ -111,16 +101,6 @@ const SubjectHeader = ({
             </div>
           </div>
 
-          {/* Curriculum Switcher — only when multi-curriculum */}
-          {curricula && curricula.length > 1 && activeCurriculum && onCurriculumSwitch && (
-            <CurriculumSwitcher
-              curricula={curricula}
-              activeCurriculum={activeCurriculum}
-              onSwitch={onCurriculumSwitch}
-              autoSelectedReason={autoSelectedReason}
-              className="mt-4"
-            />
-          )}
         </div>
       </div>
     </div>
