@@ -1,10 +1,13 @@
 // Student Subject Detail Page - Shows all chapters for a subject
+// Supports curriculum switching for multi-curriculum subjects
 
+import { useMemo } from "react";
 import { useParams, Navigate } from "react-router-dom";
 import { BookOpen } from "lucide-react";
 import { studentSubjects } from "@/data/student";
 import { getChaptersBySubject } from "@/data/student/chapters";
 import { SubjectHeader, ChapterCard } from "@/components/student/subjects";
+import { useCurriculumSelection } from "@/hooks/useCurriculumSelection";
 
 const StudentSubjectDetail = () => {
   const { subjectId } = useParams<{ subjectId: string }>();
@@ -17,13 +20,48 @@ const StudentSubjectDetail = () => {
     return <Navigate to="/student/subjects" replace />;
   }
 
-  // Get chapters for this subject
-  const chapters = getChaptersBySubject(subject.id);
+  // Curriculum selection (no-op for single-curriculum subjects)
+  const curricula = subject.curricula || [];
+  const pendingWork = subject.pendingWork || {};
+
+  const {
+    activeCurriculum,
+    autoSelectedReason,
+    switchCurriculum,
+    isMultiCurriculum,
+  } = useCurriculumSelection({
+    curricula,
+    pendingWork,
+    subjectId: subject.id,
+    section: "subjects",
+  });
+
+  // Get chapters — filtered by curriculum if multi-curriculum
+  const chapters = useMemo(() => {
+    if (isMultiCurriculum && activeCurriculum) {
+      return getChaptersBySubject(subject.id, activeCurriculum);
+    }
+    return getChaptersBySubject(subject.id);
+  }, [subject.id, isMultiCurriculum, activeCurriculum]);
+
+  // Derive curriculum-specific stats
+  const chaptersCompleted = chapters.filter(
+    ch => ch.state === "completed" || ch.state === "mastered"
+  ).length;
+  const chaptersTotal = chapters.length;
 
   return (
     <div className="w-full pb-6">
       {/* Subject Header Island */}
-      <SubjectHeader subject={subject} />
+      <SubjectHeader
+        subject={subject}
+        chaptersCompleted={isMultiCurriculum ? chaptersCompleted : undefined}
+        chaptersTotal={isMultiCurriculum ? chaptersTotal : undefined}
+        curricula={isMultiCurriculum ? curricula : undefined}
+        activeCurriculum={isMultiCurriculum ? activeCurriculum : undefined}
+        onCurriculumSwitch={isMultiCurriculum ? switchCurriculum : undefined}
+        autoSelectedReason={isMultiCurriculum ? autoSelectedReason : undefined}
+      />
 
       {/* Chapters Section */}
       <div className="mt-6">

@@ -1,21 +1,43 @@
 // Subject Header - Creative island design with subject-specific styling
+// Now supports curriculum switcher for multi-curriculum subjects
 
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { StudentSubject } from "@/data/student/subjects";
 import SubjectBackgroundPattern from "./SubjectBackgroundPattern";
+import CurriculumSwitcher from "./CurriculumSwitcher";
 import { getSubjectColors, getSubjectIcon, getSubjectPattern } from "@/components/student/shared/subjectColors";
 
 interface SubjectHeaderProps {
   subject: StudentSubject;
+  /** Override chapter stats when curriculum-filtered */
+  chaptersCompleted?: number;
+  chaptersTotal?: number;
+  /** Curriculum switcher props — only passed when multi-curriculum */
+  curricula?: string[];
+  activeCurriculum?: string;
+  onCurriculumSwitch?: (curriculum: string) => void;
+  autoSelectedReason?: string | null;
 }
 
-const SubjectHeader = ({ subject }: SubjectHeaderProps) => {
+const SubjectHeader = ({
+  subject,
+  chaptersCompleted,
+  chaptersTotal,
+  curricula,
+  activeCurriculum,
+  onCurriculumSwitch,
+  autoSelectedReason,
+}: SubjectHeaderProps) => {
   const navigate = useNavigate();
   const Icon = getSubjectIcon(subject.icon);
   const colors = getSubjectColors(subject.color);
   const pattern = getSubjectPattern(subject.id);
+
+  // Use overrides if provided, otherwise fall back to subject defaults
+  const displayCompleted = chaptersCompleted ?? subject.chaptersCompleted;
+  const displayTotal = chaptersTotal ?? subject.chaptersTotal;
 
   return (
     <div className="relative">
@@ -58,12 +80,12 @@ const SubjectHeader = ({ subject }: SubjectHeaderProps) => {
                 {subject.name}
               </h1>
               <p className="text-sm text-muted-foreground mt-0.5">
-                {subject.chaptersCompleted} of {subject.chaptersTotal} chapters completed
+                {displayCompleted} of {displayTotal} chapters completed
               </p>
             </div>
           </div>
 
-          {/* Stats section - Pills instead of progress bar */}
+          {/* Stats section - Pills */}
           <div className="mt-5 flex flex-wrap items-center gap-2">
             {/* Chapters stat */}
             <div className={cn(
@@ -71,7 +93,7 @@ const SubjectHeader = ({ subject }: SubjectHeaderProps) => {
               colors.progressBg
             )}>
               <span className={cn("text-sm font-semibold", colors.textAccent)}>
-                {subject.chaptersCompleted}/{subject.chaptersTotal}
+                {displayCompleted}/{displayTotal}
               </span>
               <span className="text-xs text-muted-foreground">chapters</span>
             </div>
@@ -88,6 +110,17 @@ const SubjectHeader = ({ subject }: SubjectHeaderProps) => {
               </span>
             </div>
           </div>
+
+          {/* Curriculum Switcher — only when multi-curriculum */}
+          {curricula && curricula.length > 1 && activeCurriculum && onCurriculumSwitch && (
+            <CurriculumSwitcher
+              curricula={curricula}
+              activeCurriculum={activeCurriculum}
+              onSwitch={onCurriculumSwitch}
+              autoSelectedReason={autoSelectedReason}
+              className="mt-4"
+            />
+          )}
         </div>
       </div>
     </div>
