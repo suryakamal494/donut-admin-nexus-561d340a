@@ -26,10 +26,6 @@ const CurriculumSwitcher = ({
 
   return (
     <div className={cn("flex flex-wrap items-center gap-2", className)}>
-      {/* Label */}
-      <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
-        Curriculum
-      </span>
 
       {/* Pill container */}
       <div className="flex items-center gap-0.5 p-0.5 rounded-[20px] bg-muted/50 border border-border/50">

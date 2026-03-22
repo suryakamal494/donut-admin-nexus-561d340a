@@ -94,7 +94,7 @@ const StudentSubjectCard = memo(function StudentSubjectCard({ subject, compact =
       </div>
 
       {/* Curriculum badges — only for multi-curriculum subjects */}
-      {subject.curricula && subject.curricula.length > 1 && (
+      {subject.curricula && subject.curricula.length >= 1 && (
         <div className="flex flex-wrap gap-1 mt-2">
           {subject.curricula.map((curriculum) => {
             const cColors = getCurriculumColors(curriculum);

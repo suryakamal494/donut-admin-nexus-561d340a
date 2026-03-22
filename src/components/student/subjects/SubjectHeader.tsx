@@ -6,7 +6,6 @@ import { ArrowLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { StudentSubject } from "@/data/student/subjects";
 import SubjectBackgroundPattern from "./SubjectBackgroundPattern";
-import CurriculumSwitcher from "./CurriculumSwitcher";
 import { getSubjectColors, getSubjectIcon, getSubjectPattern } from "@/components/student/shared/subjectColors";
 
 interface SubjectHeaderProps {
