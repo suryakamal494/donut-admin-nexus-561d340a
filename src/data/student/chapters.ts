@@ -18,34 +18,61 @@ export interface StudentChapter {
   hasAIPath: boolean;
   topicsTotal: number;
   topicsCompleted: number;
+  /** Curriculum this chapter belongs to. Undefined = default/single curriculum. */
+  curriculumId?: string;
 }
 
-// Mathematics Chapters
+// Mathematics Chapters — CBSE
 const mathChapters: StudentChapter[] = [
-  { id: "math-ch1", subjectId: "math", name: "Number Systems", order: 1, progress: 100, state: "completed", hasAIPath: false, topicsTotal: 4, topicsCompleted: 4 },
-  { id: "math-ch2", subjectId: "math", name: "Polynomials", order: 2, progress: 100, state: "mastered", hasAIPath: false, topicsTotal: 5, topicsCompleted: 5 },
-  { id: "math-ch3", subjectId: "math", name: "Quadratic Equations", order: 3, progress: 55, state: "in-progress", hasAIPath: true, topicsTotal: 6, topicsCompleted: 3 },
-  { id: "math-ch4", subjectId: "math", name: "Arithmetic Progressions", order: 4, progress: 30, state: "struggling", hasAIPath: true, topicsTotal: 4, topicsCompleted: 1 },
-  { id: "math-ch5", subjectId: "math", name: "Triangles", order: 5, progress: 0, state: "not-started", hasAIPath: false, topicsTotal: 5, topicsCompleted: 0 },
-  { id: "math-ch6", subjectId: "math", name: "Coordinate Geometry", order: 6, progress: 0, state: "not-started", hasAIPath: false, topicsTotal: 4, topicsCompleted: 0 },
+  { id: "math-ch1", subjectId: "math", name: "Number Systems", order: 1, progress: 100, state: "completed", hasAIPath: false, topicsTotal: 4, topicsCompleted: 4, curriculumId: "CBSE" },
+  { id: "math-ch2", subjectId: "math", name: "Polynomials", order: 2, progress: 100, state: "mastered", hasAIPath: false, topicsTotal: 5, topicsCompleted: 5, curriculumId: "CBSE" },
+  { id: "math-ch3", subjectId: "math", name: "Quadratic Equations", order: 3, progress: 55, state: "in-progress", hasAIPath: true, topicsTotal: 6, topicsCompleted: 3, curriculumId: "CBSE" },
+  { id: "math-ch4", subjectId: "math", name: "Arithmetic Progressions", order: 4, progress: 30, state: "struggling", hasAIPath: true, topicsTotal: 4, topicsCompleted: 1, curriculumId: "CBSE" },
+  { id: "math-ch5", subjectId: "math", name: "Triangles", order: 5, progress: 0, state: "not-started", hasAIPath: false, topicsTotal: 5, topicsCompleted: 0, curriculumId: "CBSE" },
+  { id: "math-ch6", subjectId: "math", name: "Coordinate Geometry", order: 6, progress: 0, state: "not-started", hasAIPath: false, topicsTotal: 4, topicsCompleted: 0, curriculumId: "CBSE" },
 ];
 
-// Physics Chapters
+// Mathematics Chapters — JEE Mains
+const mathJeeChapters: StudentChapter[] = [
+  { id: "math-jee-ch1", subjectId: "math", name: "Complex Numbers & Quadratic Equations", order: 1, progress: 80, state: "on-track", hasAIPath: false, topicsTotal: 6, topicsCompleted: 5, curriculumId: "JEE Mains" },
+  { id: "math-jee-ch2", subjectId: "math", name: "Matrices & Determinants", order: 2, progress: 45, state: "in-progress", hasAIPath: true, topicsTotal: 5, topicsCompleted: 2, curriculumId: "JEE Mains" },
+  { id: "math-jee-ch3", subjectId: "math", name: "Permutations & Combinations", order: 3, progress: 20, state: "in-progress", hasAIPath: true, topicsTotal: 4, topicsCompleted: 1, curriculumId: "JEE Mains" },
+  { id: "math-jee-ch4", subjectId: "math", name: "Binomial Theorem", order: 4, progress: 0, state: "not-started", hasAIPath: false, topicsTotal: 3, topicsCompleted: 0, curriculumId: "JEE Mains" },
+  { id: "math-jee-ch5", subjectId: "math", name: "Sequences & Series", order: 5, progress: 0, state: "not-started", hasAIPath: false, topicsTotal: 5, topicsCompleted: 0, curriculumId: "JEE Mains" },
+];
+
+// Physics Chapters — CBSE
 const physicsChapters: StudentChapter[] = [
-  { id: "physics-ch1", subjectId: "physics", name: "Motion", order: 1, progress: 100, state: "completed", hasAIPath: false, topicsTotal: 5, topicsCompleted: 5 },
-  { id: "physics-ch2", subjectId: "physics", name: "Force and Laws of Motion", order: 2, progress: 35, state: "in-progress", hasAIPath: true, topicsTotal: 6, topicsCompleted: 2 },
-  { id: "physics-ch3", subjectId: "physics", name: "Gravitation", order: 3, progress: 0, state: "not-started", hasAIPath: false, topicsTotal: 4, topicsCompleted: 0 },
-  { id: "physics-ch4", subjectId: "physics", name: "Work and Energy", order: 4, progress: 0, state: "not-started", hasAIPath: false, topicsTotal: 5, topicsCompleted: 0 },
-  { id: "physics-ch5", subjectId: "physics", name: "Sound", order: 5, progress: 0, state: "not-started", hasAIPath: false, topicsTotal: 4, topicsCompleted: 0 },
+  { id: "physics-ch1", subjectId: "physics", name: "Motion", order: 1, progress: 100, state: "completed", hasAIPath: false, topicsTotal: 5, topicsCompleted: 5, curriculumId: "CBSE" },
+  { id: "physics-ch2", subjectId: "physics", name: "Force and Laws of Motion", order: 2, progress: 35, state: "in-progress", hasAIPath: true, topicsTotal: 6, topicsCompleted: 2, curriculumId: "CBSE" },
+  { id: "physics-ch3", subjectId: "physics", name: "Gravitation", order: 3, progress: 0, state: "not-started", hasAIPath: false, topicsTotal: 4, topicsCompleted: 0, curriculumId: "CBSE" },
+  { id: "physics-ch4", subjectId: "physics", name: "Work and Energy", order: 4, progress: 0, state: "not-started", hasAIPath: false, topicsTotal: 5, topicsCompleted: 0, curriculumId: "CBSE" },
+  { id: "physics-ch5", subjectId: "physics", name: "Sound", order: 5, progress: 0, state: "not-started", hasAIPath: false, topicsTotal: 4, topicsCompleted: 0, curriculumId: "CBSE" },
 ];
 
-// Chemistry Chapters
+// Physics Chapters — JEE Mains
+const physicsJeeChapters: StudentChapter[] = [
+  { id: "physics-jee-ch1", subjectId: "physics", name: "Kinematics", order: 1, progress: 60, state: "on-track", hasAIPath: false, topicsTotal: 5, topicsCompleted: 3, curriculumId: "JEE Mains" },
+  { id: "physics-jee-ch2", subjectId: "physics", name: "Newton's Laws & Friction", order: 2, progress: 30, state: "in-progress", hasAIPath: true, topicsTotal: 6, topicsCompleted: 2, curriculumId: "JEE Mains" },
+  { id: "physics-jee-ch3", subjectId: "physics", name: "Work, Power & Energy", order: 3, progress: 0, state: "not-started", hasAIPath: false, topicsTotal: 4, topicsCompleted: 0, curriculumId: "JEE Mains" },
+  { id: "physics-jee-ch4", subjectId: "physics", name: "Rotational Mechanics", order: 4, progress: 0, state: "not-started", hasAIPath: false, topicsTotal: 7, topicsCompleted: 0, curriculumId: "JEE Mains" },
+];
+
+// Chemistry Chapters — CBSE
 const chemistryChapters: StudentChapter[] = [
-  { id: "chem-ch1", subjectId: "chemistry", name: "Matter in Our Surroundings", order: 1, progress: 100, state: "mastered", hasAIPath: false, topicsTotal: 4, topicsCompleted: 4 },
-  { id: "chem-ch2", subjectId: "chemistry", name: "Is Matter Around Us Pure", order: 2, progress: 100, state: "completed", hasAIPath: false, topicsTotal: 5, topicsCompleted: 5 },
-  { id: "chem-ch3", subjectId: "chemistry", name: "Atoms and Molecules", order: 3, progress: 100, state: "completed", hasAIPath: false, topicsTotal: 6, topicsCompleted: 6 },
-  { id: "chem-ch4", subjectId: "chemistry", name: "Structure of the Atom", order: 4, progress: 85, state: "on-track", hasAIPath: false, topicsTotal: 5, topicsCompleted: 4 },
-  { id: "chem-ch5", subjectId: "chemistry", name: "The Fundamental Unit of Life", order: 5, progress: 40, state: "in-progress", hasAIPath: true, topicsTotal: 4, topicsCompleted: 2 },
+  { id: "chem-ch1", subjectId: "chemistry", name: "Matter in Our Surroundings", order: 1, progress: 100, state: "mastered", hasAIPath: false, topicsTotal: 4, topicsCompleted: 4, curriculumId: "CBSE" },
+  { id: "chem-ch2", subjectId: "chemistry", name: "Is Matter Around Us Pure", order: 2, progress: 100, state: "completed", hasAIPath: false, topicsTotal: 5, topicsCompleted: 5, curriculumId: "CBSE" },
+  { id: "chem-ch3", subjectId: "chemistry", name: "Atoms and Molecules", order: 3, progress: 100, state: "completed", hasAIPath: false, topicsTotal: 6, topicsCompleted: 6, curriculumId: "CBSE" },
+  { id: "chem-ch4", subjectId: "chemistry", name: "Structure of the Atom", order: 4, progress: 85, state: "on-track", hasAIPath: false, topicsTotal: 5, topicsCompleted: 4, curriculumId: "CBSE" },
+  { id: "chem-ch5", subjectId: "chemistry", name: "The Fundamental Unit of Life", order: 5, progress: 40, state: "in-progress", hasAIPath: true, topicsTotal: 4, topicsCompleted: 2, curriculumId: "CBSE" },
+];
+
+// Chemistry Chapters — JEE Mains
+const chemistryJeeChapters: StudentChapter[] = [
+  { id: "chem-jee-ch1", subjectId: "chemistry", name: "Atomic Structure", order: 1, progress: 70, state: "on-track", hasAIPath: false, topicsTotal: 5, topicsCompleted: 4, curriculumId: "JEE Mains" },
+  { id: "chem-jee-ch2", subjectId: "chemistry", name: "Chemical Bonding & Molecular Structure", order: 2, progress: 40, state: "in-progress", hasAIPath: true, topicsTotal: 6, topicsCompleted: 2, curriculumId: "JEE Mains" },
+  { id: "chem-jee-ch3", subjectId: "chemistry", name: "Thermodynamics", order: 3, progress: 10, state: "in-progress", hasAIPath: true, topicsTotal: 5, topicsCompleted: 1, curriculumId: "JEE Mains" },
+  { id: "chem-jee-ch4", subjectId: "chemistry", name: "Equilibrium", order: 4, progress: 0, state: "not-started", hasAIPath: false, topicsTotal: 4, topicsCompleted: 0, curriculumId: "JEE Mains" },
 ];
 
 // Biology Chapters
@@ -78,16 +105,24 @@ const csChapters: StudentChapter[] = [
 // All chapters combined
 export const studentChapters: StudentChapter[] = [
   ...mathChapters,
+  ...mathJeeChapters,
   ...physicsChapters,
+  ...physicsJeeChapters,
   ...chemistryChapters,
+  ...chemistryJeeChapters,
   ...biologyChapters,
   ...englishChapters,
   ...csChapters,
 ];
 
-// Helper function to get chapters for a specific subject
-export const getChaptersBySubject = (subjectId: string): StudentChapter[] => {
+// Helper function to get chapters for a specific subject, optionally filtered by curriculum
+export const getChaptersBySubject = (subjectId: string, curriculumId?: string): StudentChapter[] => {
   return studentChapters
-    .filter(ch => ch.subjectId === subjectId)
+    .filter(ch => {
+      if (ch.subjectId !== subjectId) return false;
+      if (curriculumId && ch.curriculumId) return ch.curriculumId === curriculumId;
+      if (curriculumId && !ch.curriculumId) return true; // legacy chapters without curriculum belong to all
+      return true;
+    })
     .sort((a, b) => a.order - b.order);
 };

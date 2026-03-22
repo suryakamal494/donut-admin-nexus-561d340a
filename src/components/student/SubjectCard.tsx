@@ -1,11 +1,13 @@
 // Student Subject Card - Glassmorphic design with progress
 // Uses shared subject color/icon system for all 24 subjects
+// Shows curriculum badges for multi-curriculum subjects
 
 import { memo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { BookOpen } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getSubjectColors, getSubjectIcon } from "@/components/student/shared/subjectColors";
+import { getCurriculumColors } from "@/components/student/shared/curriculumColors";
 import type { StudentSubject } from "@/data/student/subjects";
 
 // Status labels
@@ -90,6 +92,27 @@ const StudentSubjectCard = memo(function StudentSubjectCard({ subject, compact =
           {subject.chaptersCompleted}/{subject.chaptersTotal} chapters
         </span>
       </div>
+
+      {/* Curriculum badges — only for multi-curriculum subjects */}
+      {subject.curricula && subject.curricula.length > 1 && (
+        <div className="flex flex-wrap gap-1 mt-2">
+          {subject.curricula.map((curriculum) => {
+            const cColors = getCurriculumColors(curriculum);
+            return (
+              <span
+                key={curriculum}
+                className={cn(
+                  "px-1.5 py-0.5 rounded text-[9px] font-medium",
+                  cColors.badgeBg,
+                  cColors.badgeText
+                )}
+              >
+                {curriculum}
+              </span>
+            );
+          })}
+        </div>
+      )}
     </button>
   );
 });
