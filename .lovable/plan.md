@@ -1,128 +1,95 @@
 
 
-## Curriculum Switcher — Understanding & Implementation Plan
+## Implementation Plan: 6 Curriculum Switcher UI Fixes
 
-### What I Understood from the Feature Spec
+### Issue 1 — Move Switcher Below the Header Card
 
-The spec defines **7 changes** across the student panel. Here's what each means, how I'll implement it, and where:
+**Current:** `CurriculumSwitcher` is rendered inside `SubjectHeader.tsx` (line 115-123), buried within the gradient card.
 
----
+**Change:** Remove the switcher from `SubjectHeader.tsx`. Render it in `SubjectDetail.tsx` between the header and the "Chapters" section (between lines 65 and 67). This gives it standalone visibility with its own spacing.
 
-### Change 1 — Curriculum Pill Switcher on Subject Detail Page
-
-**What I understood:** When a student opens a subject (e.g., Physics) and their batch has multiple curricula (CBSE + JEE Mains), a segmented pill switcher appears inside the subject header banner, below the title. If only one curriculum exists, nothing changes — the UI stays exactly as today. The switcher follows a "CURRICULUM" label on the left.
-
-**How I'll implement it:** Create a new `CurriculumSwitcher` component — a flex row with a label and pill buttons. Active pill color is determined by the curriculum name (using our existing color system, not the spec's hardcoded hex values — I'll map CBSE→blue, JEE Mains→purple, Foundation→green, Olympiad→amber through our design tokens). The component receives `curricula[]`, `activeCurriculum`, and `onSwitch` callback.
-
-**Where:** New component `src/components/student/subjects/CurriculumSwitcher.tsx`, rendered inside `SubjectHeader.tsx` after the stats pills row. Only rendered when `curricula.length > 1`.
+**Files:** `SubjectHeader.tsx` (remove lines 114-123 and related props), `SubjectDetail.tsx` (add `CurriculumSwitcher` import and render it after `<SubjectHeader>` with `mt-4 mb-2`).
 
 ---
 
-### Change 2 — Chapter List Re-renders on Curriculum Switch
+### Issue 2 — Remove "CURRICULUM" Label
 
-**What I understood:** When the student switches curriculum, the entire chapter list swaps — different chapter names, counts, progress, teacher names, AI path badges. The header stats ("3 of 5 chapters completed") also update to reflect only the active curriculum's data. No blending.
+**Current:** `CurriculumSwitcher.tsx` line 30-32 renders a "Curriculum" text label.
 
-**How I'll implement it:**
-- Extend the data model: add `curriculumId` field to `StudentChapter` interface
-- Add curriculum-specific chapter sets to `chapters.ts` (e.g., CBSE Physics chapters vs JEE Physics chapters — completely different lists)
-- Update `getChaptersBySubject()` to accept an optional `curriculumId` parameter: `getChaptersBySubject(subjectId, curriculumId?)`
-- In `SubjectDetail.tsx`, maintain `activeCurriculum` state, pass it to the chapter fetch, and re-derive header stats from the filtered chapters
+**Change:** Delete the label `<span>` entirely. The pills are self-explanatory with names like "CBSE" and "JEE Mains".
 
-**Where:** Data changes in `src/data/student/chapters.ts`. State management in `src/pages/student/SubjectDetail.tsx`. Header stats update in `SubjectHeader.tsx` (accept chapters count as props instead of reading from subject object).
+**File:** `CurriculumSwitcher.tsx` — remove lines 29-32.
 
 ---
 
-### Change 3 — Pending Work Indicator on Auto-Selection
+### Issue 3 — First-Time Onboarding Tooltip
 
-**What I understood:** When the switcher auto-selects a curriculum because of pending teacher work (not because the student manually chose it), show a small chip next to the active pill saying "1 pending homework" or "2 pending tasks." This chip disappears if the student manually switches.
+**What:** When a multi-curriculum subject is opened for the first time ever, show a tooltip/callout pointing at the switcher: "Switch between your curriculum tracks here". Dismissed on tap, stored in `localStorage` as `curriculum_switcher_onboarded`.
 
-**How I'll implement it:** Add an `autoSelectedReason` state alongside `activeCurriculum`. When the default selection logic runs (pending work → CBSE tiebreaker → lastVisited), if rules 1 or 2 triggered, set `autoSelectedReason` to the pending count string. When the student manually taps a pill, clear `autoSelectedReason`. The `CurriculumSwitcher` component conditionally renders a small chip when `autoSelectedReason` is truthy.
+**Implementation:** Add a `CurriculumOnboardingTooltip` component rendered conditionally in `SubjectDetail.tsx` next to the switcher. Checks `localStorage` on mount; if key absent, shows tooltip. On dismiss, sets the key. Simple overlay with an arrow pointing at the pills.
 
-**Where:** State logic in `SubjectDetail.tsx`. Chip rendering inside `CurriculumSwitcher.tsx`.
-
----
-
-### Change 4 — Curriculum Badges on Subject Cards (My Subjects Grid)
-
-**What I understood:** On the My Subjects grid page, subject cards for multi-curriculum subjects get small badge pills (e.g., "CBSE", "JEE Mains") below the chapter progress line. Single-curriculum subjects show no badges — zero visual change.
-
-**How I'll implement it:**
-- Extend `StudentSubject` interface with `curricula?: string[]` (optional array — if absent or length 1, no badges)
-- In `SubjectCard.tsx`, after the chapter count row, conditionally render a flex row of small badge pills when `curricula.length > 1`
-- Badge colors follow the same curriculum→color mapping used by the switcher
-
-**Where:** Data model change in `src/data/student/subjects.ts`. Badge rendering in `src/components/student/SubjectCard.tsx`.
+**Files:** New component `src/components/student/subjects/CurriculumOnboardingTooltip.tsx`, rendered in `SubjectDetail.tsx`.
 
 ---
 
-### Change 5 — Curriculum Switcher on Subject Tests Page
+### Issue 4 — Confirm Auto-Selection Logic is Working
 
-**What I understood:** The Subject Tests page (`/student/tests/:subject`) gets the exact same `CurriculumSwitcher` component, placed below the subject title and test count. Same visibility rule (only if multi-curriculum). The curriculum state here is **independent** from the Subjects section state.
-
-**How I'll implement it:** Reuse the `CurriculumSwitcher` component. Add `activeCurriculum` state in `SubjectTests.tsx`. The default selection logic runs independently here.
-
-**Where:** `src/pages/student/SubjectTests.tsx` — add switcher in the header section after the subject title.
+Already implemented in `useCurriculumSelection.ts`. The 3-step logic (pending work → CBSE tiebreaker → lastVisited) is active. No code changes needed — this is a confirmation only.
 
 ---
 
-### Change 6 — Test List Filters Scope to Active Curriculum
+### Issue 5 — Show Curriculum Tags for Single-Curriculum Subjects Too
 
-**What I understood:** When curriculum is switched, the test list re-renders showing only tests under that curriculum. Filter tab counts (All/Live/Upcoming/Attempted/Missed) update. Teacher name on test cards shows as a colored chip matching the active curriculum color.
+**Current:** `SubjectCard.tsx` line 97 checks `curricula.length > 1`. Single-curriculum subjects show no tag.
 
-**How I'll implement it:**
-- Add `curriculumId` field to `StudentTest` interface
-- Update test mock data to tag tests with curriculum
-- In `SubjectTests.tsx`, filter `subjectTests` by both `subject` and `activeCurriculum`
-- Update `SubjectTestItem` to render teacher name as a colored chip using curriculum color
+**Change:** Change condition to `curricula && curricula.length >= 1`. This way a subject with only `["CBSE"]` still shows the CBSE badge, giving developers visibility into all possibilities.
 
-**Where:** Data changes in `src/data/student/tests.ts`. Filtering logic and chip rendering in `src/pages/student/SubjectTests.tsx`.
+**File:** `SubjectCard.tsx` — change line 97 condition.
 
 ---
 
-### Change 7 — Persist lastVisited Curriculum
+### Issue 6 — Expand Mock Data with More Curriculum Variations
 
-**What I understood:** Store the last manually selected curriculum per student per subject, separately for Subjects and Tests sections. Use localStorage keys like `lastVisited_subjects_{studentId}_{subjectId}` and `lastVisited_tests_{studentId}_{subjectId}`.
+**Current:** Only Math, Physics, Chemistry have `curricula: ["CBSE", "JEE Mains"]`. All other subjects have no curricula field.
 
-**How I'll implement it:** Create a small hook `useCurriculumSelection` that encapsulates the 3-step default selection logic (pending work → CBSE tiebreaker → lastVisited) and the localStorage read/write. Both `SubjectDetail.tsx` and `SubjectTests.tsx` use this hook with different section keys.
+**Changes in `subjects.ts`:**
+- Biology → `curricula: ["CBSE", "NEET"]`
+- Science → `curricula: ["CBSE", "Foundation"]`
+- Zoology → `curricula: ["NEET"]` (single, but tag visible per Issue 5)
+- Botany → `curricula: ["NEET"]`
+- Economics → `curricula: ["CBSE", "Foundation", "Olympiad"]` (3-way example)
+- English → `curricula: ["CBSE"]`
+- CS → `curricula: ["CBSE"]`
+- Hindi, Sanskrit, Social Science, History, Geography, Civics → `curricula: ["CBSE"]`
+- Art, PE, Home Science → `curricula: ["CBSE"]`
+- AI → `curricula: ["CBSE", "Foundation"]`
+- Accountancy, Business → `curricula: ["CBSE"]`
+- EVS → `curricula: ["CBSE"]`
+- Informatics → `curricula: ["CBSE"]`
 
-**Where:** New hook `src/hooks/useCurriculumSelection.ts`. Used in `SubjectDetail.tsx` and `SubjectTests.tsx`.
+Also add `pendingWork` entries for the new multi-curriculum subjects (Biology, Science, Economics, AI).
+
+**File:** `src/data/student/subjects.ts`
+
+**Also update `curriculumColors.ts`:** Already has NEET, Foundation, Olympiad schemes — no changes needed there.
 
 ---
 
-### No Changes (Confirmed)
+### Files Changed Summary
 
-- **Chapter detail page** (Classroom/My Path/Compete tabs) — no changes
-- **Grand Tests page** — already has curriculum filters, no changes
-- **Home dashboard** — no changes
-- **Progress page** — no changes
-- **Single-curriculum subjects** — zero visual change anywhere
+| File | Change |
+|------|--------|
+| `src/components/student/subjects/CurriculumSwitcher.tsx` | Remove "Curriculum" label |
+| `src/components/student/subjects/SubjectHeader.tsx` | Remove switcher rendering and related props |
+| `src/pages/student/SubjectDetail.tsx` | Render switcher below header + add onboarding tooltip |
+| `src/components/student/subjects/CurriculumOnboardingTooltip.tsx` | New — first-time tooltip component |
+| `src/components/student/SubjectCard.tsx` | Show tags for `curricula.length >= 1` |
+| `src/data/student/subjects.ts` | Add curricula arrays to all subjects |
 
----
-
-### Phased Implementation
-
-**Phase 1 — Data Model + Shared Components**
-- Extend `StudentSubject` with `curricula` and `pendingWork` fields
-- Extend `StudentChapter` with `curriculumId` field
-- Extend `StudentTest` with `curriculumId` field
-- Add curriculum-specific mock data (JEE Physics chapters, JEE Physics tests)
-- Create `CurriculumSwitcher` component
-- Create `useCurriculumSelection` hook
-- Create curriculum color mapping utility
-
-**Phase 2 — Subject Detail Page (Changes 1, 2, 3)**
-- Integrate switcher into `SubjectHeader.tsx`
-- Wire `activeCurriculum` state to chapter filtering in `SubjectDetail.tsx`
-- Add pending work chip logic
-- Update header stats to be curriculum-aware
-
-**Phase 3 — My Subjects Grid (Change 4)**
-- Add curriculum badge pills to `SubjectCard.tsx`
-- Only for multi-curriculum subjects
-
-**Phase 4 — Tests Section (Changes 5, 6, 7)**
-- Add switcher to `SubjectTests.tsx`
-- Filter tests by active curriculum
-- Add teacher name colored chip
-- Wire localStorage persistence for both sections
+### What Does NOT Change
+- `useCurriculumSelection.ts` — logic already correct
+- `curriculumColors.ts` — already has NEET/Foundation/Olympiad
+- Chapter data, test data — unchanged
+- Tests section switcher — unchanged (separate issue if needed)
+- Grand Tests, Dashboard, Progress pages — unchanged
 
