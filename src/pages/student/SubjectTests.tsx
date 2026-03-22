@@ -1,5 +1,6 @@
 // Subject Tests Page - Dedicated full page replacing the old popup sheet
 // Shows all tests for a subject with filters, date grouping, and action buttons
+// Supports curriculum switching for multi-curriculum subjects
 
 import { useState, useMemo, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
@@ -19,19 +20,21 @@ import {
   formatDuration,
   subjectColorMap,
 } from "@/data/student/tests";
+import { studentSubjects } from "@/data/student/subjects";
 import { getSubjectColors, getSubjectIcon } from "@/components/student/shared/subjectColors";
+import { getCurriculumColors } from "@/components/student/shared/curriculumColors";
+import CurriculumSwitcher from "@/components/student/subjects/CurriculumSwitcher";
+import { useCurriculumSelection } from "@/hooks/useCurriculumSelection";
 import type { StudentTest, TestStatus } from "@/data/student/tests";
 import {
   isToday,
   isThisWeek,
-  isBefore,
-  isAfter,
   parseISO,
   format,
   startOfToday,
 } from "date-fns";
 
-// Colors adapter: maps shared SubjectColorScheme to the shape used by this page's components
+// Colors adapter
 function getPageColors(subjectKey: string) {
   const colorKey = subjectColorMap[subjectKey] || "blue";
   const scheme = getSubjectColors(colorKey);
@@ -62,7 +65,6 @@ interface DateGroup {
 }
 
 function groupTestsByDate(tests: StudentTest[]): DateGroup[] {
-  const today = startOfToday();
   const groups: Record<string, StudentTest[]> = {
     "🔴 Live Now": [],
     "📅 Today": [],
@@ -91,14 +93,12 @@ function groupTestsByDate(tests: StudentTest[]): DateGroup[] {
     }
   });
 
-  // Sort completed by most recent first
   groups["✅ Completed"].sort((a, b) => {
     const da = a.attemptedAt ? parseISO(a.attemptedAt).getTime() : 0;
     const db = b.attemptedAt ? parseISO(b.attemptedAt).getTime() : 0;
     return db - da;
   });
 
-  // Sort upcoming by nearest date first
   ["📅 Today", "📆 This Week", "⏳ Upcoming"].forEach((key) => {
     groups[key].sort((a, b) => {
       const da = a.scheduledDate ? parseISO(a.scheduledDate).getTime() : Infinity;
@@ -107,7 +107,6 @@ function groupTestsByDate(tests: StudentTest[]): DateGroup[] {
     });
   });
 
-  // Sort missed by most recent first
   groups["⚠️ Missed"].sort((a, b) => {
     const da = a.scheduledDate ? parseISO(a.scheduledDate).getTime() : 0;
     const db = b.scheduledDate ? parseISO(b.scheduledDate).getTime() : 0;
@@ -124,10 +123,12 @@ function SubjectTestItem({
   test,
   colors,
   index,
+  activeCurriculum,
 }: {
   test: StudentTest;
   colors: ReturnType<typeof getPageColors>;
   index: number;
+  activeCurriculum?: string;
 }) {
   const navigate = useNavigate();
 
@@ -142,6 +143,11 @@ function SubjectTestItem({
       navigate(`/student/tests/${test.id}/results`);
     }
   }, [navigate, test.id, test.status]);
+
+  // Teacher chip color — use curriculum color if available
+  const teacherChipColors = activeCurriculum
+    ? getCurriculumColors(activeCurriculum)
+    : null;
 
   return (
     <motion.div
@@ -196,7 +202,17 @@ function SubjectTestItem({
 
           {/* Meta row */}
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1.5 text-xs text-muted-foreground">
-            {test.teacherName && <span>{test.teacherName}</span>}
+            {test.teacherName && teacherChipColors ? (
+              <span className={cn(
+                "px-1.5 py-0.5 rounded text-[10px] font-medium",
+                teacherChipColors.badgeBg,
+                teacherChipColors.badgeText
+              )}>
+                {test.teacherName}
+              </span>
+            ) : test.teacherName ? (
+              <span>{test.teacherName}</span>
+            ) : null}
             <span className="flex items-center gap-1">
               <FileText className="w-3 h-3" />
               {test.totalQuestions}Q
@@ -275,11 +291,33 @@ export default function SubjectTests() {
   const colors = getPageColors(subjectKey);
   const Icon = getSubjectIcon(subjectKey);
 
-  // Get tests for this subject
-  const subjectTests = useMemo(
-    () => teacherTests.filter((t) => t.subject?.toLowerCase() === subjectKey),
-    [subjectKey]
+  // Find the subject data to get curricula info
+  const subjectData = studentSubjects.find(
+    s => s.id === subjectKey || s.name.toLowerCase() === subjectKey
   );
+  const curricula = subjectData?.curricula || [];
+  const pendingWork = subjectData?.pendingWork || {};
+
+  const {
+    activeCurriculum,
+    autoSelectedReason,
+    switchCurriculum,
+    isMultiCurriculum,
+  } = useCurriculumSelection({
+    curricula,
+    pendingWork,
+    subjectId: subjectKey,
+    section: "tests",
+  });
+
+  // Get tests for this subject, filtered by curriculum if multi-curriculum
+  const subjectTests = useMemo(() => {
+    const bySubject = teacherTests.filter((t) => t.subject?.toLowerCase() === subjectKey);
+    if (isMultiCurriculum && activeCurriculum) {
+      return bySubject.filter(t => !t.curriculumId || t.curriculumId === activeCurriculum);
+    }
+    return bySubject;
+  }, [subjectKey, isMultiCurriculum, activeCurriculum]);
 
   // Counts
   const counts: Record<FilterTab, number> = useMemo(() => ({
@@ -339,6 +377,17 @@ export default function SubjectTests() {
             </p>
           </div>
         </div>
+
+        {/* Curriculum Switcher — only when multi-curriculum */}
+        {isMultiCurriculum && (
+          <CurriculumSwitcher
+            curricula={curricula}
+            activeCurriculum={activeCurriculum}
+            onSwitch={switchCurriculum}
+            autoSelectedReason={autoSelectedReason}
+            className="mt-3"
+          />
+        )}
       </motion.div>
 
       {/* Filter Tabs */}
@@ -381,7 +430,13 @@ export default function SubjectTests() {
               </h2>
               <div className="space-y-2.5">
                 {group.tests.map((test, i) => (
-                  <SubjectTestItem key={test.id} test={test} colors={colors} index={i} />
+                  <SubjectTestItem
+                    key={test.id}
+                    test={test}
+                    colors={colors}
+                    index={i}
+                    activeCurriculum={isMultiCurriculum ? activeCurriculum : undefined}
+                  />
                 ))}
               </div>
             </div>
