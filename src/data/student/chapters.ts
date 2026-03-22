@@ -105,8 +105,11 @@ const csChapters: StudentChapter[] = [
 // All chapters combined
 export const studentChapters: StudentChapter[] = [
   ...mathChapters,
+  ...mathJeeChapters,
   ...physicsChapters,
+  ...physicsJeeChapters,
   ...chemistryChapters,
+  ...chemistryJeeChapters,
   ...biologyChapters,
   ...englishChapters,
   ...csChapters,
