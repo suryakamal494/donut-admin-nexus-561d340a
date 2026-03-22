@@ -29,6 +29,8 @@ export interface StudentTest {
   totalAttempts?: number;
   year?: number; // For PYPs
   session?: string; // For PYPs (Jan, Apr, etc.)
+  /** Curriculum this test belongs to. Undefined = default/single curriculum. */
+  curriculumId?: string;
 }
 
 // Subject color keys for consistent branding

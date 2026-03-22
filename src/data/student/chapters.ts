@@ -115,9 +115,14 @@ export const studentChapters: StudentChapter[] = [
   ...csChapters,
 ];
 
-// Helper function to get chapters for a specific subject
-export const getChaptersBySubject = (subjectId: string): StudentChapter[] => {
+// Helper function to get chapters for a specific subject, optionally filtered by curriculum
+export const getChaptersBySubject = (subjectId: string, curriculumId?: string): StudentChapter[] => {
   return studentChapters
-    .filter(ch => ch.subjectId === subjectId)
+    .filter(ch => {
+      if (ch.subjectId !== subjectId) return false;
+      if (curriculumId && ch.curriculumId) return ch.curriculumId === curriculumId;
+      if (curriculumId && !ch.curriculumId) return true; // legacy chapters without curriculum belong to all
+      return true;
+    })
     .sort((a, b) => a.order - b.order);
 };
