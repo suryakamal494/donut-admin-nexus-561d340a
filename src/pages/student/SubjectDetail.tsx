@@ -15,14 +15,9 @@ const StudentSubjectDetail = () => {
   // Find the subject
   const subject = studentSubjects.find(s => s.id === subjectId);
 
-  // If subject not found, redirect to subjects list
-  if (!subject) {
-    return <Navigate to="/student/subjects" replace />;
-  }
-
-  // Curriculum selection (no-op for single-curriculum subjects)
-  const curricula = subject.curricula || [];
-  const pendingWork = subject.pendingWork || {};
+  // Curriculum selection — safe to call unconditionally with fallbacks
+  const curricula = subject?.curricula || [];
+  const pendingWork = subject?.pendingWork || {};
 
   const {
     activeCurriculum,
@@ -32,23 +27,29 @@ const StudentSubjectDetail = () => {
   } = useCurriculumSelection({
     curricula,
     pendingWork,
-    subjectId: subject.id,
+    subjectId: subjectId || "",
     section: "subjects",
   });
 
   // Get chapters — filtered by curriculum if multi-curriculum
   const chapters = useMemo(() => {
+    if (!subject) return [];
     if (isMultiCurriculum && activeCurriculum) {
       return getChaptersBySubject(subject.id, activeCurriculum);
     }
     return getChaptersBySubject(subject.id);
-  }, [subject.id, isMultiCurriculum, activeCurriculum]);
+  }, [subject, isMultiCurriculum, activeCurriculum]);
 
   // Derive curriculum-specific stats
   const chaptersCompleted = chapters.filter(
     ch => ch.state === "completed" || ch.state === "mastered"
   ).length;
   const chaptersTotal = chapters.length;
+
+  // If subject not found, redirect to subjects list
+  if (!subject) {
+    return <Navigate to="/student/subjects" replace />;
+  }
 
   return (
     <div className="w-full pb-6">
@@ -65,7 +66,6 @@ const StudentSubjectDetail = () => {
 
       {/* Chapters Section */}
       <div className="mt-6">
-        {/* Section header */}
         <div className="flex items-center gap-2 mb-4">
           <BookOpen className="w-4 h-4 text-muted-foreground" />
           <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
@@ -76,7 +76,6 @@ const StudentSubjectDetail = () => {
           </span>
         </div>
 
-        {/* Chapter cards list */}
         <div className="space-y-3">
           {chapters.map((chapter) => (
             <ChapterCard 
@@ -87,7 +86,6 @@ const StudentSubjectDetail = () => {
           ))}
         </div>
 
-        {/* Empty state */}
         {chapters.length === 0 && (
           <div className="text-center py-12">
             <div className="w-16 h-16 rounded-full bg-muted/50 flex items-center justify-center mx-auto mb-4">
