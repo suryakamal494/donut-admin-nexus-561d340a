@@ -58,13 +58,21 @@ const physicsJeeChapters: StudentChapter[] = [
   { id: "physics-jee-ch4", subjectId: "physics", name: "Rotational Mechanics", order: 4, progress: 0, state: "not-started", hasAIPath: false, topicsTotal: 7, topicsCompleted: 0, curriculumId: "JEE Mains" },
 ];
 
-// Chemistry Chapters
+// Chemistry Chapters — CBSE
 const chemistryChapters: StudentChapter[] = [
-  { id: "chem-ch1", subjectId: "chemistry", name: "Matter in Our Surroundings", order: 1, progress: 100, state: "mastered", hasAIPath: false, topicsTotal: 4, topicsCompleted: 4 },
-  { id: "chem-ch2", subjectId: "chemistry", name: "Is Matter Around Us Pure", order: 2, progress: 100, state: "completed", hasAIPath: false, topicsTotal: 5, topicsCompleted: 5 },
-  { id: "chem-ch3", subjectId: "chemistry", name: "Atoms and Molecules", order: 3, progress: 100, state: "completed", hasAIPath: false, topicsTotal: 6, topicsCompleted: 6 },
-  { id: "chem-ch4", subjectId: "chemistry", name: "Structure of the Atom", order: 4, progress: 85, state: "on-track", hasAIPath: false, topicsTotal: 5, topicsCompleted: 4 },
-  { id: "chem-ch5", subjectId: "chemistry", name: "The Fundamental Unit of Life", order: 5, progress: 40, state: "in-progress", hasAIPath: true, topicsTotal: 4, topicsCompleted: 2 },
+  { id: "chem-ch1", subjectId: "chemistry", name: "Matter in Our Surroundings", order: 1, progress: 100, state: "mastered", hasAIPath: false, topicsTotal: 4, topicsCompleted: 4, curriculumId: "CBSE" },
+  { id: "chem-ch2", subjectId: "chemistry", name: "Is Matter Around Us Pure", order: 2, progress: 100, state: "completed", hasAIPath: false, topicsTotal: 5, topicsCompleted: 5, curriculumId: "CBSE" },
+  { id: "chem-ch3", subjectId: "chemistry", name: "Atoms and Molecules", order: 3, progress: 100, state: "completed", hasAIPath: false, topicsTotal: 6, topicsCompleted: 6, curriculumId: "CBSE" },
+  { id: "chem-ch4", subjectId: "chemistry", name: "Structure of the Atom", order: 4, progress: 85, state: "on-track", hasAIPath: false, topicsTotal: 5, topicsCompleted: 4, curriculumId: "CBSE" },
+  { id: "chem-ch5", subjectId: "chemistry", name: "The Fundamental Unit of Life", order: 5, progress: 40, state: "in-progress", hasAIPath: true, topicsTotal: 4, topicsCompleted: 2, curriculumId: "CBSE" },
+];
+
+// Chemistry Chapters — JEE Mains
+const chemistryJeeChapters: StudentChapter[] = [
+  { id: "chem-jee-ch1", subjectId: "chemistry", name: "Atomic Structure", order: 1, progress: 70, state: "on-track", hasAIPath: false, topicsTotal: 5, topicsCompleted: 4, curriculumId: "JEE Mains" },
+  { id: "chem-jee-ch2", subjectId: "chemistry", name: "Chemical Bonding & Molecular Structure", order: 2, progress: 40, state: "in-progress", hasAIPath: true, topicsTotal: 6, topicsCompleted: 2, curriculumId: "JEE Mains" },
+  { id: "chem-jee-ch3", subjectId: "chemistry", name: "Thermodynamics", order: 3, progress: 10, state: "in-progress", hasAIPath: true, topicsTotal: 5, topicsCompleted: 1, curriculumId: "JEE Mains" },
+  { id: "chem-jee-ch4", subjectId: "chemistry", name: "Equilibrium", order: 4, progress: 0, state: "not-started", hasAIPath: false, topicsTotal: 4, topicsCompleted: 0, curriculumId: "JEE Mains" },
 ];
 
 // Biology Chapters
