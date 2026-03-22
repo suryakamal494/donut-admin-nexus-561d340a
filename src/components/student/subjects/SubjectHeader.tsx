@@ -14,11 +14,6 @@ interface SubjectHeaderProps {
   /** Override chapter stats when curriculum-filtered */
   chaptersCompleted?: number;
   chaptersTotal?: number;
-  /** Curriculum switcher props — only passed when multi-curriculum */
-  curricula?: string[];
-  activeCurriculum?: string;
-  onCurriculumSwitch?: (curriculum: string) => void;
-  autoSelectedReason?: string | null;
 }
 
 const SubjectHeader = ({
