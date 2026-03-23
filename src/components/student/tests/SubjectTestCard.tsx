@@ -86,12 +86,11 @@ const SubjectTestCard = memo(function SubjectTestCard({ subject, tests }: Subjec
   const attemptedCount = tests.filter(t => t.status === "attempted").length;
   const totalCount = tests.length;
 
-  // Derive unique curricula from tests
+  // Get curricula from studentSubjects data for this subject
   const curricula = useMemo(() => {
-    const unique = new Set<string>();
-    tests.forEach(t => { if (t.curriculumId) unique.add(t.curriculumId); });
-    return Array.from(unique);
-  }, [tests]);
+    const subjectData = studentSubjects.find(s => s.id === subject.toLowerCase());
+    return subjectData?.curricula || [];
+  }, [subject]);
 
   const displayName = getSubjectDisplayName(subject);
 
