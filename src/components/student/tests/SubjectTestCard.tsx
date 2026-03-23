@@ -6,6 +6,7 @@ import { memo, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { getSubjectDisplayName } from "@/data/student/tests";
 import { getCurriculumColors } from "@/components/student/shared/curriculumColors";
+import { studentSubjects } from "@/data/student/subjects";
 import {
   Calculator, Atom, FlaskConical, Leaf, BookOpen, Code,
   Languages, ScrollText, Globe, Landmark, Mountain, Scale,
