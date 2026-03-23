@@ -130,6 +130,27 @@ const SubjectTestCard = memo(function SubjectTestCard({ subject, tests }: Subjec
               </span>
             )}
           </div>
+
+          {/* Curriculum badges */}
+          {curricula.length >= 1 && (
+            <div className="flex flex-wrap gap-1 mt-2">
+              {curricula.map((curriculum) => {
+                const cColors = getCurriculumColors(curriculum);
+                return (
+                  <span
+                    key={curriculum}
+                    className={cn(
+                      "px-1.5 py-0.5 rounded text-[9px] font-medium",
+                      cColors.badgeBg,
+                      cColors.badgeText
+                    )}
+                  >
+                    {curriculum}
+                  </span>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         <ChevronRight className="w-5 h-5 text-muted-foreground/50 group-hover:text-muted-foreground transition-colors shrink-0 mt-3" />
