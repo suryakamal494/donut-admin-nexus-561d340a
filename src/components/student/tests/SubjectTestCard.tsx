@@ -1,9 +1,11 @@
 // Subject Test Card - Matches SubjectCard design aesthetic
 // Clicking navigates to dedicated subject tests page
+// Shows curriculum badges for multi-curriculum subjects
 
-import { memo } from "react";
+import { memo, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { getSubjectDisplayName } from "@/data/student/tests";
+import { getCurriculumColors } from "@/components/student/shared/curriculumColors";
 import {
   Calculator, Atom, FlaskConical, Leaf, BookOpen, Code,
   Languages, ScrollText, Globe, Landmark, Mountain, Scale,
