@@ -1,9 +1,12 @@
 // Subject Test Card - Matches SubjectCard design aesthetic
 // Clicking navigates to dedicated subject tests page
+// Shows curriculum badges for multi-curriculum subjects
 
-import { memo } from "react";
+import { memo, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { getSubjectDisplayName } from "@/data/student/tests";
+import { getCurriculumColors } from "@/components/student/shared/curriculumColors";
+import { studentSubjects } from "@/data/student/subjects";
 import {
   Calculator, Atom, FlaskConical, Leaf, BookOpen, Code,
   Languages, ScrollText, Globe, Landmark, Mountain, Scale,
@@ -83,6 +86,12 @@ const SubjectTestCard = memo(function SubjectTestCard({ subject, tests }: Subjec
   const attemptedCount = tests.filter(t => t.status === "attempted").length;
   const totalCount = tests.length;
 
+  // Get curricula from studentSubjects data for this subject
+  const curricula = useMemo(() => {
+    const subjectData = studentSubjects.find(s => s.id === subject.toLowerCase());
+    return subjectData?.curricula || [];
+  }, [subject]);
+
   const displayName = getSubjectDisplayName(subject);
 
   return (
@@ -121,6 +130,27 @@ const SubjectTestCard = memo(function SubjectTestCard({ subject, tests }: Subjec
               </span>
             )}
           </div>
+
+          {/* Curriculum badges */}
+          {curricula.length >= 1 && (
+            <div className="flex flex-wrap gap-1 mt-2">
+              {curricula.map((curriculum) => {
+                const cColors = getCurriculumColors(curriculum);
+                return (
+                  <span
+                    key={curriculum}
+                    className={cn(
+                      "px-1.5 py-0.5 rounded text-[9px] font-medium",
+                      cColors.badgeBg,
+                      cColors.badgeText
+                    )}
+                  >
+                    {curriculum}
+                  </span>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         <ChevronRight className="w-5 h-5 text-muted-foreground/50 group-hover:text-muted-foreground transition-colors shrink-0 mt-3" />
