@@ -880,6 +880,44 @@ Share both with Institute A.
 
 ---
 
+**D11 — Mobile Test Player: Touch Navigation, Palette, and Responsiveness**
+
+*Setup:* Start an exam on a mobile device (or use browser dev tools responsive mode at 375px × 667px, simulating an iPhone SE or similar). The exam should have at least 3 subjects and 25+ questions per subject to stress-test the interface.
+
+*What to verify — step by step:*
+
+1. **Instructions page on mobile:** The instructions page should be fully readable without horizontal scrolling. The "Begin Exam" button should be easily tappable — at least 44px tall (Apple's minimum touch target guideline). If there's a long list of instructions, it should scroll vertically without cutting off the Begin button.
+
+2. **Subject tabs on small screens:** With 3+ subject tabs (Physics, Chemistry, Mathematics), verify they fit on the screen. If they don't fit in a single row, they should be horizontally scrollable with a clear scroll indicator — NOT hidden or truncated. The active tab should be clearly highlighted. Tapping between tabs should be responsive (no double-tap required).
+
+3. **Question text and options:** Long question text should wrap properly — no text overflowing off the right edge of the screen. LaTeX formulas should scale down proportionally. If a formula is too wide for the screen, it should be scrollable within its container (not cause the entire page to scroll horizontally). MCQ options should have generous tap targets — a user should be able to tap the option text OR the radio button, not just a tiny circle.
+
+4. **Question palette on mobile:** Open the question palette. On a 75-question exam, the palette grid should be scrollable within a drawer or modal — not push the entire page down. Each question number button should be at least 40px × 40px for easy tapping. Tapping a question number should navigate to that question and close the palette. The colour-coding (green, red, purple, grey) should be clearly distinguishable on mobile screens (some cheap phones have lower colour accuracy).
+
+5. **Swipe navigation (if supported):** If the Test Player supports swiping left/right to navigate between questions — verify it works smoothly. Swipe left = next question, swipe right = previous question. The swipe should not interfere with scrolling (vertical scroll for long questions should work independently).
+
+6. **Timer visibility:** The timer should remain visible at all times on mobile — not hidden behind a scroll, not obscured by other elements. If the top bar is sticky, verify it doesn't overlap question content.
+
+7. **Mark for Review button:** The "Mark for Review" button should be easily accessible on mobile — not hidden in a menu or behind a long scroll. It should be tappable without accidentally tapping an MCQ option.
+
+8. **Submit button:** The Submit button should be in a predictable location. On mobile, if it's at the bottom of the page, verify it doesn't get hidden behind the phone's navigation bar or keyboard. The submission confirmation dialog should be fully visible on mobile — not cut off at the bottom.
+
+9. **Landscape mode:** Rotate the phone to landscape. The Test Player should adapt — not break or show a blank area. Questions and options should reflow appropriately.
+
+10. **Tablet view (768px):** Test on a tablet-sized viewport. The layout should use the available space well — not just stretch the mobile layout. Ideally, the question palette could be shown as a sidebar instead of a modal on tablet.
+
+*Why this matters:* In Indian coaching institutes, a significant percentage of students take exams on their phones — not laptops. A Test Player that works perfectly on desktop but is unusable on a 5.5-inch phone screen is effectively broken for a large portion of users. Touch targets that are too small, palettes that don't scroll, and formulas that overflow are the most common mobile complaints.
+
+*Common failure points:*
+- Question palette buttons are too small to tap accurately (under 36px)
+- LaTeX formulas cause horizontal page scroll (breaks the entire layout)
+- The Submit button is hidden behind the phone's bottom navigation bar
+- Subject tabs are cut off on small screens with no scroll indicator
+- Double-tap required to select an MCQ option (touch event handling bug)
+- The timer disappears when scrolling down on a long question
+
+---
+
 ### Group E — Results & Role-Based Reporting
 
 > **What this group tests:** After an exam is submitted, results must flow correctly to three different audiences — the student, the teacher, and the institute admin. Each sees a different slice of the data, scoped by their role. This group verifies that the right data reaches the right person and — just as importantly — that no one sees data they shouldn't.
