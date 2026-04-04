@@ -325,6 +325,26 @@ Share both with Institute A.
 
 ---
 
+**A13 — Bulk Audience Assignment: Multiple PYPs Shared at Once**
+
+*Setup:* In SuperAdmin, create 10 PYPs (or use 10 existing ones). Now go to the Audience panel and attempt to share all 10 with Institute A in rapid succession — or, if the UI supports it, select multiple PYPs and share them to Institute A in a single bulk operation.
+
+*What to verify:*
+- Log in as Institute A admin. Go to Exams → Previous Year Papers tab. All 10 PYPs should be visible — not 9, not 11, exactly 10.
+- Verify that each PYP has the correct name, year, and pattern — no data got swapped or mixed up during the bulk operation.
+- Check the year-wise accordion grouping — if the 10 PYPs span multiple years (2023, 2024, 2025), each should appear under the correct year group with the correct count.
+- If the UI does NOT support bulk sharing (i.e., you must share one PYP at a time), verify that sharing 10 PYPs sequentially does not cause any of the earlier shares to be overwritten or lost. After sharing PYP #10, go back and confirm PYP #1 is still visible at the institute.
+- Performance check: does the Institute's PYP list load within a reasonable time (under 5 seconds) with 10+ PYPs? Scroll through the entire list — no lazy-loading gaps or missing entries.
+
+*Why this matters:* In real-world usage, SuperAdmins share dozens of PYPs and Grand Tests at the start of an academic year. If bulk operations silently drop some exams or corrupt data during rapid-fire sharing, institutes will have incomplete content — and the bug may go unnoticed for weeks.
+
+*Common failure points:*
+- Race condition: sharing PYP #5 overwrites the audience list from PYP #4 (if the system uses a single audience list per action instead of per-exam)
+- The institute's PYP list shows a stale count until a hard refresh (caching issue)
+- The 10th PYP appears but the 1st one disappears (FIFO queue bug in the audience assignment)
+
+---
+
 ### Group B — SuperAdmin to Institute: Grand Test Distribution
 
 > **What this group tests:** The same Audience-based distribution as Group A, but for Grand Tests. Grand Tests add an additional layer of complexity: they have schedules. These scenarios verify that schedule information is preserved during distribution and that time-based access controls work correctly.
