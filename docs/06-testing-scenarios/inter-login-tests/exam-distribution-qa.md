@@ -1097,6 +1097,67 @@ Share both with Institute A.
 
 ---
 
+**E13 — Delayed Rank Publication: Controlled Release of Results**
+
+*Setup:* This scenario tests whether the institute can control when ranks and detailed results are shown to students. Some exams (especially Grand Tests) use a "delayed publication" model where:
+- Students submit the exam and see a "Results pending" or "Awaiting Publication" status.
+- The institute reviews the results, resolves any disputes, and then "publishes" the results.
+- Only after publication do students see their scores, ranks, and detailed breakdowns.
+
+To set this up: create a Grand Test with the "delayed results" or "manual publication" setting enabled (if available in the exam configuration). Share it with an institute, assign to a batch, and have students take it.
+
+*What to verify:*
+
+1. **Before publication (student view):**
+   - After submitting the exam, the student should see a status like "Results Awaiting Publication" or "Your results will be available once published by your institute."
+   - The student should NOT see their score, rank, or question-by-question breakdown yet.
+   - The "View Results" button should either be disabled or show the pending status when clicked.
+   - The student should not be able to access results by manipulating the URL (e.g., directly navigating to `/tests/results/[exam-id]` should show the pending status, not the actual results).
+
+2. **Before publication (teacher view):**
+   - Can the teacher see the raw results before the institute publishes? This depends on the product decision:
+     - If yes: verify the teacher sees their subject-scoped results as usual, but with a "Not Published" indicator.
+     - If no: the teacher should see the same pending status as the student.
+   - Document the actual behaviour.
+
+3. **Before publication (institute view):**
+   - The institute admin should be able to see the full results — scores, ranks, analytics — even before publishing. This is the review phase.
+   - There should be a "Publish Results" button or action clearly visible.
+   - The institute should be able to review and verify before making results available to students.
+
+4. **Publishing action:**
+   - The institute admin clicks "Publish Results."
+   - A confirmation dialog should appear: "Publishing will make results visible to all students. This action cannot be undone. Proceed?"
+   - After confirmation, the publish action should complete.
+
+5. **After publication (student view):**
+   - The student should now see their full results: score, rank (if applicable), question-by-question breakdown.
+   - If push notifications are enabled, the student should receive a notification: "Results for [Exam Name] have been published."
+   - The status should change from "Awaiting Publication" to "Published" or simply show the results directly.
+
+6. **After publication (teacher view):**
+   - The teacher should now see the subject-scoped results (if they were hidden before publication).
+   - Analytics and reports should be fully available.
+
+7. **Partial publication (edge case):**
+   - If the system supports publishing results for specific batches (not all at once): verify that publishing for Batch A makes results visible to Batch A students but NOT Batch B students who also took the exam.
+   - If the system does NOT support partial publication: all students should see results simultaneously.
+
+8. **Re-publication after correction:**
+   - After publishing, if the institute discovers a scoring error and needs to correct it — can they "unpublish," fix, and re-publish? Or are published results locked?
+   - Document the actual behaviour.
+
+*Why this matters:* In competitive exam coaching, premature result release can cause panic — especially if there are scoring disputes or question errors. The delayed publication model gives institutes control over the release timeline. If results leak before publication (through URL manipulation or caching), it undermines the institute's authority and can cause student unrest. This is both a UX and a security test.
+
+*Common failure points:*
+- Results are visible to students immediately despite the "delayed publication" setting (setting not enforced)
+- The "Publish" button is missing or hidden in the institute UI (feature exists but is undiscoverable)
+- After publishing, the student still sees "Awaiting Publication" until they hard-refresh (real-time update failure)
+- Push notification is sent before the publish action is confirmed (premature notification)
+- Rank calculation changes after publication (late-arriving submissions or score corrections cause rank shifts that confuse students)
+
+---
+
 ### Group F — Cross-Cutting & Edge Scenarios
 
 > **What this group tests:** End-to-end flows that exercise the entire distribution chain in complex, real-world-like scenarios. These scenarios combine multiple aspects from Groups A through E and introduce edge cases that are likely to cause failures. If Groups A-E pass but Group F fails, there are integration bugs hiding in the seams between features.
