@@ -199,6 +199,7 @@ export const docsNavigation: DocSection[] = [
           { title: "Curriculum Scope QA", path: "06-testing-scenarios/inter-login-tests/curriculum-scope-qa" },
           { title: "Course Filtering QA", path: "06-testing-scenarios/inter-login-tests/course-chapter-filtering-qa" },
           { title: "Course Assignment QA", path: "06-testing-scenarios/inter-login-tests/course-assignment-scope-qa" },
+          { title: "Exam Distribution QA", path: "06-testing-scenarios/inter-login-tests/exam-distribution-qa" },
         ],
       },
     ],
