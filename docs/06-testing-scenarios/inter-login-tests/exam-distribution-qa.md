@@ -660,6 +660,34 @@ Share both with Institute A.
 
 ---
 
+**C13 — Exam Pattern Filter on Student Tests Page**
+
+*Setup:* A student's batch has been assigned multiple exams of different patterns:
+- 2 JEE Main PYPs
+- 1 JEE Advanced PYP
+- 1 NEET Grand Test (if the batch has NEET curriculum)
+- 1 institute-created subject test
+
+*What to verify:*
+- Go to the student's Tests page. All assigned exams should be visible in their respective tabs (Grand Tests & PYPs tab for PYPs and GTs, Subject Tests tab for institute-created exams).
+- If a pattern filter exists on the Tests page (e.g., a dropdown or chip filter for "JEE Main," "JEE Advanced," "NEET"): select "JEE Main" — only the 2 JEE Main PYPs should appear. The JEE Advanced and NEET exams should be hidden.
+- Switch the filter to "JEE Advanced" — only the 1 JEE Advanced PYP should appear.
+- Switch to "NEET" — only the NEET GT should appear.
+- Clear the filter (select "All" or remove the filter) — all exams should reappear.
+- Verify the filter count badge (if any) matches the number of exams shown (e.g., "JEE Main (2)").
+- Verify the filter does NOT affect the Subject Tests tab — institute-created exams should remain visible regardless of the pattern filter applied to the Grand Tests & PYPs tab.
+- Edge case: if the student's batch has only one pattern (e.g., all JEE Main), does the filter still work? It should — showing the same results whether filtered or not.
+
+*Why this matters:* Students preparing for JEE Main don't want to scroll through NEET papers to find their practice tests. The pattern filter is a key usability feature, especially when a batch has 20+ exams assigned. If the filter shows wrong results or hides exams that should be visible, students will miss tests.
+
+*Common failure points:*
+- The filter shows all exams regardless of selection (filter not applied to the query)
+- The filter hides exams from the wrong tab (e.g., filtering on Grand Tests tab also hides Subject Tests)
+- After applying and clearing a filter, some exams don't reappear (state not reset properly)
+- The filter dropdown shows patterns that the student has no exams for (e.g., "NEET" appears even though no NEET exams are assigned — this is confusing but not critical)
+
+---
+
 ### Group D — Student Test Attempt
 
 > **What this group tests:** The student's exam-taking experience from start to finish. These scenarios verify the Test Player's functionality, including pattern-specific UI, navigation, timer, submission, and edge cases like browser crashes and network issues. This is where the student directly interacts with exam content, so every detail matters.
