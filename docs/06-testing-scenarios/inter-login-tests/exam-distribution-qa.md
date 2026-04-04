@@ -325,6 +325,26 @@ Share both with Institute A.
 
 ---
 
+**A13 — Bulk Audience Assignment: Multiple PYPs Shared at Once**
+
+*Setup:* In SuperAdmin, create 10 PYPs (or use 10 existing ones). Now go to the Audience panel and attempt to share all 10 with Institute A in rapid succession — or, if the UI supports it, select multiple PYPs and share them to Institute A in a single bulk operation.
+
+*What to verify:*
+- Log in as Institute A admin. Go to Exams → Previous Year Papers tab. All 10 PYPs should be visible — not 9, not 11, exactly 10.
+- Verify that each PYP has the correct name, year, and pattern — no data got swapped or mixed up during the bulk operation.
+- Check the year-wise accordion grouping — if the 10 PYPs span multiple years (2023, 2024, 2025), each should appear under the correct year group with the correct count.
+- If the UI does NOT support bulk sharing (i.e., you must share one PYP at a time), verify that sharing 10 PYPs sequentially does not cause any of the earlier shares to be overwritten or lost. After sharing PYP #10, go back and confirm PYP #1 is still visible at the institute.
+- Performance check: does the Institute's PYP list load within a reasonable time (under 5 seconds) with 10+ PYPs? Scroll through the entire list — no lazy-loading gaps or missing entries.
+
+*Why this matters:* In real-world usage, SuperAdmins share dozens of PYPs and Grand Tests at the start of an academic year. If bulk operations silently drop some exams or corrupt data during rapid-fire sharing, institutes will have incomplete content — and the bug may go unnoticed for weeks.
+
+*Common failure points:*
+- Race condition: sharing PYP #5 overwrites the audience list from PYP #4 (if the system uses a single audience list per action instead of per-exam)
+- The institute's PYP list shows a stale count until a hard refresh (caching issue)
+- The 10th PYP appears but the 1st one disappears (FIFO queue bug in the audience assignment)
+
+---
+
 ### Group B — SuperAdmin to Institute: Grand Test Distribution
 
 > **What this group tests:** The same Audience-based distribution as Group A, but for Grand Tests. Grand Tests add an additional layer of complexity: they have schedules. These scenarios verify that schedule information is preserved during distribution and that time-based access controls work correctly.
@@ -640,6 +660,34 @@ Share both with Institute A.
 
 ---
 
+**C13 — Exam Pattern Filter on Student Tests Page**
+
+*Setup:* A student's batch has been assigned multiple exams of different patterns:
+- 2 JEE Main PYPs
+- 1 JEE Advanced PYP
+- 1 NEET Grand Test (if the batch has NEET curriculum)
+- 1 institute-created subject test
+
+*What to verify:*
+- Go to the student's Tests page. All assigned exams should be visible in their respective tabs (Grand Tests & PYPs tab for PYPs and GTs, Subject Tests tab for institute-created exams).
+- If a pattern filter exists on the Tests page (e.g., a dropdown or chip filter for "JEE Main," "JEE Advanced," "NEET"): select "JEE Main" — only the 2 JEE Main PYPs should appear. The JEE Advanced and NEET exams should be hidden.
+- Switch the filter to "JEE Advanced" — only the 1 JEE Advanced PYP should appear.
+- Switch to "NEET" — only the NEET GT should appear.
+- Clear the filter (select "All" or remove the filter) — all exams should reappear.
+- Verify the filter count badge (if any) matches the number of exams shown (e.g., "JEE Main (2)").
+- Verify the filter does NOT affect the Subject Tests tab — institute-created exams should remain visible regardless of the pattern filter applied to the Grand Tests & PYPs tab.
+- Edge case: if the student's batch has only one pattern (e.g., all JEE Main), does the filter still work? It should — showing the same results whether filtered or not.
+
+*Why this matters:* Students preparing for JEE Main don't want to scroll through NEET papers to find their practice tests. The pattern filter is a key usability feature, especially when a batch has 20+ exams assigned. If the filter shows wrong results or hides exams that should be visible, students will miss tests.
+
+*Common failure points:*
+- The filter shows all exams regardless of selection (filter not applied to the query)
+- The filter hides exams from the wrong tab (e.g., filtering on Grand Tests tab also hides Subject Tests)
+- After applying and clearing a filter, some exams don't reappear (state not reset properly)
+- The filter dropdown shows patterns that the student has no exams for (e.g., "NEET" appears even though no NEET exams are assigned — this is confusing but not critical)
+
+---
+
 ### Group D — Student Test Attempt
 
 > **What this group tests:** The student's exam-taking experience from start to finish. These scenarios verify the Test Player's functionality, including pattern-specific UI, navigation, timer, submission, and edge cases like browser crashes and network issues. This is where the student directly interacts with exam content, so every detail matters.
@@ -832,6 +880,44 @@ Share both with Institute A.
 
 ---
 
+**D11 — Mobile Test Player: Touch Navigation, Palette, and Responsiveness**
+
+*Setup:* Start an exam on a mobile device (or use browser dev tools responsive mode at 375px × 667px, simulating an iPhone SE or similar). The exam should have at least 3 subjects and 25+ questions per subject to stress-test the interface.
+
+*What to verify — step by step:*
+
+1. **Instructions page on mobile:** The instructions page should be fully readable without horizontal scrolling. The "Begin Exam" button should be easily tappable — at least 44px tall (Apple's minimum touch target guideline). If there's a long list of instructions, it should scroll vertically without cutting off the Begin button.
+
+2. **Subject tabs on small screens:** With 3+ subject tabs (Physics, Chemistry, Mathematics), verify they fit on the screen. If they don't fit in a single row, they should be horizontally scrollable with a clear scroll indicator — NOT hidden or truncated. The active tab should be clearly highlighted. Tapping between tabs should be responsive (no double-tap required).
+
+3. **Question text and options:** Long question text should wrap properly — no text overflowing off the right edge of the screen. LaTeX formulas should scale down proportionally. If a formula is too wide for the screen, it should be scrollable within its container (not cause the entire page to scroll horizontally). MCQ options should have generous tap targets — a user should be able to tap the option text OR the radio button, not just a tiny circle.
+
+4. **Question palette on mobile:** Open the question palette. On a 75-question exam, the palette grid should be scrollable within a drawer or modal — not push the entire page down. Each question number button should be at least 40px × 40px for easy tapping. Tapping a question number should navigate to that question and close the palette. The colour-coding (green, red, purple, grey) should be clearly distinguishable on mobile screens (some cheap phones have lower colour accuracy).
+
+5. **Swipe navigation (if supported):** If the Test Player supports swiping left/right to navigate between questions — verify it works smoothly. Swipe left = next question, swipe right = previous question. The swipe should not interfere with scrolling (vertical scroll for long questions should work independently).
+
+6. **Timer visibility:** The timer should remain visible at all times on mobile — not hidden behind a scroll, not obscured by other elements. If the top bar is sticky, verify it doesn't overlap question content.
+
+7. **Mark for Review button:** The "Mark for Review" button should be easily accessible on mobile — not hidden in a menu or behind a long scroll. It should be tappable without accidentally tapping an MCQ option.
+
+8. **Submit button:** The Submit button should be in a predictable location. On mobile, if it's at the bottom of the page, verify it doesn't get hidden behind the phone's navigation bar or keyboard. The submission confirmation dialog should be fully visible on mobile — not cut off at the bottom.
+
+9. **Landscape mode:** Rotate the phone to landscape. The Test Player should adapt — not break or show a blank area. Questions and options should reflow appropriately.
+
+10. **Tablet view (768px):** Test on a tablet-sized viewport. The layout should use the available space well — not just stretch the mobile layout. Ideally, the question palette could be shown as a sidebar instead of a modal on tablet.
+
+*Why this matters:* In Indian coaching institutes, a significant percentage of students take exams on their phones — not laptops. A Test Player that works perfectly on desktop but is unusable on a 5.5-inch phone screen is effectively broken for a large portion of users. Touch targets that are too small, palettes that don't scroll, and formulas that overflow are the most common mobile complaints.
+
+*Common failure points:*
+- Question palette buttons are too small to tap accurately (under 36px)
+- LaTeX formulas cause horizontal page scroll (breaks the entire layout)
+- The Submit button is hidden behind the phone's bottom navigation bar
+- Subject tabs are cut off on small screens with no scroll indicator
+- Double-tap required to select an MCQ option (touch event handling bug)
+- The timer disappears when scrolling down on a long question
+
+---
+
 ### Group E — Results & Role-Based Reporting
 
 > **What this group tests:** After an exam is submitted, results must flow correctly to three different audiences — the student, the teacher, and the institute admin. Each sees a different slice of the data, scoped by their role. This group verifies that the right data reaches the right person and — just as importantly — that no one sees data they shouldn't.
@@ -1008,6 +1094,67 @@ Share both with Institute A.
 - The total score should be the sum of marks from the 50 answered questions.
 - In the question-by-question breakdown, the 25 unanswered questions should be marked as "Not Attempted" — not as "Incorrect."
 - Teacher and institute reports should reflect the same data.
+
+---
+
+**E13 — Delayed Rank Publication: Controlled Release of Results**
+
+*Setup:* This scenario tests whether the institute can control when ranks and detailed results are shown to students. Some exams (especially Grand Tests) use a "delayed publication" model where:
+- Students submit the exam and see a "Results pending" or "Awaiting Publication" status.
+- The institute reviews the results, resolves any disputes, and then "publishes" the results.
+- Only after publication do students see their scores, ranks, and detailed breakdowns.
+
+To set this up: create a Grand Test with the "delayed results" or "manual publication" setting enabled (if available in the exam configuration). Share it with an institute, assign to a batch, and have students take it.
+
+*What to verify:*
+
+1. **Before publication (student view):**
+   - After submitting the exam, the student should see a status like "Results Awaiting Publication" or "Your results will be available once published by your institute."
+   - The student should NOT see their score, rank, or question-by-question breakdown yet.
+   - The "View Results" button should either be disabled or show the pending status when clicked.
+   - The student should not be able to access results by manipulating the URL (e.g., directly navigating to `/tests/results/[exam-id]` should show the pending status, not the actual results).
+
+2. **Before publication (teacher view):**
+   - Can the teacher see the raw results before the institute publishes? This depends on the product decision:
+     - If yes: verify the teacher sees their subject-scoped results as usual, but with a "Not Published" indicator.
+     - If no: the teacher should see the same pending status as the student.
+   - Document the actual behaviour.
+
+3. **Before publication (institute view):**
+   - The institute admin should be able to see the full results — scores, ranks, analytics — even before publishing. This is the review phase.
+   - There should be a "Publish Results" button or action clearly visible.
+   - The institute should be able to review and verify before making results available to students.
+
+4. **Publishing action:**
+   - The institute admin clicks "Publish Results."
+   - A confirmation dialog should appear: "Publishing will make results visible to all students. This action cannot be undone. Proceed?"
+   - After confirmation, the publish action should complete.
+
+5. **After publication (student view):**
+   - The student should now see their full results: score, rank (if applicable), question-by-question breakdown.
+   - If push notifications are enabled, the student should receive a notification: "Results for [Exam Name] have been published."
+   - The status should change from "Awaiting Publication" to "Published" or simply show the results directly.
+
+6. **After publication (teacher view):**
+   - The teacher should now see the subject-scoped results (if they were hidden before publication).
+   - Analytics and reports should be fully available.
+
+7. **Partial publication (edge case):**
+   - If the system supports publishing results for specific batches (not all at once): verify that publishing for Batch A makes results visible to Batch A students but NOT Batch B students who also took the exam.
+   - If the system does NOT support partial publication: all students should see results simultaneously.
+
+8. **Re-publication after correction:**
+   - After publishing, if the institute discovers a scoring error and needs to correct it — can they "unpublish," fix, and re-publish? Or are published results locked?
+   - Document the actual behaviour.
+
+*Why this matters:* In competitive exam coaching, premature result release can cause panic — especially if there are scoring disputes or question errors. The delayed publication model gives institutes control over the release timeline. If results leak before publication (through URL manipulation or caching), it undermines the institute's authority and can cause student unrest. This is both a UX and a security test.
+
+*Common failure points:*
+- Results are visible to students immediately despite the "delayed publication" setting (setting not enforced)
+- The "Publish" button is missing or hidden in the institute UI (feature exists but is undiscoverable)
+- After publishing, the student still sees "Awaiting Publication" until they hard-refresh (real-time update failure)
+- Push notification is sent before the publish action is confirmed (premature notification)
+- Rank calculation changes after publication (late-arriving submissions or score corrections cause rank shifts that confuse students)
 
 ---
 
