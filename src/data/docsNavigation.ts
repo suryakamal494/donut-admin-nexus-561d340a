@@ -160,6 +160,14 @@ export const docsNavigation: DocSection[] = [
     ],
   },
   {
+    title: "Product Audit",
+    icon: "📊",
+    color: "text-orange-500",
+    items: [
+      { title: "Pricing vs Product Gap Analysis", path: "07-product-audit/pricing-feature-gap-analysis" },
+    ],
+  },
+  {
     title: "Testing Scenarios",
     icon: "🧪",
     color: "text-teal-500",
