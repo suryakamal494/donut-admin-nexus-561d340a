@@ -19,6 +19,7 @@ import { ProfileEditDialog, PasswordResetDialog } from "@/components/teacher";
 import { toast } from "sonner";
 import { useTeacherNotifications } from "@/hooks/useTeacherNotifications";
 import { TeacherNotificationCard } from "@/components/teacher/notifications";
+import CopilotLauncher from "@/components/teacher/routine-pilot/CopilotLauncher";
 
 const TeacherLayout = () => {
   const navigate = useNavigate();
@@ -245,6 +246,9 @@ const TeacherLayout = () => {
 
       {/* Bottom Navigation - Mobile Only */}
       {isMobile && <TeacherBottomNav />}
+
+      {/* Floating Copilot launcher - visible on every teacher page */}
+      <CopilotLauncher />
 
       {/* Profile Edit Dialog */}
       <ProfileEditDialog 

@@ -90,7 +90,7 @@ export default function RoutinePilotPage() {
   const selectedThread = threads.find((t) => t.id === selectedThreadId) ?? null;
 
   return (
-    <div className="flex h-[calc(100vh-4rem)] overflow-hidden bg-background">
+    <div className="flex h-full overflow-hidden bg-background">
       <div className="hidden md:block w-[260px] flex-shrink-0 border-r bg-card/40">
         <LeftRail
           batches={batches}
