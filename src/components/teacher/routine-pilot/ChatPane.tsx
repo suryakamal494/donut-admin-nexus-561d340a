@@ -11,19 +11,29 @@ import { buildReportsContext, serializeReportsContext } from "./reports-cards/re
 import ReportCardRenderer, { type ReportDataEvent } from "./reports-cards/ReportCardRenderer";
 import type { Batch, Routine, Thread, Message } from "./types";
 
+interface PrefillPayload {
+  contextBanner?: string;
+  topic?: string;
+  difficulty?: string;
+  studentIds?: string[];
+  studentNames?: string[];
+}
+
 interface Props {
   batch: Batch | null;
   routine: Routine | null;
   thread: Thread | null;
   onThreadCreated: (t: Thread) => void;
   onArtifactsCreated: () => void;
+  prefill?: PrefillPayload | null;
+  onPrefillConsumed?: () => void;
 }
 
 interface MessageWithReports extends Message {
   reportEvents?: ReportDataEvent[];
 }
 
-export default function ChatPane({ batch, routine, thread, onThreadCreated, onArtifactsCreated }: Props) {
+export default function ChatPane({ batch, routine, thread, onThreadCreated, onArtifactsCreated, prefill, onPrefillConsumed }: Props) {
   const [messages, setMessages] = useState<MessageWithReports[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
