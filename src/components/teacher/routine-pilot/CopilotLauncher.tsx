@@ -1,7 +1,8 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { Sparkles, ArrowLeft } from "lucide-react";
 import RoutinePilotPage from "./RoutinePilotPage";
+import CopilotTutorial, { shouldShowTutorial } from "./CopilotTutorial";
 import { cn } from "@/lib/utils";
 import { useCopilot } from "./CopilotContext";
 
