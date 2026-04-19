@@ -777,6 +777,15 @@ ${JSON.stringify({ title: targetArtifact.title, content: targetArtifact.content 
           // Persist tool-call results
           const createdArtifactIds: string[] = [];
           const updatedArtifactIds: string[] = [];
+          // Collect Reports tool outputs so we can run a follow-up turn that
+          // produces a plain-language insight on top of each card.
+          const reportsToolOutputs: Array<{
+            name: string;
+            args: string;
+            toolCallId: string;
+            toolResultText: string;
+          }> = [];
+          const assistantToolCalls: any[] = [];
 
           for (const idx of Object.keys(toolCalls)) {
             const call = toolCalls[+idx];
@@ -789,6 +798,18 @@ ${JSON.stringify({ title: targetArtifact.title, content: targetArtifact.content 
                   encoder.encode(`data: ${JSON.stringify({ rp_report_data: result.event })}\n\n`)
                 );
               }
+              const toolCallId = `rp_tool_${idx}_${Date.now()}`;
+              assistantToolCalls.push({
+                id: toolCallId,
+                type: "function",
+                function: { name: call.name, arguments: call.args || "{}" },
+              });
+              reportsToolOutputs.push({
+                name: call.name,
+                args: call.args,
+                toolCallId,
+                toolResultText: result?.toolResultText ?? JSON.stringify({ ok: false }),
+              });
               continue;
             }
 
