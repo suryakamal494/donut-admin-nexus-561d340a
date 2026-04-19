@@ -11,19 +11,29 @@ import { buildReportsContext, serializeReportsContext } from "./reports-cards/re
 import ReportCardRenderer, { type ReportDataEvent } from "./reports-cards/ReportCardRenderer";
 import type { Batch, Routine, Thread, Message } from "./types";
 
+interface PrefillPayload {
+  contextBanner?: string;
+  topic?: string;
+  difficulty?: string;
+  studentIds?: string[];
+  studentNames?: string[];
+}
+
 interface Props {
   batch: Batch | null;
   routine: Routine | null;
   thread: Thread | null;
   onThreadCreated: (t: Thread) => void;
   onArtifactsCreated: () => void;
+  prefill?: PrefillPayload | null;
+  onPrefillConsumed?: () => void;
 }
 
 interface MessageWithReports extends Message {
   reportEvents?: ReportDataEvent[];
 }
 
-export default function ChatPane({ batch, routine, thread, onThreadCreated, onArtifactsCreated }: Props) {
+export default function ChatPane({ batch, routine, thread, onThreadCreated, onArtifactsCreated, prefill, onPrefillConsumed }: Props) {
   const [messages, setMessages] = useState<MessageWithReports[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -65,6 +75,27 @@ export default function ChatPane({ batch, routine, thread, onThreadCreated, onAr
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [messages]);
+
+  // Consume cross-routine prefill (Reports -> Homework). Drop a draft into the
+  // composer so the teacher can review/tweak before sending.
+  useEffect(() => {
+    if (!prefill || !routine) return;
+    const isHomework = routine.key === "homework" || routine.key.includes("homework");
+    if (!isHomework) return;
+    const parts: string[] = [];
+    if (prefill.contextBanner) parts.push(prefill.contextBanner);
+    const verb = "Generate banded homework";
+    const topicPart = prefill.topic ? ` on ${prefill.topic}` : "";
+    const diffPart = prefill.difficulty ? ` (${prefill.difficulty} difficulty)` : "";
+    const namesPart =
+      prefill.studentNames && prefill.studentNames.length
+        ? ` for ${prefill.studentNames.slice(0, 6).join(", ")}${prefill.studentNames.length > 6 ? ` and ${prefill.studentNames.length - 6} more` : ""}`
+        : "";
+    parts.push(`${verb}${topicPart}${diffPart}${namesPart}.`);
+    setInput(parts.join("\n\n"));
+    setTimeout(() => textareaRef.current?.focus(), 0);
+    onPrefillConsumed?.();
+  }, [prefill, routine, onPrefillConsumed]);
 
   const handleChip = (chip: string) => {
     setInput(chip);

@@ -51,6 +51,15 @@ export default function RoutinePilotPage({ initialBatchId, initialRoutineKey }: 
   // Artifact count for mobile handle
   const [artifactCount, setArtifactCount] = useState(0);
 
+  // Cross-routine handoff prefill (Reports -> Homework)
+  const [pendingHomeworkPrefill, setPendingHomeworkPrefill] = useState<{
+    contextBanner?: string;
+    topic?: string;
+    difficulty?: string;
+    studentIds?: string[];
+    studentNames?: string[];
+  } | null>(null);
+
   // Load batches + routines
   useEffect(() => {
     (async () => {
@@ -128,6 +137,38 @@ export default function RoutinePilotPage({ initialBatchId, initialRoutineKey }: 
       supabase.removeChannel(channel);
     };
   }, [selectedBatchId]);
+
+  // ───── Reports → Homework handoff ─────
+  // ActionableInsightCard / TopicCard / StudentProfileCard dispatch a custom
+  // event with prefill data. We switch routine, create a fresh thread, and
+  // hand the prefill to ChatPane to drop into the composer.
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent).detail ?? {};
+      const homeworkRoutine = routines.find(
+        (r) => r.is_active && (r.key === "homework" || r.key.includes("homework"))
+      );
+      if (!homeworkRoutine) {
+        // fall back to first non-reports routine
+        const fb = routines.find((r) => r.is_active && r.key !== "reports");
+        if (!fb) return;
+        setSelectedRoutineKey(fb.key);
+      } else {
+        setSelectedRoutineKey(homeworkRoutine.key);
+      }
+      setSelectedThreadId(null);
+      setThreads([]);
+      setPendingHomeworkPrefill({
+        contextBanner: detail.contextBanner,
+        topic: detail.topic,
+        difficulty: detail.difficulty,
+        studentIds: detail.studentIds,
+        studentNames: detail.studentNames,
+      });
+    };
+    window.addEventListener("rp:handoff-homework", handler as EventListener);
+    return () => window.removeEventListener("rp:handoff-homework", handler as EventListener);
+  }, [routines]);
 
   const refreshThreads = async () => {
     if (!selectedBatchId || !selectedRoutineKey) return;
@@ -256,6 +297,8 @@ export default function RoutinePilotPage({ initialBatchId, initialRoutineKey }: 
               setSelectedThreadId(t.id);
             }}
             onArtifactsCreated={refreshThreads}
+            prefill={pendingHomeworkPrefill}
+            onPrefillConsumed={() => setPendingHomeworkPrefill(null)}
           />
         </div>
 
