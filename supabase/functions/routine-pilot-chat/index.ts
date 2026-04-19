@@ -353,7 +353,16 @@ const reportsTools = [
     function: {
       name: "get_batch_overview",
       description:
-        "Returns the active batch's health summary: overall trend, recent average, at-risk count, weak topic count, and a suggested focus area. Use for 'how is the batch doing', 'overall health', 'pulse', or any open-ended question about the batch.",
+        "Returns the active batch's health summary: overall trend, recent average, at-risk count, weak topic count, and a suggested focus area. Use for 'how is the batch doing', 'overall health', 'pulse'.",
+      parameters: { type: "object", properties: {}, additionalProperties: false },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_batch_health_summary",
+      description:
+        "Returns the full 'Today's Focus' card: priority topics, students to check in, suggested focus sentence. Use for 'what should I focus on today', 'today's focus', 'priority list'.",
       parameters: { type: "object", properties: {}, additionalProperties: false },
     },
   },
@@ -362,14 +371,11 @@ const reportsTools = [
     function: {
       name: "get_recent_exams",
       description:
-        "Returns the last few completed exams for the active batch with their class averages. Use for 'last exam', 'recent tests', 'how have we been doing', or to set up a follow-up exam analysis.",
+        "Returns the last few completed exams with class averages. Use for 'recent tests', 'last few exams', or to set up a follow-up exam analysis.",
       parameters: {
         type: "object",
         properties: {
-          limit: {
-            type: "number",
-            description: "How many recent exams to include. Default 5, max 8.",
-          },
+          limit: { type: "number", description: "Default 5, max 8." },
         },
         additionalProperties: false,
       },
@@ -380,15 +386,81 @@ const reportsTools = [
     function: {
       name: "get_exam_analysis",
       description:
-        "Deep-dive on ONE specific exam: verdict, performance bands, weak topic flags, score distribution. Use when the teacher names an exam or asks 'how did we do on the optics test'. If no exam_id is given, the most recent completed exam is used.",
+        "Deep-dive on ONE exam: verdict, performance bands, topic flags, score distribution, difficulty/cognitive mix. If exam_id is omitted, the most recent exam is used. Match exam_id from get_recent_exams.",
       parameters: {
         type: "object",
         properties: {
-          exam_id: {
+          exam_id: { type: "string", description: "Exam id from get_recent_exams." },
+          exam_name_hint: {
             type: "string",
             description:
-              "The exam id from get_recent_exams. Omit to use the most recent completed exam.",
+              "If you don't have an id but the user named the exam (e.g. 'optics test'), pass the name and we will fuzzy-match.",
           },
+        },
+        additionalProperties: false,
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_question_analysis",
+      description:
+        "Per-question stats for an exam (correct/incorrect/unattempted, avg time, success rate, difficulty, cognitive type). Use for 'which questions tripped them up', 'question-wise breakdown'.",
+      parameters: {
+        type: "object",
+        properties: {
+          exam_id: { type: "string" },
+          exam_name_hint: { type: "string" },
+          weakest_only: { type: "boolean", description: "Return only weak/hard questions." },
+        },
+        additionalProperties: false,
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_difficulty_analysis",
+      description:
+        "Easy/medium/hard accuracy + cognitive-type distribution for one exam. Use for 'easy vs hard performance', 'cognitive mix', 'difficulty breakdown'.",
+      parameters: {
+        type: "object",
+        properties: {
+          exam_id: { type: "string" },
+          exam_name_hint: { type: "string" },
+        },
+        additionalProperties: false,
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_actionable_insights",
+      description:
+        "Reteach/practice/celebrate/attention insight cards for an exam — each carries a one-click action payload (topic, difficulty, studentIds) so the teacher can hand off to the Homework routine. Use whenever the teacher asks 'what should I do', 'what should I reteach', 'next steps'.",
+      parameters: {
+        type: "object",
+        properties: {
+          exam_id: { type: "string" },
+          exam_name_hint: { type: "string" },
+        },
+        additionalProperties: false,
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_compare_exams",
+      description:
+        "Side-by-side delta of TWO exams: avg %, pass %, weak topics joined/dropped. Pass two exam ids OR one id and we'll compare the most recent two.",
+      parameters: {
+        type: "object",
+        properties: {
+          exam_id_a: { type: "string" },
+          exam_id_b: { type: "string" },
         },
         additionalProperties: false,
       },
@@ -399,8 +471,41 @@ const reportsTools = [
     function: {
       name: "get_chapter_health",
       description:
-        "Returns chapter-wise success rates and weak-topic counts for the active batch (sorted weakest first). Use for 'weak chapters', 'chapter health', or 'where do students struggle most'.",
+        "Chapter-wise success rates and weak-topic counts (sorted weakest first). Use for 'weak chapters', 'chapter health'.",
       parameters: { type: "object", properties: {}, additionalProperties: false },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_chapter_deep_dive",
+      description:
+        "ONE chapter deep-dive: topic heatmap, per-exam breakdown, 4-bucket student counts, weak-topic list. Either chapter_id OR chapter_name_hint required.",
+      parameters: {
+        type: "object",
+        properties: {
+          chapter_id: { type: "string" },
+          chapter_name_hint: { type: "string", description: "e.g. 'optics', 'thermo'." },
+        },
+        additionalProperties: false,
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_topic_analysis",
+      description:
+        "ONE topic across the batch: success rate, status, affected students. Use when the teacher names a topic ('how is Wave Optics doing', 'Doppler Effect performance').",
+      parameters: {
+        type: "object",
+        properties: {
+          topic_name_hint: { type: "string", description: "e.g. 'Wave Optics', 'Doppler'." },
+          chapter_name_hint: { type: "string", description: "Optional chapter filter." },
+        },
+        required: ["topic_name_hint"],
+        additionalProperties: false,
+      },
     },
   },
   {
@@ -408,15 +513,10 @@ const reportsTools = [
     function: {
       name: "get_at_risk_students",
       description:
-        "Returns students in the risk or reinforcement performance bands with their PI scores. Use for 'who is at risk', 'struggling students', 'who needs help'.",
+        "Students in risk or reinforcement bands with PI scores. Use for 'who is at risk', 'struggling students'.",
       parameters: {
         type: "object",
-        properties: {
-          limit: {
-            type: "number",
-            description: "Max students to return. Default 8.",
-          },
-        },
+        properties: { limit: { type: "number", description: "Default 8." } },
         additionalProperties: false,
       },
     },
@@ -425,23 +525,147 @@ const reportsTools = [
     type: "function",
     function: {
       name: "get_top_performers",
+      description: "Top performers by Performance Index. Default 5.",
+      parameters: {
+        type: "object",
+        properties: { limit: { type: "number" } },
+        additionalProperties: false,
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_student_search",
       description:
-        "Returns the top performing students in the active batch by Performance Index. Use for 'top students', 'best performers', 'who's leading the batch'.",
+        "Resolve a free-text student name (e.g. 'Aarav', 'Kavya M.') to a student record. Returns up to 5 candidates ranked by name match. Call this BEFORE get_student_profile/get_compare_students whenever you only have a name.",
+      parameters: {
+        type: "object",
+        properties: { name_hint: { type: "string" } },
+        required: ["name_hint"],
+        additionalProperties: false,
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_student_profile",
+      description:
+        "Full per-student profile for the active batch: PI breakdown, chapter mastery, weak topics, difficulty/cognitive mix, exam history, suggested difficulty, AI summary. Use for 'how is X doing', 'profile of X'.",
       parameters: {
         type: "object",
         properties: {
-          limit: {
-            type: "number",
-            description: "Max students to return. Default 5.",
-          },
+          student_id: { type: "string" },
+          name_hint: { type: "string", description: "If id is unknown." },
         },
         additionalProperties: false,
       },
     },
   },
+  {
+    type: "function",
+    function: {
+      name: "get_compare_students",
+      description:
+        "Side-by-side two-student delta (PI, accuracy, weak chapters, trend, suggested difficulty). Use for 'compare X and Y'.",
+      parameters: {
+        type: "object",
+        properties: {
+          student_id_a: { type: "string" },
+          student_id_b: { type: "string" },
+          name_hint_a: { type: "string" },
+          name_hint_b: { type: "string" },
+        },
+        additionalProperties: false,
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_chapter_search",
+      description:
+        "Resolve a free-text chapter name (e.g. 'optics', 'thermo') to a chapter record. Use BEFORE get_chapter_deep_dive when you only have a name.",
+      parameters: {
+        type: "object",
+        properties: { name_hint: { type: "string" } },
+        required: ["name_hint"],
+        additionalProperties: false,
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_multi_subject_risk",
+      description:
+        "Students at risk across MULTIPLE chapters/areas (proxy for 'multi-subject risk' in this single-subject batch). Use for 'students struggling in many areas', 'multi-subject risk'.",
+      parameters: { type: "object", properties: {}, additionalProperties: false },
+    },
+  },
 ];
 
 const REPORTS_TOOL_NAMES = new Set(reportsTools.map((t) => t.function.name));
+
+// ─── Fuzzy helpers ───
+function norm(s: string): string {
+  return (s || "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+}
+function fuzzyScore(query: string, target: string): number {
+  const q = norm(query);
+  const t = norm(target);
+  if (!q || !t) return 0;
+  if (t === q) return 100;
+  if (t.includes(q)) return 80 + Math.max(0, 10 - Math.abs(t.length - q.length));
+  if (q.includes(t)) return 70;
+  // Token overlap
+  const qt = new Set(q.split(" "));
+  const tt = t.split(" ");
+  const hits = tt.filter((x) => qt.has(x)).length;
+  if (hits === 0) return 0;
+  return 30 + hits * 15;
+}
+function findExam(ctx: any, args: any): any | null {
+  const exams = ctx?.recent_exams ?? [];
+  const analyses = ctx?.exam_analyses ?? [];
+  if (args.exam_id) {
+    return analyses.find((a: any) => a.exam_id === args.exam_id) ?? null;
+  }
+  if (args.exam_name_hint) {
+    const ranked = analyses
+      .map((a: any) => ({ a, s: fuzzyScore(args.exam_name_hint, a.exam_name) }))
+      .filter((x: any) => x.s > 0)
+      .sort((x: any, y: any) => y.s - x.s);
+    if (ranked[0]) return ranked[0].a;
+  }
+  // Default to most recent
+  return analyses[0] ?? (exams[0] ? null : null);
+}
+function findStudent(ctx: any, idOrHint: { id?: string; hint?: string }): any | null {
+  const profiles = ctx?.student_profiles ?? [];
+  if (idOrHint.id) return profiles.find((p: any) => p.id === idOrHint.id) ?? null;
+  if (idOrHint.hint) {
+    const ranked = profiles
+      .map((p: any) => ({ p, s: fuzzyScore(idOrHint.hint!, p.name) }))
+      .filter((x: any) => x.s > 0)
+      .sort((x: any, y: any) => y.s - x.s);
+    return ranked[0]?.p ?? null;
+  }
+  return null;
+}
+function findChapter(ctx: any, idOrHint: { id?: string; hint?: string }): any | null {
+  const details = ctx?.chapter_details ?? [];
+  if (idOrHint.id) return details.find((d: any) => d.chapter_id === idOrHint.id) ?? null;
+  if (idOrHint.hint) {
+    const ranked = details
+      .map((d: any) => ({ d, s: fuzzyScore(idOrHint.hint!, d.chapter) }))
+      .filter((x: any) => x.s > 0)
+      .sort((x: any, y: any) => y.s - x.s);
+    return ranked[0]?.d ?? null;
+  }
+  return null;
+}
 
 /**
  * Resolve a get_* tool call against the inline reports_context payload.
@@ -493,62 +717,171 @@ function resolveReportsTool(
         toolResultText: JSON.stringify({ count: exams.length, exams }),
       };
     }
-    case "get_exam_analysis": {
-      const exams = ctx.recent_exams ?? [];
-      const examId =
-        args.exam_id ||
-        exams[0]?.id;
-      const exam = exams.find((e: any) => e.id === examId) ?? exams[0];
-      if (!exam) {
-        return {
-          event: null,
-          toolResultText: JSON.stringify({ error: "No exam found for this batch." }),
-        };
-      }
-      // Synthetic verdict from the recent_exams + at_risk numbers.
-      const avgPct = exam.total_marks
-        ? Math.round((exam.class_average / exam.total_marks) * 100)
-        : 0;
-      const passed = Math.round((exam.total_students * exam.pass_percentage) / 100);
-      const verdict =
-        `Class average ${avgPct}% on ${exam.total_marks} marks. ` +
-        `${passed} of ${exam.total_students} students cleared the pass threshold ` +
-        `(${exam.pass_percentage}% pass rate). Highest score ${exam.highest_score}.`;
-      const bands = [
-        { key: "mastery", label: "Mastery", count: ctx.student_roster_summary?.mastery ?? 0 },
-        { key: "stable", label: "Stable", count: ctx.student_roster_summary?.stable ?? 0 },
-        { key: "reinforcement", label: "Reinforce", count: ctx.student_roster_summary?.reinforcement ?? 0 },
-        { key: "risk", label: "At Risk", count: ctx.student_roster_summary?.risk ?? 0 },
-      ];
-      const topicFlags = (ctx.priority_topics ?? []).map((t: any) => ({
-        topic: t.topic,
-        success_rate: t.successRate,
-        status: t.successRate < 40 ? "weak" : t.successRate < 70 ? "moderate" : "strong",
-      }));
+    case "get_batch_health_summary": {
       const payload = {
         reports_batch_id: ctx.reports_batch_id,
-        exam_id: exam.id,
-        exam_name: exam.name,
+        reports_batch_name: ctx.reports_batch_name,
+        overall_trend: ctx.overall_trend,
+        recent_exam_avg: ctx.recent_exam_avg,
+        suggested_focus: ctx.suggested_focus,
+        priority_topics: ctx.priority_topics ?? [],
+        students_to_check_in: ctx.students_to_check_in ?? [],
+        at_risk_count: ctx.at_risk_count,
+        weak_topic_count: ctx.weak_topic_count,
+      };
+      return {
+        event: { kind: "todays_focus", payload },
+        toolResultText: JSON.stringify({
+          overall_trend: ctx.overall_trend,
+          recent_exam_avg: ctx.recent_exam_avg,
+          suggested_focus: ctx.suggested_focus,
+          priority_topics: payload.priority_topics.map((t: any) => `${t.topic} (${t.successRate}%)`),
+          students_to_check_in: payload.students_to_check_in.map((s: any) => s.studentName),
+        }),
+      };
+    }
+    case "get_exam_analysis": {
+      const exam = findExam(ctx, args);
+      if (!exam) {
+        return { event: null, toolResultText: JSON.stringify({ error: "No exam found." }) };
+      }
+      const payload = {
+        reports_batch_id: ctx.reports_batch_id,
+        exam_id: exam.exam_id,
+        exam_name: exam.exam_name,
         date: exam.date,
         total_marks: exam.total_marks,
         class_average: exam.class_average,
         highest_score: exam.highest_score,
         pass_percentage: exam.pass_percentage,
         total_students: exam.total_students,
-        verdict_text: verdict,
-        bands,
-        topic_flags: topicFlags,
+        attempted_count: exam.attempted_count,
+        verdict_text: exam.verdict_text,
+        bands: exam.bands,
+        topic_flags: exam.topic_flags,
+        score_distribution: exam.score_distribution,
       };
       return {
         event: { kind: "exam_analysis", payload },
         toolResultText: JSON.stringify({
-          exam_name: exam.name,
-          avg_pct: avgPct,
+          exam_name: exam.exam_name,
+          avg_pct: exam.avg_pct,
           pass_pct: exam.pass_percentage,
           highest: exam.highest_score,
-          verdict,
-          weak_topics: topicFlags.filter((t: any) => t.status === "weak").map((t: any) => t.topic),
+          verdict: exam.verdict_text,
+          bands: exam.bands,
+          weak_topics: (exam.topic_flags ?? [])
+            .filter((t: any) => t.status === "weak")
+            .map((t: any) => `${t.topic} (${t.success_rate}%)`),
         }),
+      };
+    }
+    case "get_question_analysis": {
+      const exam = findExam(ctx, args);
+      if (!exam) return { event: null, toolResultText: JSON.stringify({ error: "No exam found." }) };
+      let qs = exam.question_analysis ?? [];
+      if (args.weakest_only) {
+        qs = qs.filter((q: any) => q.success_rate < 50 || q.difficulty === "hard");
+      }
+      const payload = {
+        reports_batch_id: ctx.reports_batch_id,
+        exam_id: exam.exam_id,
+        exam_name: exam.exam_name,
+        questions: qs,
+      };
+      return {
+        event: { kind: "question_analysis", payload },
+        toolResultText: JSON.stringify({
+          exam_name: exam.exam_name,
+          count: qs.length,
+          weakest: [...qs].sort((a: any, b: any) => a.success_rate - b.success_rate).slice(0, 3),
+        }),
+      };
+    }
+    case "get_difficulty_analysis": {
+      const exam = findExam(ctx, args);
+      if (!exam) return { event: null, toolResultText: JSON.stringify({ error: "No exam found." }) };
+      const payload = {
+        reports_batch_id: ctx.reports_batch_id,
+        exam_id: exam.exam_id,
+        exam_name: exam.exam_name,
+        difficulty_mix: exam.difficulty_mix ?? [],
+        cognitive_mix: exam.cognitive_mix ?? [],
+      };
+      return {
+        event: { kind: "difficulty_mix", payload },
+        toolResultText: JSON.stringify({
+          exam_name: exam.exam_name,
+          difficulty_mix: payload.difficulty_mix,
+          cognitive_mix: payload.cognitive_mix,
+        }),
+      };
+    }
+    case "get_actionable_insights": {
+      const exam = findExam(ctx, args);
+      if (!exam) return { event: null, toolResultText: JSON.stringify({ error: "No exam found." }) };
+      const payload = {
+        reports_batch_id: ctx.reports_batch_id,
+        exam_id: exam.exam_id,
+        exam_name: exam.exam_name,
+        insights: exam.actionable_insights ?? [],
+      };
+      return {
+        event: { kind: "actionable_insights", payload },
+        toolResultText: JSON.stringify({
+          exam_name: exam.exam_name,
+          count: payload.insights.length,
+          insights: payload.insights.map((i: any) => ({
+            type: i.type,
+            severity: i.severity,
+            finding: i.finding,
+            suggested_action: i.suggested_action,
+            affected_count: (i.affected_students ?? []).length,
+          })),
+        }),
+      };
+    }
+    case "get_compare_exams": {
+      const analyses = ctx.exam_analyses ?? [];
+      const a =
+        (args.exam_id_a && analyses.find((x: any) => x.exam_id === args.exam_id_a)) ||
+        analyses[0];
+      const b =
+        (args.exam_id_b && analyses.find((x: any) => x.exam_id === args.exam_id_b)) ||
+        analyses[1];
+      if (!a || !b) {
+        return { event: null, toolResultText: JSON.stringify({ error: "Need at least two exams to compare." }) };
+      }
+      const weakA = new Set((a.topic_flags ?? []).filter((t: any) => t.status === "weak").map((t: any) => t.topic));
+      const weakB = new Set((b.topic_flags ?? []).filter((t: any) => t.status === "weak").map((t: any) => t.topic));
+      const joined = [...weakB].filter((t) => !weakA.has(t));
+      const dropped = [...weakA].filter((t) => !weakB.has(t));
+      const payload = {
+        reports_batch_id: ctx.reports_batch_id,
+        exam_a: {
+          exam_id: a.exam_id,
+          exam_name: a.exam_name,
+          date: a.date,
+          avg_pct: a.avg_pct,
+          pass_percentage: a.pass_percentage,
+          weak_topics: [...weakA],
+        },
+        exam_b: {
+          exam_id: b.exam_id,
+          exam_name: b.exam_name,
+          date: b.date,
+          avg_pct: b.avg_pct,
+          pass_percentage: b.pass_percentage,
+          weak_topics: [...weakB],
+        },
+        delta_avg_pct: a.avg_pct - b.avg_pct,
+        delta_pass_pct: a.pass_percentage - b.pass_percentage,
+        new_weak_topics: joined,
+        improved_topics: dropped,
+      };
+      return {
+        event: { kind: "exam_compare", payload },
+        toolResultText: JSON.stringify(payload),
       };
     }
     case "get_chapter_health": {
@@ -563,9 +896,50 @@ function resolveReportsTool(
         .map((c: any) => `${c.name} (${c.avg_success_rate}%)`);
       return {
         event: { kind: "chapter_health", payload },
+        toolResultText: JSON.stringify({ total: payload.chapters.length, weakest }),
+      };
+    }
+    case "get_chapter_deep_dive": {
+      const ch = findChapter(ctx, { id: args.chapter_id, hint: args.chapter_name_hint });
+      if (!ch) {
+        return { event: null, toolResultText: JSON.stringify({ error: "Chapter not found." }) };
+      }
+      const payload = { reports_batch_id: ctx.reports_batch_id, chapter: ch };
+      return {
+        event: { kind: "chapter_deep_dive", payload },
         toolResultText: JSON.stringify({
-          total: payload.chapters.length,
-          weakest,
+          chapter: ch.chapter,
+          overall_success_rate: ch.overall_success_rate,
+          weak_topics: ch.topics.filter((t: any) => t.status === "weak").map((t: any) => `${t.topic} (${t.success_rate}%)`),
+          buckets: ch.student_buckets.map((b: any) => `${b.label}: ${b.count}`),
+        }),
+      };
+    }
+    case "get_topic_analysis": {
+      const topics = ctx.topics ?? [];
+      const ranked = topics
+        .map((t: any) => ({
+          t,
+          s:
+            fuzzyScore(args.topic_name_hint, t.topic) +
+            (args.chapter_name_hint ? fuzzyScore(args.chapter_name_hint, t.chapter) * 0.4 : 0),
+        }))
+        .filter((x: any) => x.s > 0)
+        .sort((x: any, y: any) => y.s - x.s);
+      const top = ranked[0]?.t;
+      if (!top) {
+        return { event: null, toolResultText: JSON.stringify({ error: "Topic not found.", searched: args.topic_name_hint }) };
+      }
+      const payload = { reports_batch_id: ctx.reports_batch_id, topic: top };
+      return {
+        event: { kind: "topic_analysis", payload },
+        toolResultText: JSON.stringify({
+          topic: top.topic,
+          chapter: top.chapter,
+          success_rate: top.success_rate,
+          status: top.status,
+          affected_count: top.affected_students.length,
+          affected_names: top.affected_students.slice(0, 5).map((s: any) => s.name),
         }),
       };
     }
@@ -580,10 +954,7 @@ function resolveReportsTool(
       };
       return {
         event: { kind: "at_risk_students", payload },
-        toolResultText: JSON.stringify({
-          count: students.length,
-          names: students.map((s: any) => s.name),
-        }),
+        toolResultText: JSON.stringify({ count: students.length, names: students.map((s: any) => s.name) }),
       };
     }
     case "get_top_performers": {
@@ -597,9 +968,94 @@ function resolveReportsTool(
       };
       return {
         event: { kind: "top_performers", payload },
+        toolResultText: JSON.stringify({ count: students.length, names: students.map((s: any) => s.name) }),
+      };
+    }
+    case "get_student_search": {
+      const profiles = ctx.student_profiles ?? [];
+      const ranked = profiles
+        .map((p: any) => ({ p, s: fuzzyScore(args.name_hint ?? "", p.name) }))
+        .filter((x: any) => x.s > 0)
+        .sort((x: any, y: any) => y.s - x.s)
+        .slice(0, 5)
+        .map((x: any) => ({ id: x.p.id, name: x.p.name, roll: x.p.roll, score: x.s }));
+      return {
+        event: null,
+        toolResultText: JSON.stringify({ candidates: ranked }),
+      };
+    }
+    case "get_student_profile": {
+      const sp = findStudent(ctx, { id: args.student_id, hint: args.name_hint });
+      if (!sp) {
+        return { event: null, toolResultText: JSON.stringify({ error: "Student not found." }) };
+      }
+      const payload = { reports_batch_id: ctx.reports_batch_id, student: sp };
+      return {
+        event: { kind: "student_profile", payload },
+        toolResultText: JSON.stringify({
+          name: sp.name,
+          roll: sp.roll,
+          pi: sp.pi,
+          accuracy: sp.accuracy,
+          consistency: sp.consistency,
+          trend: sp.trend,
+          tags: sp.secondary_tags,
+          weak_topics: sp.weak_topic_names,
+          suggested_difficulty: sp.suggested_difficulty,
+          ai_summary: sp.ai_summary,
+          strengths: sp.ai_strengths,
+          priorities: sp.ai_priorities,
+          engagement_note: sp.ai_engagement_note,
+        }),
+      };
+    }
+    case "get_compare_students": {
+      const a = findStudent(ctx, { id: args.student_id_a, hint: args.name_hint_a });
+      const b = findStudent(ctx, { id: args.student_id_b, hint: args.name_hint_b });
+      if (!a || !b) {
+        return { event: null, toolResultText: JSON.stringify({ error: "Need two students to compare." }) };
+      }
+      const payload = {
+        reports_batch_id: ctx.reports_batch_id,
+        student_a: a,
+        student_b: b,
+        delta_pi: a.pi - b.pi,
+        delta_accuracy: a.accuracy - b.accuracy,
+      };
+      return {
+        event: { kind: "student_compare", payload },
+        toolResultText: JSON.stringify({
+          a: { name: a.name, pi: a.pi, accuracy: a.accuracy, trend: a.trend, weak: a.weak_topic_names.slice(0, 3) },
+          b: { name: b.name, pi: b.pi, accuracy: b.accuracy, trend: b.trend, weak: b.weak_topic_names.slice(0, 3) },
+        }),
+      };
+    }
+    case "get_chapter_search": {
+      const details = ctx.chapter_details ?? [];
+      const ranked = details
+        .map((d: any) => ({ d, s: fuzzyScore(args.name_hint ?? "", d.chapter) }))
+        .filter((x: any) => x.s > 0)
+        .sort((x: any, y: any) => y.s - x.s)
+        .slice(0, 5)
+        .map((x: any) => ({ chapter_id: x.d.chapter_id, chapter: x.d.chapter, score: x.s }));
+      return {
+        event: null,
+        toolResultText: JSON.stringify({ candidates: ranked }),
+      };
+    }
+    case "get_multi_subject_risk": {
+      const students = ctx.multi_area_risk ?? [];
+      const payload = { reports_batch_id: ctx.reports_batch_id, students };
+      return {
+        event: { kind: "multi_subject_risk", payload },
         toolResultText: JSON.stringify({
           count: students.length,
-          names: students.map((s: any) => s.name),
+          students: students.slice(0, 10).map((s: any) => ({
+            name: s.name,
+            weak_chapter_count: s.weak_chapter_count,
+            weak_chapters: s.weak_chapters,
+            pi: s.pi,
+          })),
         }),
       };
     }
