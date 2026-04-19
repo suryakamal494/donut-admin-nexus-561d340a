@@ -42,7 +42,15 @@ const Exams = () => {
   const debouncedSearch = useDebounce(searchQuery, 300);
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [batchFilter, setBatchFilter] = useState<string>("all");
-  const [exams, setExams] = useState<TeacherExam[]>(initialExams);
+
+  // Source of truth: the session-level store (includes any tests published from Copilot)
+  const storeExams = useTeacherExams();
+  // Local-only patches (assign/schedule edits made on this page within the session)
+  const [overrides, setOverrides] = useState<Record<string, Partial<TeacherExam>>>({});
+  const exams = useMemo<TeacherExam[]>(
+    () => storeExams.map((e) => (overrides[e.id] ? { ...e, ...overrides[e.id] } : e)),
+    [storeExams, overrides]
+  );
 
   // Dialog states
   const [previewExam, setPreviewExam] = useState<TeacherExam | null>(null);
@@ -67,7 +75,7 @@ const Exams = () => {
   }, []);
 
   const handleDelete = useCallback((examId: string) => {
-    setExams(prev => prev.filter(e => e.id !== examId));
+    removeTeacherExam(examId);
     toast.success("Exam deleted");
   }, []);
 
@@ -78,17 +86,22 @@ const Exams = () => {
   }, [navigate, exams]);
 
   const handleAssignBatches = useCallback((examId: string, batchIds: string[]) => {
-    setExams(prev => prev.map(e => 
-      e.id === examId ? { ...e, batchIds } : e
-    ));
+    setOverrides((prev) => ({
+      ...prev,
+      [examId]: { ...(prev[examId] ?? {}), batchIds },
+    }));
   }, []);
 
   const handleScheduleExam = useCallback((examId: string, date: Date, time: string) => {
-    setExams(prev => prev.map(e => 
-      e.id === examId 
-        ? { ...e, scheduledDate: date.toISOString(), scheduledTime: time, status: "scheduled" as const } 
-        : e
-    ));
+    setOverrides((prev) => ({
+      ...prev,
+      [examId]: {
+        ...(prev[examId] ?? {}),
+        scheduledDate: date.toISOString(),
+        scheduledTime: time,
+        status: "scheduled" as const,
+      },
+    }));
   }, []);
 
   // Collect unique batch IDs across all exams
