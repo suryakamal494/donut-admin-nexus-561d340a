@@ -297,6 +297,8 @@ export default function RoutinePilotPage({ initialBatchId, initialRoutineKey }: 
               setSelectedThreadId(t.id);
             }}
             onArtifactsCreated={refreshThreads}
+            prefill={pendingHomeworkPrefill}
+            onPrefillConsumed={() => setPendingHomeworkPrefill(null)}
           />
         </div>
 
