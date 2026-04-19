@@ -1,18 +1,20 @@
 /**
  * Streams an SSE chat response from the routine-pilot-chat edge function.
- * Calls onDelta for each text chunk and reports artifact create/update events.
+ * Calls onDelta for each text chunk and reports artifact + report events.
  */
 export interface StreamChatResult {
   ok: boolean;
   status: number;
   artifactsCreated: boolean;
   artifactsUpdated: boolean;
+  reportEvents: any[];
 }
 
 export interface StreamChatCallbacks {
   onDelta?: (chunk: string) => void;
   onArtifactsCreated?: (ids: string[]) => void;
   onArtifactsUpdated?: (ids: string[]) => void;
+  onReportData?: (event: any) => void;
 }
 
 export async function streamChat(
@@ -30,7 +32,7 @@ export async function streamChat(
   });
 
   if (!resp.ok || !resp.body) {
-    return { ok: false, status: resp.status, artifactsCreated: false, artifactsUpdated: false };
+    return { ok: false, status: resp.status, artifactsCreated: false, artifactsUpdated: false, reportEvents: [] };
   }
 
   const reader = resp.body.getReader();
@@ -38,6 +40,7 @@ export async function streamChat(
   let buf = "";
   let artifactsCreated = false;
   let artifactsUpdated = false;
+  const reportEvents: any[] = [];
   let done = false;
 
   while (!done) {
@@ -64,15 +67,19 @@ export async function streamChat(
           callbacks.onArtifactsUpdated?.(parsed.rp_artifacts_updated);
           continue;
         }
+        if (parsed.rp_report_data) {
+          reportEvents.push(parsed.rp_report_data);
+          callbacks.onReportData?.(parsed.rp_report_data);
+          continue;
+        }
         const delta = parsed.choices?.[0]?.delta?.content;
         if (delta) callbacks.onDelta?.(delta);
       } catch {
-        // Partial JSON — push back and wait for more data
         buf = line + "\n" + buf;
         break;
       }
     }
   }
 
-  return { ok: true, status: resp.status, artifactsCreated, artifactsUpdated };
+  return { ok: true, status: resp.status, artifactsCreated, artifactsUpdated, reportEvents };
 }

@@ -77,6 +77,18 @@ export default function ArtifactPane({ batch, thread, routineKey }: Props) {
     );
   }
 
+  if (routineKey === "reports") {
+    return (
+      <div data-tour="copilot-artifacts" className="h-full flex flex-col items-center justify-center px-6 text-center">
+        <Sparkles className="w-8 h-8 text-primary/60 mb-3" />
+        <div className="text-sm font-medium mb-1">Reports mode</div>
+        <p className="text-xs text-muted-foreground max-w-[220px] leading-relaxed">
+          Answers appear inline in the chat as cards. Click any card to deep-link to the full Reports page.
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div data-tour="copilot-artifacts" className="flex flex-col h-full">
       {openArtifact ? (

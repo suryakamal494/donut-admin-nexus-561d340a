@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -7,6 +7,8 @@ import { Send, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { useDynamicChips } from "./useDynamicChips";
 import { streamChat } from "./streamChat";
+import { buildReportsContext, serializeReportsContext } from "./reports-cards/reportContext";
+import ReportCardRenderer, { type ReportDataEvent } from "./reports-cards/ReportCardRenderer";
 import type { Batch, Routine, Thread, Message } from "./types";
 
 interface Props {
@@ -17,18 +19,31 @@ interface Props {
   onArtifactsCreated: () => void;
 }
 
+interface MessageWithReports extends Message {
+  reportEvents?: ReportDataEvent[];
+}
+
 export default function ChatPane({ batch, routine, thread, onThreadCreated, onArtifactsCreated }: Props) {
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [messages, setMessages] = useState<MessageWithReports[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // IMPORTANT: All hooks must be called before any early return so React's
-  // hook order stays stable across renders (prevents "Rendered more hooks
-  // than during the previous render").
   const dynamicChips = useDynamicChips(batch?.id ?? null, routine);
   const isEmpty = messages.length === 0;
+  const isReports = routine?.key === "reports";
+
+  // Pre-compute reports context for this batch (memoised so we don't recompute per keystroke)
+  const reportsContext = useMemo(() => {
+    if (!isReports || !batch) return null;
+    try {
+      return serializeReportsContext(buildReportsContext(batch));
+    } catch (e) {
+      console.error("Failed to build reports context:", e);
+      return null;
+    }
+  }, [isReports, batch]);
 
   useEffect(() => {
     if (!thread) {
@@ -42,7 +57,7 @@ export default function ChatPane({ batch, routine, thread, onThreadCreated, onAr
         .select("*")
         .eq("thread_id", thread.id)
         .order("created_at");
-      if (!cancelled) setMessages((data ?? []) as Message[]);
+      if (!cancelled) setMessages((data ?? []) as MessageWithReports[]);
     })();
     return () => { cancelled = true; };
   }, [thread]);
@@ -70,7 +85,6 @@ export default function ChatPane({ batch, routine, thread, onThreadCreated, onAr
     if (!input.trim() || !batch || !routine || loading) return;
     const text = input.trim();
 
-    // Ensure thread exists
     let activeThread = thread;
     if (!activeThread) {
       const { data, error } = await supabase
@@ -90,8 +104,7 @@ export default function ChatPane({ batch, routine, thread, onThreadCreated, onAr
       onThreadCreated(activeThread);
     }
 
-    // Optimistic user message
-    const tempUser: Message = {
+    const tempUser: MessageWithReports = {
       id: `temp-${Date.now()}`,
       thread_id: activeThread.id,
       role: "user",
@@ -102,21 +115,18 @@ export default function ChatPane({ batch, routine, thread, onThreadCreated, onAr
     setInput("");
     setLoading(true);
 
-    // Persist user message
     await supabase.from("rp_messages").insert({
       thread_id: activeThread.id,
       role: "user",
       content: text,
     });
 
-    // Build conversation history
     const history = [...messages, tempUser].map((m) => ({ role: m.role, content: m.content }));
 
-    // Add streaming assistant placeholder
     const assistantId = `assistant-${Date.now()}`;
     setMessages((prev) => [
       ...prev,
-      { id: assistantId, thread_id: activeThread!.id, role: "assistant", content: "", created_at: new Date().toISOString() },
+      { id: assistantId, thread_id: activeThread!.id, role: "assistant", content: "", created_at: new Date().toISOString(), reportEvents: [] },
     ]);
     let assistantText = "";
 
@@ -127,11 +137,19 @@ export default function ChatPane({ batch, routine, thread, onThreadCreated, onAr
           batch_id: batch.id,
           routine_key: routine.key,
           messages: history,
+          ...(isReports && reportsContext ? { reports_context: reportsContext } : {}),
         },
         {
           onDelta: (delta) => {
             assistantText += delta;
             setMessages((prev) => prev.map((m) => m.id === assistantId ? { ...m, content: assistantText } : m));
+          },
+          onReportData: (event) => {
+            setMessages((prev) => prev.map((m) =>
+              m.id === assistantId
+                ? { ...m, reportEvents: [...(m.reportEvents ?? []), event] }
+                : m
+            ));
           },
         }
       );
@@ -145,8 +163,7 @@ export default function ChatPane({ batch, routine, thread, onThreadCreated, onAr
         return;
       }
 
-      // Persist assistant message
-      const finalText = assistantText.trim() || "Done.";
+      const finalText = assistantText.trim() || (result.reportEvents.length ? "Here's what I found." : "Done.");
       await supabase.from("rp_messages").insert({
         thread_id: activeThread.id,
         role: "assistant",
@@ -154,12 +171,10 @@ export default function ChatPane({ batch, routine, thread, onThreadCreated, onAr
       });
       setMessages((prev) => prev.map((m) => m.id === assistantId ? { ...m, content: finalText } : m));
 
-      // Update thread timestamp
       await supabase.from("rp_threads")
         .update({ last_message_at: new Date().toISOString() })
         .eq("id", activeThread.id);
 
-      // Refresh thread list when EITHER artifacts were created OR existing ones updated
       if (result.artifactsCreated || result.artifactsUpdated) onArtifactsCreated();
     } catch (e) {
       console.error(e);
@@ -186,6 +201,11 @@ export default function ChatPane({ batch, routine, thread, onThreadCreated, onAr
           <span className="font-medium">{routine.label}</span>
           <span className="text-muted-foreground">·</span>
           <span className="text-muted-foreground truncate">{batch.name}</span>
+          {isReports && (
+            <span className="ml-auto text-[10px] uppercase tracking-wider text-muted-foreground">
+              Read-only analytics
+            </span>
+          )}
         </div>
       </div>
 
@@ -217,18 +237,32 @@ export default function ChatPane({ batch, routine, thread, onThreadCreated, onAr
               <Sparkles className="w-8 h-8 text-primary mx-auto mb-3" />
               <h3 className="font-semibold">{routine.label}</h3>
               <p className="text-sm text-muted-foreground mt-1">{routine.description}</p>
+              {isReports && (
+                <p className="text-xs text-muted-foreground mt-3 max-w-md mx-auto">
+                  Ask anything about this batch's exams, chapters, or students. Answers come straight from your Reports module.
+                </p>
+              )}
             </div>
           )}
           {messages.map((m) => (
             <div key={m.id} className={m.role === "user" ? "flex justify-end" : "flex justify-start"}>
-              <div
-                className={
-                  m.role === "user"
-                    ? "max-w-[85%] rounded-2xl rounded-br-sm bg-primary text-primary-foreground px-4 py-2.5 text-sm whitespace-pre-wrap"
-                    : "max-w-[85%] rounded-2xl rounded-bl-sm bg-muted px-4 py-2.5 text-sm whitespace-pre-wrap"
-                }
-              >
-                {m.content || (loading ? <span className="text-muted-foreground">Thinking…</span> : "")}
+              <div className={m.role === "user" ? "max-w-[85%]" : "max-w-[92%] w-full"}>
+                <div
+                  className={
+                    m.role === "user"
+                      ? "rounded-2xl rounded-br-sm bg-primary text-primary-foreground px-4 py-2.5 text-sm whitespace-pre-wrap"
+                      : "rounded-2xl rounded-bl-sm bg-muted px-4 py-2.5 text-sm whitespace-pre-wrap"
+                  }
+                >
+                  {m.content || (loading ? <span className="text-muted-foreground">Thinking…</span> : "")}
+                </div>
+                {m.reportEvents && m.reportEvents.length > 0 && (
+                  <div className="mt-2 space-y-2">
+                    {m.reportEvents.map((ev, i) => (
+                      <ReportCardRenderer key={i} event={ev as ReportDataEvent} />
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           ))}
