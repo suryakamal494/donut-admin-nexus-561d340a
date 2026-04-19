@@ -78,7 +78,7 @@ export default function ArtifactPane({ batch, thread, routineKey }: Props) {
   }
 
   return (
-    <div className="flex flex-col h-full">
+    <div data-tour="copilot-artifacts" className="flex flex-col h-full">
       {openArtifact ? (
         <>
           <div className="px-4 py-3 border-b flex items-center gap-2">

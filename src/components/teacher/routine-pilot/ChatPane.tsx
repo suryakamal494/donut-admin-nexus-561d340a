@@ -235,7 +235,7 @@ export default function ChatPane({ batch, routine, thread, onThreadCreated, onAr
         </div>
       </ScrollArea>
 
-      <div className="border-t px-5 py-3">
+      <div data-tour="copilot-composer" className="border-t px-5 py-3">
         <div className="max-w-3xl mx-auto flex items-end gap-2">
           <Textarea
             ref={textareaRef}

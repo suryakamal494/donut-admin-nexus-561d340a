@@ -16,6 +16,7 @@ export default function MobileArtifactSheet({ batch, thread, artifactCount, rout
       <DrawerTrigger asChild>
         <button
           type="button"
+          data-tour="copilot-mobile-artifacts"
           className="w-full flex items-center justify-between px-4 py-2.5 border-t bg-card/80 backdrop-blur-sm text-sm hover:bg-muted/50 transition-colors"
         >
           <span className="flex items-center gap-2 font-medium">

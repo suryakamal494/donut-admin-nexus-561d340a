@@ -33,7 +33,7 @@ export default function LeftRail({
 }: Props) {
   return (
     <div className="flex flex-col h-full">
-      <div className="p-4 border-b space-y-2">
+      <div data-tour="copilot-batch" className="p-4 border-b space-y-2">
         <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
           Batch
         </div>
@@ -52,7 +52,7 @@ export default function LeftRail({
       </div>
 
       <ScrollArea className="flex-1">
-        <div className="p-3">
+        <div data-tour="copilot-routines" className="p-3">
           <div className="text-[11px] uppercase tracking-wider text-muted-foreground px-2 mb-1.5">Routines</div>
           <div className="space-y-0.5">
             {routines.map((r) => {
