@@ -1325,12 +1325,14 @@ ${JSON.stringify({ title: targetArtifact.title, content: targetArtifact.content 
             );
           }
 
-          // ---------- Reports follow-up turn ----------
-          // Feed tool results back so the model writes a short plain-language
-          // insight on top of the cards. Streamed as standard content deltas.
+          // ---------- Reports multi-round tool loop ----------
+          // The model may need to chain tools (e.g. get_student_search ->
+          // get_student_profile). Run up to 3 follow-up rounds where the model
+          // can keep calling tools, then a final no-tools turn that produces
+          // the plain-language insight on top of the cards.
           if (isReportsRoutine && reportsToolOutputs.length > 0) {
             try {
-              const followupMessages = [
+              const convo: any[] = [
                 { role: "system", content: systemPrompt },
                 ...messages,
                 {
@@ -1344,53 +1346,142 @@ ${JSON.stringify({ title: targetArtifact.title, content: targetArtifact.content 
                   name: o.name,
                   content: o.toolResultText,
                 })),
-                {
-                  role: "system",
-                  content:
-                    "Now write 2-4 sentences in plain language summarising the data the tools returned. Be concrete: cite numbers, names, or topics. Do NOT call any more tools. Do NOT repeat the raw JSON. The structured cards are already shown to the teacher above your message.",
-                },
               ];
 
-              const followupResp = await fetch(
-                "https://ai.gateway.lovable.dev/v1/chat/completions",
-                {
-                  method: "POST",
-                  headers: {
-                    Authorization: `Bearer ${LOVABLE_API_KEY}`,
-                    "Content-Type": "application/json",
-                  },
-                  body: JSON.stringify({
-                    model: "google/gemini-2.5-flash",
-                    messages: followupMessages,
-                    stream: true,
-                  }),
-                }
-              );
-
-              if (followupResp.ok && followupResp.body) {
-                const fReader = followupResp.body.getReader();
-                let fBuf = "";
-                while (true) {
-                  const { done: fd, value: fv } = await fReader.read();
-                  if (fd) break;
-                  fBuf += decoder.decode(fv, { stream: true });
-                  let fnl: number;
-                  while ((fnl = fBuf.indexOf("\n")) !== -1) {
-                    let fLine = fBuf.slice(0, fnl);
-                    fBuf = fBuf.slice(fnl + 1);
-                    if (fLine.endsWith("\r")) fLine = fLine.slice(0, -1);
-                    if (!fLine.startsWith("data: ")) continue;
-                    const fPayload = fLine.slice(6).trim();
-                    if (fPayload === "[DONE]") continue;
-                    // Pass content deltas straight through to the client.
-                    controller.enqueue(encoder.encode(fLine + "\n\n"));
+              const MAX_ROUNDS = 3;
+              let producedFinalText = false;
+              for (let round = 0; round < MAX_ROUNDS && !producedFinalText; round++) {
+                const roundResp = await fetch(
+                  "https://ai.gateway.lovable.dev/v1/chat/completions",
+                  {
+                    method: "POST",
+                    headers: {
+                      Authorization: `Bearer ${LOVABLE_API_KEY}`,
+                      "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                      model: "google/gemini-2.5-flash",
+                      messages: convo,
+                      tools: reportsTools,
+                      stream: false,
+                    }),
                   }
+                );
+                if (!roundResp.ok) {
+                  console.error("Reports tool-loop round failed:", roundResp.status);
+                  break;
                 }
-              } else {
-                console.error("Reports follow-up failed:", followupResp.status);
+                const roundJson = await roundResp.json();
+                const choice = roundJson.choices?.[0];
+                const msg = choice?.message;
+                const newToolCalls = msg?.tool_calls ?? [];
+
+                if (newToolCalls.length === 0) {
+                  const finalText: string = msg?.content ?? "";
+                  if (finalText) {
+                    producedFinalText = true;
+                    const chunk = {
+                      choices: [{ index: 0, delta: { content: finalText, role: "assistant" } }],
+                    };
+                    controller.enqueue(
+                      encoder.encode(`data: ${JSON.stringify(chunk)}\n\n`)
+                    );
+                  }
+                  break;
+                }
+
+                const newAssistantToolCalls: any[] = [];
+                const newToolResults: Array<{ id: string; name: string; text: string }> = [];
+                for (let i = 0; i < newToolCalls.length; i++) {
+                  const tc = newToolCalls[i];
+                  const name = tc.function?.name;
+                  const args = tc.function?.arguments ?? "{}";
+                  if (!name || !REPORTS_TOOL_NAMES.has(name)) continue;
+                  const result = resolveReportsTool(name, args, reports_context);
+                  if (result?.event) {
+                    controller.enqueue(
+                      encoder.encode(`data: ${JSON.stringify({ rp_report_data: result.event })}\n\n`)
+                    );
+                  }
+                  const callId = tc.id ?? `rp_tool_r${round}_${i}_${Date.now()}`;
+                  newAssistantToolCalls.push({
+                    id: callId,
+                    type: "function",
+                    function: { name, arguments: args },
+                  });
+                  newToolResults.push({
+                    id: callId,
+                    name,
+                    text: result?.toolResultText ?? JSON.stringify({ ok: false }),
+                  });
+                }
+
+                if (newAssistantToolCalls.length === 0) break;
+
+                convo.push({
+                  role: "assistant",
+                  content: null,
+                  tool_calls: newAssistantToolCalls,
+                });
+                for (const r of newToolResults) {
+                  convo.push({
+                    role: "tool",
+                    tool_call_id: r.id,
+                    name: r.name,
+                    content: r.text,
+                  });
+                }
+              }
+
+              // Final summary pass — no tools; must produce the insight text.
+              if (!producedFinalText) {
+                const summaryConvo = [
+                  ...convo,
+                  {
+                    role: "system",
+                    content:
+                      "Now write 2-4 sentences in plain language summarising the data the tools returned. Be concrete: cite numbers, names, or topics. Do NOT call any more tools. Do NOT repeat the raw JSON. The structured cards are already shown to the teacher above your message.",
+                  },
+                ];
+                const summaryResp = await fetch(
+                  "https://ai.gateway.lovable.dev/v1/chat/completions",
+                  {
+                    method: "POST",
+                    headers: {
+                      Authorization: `Bearer ${LOVABLE_API_KEY}`,
+                      "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                      model: "google/gemini-2.5-flash",
+                      messages: summaryConvo,
+                      stream: true,
+                    }),
+                  }
+                );
+                if (summaryResp.ok && summaryResp.body) {
+                  const fReader = summaryResp.body.getReader();
+                  let fBuf = "";
+                  while (true) {
+                    const { done: fd, value: fv } = await fReader.read();
+                    if (fd) break;
+                    fBuf += decoder.decode(fv, { stream: true });
+                    let fnl: number;
+                    while ((fnl = fBuf.indexOf("\n")) !== -1) {
+                      let fLine = fBuf.slice(0, fnl);
+                      fBuf = fBuf.slice(fnl + 1);
+                      if (fLine.endsWith("\r")) fLine = fLine.slice(0, -1);
+                      if (!fLine.startsWith("data: ")) continue;
+                      const fPayload = fLine.slice(6).trim();
+                      if (fPayload === "[DONE]") continue;
+                      controller.enqueue(encoder.encode(fLine + "\n\n"));
+                    }
+                  }
+                } else {
+                  console.error("Reports summary turn failed:", summaryResp.status);
+                }
               }
             } catch (e) {
-              console.error("Reports follow-up error:", e);
+              console.error("Reports tool-loop error:", e);
             }
           }
 
