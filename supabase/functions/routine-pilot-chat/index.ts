@@ -777,6 +777,15 @@ ${JSON.stringify({ title: targetArtifact.title, content: targetArtifact.content 
           // Persist tool-call results
           const createdArtifactIds: string[] = [];
           const updatedArtifactIds: string[] = [];
+          // Collect Reports tool outputs so we can run a follow-up turn that
+          // produces a plain-language insight on top of each card.
+          const reportsToolOutputs: Array<{
+            name: string;
+            args: string;
+            toolCallId: string;
+            toolResultText: string;
+          }> = [];
+          const assistantToolCalls: any[] = [];
 
           for (const idx of Object.keys(toolCalls)) {
             const call = toolCalls[+idx];
@@ -789,6 +798,18 @@ ${JSON.stringify({ title: targetArtifact.title, content: targetArtifact.content 
                   encoder.encode(`data: ${JSON.stringify({ rp_report_data: result.event })}\n\n`)
                 );
               }
+              const toolCallId = `rp_tool_${idx}_${Date.now()}`;
+              assistantToolCalls.push({
+                id: toolCallId,
+                type: "function",
+                function: { name: call.name, arguments: call.args || "{}" },
+              });
+              reportsToolOutputs.push({
+                name: call.name,
+                args: call.args,
+                toolCallId,
+                toolResultText: result?.toolResultText ?? JSON.stringify({ ok: false }),
+              });
               continue;
             }
 
@@ -847,6 +868,76 @@ ${JSON.stringify({ title: targetArtifact.title, content: targetArtifact.content 
               encoder.encode(`data: ${JSON.stringify({ rp_artifacts_updated: updatedArtifactIds })}\n\n`)
             );
           }
+
+          // ---------- Reports follow-up turn ----------
+          // Feed tool results back so the model writes a short plain-language
+          // insight on top of the cards. Streamed as standard content deltas.
+          if (isReportsRoutine && reportsToolOutputs.length > 0) {
+            try {
+              const followupMessages = [
+                { role: "system", content: systemPrompt },
+                ...messages,
+                {
+                  role: "assistant",
+                  content: null,
+                  tool_calls: assistantToolCalls,
+                },
+                ...reportsToolOutputs.map((o) => ({
+                  role: "tool",
+                  tool_call_id: o.toolCallId,
+                  name: o.name,
+                  content: o.toolResultText,
+                })),
+                {
+                  role: "system",
+                  content:
+                    "Now write 2-4 sentences in plain language summarising the data the tools returned. Be concrete: cite numbers, names, or topics. Do NOT call any more tools. Do NOT repeat the raw JSON. The structured cards are already shown to the teacher above your message.",
+                },
+              ];
+
+              const followupResp = await fetch(
+                "https://ai.gateway.lovable.dev/v1/chat/completions",
+                {
+                  method: "POST",
+                  headers: {
+                    Authorization: `Bearer ${LOVABLE_API_KEY}`,
+                    "Content-Type": "application/json",
+                  },
+                  body: JSON.stringify({
+                    model: "google/gemini-2.5-flash",
+                    messages: followupMessages,
+                    stream: true,
+                  }),
+                }
+              );
+
+              if (followupResp.ok && followupResp.body) {
+                const fReader = followupResp.body.getReader();
+                let fBuf = "";
+                while (true) {
+                  const { done: fd, value: fv } = await fReader.read();
+                  if (fd) break;
+                  fBuf += decoder.decode(fv, { stream: true });
+                  let fnl: number;
+                  while ((fnl = fBuf.indexOf("\n")) !== -1) {
+                    let fLine = fBuf.slice(0, fnl);
+                    fBuf = fBuf.slice(fnl + 1);
+                    if (fLine.endsWith("\r")) fLine = fLine.slice(0, -1);
+                    if (!fLine.startsWith("data: ")) continue;
+                    const fPayload = fLine.slice(6).trim();
+                    if (fPayload === "[DONE]") continue;
+                    // Pass content deltas straight through to the client.
+                    controller.enqueue(encoder.encode(fLine + "\n\n"));
+                  }
+                }
+              } else {
+                console.error("Reports follow-up failed:", followupResp.status);
+              }
+            } catch (e) {
+              console.error("Reports follow-up error:", e);
+            }
+          }
+
           controller.enqueue(encoder.encode("data: [DONE]\n\n"));
         } catch (e) {
           console.error("stream error", e);
