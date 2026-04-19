@@ -13,6 +13,7 @@ import {
   X,
   TrendingUp,
   BarChart3,
+  Sparkles,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import DonutLogo from "@/components/shared/DonutLogo";
@@ -35,6 +36,7 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { icon: LayoutDashboard, label: "Dashboard", path: "/teacher/dashboard" },
+  { icon: Sparkles, label: "RoutinePilot", path: "/teacher/routine-pilot" },
   { icon: Calendar, label: "My Schedule", path: "/teacher/schedule" },
   { icon: BookOpen, label: "Lesson Plans", path: "/teacher/lesson-plans" },
   { icon: TrendingUp, label: "Syllabus Progress", path: "/teacher/academic-progress" },
