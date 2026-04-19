@@ -1,5 +1,5 @@
 import { Badge } from "@/components/ui/badge";
-import { BookOpen, FileText, PencilLine, Layers, Calendar, ClipboardList, BarChart3 } from "lucide-react";
+import { BookOpen, FileText, PencilLine, Layers, Calendar, ClipboardList, BarChart3, Maximize2, Download } from "lucide-react";
 import type { Artifact } from "../types";
 
 const meta: Record<Artifact["type"], { icon: React.ElementType; label: string; color: string }> = {
@@ -16,10 +16,18 @@ export default function ArtifactCard({ artifact, onClick }: { artifact: Artifact
   const m = meta[artifact.type] ?? { icon: ClipboardList, label: artifact.type, color: "text-muted-foreground" };
   const Icon = m.icon;
   const date = new Date(artifact.created_at);
+  // Try to extract a short batch tag (e.g. "10A") from artifact content if present
+  const batchTag = (artifact.content as any)?.batch_short
+    ?? (artifact.content as any)?.batch_label
+    ?? null;
+
   return (
-    <button
+    <div
       onClick={onClick}
-      className="w-full text-left rounded-lg border bg-card hover:bg-muted/40 transition-colors p-3 group"
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => { if (e.key === "Enter") onClick(); }}
+      className="w-full text-left rounded-lg border bg-card hover:bg-muted/40 hover:-translate-y-0.5 hover:shadow-md transition-all p-3 group cursor-pointer"
     >
       <div className="flex items-start gap-2.5">
         <div className={`mt-0.5 ${m.color}`}>
@@ -36,7 +44,31 @@ export default function ArtifactCard({ artifact, onClick }: { artifact: Artifact
             {artifact.title}
           </div>
         </div>
+        {batchTag && (
+          <Badge className="text-[10px] h-4 px-1.5 font-medium bg-donut-teal/15 text-donut-teal border-donut-teal/30 hover:bg-donut-teal/20 flex-shrink-0">
+            {batchTag}
+          </Badge>
+        )}
       </div>
-    </button>
+
+      <div className="mt-2.5 pt-2 border-t border-border/60 flex items-center justify-between">
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); onClick(); }}
+          className="text-[11px] text-muted-foreground hover:text-primary inline-flex items-center gap-1 transition-colors"
+        >
+          <Maximize2 className="w-3 h-3" />
+          Expand
+        </button>
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); onClick(); }}
+          className="text-[11px] text-muted-foreground hover:text-primary inline-flex items-center gap-1 transition-colors"
+        >
+          <Download className="w-3 h-3" />
+          Export
+        </button>
+      </div>
+    </div>
   );
 }

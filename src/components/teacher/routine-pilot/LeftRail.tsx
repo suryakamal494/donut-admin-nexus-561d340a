@@ -33,10 +33,9 @@ export default function LeftRail({
 }: Props) {
   return (
     <div className="flex flex-col h-full">
-      <div className="p-4 border-b space-y-3">
-        <div className="flex items-center gap-2">
-          <Sparkles className="w-4 h-4 text-primary" />
-          <h2 className="font-semibold text-sm">RoutinePilot</h2>
+      <div className="p-4 border-b space-y-2">
+        <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+          Batch
         </div>
         <Select value={selectedBatchId ?? undefined} onValueChange={onSelectBatch}>
           <SelectTrigger className="h-9 text-sm">
@@ -112,6 +111,15 @@ export default function LeftRail({
           </div>
         </div>
       </ScrollArea>
+
+      <div className="p-3 border-t">
+        <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-full bg-primary/5 border border-primary/10">
+          <Sparkles className="w-3 h-3 text-primary flex-shrink-0" />
+          <span className="text-[11px] text-muted-foreground truncate">
+            RoutinePilot · Co-pilot Mode
+          </span>
+        </div>
+      </div>
     </div>
   );
 }
