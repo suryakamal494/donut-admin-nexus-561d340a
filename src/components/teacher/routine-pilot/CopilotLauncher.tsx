@@ -105,6 +105,7 @@ export default function CopilotLauncher() {
           <div className="h-12 flex items-center justify-between px-3 md:px-4 border-b bg-card/80 backdrop-blur-xl flex-shrink-0">
             <button
               type="button"
+              data-tour="copilot-exit"
               onClick={closeCopilot}
               className="flex items-center gap-1.5 h-8 px-2 rounded-md text-sm font-medium hover:bg-muted transition-colors"
               aria-label="Exit Copilot"

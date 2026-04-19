@@ -216,6 +216,7 @@ export default function RoutinePilotPage({ initialBatchId, initialRoutineKey }: 
             <Button
               variant="ghost"
               size="sm"
+              data-tour="copilot-toggle-right"
               className="h-7 px-2 text-xs hidden lg:inline-flex"
               onClick={() => setRightCollapsed((v) => !v)}
               aria-label={rightCollapsed ? "Show artifacts" : "Hide artifacts"}
