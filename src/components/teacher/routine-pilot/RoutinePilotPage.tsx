@@ -51,6 +51,15 @@ export default function RoutinePilotPage({ initialBatchId, initialRoutineKey }: 
   // Artifact count for mobile handle
   const [artifactCount, setArtifactCount] = useState(0);
 
+  // Cross-routine handoff prefill (Reports -> Homework)
+  const [pendingHomeworkPrefill, setPendingHomeworkPrefill] = useState<{
+    contextBanner?: string;
+    topic?: string;
+    difficulty?: string;
+    studentIds?: string[];
+    studentNames?: string[];
+  } | null>(null);
+
   // Load batches + routines
   useEffect(() => {
     (async () => {
