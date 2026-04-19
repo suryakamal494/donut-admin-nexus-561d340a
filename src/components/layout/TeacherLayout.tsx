@@ -20,6 +20,7 @@ import { toast } from "sonner";
 import { useTeacherNotifications } from "@/hooks/useTeacherNotifications";
 import { TeacherNotificationCard } from "@/components/teacher/notifications";
 import CopilotLauncher from "@/components/teacher/routine-pilot/CopilotLauncher";
+import { CopilotProvider } from "@/components/teacher/routine-pilot/CopilotContext";
 
 const TeacherLayout = () => {
   const navigate = useNavigate();
@@ -61,6 +62,7 @@ const TeacherLayout = () => {
   }, [isMobile]);
 
   return (
+    <CopilotProvider>
     <div className="min-h-screen bg-background">
       {/* Mobile overlay */}
       {isMobile && mobileMenuOpen && (
@@ -262,6 +264,7 @@ const TeacherLayout = () => {
         onOpenChange={setResetPasswordOpen} 
       />
     </div>
+    </CopilotProvider>
   );
 };
 
