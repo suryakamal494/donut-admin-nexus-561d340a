@@ -340,6 +340,274 @@ const UPDATE_TOOL_TO_TYPE: Record<string, string> = {
   update_banded_homework: "banded_homework",
 };
 
+// ---------- Reports routine: read-only analytics tools ----------
+// These tools resolve their data from the inline `reports_context` payload
+// the client sends in the request body (computed from the same generators
+// the Teacher Reports pages use). The edge function does NOT invent any
+// numbers — it only routes pre-computed structured data back to the chat
+// as `report_data` SSE events.
+
+const reportsTools = [
+  {
+    type: "function",
+    function: {
+      name: "get_batch_overview",
+      description:
+        "Returns the active batch's health summary: overall trend, recent average, at-risk count, weak topic count, and a suggested focus area. Use for 'how is the batch doing', 'overall health', 'pulse', or any open-ended question about the batch.",
+      parameters: { type: "object", properties: {}, additionalProperties: false },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_recent_exams",
+      description:
+        "Returns the last few completed exams for the active batch with their class averages. Use for 'last exam', 'recent tests', 'how have we been doing', or to set up a follow-up exam analysis.",
+      parameters: {
+        type: "object",
+        properties: {
+          limit: {
+            type: "number",
+            description: "How many recent exams to include. Default 5, max 8.",
+          },
+        },
+        additionalProperties: false,
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_exam_analysis",
+      description:
+        "Deep-dive on ONE specific exam: verdict, performance bands, weak topic flags, score distribution. Use when the teacher names an exam or asks 'how did we do on the optics test'. If no exam_id is given, the most recent completed exam is used.",
+      parameters: {
+        type: "object",
+        properties: {
+          exam_id: {
+            type: "string",
+            description:
+              "The exam id from get_recent_exams. Omit to use the most recent completed exam.",
+          },
+        },
+        additionalProperties: false,
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_chapter_health",
+      description:
+        "Returns chapter-wise success rates and weak-topic counts for the active batch (sorted weakest first). Use for 'weak chapters', 'chapter health', or 'where do students struggle most'.",
+      parameters: { type: "object", properties: {}, additionalProperties: false },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_at_risk_students",
+      description:
+        "Returns students in the risk or reinforcement performance bands with their PI scores. Use for 'who is at risk', 'struggling students', 'who needs help'.",
+      parameters: {
+        type: "object",
+        properties: {
+          limit: {
+            type: "number",
+            description: "Max students to return. Default 8.",
+          },
+        },
+        additionalProperties: false,
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_top_performers",
+      description:
+        "Returns the top performing students in the active batch by Performance Index. Use for 'top students', 'best performers', 'who's leading the batch'.",
+      parameters: {
+        type: "object",
+        properties: {
+          limit: {
+            type: "number",
+            description: "Max students to return. Default 5.",
+          },
+        },
+        additionalProperties: false,
+      },
+    },
+  },
+];
+
+const REPORTS_TOOL_NAMES = new Set(reportsTools.map((t) => t.function.name));
+
+/**
+ * Resolve a get_* tool call against the inline reports_context payload.
+ * Returns either a structured event payload (kind + data) for the SSE stream
+ * AND a human-readable JSON string the AI sees as the tool result.
+ */
+function resolveReportsTool(
+  name: string,
+  rawArgs: string,
+  ctx: any
+): { event: any; toolResultText: string } | null {
+  if (!ctx) {
+    return {
+      event: null,
+      toolResultText: JSON.stringify({ error: "No reports context available." }),
+    };
+  }
+  let args: any = {};
+  try {
+    args = rawArgs ? JSON.parse(rawArgs) : {};
+  } catch {
+    args = {};
+  }
+
+  switch (name) {
+    case "get_batch_overview": {
+      const payload = {
+        reports_batch_id: ctx.reports_batch_id,
+        reports_batch_name: ctx.reports_batch_name,
+        overall_trend: ctx.overall_trend,
+        recent_exam_avg: ctx.recent_exam_avg,
+        at_risk_count: ctx.at_risk_count,
+        weak_topic_count: ctx.weak_topic_count,
+        exam_count: (ctx.recent_exams ?? []).length,
+        total_students: ctx.student_roster_summary?.total ?? 0,
+        suggested_focus: ctx.suggested_focus,
+      };
+      return {
+        event: { kind: "batch_overview", payload },
+        toolResultText: JSON.stringify(payload),
+      };
+    }
+    case "get_recent_exams": {
+      const limit = Math.min(Math.max(args.limit ?? 5, 1), 8);
+      const exams = (ctx.recent_exams ?? []).slice(0, limit);
+      const payload = { reports_batch_id: ctx.reports_batch_id, exams };
+      return {
+        event: { kind: "recent_exams", payload },
+        toolResultText: JSON.stringify({ count: exams.length, exams }),
+      };
+    }
+    case "get_exam_analysis": {
+      const exams = ctx.recent_exams ?? [];
+      const examId =
+        args.exam_id ||
+        exams[0]?.id;
+      const exam = exams.find((e: any) => e.id === examId) ?? exams[0];
+      if (!exam) {
+        return {
+          event: null,
+          toolResultText: JSON.stringify({ error: "No exam found for this batch." }),
+        };
+      }
+      // Synthetic verdict from the recent_exams + at_risk numbers.
+      const avgPct = exam.total_marks
+        ? Math.round((exam.class_average / exam.total_marks) * 100)
+        : 0;
+      const passed = Math.round((exam.total_students * exam.pass_percentage) / 100);
+      const verdict =
+        `Class average ${avgPct}% on ${exam.total_marks} marks. ` +
+        `${passed} of ${exam.total_students} students cleared the pass threshold ` +
+        `(${exam.pass_percentage}% pass rate). Highest score ${exam.highest_score}.`;
+      const bands = [
+        { key: "mastery", label: "Mastery", count: ctx.student_roster_summary?.mastery ?? 0 },
+        { key: "stable", label: "Stable", count: ctx.student_roster_summary?.stable ?? 0 },
+        { key: "reinforcement", label: "Reinforce", count: ctx.student_roster_summary?.reinforcement ?? 0 },
+        { key: "risk", label: "At Risk", count: ctx.student_roster_summary?.risk ?? 0 },
+      ];
+      const topicFlags = (ctx.priority_topics ?? []).map((t: any) => ({
+        topic: t.topic,
+        success_rate: t.successRate,
+        status: t.successRate < 40 ? "weak" : t.successRate < 70 ? "moderate" : "strong",
+      }));
+      const payload = {
+        reports_batch_id: ctx.reports_batch_id,
+        exam_id: exam.id,
+        exam_name: exam.name,
+        date: exam.date,
+        total_marks: exam.total_marks,
+        class_average: exam.class_average,
+        highest_score: exam.highest_score,
+        pass_percentage: exam.pass_percentage,
+        total_students: exam.total_students,
+        verdict_text: verdict,
+        bands,
+        topic_flags: topicFlags,
+      };
+      return {
+        event: { kind: "exam_analysis", payload },
+        toolResultText: JSON.stringify({
+          exam_name: exam.name,
+          avg_pct: avgPct,
+          pass_pct: exam.pass_percentage,
+          highest: exam.highest_score,
+          verdict,
+          weak_topics: topicFlags.filter((t: any) => t.status === "weak").map((t: any) => t.topic),
+        }),
+      };
+    }
+    case "get_chapter_health": {
+      const payload = {
+        reports_batch_id: ctx.reports_batch_id,
+        chapters: ctx.chapters ?? [],
+      };
+      const weakest = (ctx.chapters ?? [])
+        .slice()
+        .sort((a: any, b: any) => a.avg_success_rate - b.avg_success_rate)
+        .slice(0, 3)
+        .map((c: any) => `${c.name} (${c.avg_success_rate}%)`);
+      return {
+        event: { kind: "chapter_health", payload },
+        toolResultText: JSON.stringify({
+          total: payload.chapters.length,
+          weakest,
+        }),
+      };
+    }
+    case "get_at_risk_students": {
+      const limit = Math.min(Math.max(args.limit ?? 8, 1), 20);
+      const students = (ctx.at_risk_students ?? []).slice(0, limit);
+      const payload = {
+        reports_batch_id: ctx.reports_batch_id,
+        title: `${students.length} student${students.length !== 1 ? "s" : ""} need attention`,
+        variant: "at_risk",
+        students,
+      };
+      return {
+        event: { kind: "at_risk_students", payload },
+        toolResultText: JSON.stringify({
+          count: students.length,
+          names: students.map((s: any) => s.name),
+        }),
+      };
+    }
+    case "get_top_performers": {
+      const limit = Math.min(Math.max(args.limit ?? 5, 1), 12);
+      const students = (ctx.top_performers ?? []).slice(0, limit);
+      const payload = {
+        reports_batch_id: ctx.reports_batch_id,
+        title: `Top ${students.length} performers`,
+        variant: "top_performers",
+        students,
+      };
+      return {
+        event: { kind: "top_performers", payload },
+        toolResultText: JSON.stringify({
+          count: students.length,
+          names: students.map((s: any) => s.name),
+        }),
+      };
+    }
+    default:
+      return null;
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
