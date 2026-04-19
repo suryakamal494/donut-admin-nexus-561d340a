@@ -80,6 +80,191 @@ export type Database = {
         }
         Relationships: []
       }
+      rp_artifacts: {
+        Row: {
+          batch_id: string
+          content: Json
+          created_at: string
+          id: string
+          thread_id: string | null
+          title: string
+          type: string
+        }
+        Insert: {
+          batch_id: string
+          content?: Json
+          created_at?: string
+          id?: string
+          thread_id?: string | null
+          title: string
+          type: string
+        }
+        Update: {
+          batch_id?: string
+          content?: Json
+          created_at?: string
+          id?: string
+          thread_id?: string | null
+          title?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rp_artifacts_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "rp_batches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rp_artifacts_thread_id_fkey"
+            columns: ["thread_id"]
+            isOneToOne: false
+            referencedRelation: "rp_threads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rp_batches: {
+        Row: {
+          created_at: string
+          grade: string
+          id: string
+          name: string
+          section: string | null
+          subject: string
+        }
+        Insert: {
+          created_at?: string
+          grade: string
+          id?: string
+          name: string
+          section?: string | null
+          subject: string
+        }
+        Update: {
+          created_at?: string
+          grade?: string
+          id?: string
+          name?: string
+          section?: string | null
+          subject?: string
+        }
+        Relationships: []
+      }
+      rp_messages: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          role: string
+          thread_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          role: string
+          thread_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          role?: string
+          thread_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rp_messages_thread_id_fkey"
+            columns: ["thread_id"]
+            isOneToOne: false
+            referencedRelation: "rp_threads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rp_routines: {
+        Row: {
+          created_at: string
+          default_system_prompt: string | null
+          description: string | null
+          icon: string
+          id: string
+          is_active: boolean
+          key: string
+          label: string
+          quick_start_chips: string[] | null
+          sort_order: number
+        }
+        Insert: {
+          created_at?: string
+          default_system_prompt?: string | null
+          description?: string | null
+          icon: string
+          id?: string
+          is_active?: boolean
+          key: string
+          label: string
+          quick_start_chips?: string[] | null
+          sort_order?: number
+        }
+        Update: {
+          created_at?: string
+          default_system_prompt?: string | null
+          description?: string | null
+          icon?: string
+          id?: string
+          is_active?: boolean
+          key?: string
+          label?: string
+          quick_start_chips?: string[] | null
+          sort_order?: number
+        }
+        Relationships: []
+      }
+      rp_threads: {
+        Row: {
+          batch_id: string
+          created_at: string
+          id: string
+          last_message_at: string
+          routine_id: string
+          title: string
+        }
+        Insert: {
+          batch_id: string
+          created_at?: string
+          id?: string
+          last_message_at?: string
+          routine_id: string
+          title: string
+        }
+        Update: {
+          batch_id?: string
+          created_at?: string
+          id?: string
+          last_message_at?: string
+          routine_id?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rp_threads_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "rp_batches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rp_threads_routine_id_fkey"
+            columns: ["routine_id"]
+            isOneToOne: false
+            referencedRelation: "rp_routines"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
