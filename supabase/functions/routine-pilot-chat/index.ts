@@ -780,6 +780,18 @@ ${JSON.stringify({ title: targetArtifact.title, content: targetArtifact.content 
 
           for (const idx of Object.keys(toolCalls)) {
             const call = toolCalls[+idx];
+
+            // Reports routine: emit a structured report_data event
+            if (isReportsRoutine && REPORTS_TOOL_NAMES.has(call.name)) {
+              const result = resolveReportsTool(call.name, call.args, reports_context);
+              if (result?.event) {
+                controller.enqueue(
+                  encoder.encode(`data: ${JSON.stringify({ rp_report_data: result.event })}\n\n`)
+                );
+              }
+              continue;
+            }
+
             let parsed: any;
             try {
               parsed = JSON.parse(call.args);
