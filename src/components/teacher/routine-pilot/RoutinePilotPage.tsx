@@ -261,6 +261,7 @@ export default function RoutinePilotPage({ initialBatchId, initialRoutineKey }: 
             batch={selectedBatch}
             thread={selectedThread}
             artifactCount={artifactCount}
+            routineKey={selectedRoutine?.key}
           />
         )}
       </div>
@@ -268,7 +269,7 @@ export default function RoutinePilotPage({ initialBatchId, initialRoutineKey }: 
       {/* Desktop/tablet artifact pane (collapsible, lg+) */}
       {!isMobile && !rightCollapsed && (
         <div className="hidden lg:block w-[400px] flex-shrink-0 bg-card/40">
-          <ArtifactPane batch={selectedBatch} thread={selectedThread} />
+          <ArtifactPane batch={selectedBatch} thread={selectedThread} routineKey={selectedRoutine?.key} />
         </div>
       )}
 
