@@ -83,7 +83,7 @@ export default function ArtifactPane({ batch, thread }: Props) {
           </div>
           <ScrollArea className="flex-1">
             <div className="p-4">
-              <ArtifactView artifact={openArtifact} />
+              <ArtifactView artifact={openArtifact} batch={batch} />
             </div>
           </ScrollArea>
         </>

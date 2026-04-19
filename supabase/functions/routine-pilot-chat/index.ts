@@ -90,7 +90,8 @@ const tools = [
     type: "function",
     function: {
       name: "create_test",
-      description: "Create a mixed-format test",
+      description:
+        "Create a mixed-format test with rich curriculum, chapter, and per-question metadata so it can be published to the Tests page.",
       parameters: {
         type: "object",
         properties: {
@@ -98,9 +99,32 @@ const tools = [
           content: {
             type: "object",
             properties: {
+              curriculum: {
+                type: "string",
+                description: "e.g. 'CBSE Class 10', 'ICSE Class 9', 'JEE Main'",
+              },
+              chapters: {
+                type: "array",
+                description: "Chapters covered by this test, with topics under each.",
+                items: {
+                  type: "object",
+                  properties: {
+                    name: { type: "string" },
+                    topics: { type: "array", items: { type: "string" } },
+                  },
+                  required: ["name"],
+                },
+              },
+              pattern: {
+                type: "string",
+                enum: ["custom", "jee_main", "jee_advanced", "neet"],
+                description: "Test pattern. Default to 'custom' unless the teacher asks for a specific competitive exam pattern.",
+              },
               duration_minutes: { type: "number" },
               total_marks: { type: "number" },
               instructions: { type: "string" },
+              negative_marking: { type: "boolean" },
+              negative_marks: { type: "number" },
               questions: {
                 type: "array",
                 items: {
@@ -111,12 +135,26 @@ const tools = [
                     options: { type: "array", items: { type: "string" } },
                     answer: { type: "string" },
                     marks: { type: "number" },
+                    chapter: { type: "string" },
+                    topic: { type: "string" },
+                    difficulty: { type: "string", enum: ["easy", "medium", "hard"] },
+                    cognitive_type: {
+                      type: "string",
+                      enum: ["memory", "conceptual", "logical", "analytical", "application"],
+                    },
                   },
                   required: ["type", "prompt", "marks"],
                 },
               },
             },
-            required: ["duration_minutes", "total_marks", "instructions", "questions"],
+            required: [
+              "curriculum",
+              "pattern",
+              "duration_minutes",
+              "total_marks",
+              "instructions",
+              "questions",
+            ],
             additionalProperties: false,
           },
         },
@@ -288,7 +326,9 @@ CONTEXT:
 - Batch: ${batch.name} (Grade ${batch.grade}${batch.section ? "-" + batch.section : ""}, Subject: ${batch.subject})
 - Routine: ${routine.label}
 
-When you produce structured output (lesson plan, slide deck, test, homework, schedule), CALL THE APPROPRIATE TOOL. Then add a short text confirmation. Do not paste JSON inline.`;
+When you produce structured output (lesson plan, slide deck, test, homework, schedule), CALL THE APPROPRIATE TOOL. Then add a short text confirmation. Do not paste JSON inline.
+
+For tests specifically: ALWAYS infer a sensible curriculum from the batch (e.g. "CBSE Grade ${batch.grade}" if not specified), set pattern to "custom" unless a competitive exam (JEE Main/Advanced, NEET) is explicitly requested, and tag every question with chapter, topic, difficulty (easy/medium/hard) and cognitive_type (memory/conceptual/logical/analytical/application). The teacher will publish this test to their real Tests page, so the metadata MUST be complete.`;
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY missing");
