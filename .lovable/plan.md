@@ -1,97 +1,75 @@
 
-The user has pasted a complete spec/prompt for "RoutinePilot" — a teacher-facing AI copilot. They said "in teacher panel" at the start, which means they want this built INTO the existing teacher panel of the current project (not as a separate export).
 
-This is a large feature. Let me plan a phased build inside the teacher panel.
+## Plan: Refactor Copilot to full-screen overlay (keep 3-panel layout)
 
-## Plan: Build RoutinePilot inside Teacher Panel
+### What changes
 
-### Where it lives
-New route `/teacher/routine-pilot` added to the teacher panel sidebar (under existing TeacherLayout). Three-pane NotebookLM-style workspace.
+**Entry & exit**
+- Keep the existing floating "Copilot" pill (bottom-right) as the primary opener.
+- Add global `Cmd/Ctrl + K` shortcut to open it.
+- Add `Esc` to close (Sheet already does this, but we'll make it explicit).
+- When open, the app's `TeacherLayout` chrome (sidebar + bottom nav + top bar) must be hidden — Copilot renders truly full-screen.
+- Add a persistent **← Exit Copilot** button top-left inside the overlay (replaces the current generic close X behavior on mobile; desktop keeps both options).
 
-### Phase 1 — Data & Backend
+**Overlay shell**
+- Replace the current right-side `Sheet` (`max-w-[1400px]`) with a true full-screen overlay (fixed inset-0, z-50) so there's no background app peeking on the left.
+- Top bar inside the overlay: only `← Exit Copilot` on left + optional `[⋮]` menu on right. **No filters, no breadcrumb, no routine/batch dropdowns in the header.**
 
-**Database tables** (new migration):
-- `rp_batches` — id, name, subject, grade, section
-- `rp_routines` — id, key, label, icon, description, default_system_prompt, quick_start_chips[], is_active, sort_order
-- `rp_threads` — id, batch_id, routine_id, title, last_message_at, created_at
-- `rp_messages` — id, thread_id, role, content, created_at
-- `rp_artifacts` — id, batch_id, thread_id (nullable), type, title, content (jsonb), created_at
-  - CHECK on type: lesson_plan, ppt, test, homework, banded_homework, report, schedule
+**Desktop layout (≥1024px)** — keep `RoutinePilotPage` 3-panel structure as-is:
+- Left rail: Batch switcher → Routines list → `+ New thread` → Threads (already built in `LeftRail.tsx`).
+- Center: Chat (`ChatPane`).
+- Right: Artifacts (`ArtifactPane`).
+- Both side panels remain collapsible. Today the left rail uses `hidden md:block` and the right uses `hidden lg:block` — we'll convert these to user-toggleable collapse state (hamburger on left, panel toggle on right) so a teacher can hide either pane on demand even on desktop.
 
-RLS: public read/write (single-teacher prototype, matching project's current mock-driven approach).
+**Mobile (≤768px)**
+- Center chat is full-screen.
+- Left rail becomes a slide-in `Sheet` (left side) triggered by a hamburger icon top-left, next to Exit.
+- Artifact pane becomes a swipe-up bottom sheet (use existing `Drawer` from vaul) with a `📎 N artifacts ▲` handle pinned above the chat composer.
 
-**Seed data** (inserted via migration):
-- 4 batches: 9-A Science, 10-A Science, 10-B Science, 11-B Physics
-- 6 routines (3 active, 3 coming-soon)
-- For each batch × each active routine: 1 thread + 2 messages + 1 artifact
-- Every batch gets a `banded_homework` artifact under Homework
-- 11-B also gets a `schedule` artifact
-- Each batch gets a `ppt` artifact (8–10 slides) under Lesson Prep
+**Tablet (768–1023px)**
+- Left rail visible inline, artifact pane becomes the bottom sheet (or right slide-in sheet) — toggleable.
 
-**Edge function** `routine-pilot-chat`:
-- Inputs: thread_id, batch_id, routine_key, messages[]
-- Loads routine system prompt + batch context
-- Calls Lovable AI Gateway (`google/gemini-2.5-flash` default)
-- Tool calls: `create_lesson_plan`, `create_ppt`, `create_test`, `create_homework`, `create_banded_homework`, `schedule_homework`
-- On tool call → inserts row in `rp_artifacts`, returns artifact id
-- Streaming SSE response
+**Context-aware entry**
+- `CopilotLauncher` accepts/derives a context based on the current route (read via `useLocation`):
+  - `/teacher/dashboard` → preselect routine `lesson_prep`
+  - `/teacher/tests*` → `test_creation`
+  - `/teacher/homework*` → `homework`
+  - `/teacher/reports*` → `analysis` (currently coming-soon → fall back to `lesson_prep` with a toast, OR just don't preselect)
+  - `/teacher/syllabus*` → `syllabus_tracker` (same fallback)
+- If the route contains a batch id (e.g. `/teacher/batches/:batchId/...`), preselect that batch in the left rail's batch switcher.
+- Implementation: pass `initialRoutineKey` and `initialBatchId` props from `CopilotLauncher` → `RoutinePilotPage`, which uses them for initial state instead of "first batch / first active routine".
+- Also expose a global helper / context so any "Open in Copilot" button on app screens can call `openCopilot({ routine, batchId })`.
 
-### Phase 2 — UI Shell
-
-New folder: `src/components/teacher/routine-pilot/`
-
-- `RoutinePilotPage.tsx` — three-pane shell, route entry
-- `LeftRail.tsx` — batch switcher, routine list, thread list
-- `ChatPane.tsx` — messages list, composer, quick-start chips
-- `ArtifactPane.tsx` — tabs ("This thread" / "Batch library"), card list, inline detail swap (no modal)
-- `useChat.ts` — hook that streams from edge function, appends messages, refreshes artifacts on tool call
-
-Sidebar entry in `TeacherSidebar` → "RoutinePilot" with Sparkles icon.
-
-### Phase 3 — Artifact Renderers
-
-`src/components/teacher/routine-pilot/artifacts/`:
-- `ArtifactCard.tsx` — list-item summary (icon + title + type badge + timestamp)
-- `ArtifactView.tsx` — switch on type → renders one of:
-  - `LessonPlanView` — objectives, materials, sections, homework
-  - `PptView` — vertical slide cards (number badge, title, bullets, speaker notes)
-  - `TestView` — questions grouped by type with marks
-  - `HomeworkView` — flat problem list (legacy)
-  - `BandedHomeworkView` — 4-tab strip (mastery=emerald, stable=teal, reinforcement=amber, foundational=rose), per-band instructions/problems/time, "Schedule send" button
-  - `ScheduleView` — confirmation card with time, channel, band chips, mock reschedule/cancel
-
-Inline detail swap inside `ArtifactPane` via local state + back arrow. No Dialog component used.
-
-### Behavior
-- Batch switch → reloads routines/threads/artifacts
-- Routine switch → filters threads
-- Thread click → loads messages + scopes "This thread" tab
-- "Batch library" tab → all artifacts for current batch
-- Quick-start chip click → fills composer, cursor at `____`
-- Coming-soon routines → disabled with "Coming soon" badge
-- Narrow viewport → left/right collapse, chat stays usable
+**What stays unchanged**
+- All artifact types and their renderers (lesson_plan, test, homework, banded_homework, ppt, schedule).
+- `BandedHomeworkView`, `PptView`, inline artifact detail swap (no modal).
+- Mock scheduling flow.
+- Edge function `routine-pilot-chat` and DB schema.
+- LeftRail batch switcher remains the only filter — no header dropdowns.
 
 ### Files
 
 | File | Action |
 |---|---|
-| Migration: 5 tables + seeds | Create |
-| `supabase/functions/routine-pilot-chat/index.ts` | Create |
-| `supabase/config.toml` | Add `[functions.routine-pilot-chat] verify_jwt = false` |
-| `src/pages/teacher/RoutinePilot.tsx` | Create |
-| `src/components/teacher/routine-pilot/*` (~12 files) | Create |
-| `src/components/layout/TeacherSidebar.tsx` | Add nav entry |
-| `src/App.tsx` (or teacher routes file) | Add route |
+| `src/components/teacher/routine-pilot/CopilotLauncher.tsx` | Refactor: full-screen overlay (not Sheet), Exit button, Cmd+K, context-aware preselect from route, hide app chrome via portal/fixed inset-0 |
+| `src/components/teacher/routine-pilot/RoutinePilotPage.tsx` | Accept `initialBatchId` + `initialRoutineKey` props; add user-toggleable collapse state for left & right panes; integrate mobile drawer + bottom sheet |
+| `src/components/teacher/routine-pilot/MobileArtifactSheet.tsx` | New: vaul `Drawer` wrapper with "📎 N artifacts" handle, hosts `ArtifactPane` inside |
+| `src/components/teacher/routine-pilot/MobileLeftRailSheet.tsx` | New: `Sheet` (left side) wrapper hosting `LeftRail` for mobile/tablet |
+| `src/components/teacher/routine-pilot/CopilotContext.tsx` | New: tiny context exposing `openCopilot({ routine?, batchId? })` so other teacher screens can trigger it programmatically |
+| `src/components/layout/TeacherLayout.tsx` | Wrap children with `CopilotProvider`; ensure `CopilotLauncher` uses route-derived context |
+
+### Behavior details
+- Exit Copilot: closes overlay, restores the floating pill, keeps app on the same underlying route.
+- Cmd/Ctrl+K: toggles open/close; ignored when typing inside `<input>` / `<textarea>` outside Copilot only if conflicts arise (otherwise allow it everywhere).
+- Pane collapse state persists in `localStorage` (`copilot.leftCollapsed`, `copilot.rightCollapsed`).
+- Mobile bottom sheet artifact count badge updates as new artifacts arrive (already realtime-wired).
+
+### Out of scope
+- No DB changes.
+- No edge function changes.
+- No new artifact types.
+- No styling overhaul — uses existing tokens.
 
 ### Phasing
-- **Phase 1** (one go): Migration + seed + edge function + sidebar/route stub
-- **Phase 2** (one go): Shell UI + chat streaming + artifact list
-- **Phase 3** (one go): All 6 artifact renderers + inline detail swap
+Single implementation pass — the changes are mostly contained to `CopilotLauncher` + 2 new mobile sheet components + a small prop addition on `RoutinePilotPage`.
 
-Total: 3 implementation messages after approval.
-
-Notes:
-- Tables prefixed `rp_` to avoid collision with future real batch/thread tables
-- Uses existing TeacherLayout — no new global chrome
-- No new visual styling — uses existing tokens (primary/accent/muted/etc.)
-- LOVABLE_API_KEY already present, no secret prompts needed
