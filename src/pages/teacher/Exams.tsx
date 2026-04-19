@@ -18,7 +18,7 @@ import { TeacherExamCard } from "@/components/teacher/exams";
 import { ExamPreviewDialog } from "@/components/teacher/exams/ExamPreviewDialog";
 import { AssignBatchesDialog } from "@/components/teacher/exams/AssignBatchesDialog";
 import { ScheduleExamDialog } from "@/components/teacher/exams/ScheduleExamDialog";
-import { teacherExams as initialExams } from "@/data/teacher/exams";
+import { useTeacherExams, removeTeacherExam } from "@/stores/teacherExamsStore";
 import { batchInfoMap } from "@/data/teacher/examResults";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
