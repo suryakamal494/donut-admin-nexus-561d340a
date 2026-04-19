@@ -613,13 +613,14 @@ Deno.serve(async (req) => {
 
   try {
     const body = await req.json();
-    const { thread_id, batch_id, routine_key, messages, target_artifact_id } = body;
+    const { thread_id, batch_id, routine_key, messages, target_artifact_id, reports_context } = body;
     if (!thread_id || !batch_id || !routine_key || !Array.isArray(messages)) {
       return new Response(JSON.stringify({ error: "Missing required fields" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+    const isReportsRoutine = routine_key === "reports";
 
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
@@ -698,7 +699,7 @@ ${JSON.stringify({ title: targetArtifact.title, content: targetArtifact.content 
       body: JSON.stringify({
         model: "google/gemini-2.5-flash",
         messages: [{ role: "system", content: systemPrompt }, ...messages],
-        tools,
+        tools: isReportsRoutine ? reportsTools : tools,
         stream: true,
       }),
     });
