@@ -353,7 +353,16 @@ const reportsTools = [
     function: {
       name: "get_batch_overview",
       description:
-        "Returns the active batch's health summary: overall trend, recent average, at-risk count, weak topic count, and a suggested focus area. Use for 'how is the batch doing', 'overall health', 'pulse', or any open-ended question about the batch.",
+        "Returns the active batch's health summary: overall trend, recent average, at-risk count, weak topic count, and a suggested focus area. Use for 'how is the batch doing', 'overall health', 'pulse'.",
+      parameters: { type: "object", properties: {}, additionalProperties: false },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_batch_health_summary",
+      description:
+        "Returns the full 'Today's Focus' card: priority topics, students to check in, suggested focus sentence. Use for 'what should I focus on today', 'today's focus', 'priority list'.",
       parameters: { type: "object", properties: {}, additionalProperties: false },
     },
   },
@@ -362,14 +371,11 @@ const reportsTools = [
     function: {
       name: "get_recent_exams",
       description:
-        "Returns the last few completed exams for the active batch with their class averages. Use for 'last exam', 'recent tests', 'how have we been doing', or to set up a follow-up exam analysis.",
+        "Returns the last few completed exams with class averages. Use for 'recent tests', 'last few exams', or to set up a follow-up exam analysis.",
       parameters: {
         type: "object",
         properties: {
-          limit: {
-            type: "number",
-            description: "How many recent exams to include. Default 5, max 8.",
-          },
+          limit: { type: "number", description: "Default 5, max 8." },
         },
         additionalProperties: false,
       },
@@ -380,15 +386,81 @@ const reportsTools = [
     function: {
       name: "get_exam_analysis",
       description:
-        "Deep-dive on ONE specific exam: verdict, performance bands, weak topic flags, score distribution. Use when the teacher names an exam or asks 'how did we do on the optics test'. If no exam_id is given, the most recent completed exam is used.",
+        "Deep-dive on ONE exam: verdict, performance bands, topic flags, score distribution, difficulty/cognitive mix. If exam_id is omitted, the most recent exam is used. Match exam_id from get_recent_exams.",
       parameters: {
         type: "object",
         properties: {
-          exam_id: {
+          exam_id: { type: "string", description: "Exam id from get_recent_exams." },
+          exam_name_hint: {
             type: "string",
             description:
-              "The exam id from get_recent_exams. Omit to use the most recent completed exam.",
+              "If you don't have an id but the user named the exam (e.g. 'optics test'), pass the name and we will fuzzy-match.",
           },
+        },
+        additionalProperties: false,
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_question_analysis",
+      description:
+        "Per-question stats for an exam (correct/incorrect/unattempted, avg time, success rate, difficulty, cognitive type). Use for 'which questions tripped them up', 'question-wise breakdown'.",
+      parameters: {
+        type: "object",
+        properties: {
+          exam_id: { type: "string" },
+          exam_name_hint: { type: "string" },
+          weakest_only: { type: "boolean", description: "Return only weak/hard questions." },
+        },
+        additionalProperties: false,
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_difficulty_analysis",
+      description:
+        "Easy/medium/hard accuracy + cognitive-type distribution for one exam. Use for 'easy vs hard performance', 'cognitive mix', 'difficulty breakdown'.",
+      parameters: {
+        type: "object",
+        properties: {
+          exam_id: { type: "string" },
+          exam_name_hint: { type: "string" },
+        },
+        additionalProperties: false,
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_actionable_insights",
+      description:
+        "Reteach/practice/celebrate/attention insight cards for an exam — each carries a one-click action payload (topic, difficulty, studentIds) so the teacher can hand off to the Homework routine. Use whenever the teacher asks 'what should I do', 'what should I reteach', 'next steps'.",
+      parameters: {
+        type: "object",
+        properties: {
+          exam_id: { type: "string" },
+          exam_name_hint: { type: "string" },
+        },
+        additionalProperties: false,
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_compare_exams",
+      description:
+        "Side-by-side delta of TWO exams: avg %, pass %, weak topics joined/dropped. Pass two exam ids OR one id and we'll compare the most recent two.",
+      parameters: {
+        type: "object",
+        properties: {
+          exam_id_a: { type: "string" },
+          exam_id_b: { type: "string" },
         },
         additionalProperties: false,
       },
@@ -399,8 +471,41 @@ const reportsTools = [
     function: {
       name: "get_chapter_health",
       description:
-        "Returns chapter-wise success rates and weak-topic counts for the active batch (sorted weakest first). Use for 'weak chapters', 'chapter health', or 'where do students struggle most'.",
+        "Chapter-wise success rates and weak-topic counts (sorted weakest first). Use for 'weak chapters', 'chapter health'.",
       parameters: { type: "object", properties: {}, additionalProperties: false },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_chapter_deep_dive",
+      description:
+        "ONE chapter deep-dive: topic heatmap, per-exam breakdown, 4-bucket student counts, weak-topic list. Either chapter_id OR chapter_name_hint required.",
+      parameters: {
+        type: "object",
+        properties: {
+          chapter_id: { type: "string" },
+          chapter_name_hint: { type: "string", description: "e.g. 'optics', 'thermo'." },
+        },
+        additionalProperties: false,
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_topic_analysis",
+      description:
+        "ONE topic across the batch: success rate, status, affected students. Use when the teacher names a topic ('how is Wave Optics doing', 'Doppler Effect performance').",
+      parameters: {
+        type: "object",
+        properties: {
+          topic_name_hint: { type: "string", description: "e.g. 'Wave Optics', 'Doppler'." },
+          chapter_name_hint: { type: "string", description: "Optional chapter filter." },
+        },
+        required: ["topic_name_hint"],
+        additionalProperties: false,
+      },
     },
   },
   {
@@ -408,15 +513,10 @@ const reportsTools = [
     function: {
       name: "get_at_risk_students",
       description:
-        "Returns students in the risk or reinforcement performance bands with their PI scores. Use for 'who is at risk', 'struggling students', 'who needs help'.",
+        "Students in risk or reinforcement bands with PI scores. Use for 'who is at risk', 'struggling students'.",
       parameters: {
         type: "object",
-        properties: {
-          limit: {
-            type: "number",
-            description: "Max students to return. Default 8.",
-          },
-        },
+        properties: { limit: { type: "number", description: "Default 8." } },
         additionalProperties: false,
       },
     },
@@ -425,23 +525,147 @@ const reportsTools = [
     type: "function",
     function: {
       name: "get_top_performers",
+      description: "Top performers by Performance Index. Default 5.",
+      parameters: {
+        type: "object",
+        properties: { limit: { type: "number" } },
+        additionalProperties: false,
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_student_search",
       description:
-        "Returns the top performing students in the active batch by Performance Index. Use for 'top students', 'best performers', 'who's leading the batch'.",
+        "Resolve a free-text student name (e.g. 'Aarav', 'Kavya M.') to a student record. Returns up to 5 candidates ranked by name match. Call this BEFORE get_student_profile/get_compare_students whenever you only have a name.",
+      parameters: {
+        type: "object",
+        properties: { name_hint: { type: "string" } },
+        required: ["name_hint"],
+        additionalProperties: false,
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_student_profile",
+      description:
+        "Full per-student profile for the active batch: PI breakdown, chapter mastery, weak topics, difficulty/cognitive mix, exam history, suggested difficulty, AI summary. Use for 'how is X doing', 'profile of X'.",
       parameters: {
         type: "object",
         properties: {
-          limit: {
-            type: "number",
-            description: "Max students to return. Default 5.",
-          },
+          student_id: { type: "string" },
+          name_hint: { type: "string", description: "If id is unknown." },
         },
         additionalProperties: false,
       },
     },
   },
+  {
+    type: "function",
+    function: {
+      name: "get_compare_students",
+      description:
+        "Side-by-side two-student delta (PI, accuracy, weak chapters, trend, suggested difficulty). Use for 'compare X and Y'.",
+      parameters: {
+        type: "object",
+        properties: {
+          student_id_a: { type: "string" },
+          student_id_b: { type: "string" },
+          name_hint_a: { type: "string" },
+          name_hint_b: { type: "string" },
+        },
+        additionalProperties: false,
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_chapter_search",
+      description:
+        "Resolve a free-text chapter name (e.g. 'optics', 'thermo') to a chapter record. Use BEFORE get_chapter_deep_dive when you only have a name.",
+      parameters: {
+        type: "object",
+        properties: { name_hint: { type: "string" } },
+        required: ["name_hint"],
+        additionalProperties: false,
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_multi_subject_risk",
+      description:
+        "Students at risk across MULTIPLE chapters/areas (proxy for 'multi-subject risk' in this single-subject batch). Use for 'students struggling in many areas', 'multi-subject risk'.",
+      parameters: { type: "object", properties: {}, additionalProperties: false },
+    },
+  },
 ];
 
 const REPORTS_TOOL_NAMES = new Set(reportsTools.map((t) => t.function.name));
+
+// ─── Fuzzy helpers ───
+function norm(s: string): string {
+  return (s || "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+}
+function fuzzyScore(query: string, target: string): number {
+  const q = norm(query);
+  const t = norm(target);
+  if (!q || !t) return 0;
+  if (t === q) return 100;
+  if (t.includes(q)) return 80 + Math.max(0, 10 - Math.abs(t.length - q.length));
+  if (q.includes(t)) return 70;
+  // Token overlap
+  const qt = new Set(q.split(" "));
+  const tt = t.split(" ");
+  const hits = tt.filter((x) => qt.has(x)).length;
+  if (hits === 0) return 0;
+  return 30 + hits * 15;
+}
+function findExam(ctx: any, args: any): any | null {
+  const exams = ctx?.recent_exams ?? [];
+  const analyses = ctx?.exam_analyses ?? [];
+  if (args.exam_id) {
+    return analyses.find((a: any) => a.exam_id === args.exam_id) ?? null;
+  }
+  if (args.exam_name_hint) {
+    const ranked = analyses
+      .map((a: any) => ({ a, s: fuzzyScore(args.exam_name_hint, a.exam_name) }))
+      .filter((x: any) => x.s > 0)
+      .sort((x: any, y: any) => y.s - x.s);
+    if (ranked[0]) return ranked[0].a;
+  }
+  // Default to most recent
+  return analyses[0] ?? (exams[0] ? null : null);
+}
+function findStudent(ctx: any, idOrHint: { id?: string; hint?: string }): any | null {
+  const profiles = ctx?.student_profiles ?? [];
+  if (idOrHint.id) return profiles.find((p: any) => p.id === idOrHint.id) ?? null;
+  if (idOrHint.hint) {
+    const ranked = profiles
+      .map((p: any) => ({ p, s: fuzzyScore(idOrHint.hint!, p.name) }))
+      .filter((x: any) => x.s > 0)
+      .sort((x: any, y: any) => y.s - x.s);
+    return ranked[0]?.p ?? null;
+  }
+  return null;
+}
+function findChapter(ctx: any, idOrHint: { id?: string; hint?: string }): any | null {
+  const details = ctx?.chapter_details ?? [];
+  if (idOrHint.id) return details.find((d: any) => d.chapter_id === idOrHint.id) ?? null;
+  if (idOrHint.hint) {
+    const ranked = details
+      .map((d: any) => ({ d, s: fuzzyScore(idOrHint.hint!, d.chapter) }))
+      .filter((x: any) => x.s > 0)
+      .sort((x: any, y: any) => y.s - x.s);
+    return ranked[0]?.d ?? null;
+  }
+  return null;
+}
 
 /**
  * Resolve a get_* tool call against the inline reports_context payload.
