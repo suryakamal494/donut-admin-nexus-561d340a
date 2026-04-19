@@ -14,3 +14,6 @@ verify_jwt = false
 
 [functions.generate-chapter-practice]
 verify_jwt = false
+
+[functions.routine-pilot-chat]
+verify_jwt = false
