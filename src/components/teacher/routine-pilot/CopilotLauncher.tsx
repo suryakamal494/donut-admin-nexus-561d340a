@@ -55,6 +55,17 @@ export default function CopilotLauncher() {
     initialRoutineKey ?? deriveRoutineFromPath(location.pathname);
   const resolvedBatchId = initialBatchId ?? deriveBatchIdFromPath(location.pathname);
 
+  // Tutorial state — show on open if eligible
+  const [tutorialVisible, setTutorialVisible] = useState(false);
+  useEffect(() => {
+    if (isOpen && shouldShowTutorial()) {
+      // Small delay so the overlay paints first
+      const t = setTimeout(() => setTutorialVisible(true), 250);
+      return () => clearTimeout(t);
+    }
+    if (!isOpen) setTutorialVisible(false);
+  }, [isOpen]);
+
   const handleOpen = () => openCopilot();
 
   return (
@@ -116,6 +127,11 @@ export default function CopilotLauncher() {
               initialRoutineKey={resolvedRoutineKey}
             />
           </div>
+
+          {/* First-run coachmark tour */}
+          {tutorialVisible && (
+            <CopilotTutorial onDone={() => setTutorialVisible(false)} />
+          )}
         </div>
       )}
     </>

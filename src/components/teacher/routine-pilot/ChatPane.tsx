@@ -5,6 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Send, Sparkles } from "lucide-react";
 import { toast } from "sonner";
+import { useDynamicChips } from "./useDynamicChips";
 import type { Batch, Routine, Thread, Message } from "./types";
 
 interface Props {
@@ -203,6 +204,7 @@ export default function ChatPane({ batch, routine, thread, onThreadCreated, onAr
   }
 
   const isEmpty = messages.length === 0;
+  const dynamicChips = useDynamicChips(batch?.id ?? null, routine);
 
   return (
     <div className="flex flex-col h-full">
@@ -240,13 +242,15 @@ export default function ChatPane({ batch, routine, thread, onThreadCreated, onAr
 
       <div className="border-t p-3 bg-card/30">
         <div className="max-w-3xl mx-auto space-y-2">
-          {isEmpty && routine.quick_start_chips?.length > 0 && (
+          {dynamicChips.length > 0 && (
             <div className="flex flex-wrap gap-1.5">
-              {routine.quick_start_chips.map((chip, i) => (
+              {dynamicChips.map((chip, i) => (
                 <button
                   key={i}
+                  type="button"
                   onClick={() => handleChip(chip)}
                   className="text-xs px-2.5 py-1 rounded-full border bg-background hover:bg-muted transition-colors"
+                  title={chip}
                 >
                   {chip}
                 </button>
