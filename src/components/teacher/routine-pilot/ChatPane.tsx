@@ -232,15 +232,38 @@ export default function ChatPane({ batch, routine, thread, onThreadCreated, onAr
 
   return (
     <div className="flex flex-col h-full">
-      <div className="px-5 py-3 border-b flex items-center justify-between">
-        <div>
-          <div className="text-sm font-medium">{routine.label}</div>
-          <div className="text-xs text-muted-foreground">{batch.name} • {batch.subject}</div>
+      <div className="px-5 py-2.5 border-b">
+        <div className="flex items-center gap-2 text-sm">
+          <Sparkles className="w-4 h-4 text-primary flex-shrink-0" />
+          <span className="font-medium">{routine.label}</span>
+          <span className="text-muted-foreground">·</span>
+          <span className="text-muted-foreground truncate">{batch.name}</span>
         </div>
       </div>
 
+      {dynamicChips.length > 0 && (
+        <div className="px-5 py-2 border-b bg-muted/20">
+          <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide">
+            <span className="text-[11px] text-muted-foreground flex-shrink-0 font-medium">
+              Quick starts:
+            </span>
+            {dynamicChips.map((chip, i) => (
+              <button
+                key={i}
+                type="button"
+                onClick={() => handleChip(chip)}
+                className="text-xs px-2.5 py-1 rounded-full border bg-background hover:bg-muted hover:border-primary/30 transition-colors whitespace-nowrap flex-shrink-0"
+                title={chip}
+              >
+                {chip}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       <ScrollArea className="flex-1">
-        <div ref={scrollRef as any} className="px-5 py-6 max-w-3xl mx-auto space-y-5">
+        <div ref={scrollRef as any} className="px-5 py-5 max-w-3xl mx-auto space-y-5">
           {isEmpty && (
             <div className="text-center py-10">
               <Sparkles className="w-8 h-8 text-primary mx-auto mb-3" />
@@ -264,42 +287,30 @@ export default function ChatPane({ batch, routine, thread, onThreadCreated, onAr
         </div>
       </ScrollArea>
 
-      <div className="border-t p-3 bg-card/30">
-        <div className="max-w-3xl mx-auto space-y-2">
-          {dynamicChips.length > 0 && (
-            <div className="flex flex-wrap gap-1.5">
-              {dynamicChips.map((chip, i) => (
-                <button
-                  key={i}
-                  type="button"
-                  onClick={() => handleChip(chip)}
-                  className="text-xs px-2.5 py-1 rounded-full border bg-background hover:bg-muted transition-colors"
-                  title={chip}
-                >
-                  {chip}
-                </button>
-              ))}
-            </div>
-          )}
-          <div className="flex items-end gap-2">
-            <Textarea
-              ref={textareaRef}
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
-                  send();
-                }
-              }}
-              placeholder={`Message ${routine.label}…`}
-              className="min-h-[44px] max-h-32 resize-none text-sm"
-              rows={1}
-            />
-            <Button onClick={send} disabled={loading || !input.trim()} size="icon" className="h-11 w-11 flex-shrink-0">
-              <Send className="w-4 h-4" />
-            </Button>
-          </div>
+      <div className="border-t px-5 py-3">
+        <div className="max-w-3xl mx-auto flex items-end gap-2">
+          <Textarea
+            ref={textareaRef}
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                send();
+              }
+            }}
+            placeholder={`Message ${routine.label}…`}
+            className="min-h-[40px] max-h-32 resize-none text-sm focus-visible:ring-2 focus-visible:ring-primary/40"
+            rows={1}
+          />
+          <Button
+            onClick={send}
+            disabled={loading || !input.trim()}
+            size="icon"
+            className="h-9 w-9 flex-shrink-0 rounded-full"
+          >
+            <Send className="w-4 h-4" />
+          </Button>
         </div>
       </div>
     </div>
