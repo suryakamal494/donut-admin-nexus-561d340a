@@ -41,9 +41,10 @@ export async function streamChat(
   let artifactsCreated = false;
   let artifactsUpdated = false;
   const reportEvents: any[] = [];
-  let done = false;
-
-  while (!done) {
+  // Read until the server actually closes the stream. We must NOT break on
+  // intermediate "[DONE]" markers because the edge function may emit additional
+  // SSE events (e.g. rp_report_data) AFTER a model turn completes.
+  while (true) {
     const { done: d, value } = await reader.read();
     if (d) break;
     buf += decoder.decode(value, { stream: true });
@@ -54,7 +55,7 @@ export async function streamChat(
       if (line.endsWith("\r")) line = line.slice(0, -1);
       if (!line.startsWith("data: ")) continue;
       const json = line.slice(6).trim();
-      if (json === "[DONE]") { done = true; break; }
+      if (json === "[DONE]") continue;
       try {
         const parsed = JSON.parse(json);
         if (parsed.rp_artifacts_created?.length) {
