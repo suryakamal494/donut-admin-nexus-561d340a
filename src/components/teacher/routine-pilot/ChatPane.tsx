@@ -35,14 +35,16 @@ export default function ChatPane({ batch, routine, thread, onThreadCreated, onAr
       setMessages([]);
       return;
     }
+    let cancelled = false;
     (async () => {
       const { data } = await supabase
         .from("rp_messages")
         .select("*")
         .eq("thread_id", thread.id)
         .order("created_at");
-      setMessages((data ?? []) as Message[]);
+      if (!cancelled) setMessages((data ?? []) as Message[]);
     })();
+    return () => { cancelled = true; };
   }, [thread]);
 
   useEffect(() => {
@@ -126,9 +128,11 @@ export default function ChatPane({ batch, routine, thread, onThreadCreated, onAr
           routine_key: routine.key,
           messages: history,
         },
-        (delta) => {
-          assistantText += delta;
-          setMessages((prev) => prev.map((m) => m.id === assistantId ? { ...m, content: assistantText } : m));
+        {
+          onDelta: (delta) => {
+            assistantText += delta;
+            setMessages((prev) => prev.map((m) => m.id === assistantId ? { ...m, content: assistantText } : m));
+          },
         }
       );
 
@@ -155,7 +159,8 @@ export default function ChatPane({ batch, routine, thread, onThreadCreated, onAr
         .update({ last_message_at: new Date().toISOString() })
         .eq("id", activeThread.id);
 
-      if (result.artifactsCreated) onArtifactsCreated();
+      // Refresh thread list when EITHER artifacts were created OR existing ones updated
+      if (result.artifactsCreated || result.artifactsUpdated) onArtifactsCreated();
     } catch (e) {
       console.error(e);
       toast.error("Something went wrong");

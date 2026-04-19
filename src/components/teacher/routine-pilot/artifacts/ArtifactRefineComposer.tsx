@@ -5,6 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { streamChat } from "../streamChat";
 
 interface Props {
   artifactId: string;
@@ -37,11 +38,14 @@ export default function ArtifactRefineComposer({
 }: Props) {
   const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
+  // Live streaming preview of the assistant's narration while it refines.
+  const [preview, setPreview] = useState("");
 
   const send = async () => {
     const instruction = text.trim();
     if (!instruction || busy) return;
     setBusy(true);
+    setPreview("");
     try {
       // Resolve a thread_id to attach to. Fallback: query the artifact for its thread.
       let resolvedThreadId = threadId ?? null;
@@ -58,23 +62,45 @@ export default function ArtifactRefineComposer({
         return;
       }
 
-      // Invoke the edge function in refinement mode
-      const { error } = await supabase.functions.invoke("routine-pilot-chat", {
-        body: {
+      // Stream so we can show live feedback and surface real errors (not just a buffered toast)
+      let buf = "";
+      const result = await streamChat(
+        {
           thread_id: resolvedThreadId,
           batch_id: batchId,
           routine_key: routineKey,
           target_artifact_id: artifactId,
           messages: [{ role: "user", content: instruction }],
         },
-      });
+        {
+          onDelta: (chunk) => {
+            buf += chunk;
+            setPreview(buf);
+          },
+        }
+      );
 
-      if (error) throw error;
+      if (!result.ok) {
+        if (result.status === 429) toast.error("Rate limit hit. Try again shortly.");
+        else if (result.status === 402) toast.error("AI credits exhausted. Add credits in Workspace settings.");
+        else toast.error("Refinement failed", { description: `Server returned ${result.status}` });
+        return;
+      }
+
+      // We expect at least one update; warn the user if the model went off-script
+      if (!result.artifactsUpdated) {
+        toast.warning("AI replied but didn't update the artifact", {
+          description: "Try a more specific instruction.",
+        });
+      } else {
+        toast.success("Updated", {
+          description: "Refreshed in place.",
+        });
+      }
 
       setText("");
-      toast.success("Refining…", {
-        description: "Updates will appear here as soon as they're ready.",
-      });
+      // Clear the live preview after a short pause so the user can read it
+      setTimeout(() => setPreview(""), 1500);
     } catch (e: any) {
       console.error("refine error", e);
       toast.error("Refinement failed", { description: e?.message ?? "Unknown error" });
@@ -120,6 +146,18 @@ export default function ArtifactRefineComposer({
           {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
         </Button>
       </div>
+
+      {(busy || preview) && (
+        <div className="mt-2 px-3 py-2 rounded-md bg-muted/40 border text-xs text-muted-foreground leading-relaxed whitespace-pre-wrap">
+          {preview || (
+            <span className="inline-flex items-center gap-1.5">
+              <Loader2 className="w-3 h-3 animate-spin" />
+              Thinking…
+            </span>
+          )}
+        </div>
+      )}
+
       <p className="text-[10px] text-muted-foreground mt-1.5 px-1">
         Press Enter to send · Shift+Enter for newline · Updates this artifact in place
       </p>
