@@ -76,6 +76,27 @@ export default function ChatPane({ batch, routine, thread, onThreadCreated, onAr
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [messages]);
 
+  // Consume cross-routine prefill (Reports -> Homework). Drop a draft into the
+  // composer so the teacher can review/tweak before sending.
+  useEffect(() => {
+    if (!prefill || !routine) return;
+    const isHomework = routine.key === "homework" || routine.key.includes("homework");
+    if (!isHomework) return;
+    const parts: string[] = [];
+    if (prefill.contextBanner) parts.push(prefill.contextBanner);
+    const verb = "Generate banded homework";
+    const topicPart = prefill.topic ? ` on ${prefill.topic}` : "";
+    const diffPart = prefill.difficulty ? ` (${prefill.difficulty} difficulty)` : "";
+    const namesPart =
+      prefill.studentNames && prefill.studentNames.length
+        ? ` for ${prefill.studentNames.slice(0, 6).join(", ")}${prefill.studentNames.length > 6 ? ` and ${prefill.studentNames.length - 6} more` : ""}`
+        : "";
+    parts.push(`${verb}${topicPart}${diffPart}${namesPart}.`);
+    setInput(parts.join("\n\n"));
+    setTimeout(() => textareaRef.current?.focus(), 0);
+    onPrefillConsumed?.();
+  }, [prefill, routine, onPrefillConsumed]);
+
   const handleChip = (chip: string) => {
     setInput(chip);
     setTimeout(() => {
