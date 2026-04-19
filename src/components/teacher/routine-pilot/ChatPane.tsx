@@ -6,6 +6,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Send, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { useDynamicChips } from "./useDynamicChips";
+import { streamChat } from "./streamChat";
 import type { Batch, Routine, Thread, Message } from "./types";
 
 interface Props {
@@ -14,64 +15,6 @@ interface Props {
   thread: Thread | null;
   onThreadCreated: (t: Thread) => void;
   onArtifactsCreated: () => void;
-}
-
-/**
- * Streams an SSE chat response from the routine-pilot-chat edge function.
- * Calls onDelta for each text chunk and returns whether artifacts were created.
- */
-async function streamChat(
-  body: Record<string, unknown>,
-  onDelta: (chunk: string) => void
-): Promise<{ ok: boolean; status: number; artifactsCreated: boolean }> {
-  const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/routine-pilot-chat`;
-  const resp = await fetch(url, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-    },
-    body: JSON.stringify(body),
-  });
-
-  if (!resp.ok || !resp.body) {
-    return { ok: false, status: resp.status, artifactsCreated: false };
-  }
-
-  const reader = resp.body.getReader();
-  const decoder = new TextDecoder();
-  let buf = "";
-  let artifactsCreated = false;
-  let done = false;
-
-  while (!done) {
-    const { done: d, value } = await reader.read();
-    if (d) break;
-    buf += decoder.decode(value, { stream: true });
-    let nl: number;
-    while ((nl = buf.indexOf("\n")) !== -1) {
-      let line = buf.slice(0, nl);
-      buf = buf.slice(nl + 1);
-      if (line.endsWith("\r")) line = line.slice(0, -1);
-      if (!line.startsWith("data: ")) continue;
-      const json = line.slice(6).trim();
-      if (json === "[DONE]") { done = true; break; }
-      try {
-        const parsed = JSON.parse(json);
-        if (parsed.rp_artifacts_created?.length) {
-          artifactsCreated = true;
-          continue;
-        }
-        const delta = parsed.choices?.[0]?.delta?.content;
-        if (delta) onDelta(delta);
-      } catch {
-        buf = line + "\n" + buf;
-        break;
-      }
-    }
-  }
-
-  return { ok: true, status: resp.status, artifactsCreated };
 }
 
 export default function ChatPane({ batch, routine, thread, onThreadCreated, onArtifactsCreated }: Props) {
