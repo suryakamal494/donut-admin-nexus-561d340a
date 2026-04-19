@@ -7,9 +7,10 @@ interface Props {
   batch: Batch | null;
   thread: Thread | null;
   artifactCount: number;
+  routineKey?: string;
 }
 
-export default function MobileArtifactSheet({ batch, thread, artifactCount }: Props) {
+export default function MobileArtifactSheet({ batch, thread, artifactCount, routineKey }: Props) {
   return (
     <Drawer>
       <DrawerTrigger asChild>
@@ -26,7 +27,7 @@ export default function MobileArtifactSheet({ batch, thread, artifactCount }: Pr
       </DrawerTrigger>
       <DrawerContent className="h-[85vh]">
         <div className="flex-1 min-h-0 overflow-hidden">
-          <ArtifactPane batch={batch} thread={thread} />
+          <ArtifactPane batch={batch} thread={thread} routineKey={routineKey} />
         </div>
       </DrawerContent>
     </Drawer>

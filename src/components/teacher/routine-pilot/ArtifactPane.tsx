@@ -11,9 +11,10 @@ import type { Artifact, Batch, Thread } from "./types";
 interface Props {
   batch: Batch | null;
   thread: Thread | null;
+  routineKey?: string;
 }
 
-export default function ArtifactPane({ batch, thread }: Props) {
+export default function ArtifactPane({ batch, thread, routineKey }: Props) {
   const [allArtifacts, setAllArtifacts] = useState<Artifact[]>([]);
   const [tab, setTab] = useState<"thread" | "library">("thread");
   const [openArtifactId, setOpenArtifactId] = useState<string | null>(null);
@@ -39,6 +40,11 @@ export default function ArtifactPane({ batch, thread }: Props) {
       .on(
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "rp_artifacts", filter: `batch_id=eq.${batch.id}` },
+        () => load()
+      )
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "rp_artifacts", filter: `batch_id=eq.${batch.id}` },
         () => load()
       )
       .subscribe();
@@ -83,7 +89,7 @@ export default function ArtifactPane({ batch, thread }: Props) {
           </div>
           <ScrollArea className="flex-1">
             <div className="p-4">
-              <ArtifactView artifact={openArtifact} batch={batch} />
+              <ArtifactView artifact={openArtifact} batch={batch} routineKey={routineKey} />
             </div>
           </ScrollArea>
         </>

@@ -8,6 +8,153 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+// ---------- Tool schemas ----------
+
+const lessonPlanContentSchema = {
+  type: "object",
+  properties: {
+    duration_minutes: { type: "number" },
+    objectives: { type: "array", items: { type: "string" } },
+    materials: { type: "array", items: { type: "string" } },
+    sections: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          name: { type: "string" },
+          minutes: { type: "number" },
+          description: { type: "string" },
+        },
+        required: ["name", "minutes", "description"],
+        additionalProperties: false,
+      },
+    },
+    homework: { type: "string" },
+  },
+  required: ["duration_minutes", "objectives", "materials", "sections", "homework"],
+  additionalProperties: false,
+};
+
+const pptContentSchema = {
+  type: "object",
+  properties: {
+    topic: { type: "string" },
+    total_slides: { type: "number" },
+    duration_minutes: { type: "number" },
+    slides: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          title: { type: "string" },
+          bullets: { type: "array", items: { type: "string" } },
+          speaker_notes: { type: "string" },
+        },
+        required: ["title", "bullets", "speaker_notes"],
+        additionalProperties: false,
+      },
+    },
+  },
+  required: ["topic", "total_slides", "duration_minutes", "slides"],
+  additionalProperties: false,
+};
+
+const testContentSchema = {
+  type: "object",
+  properties: {
+    curriculum: { type: "string" },
+    chapters: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          name: { type: "string" },
+          topics: { type: "array", items: { type: "string" } },
+        },
+        required: ["name"],
+      },
+    },
+    pattern: {
+      type: "string",
+      enum: ["custom", "jee_main", "jee_advanced", "neet"],
+    },
+    duration_minutes: { type: "number" },
+    total_marks: { type: "number" },
+    instructions: { type: "string" },
+    negative_marking: { type: "boolean" },
+    negative_marks: { type: "number" },
+    questions: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          type: { type: "string", enum: ["mcq", "short", "long"] },
+          prompt: { type: "string" },
+          options: { type: "array", items: { type: "string" } },
+          answer: { type: "string" },
+          marks: { type: "number" },
+          chapter: { type: "string" },
+          topic: { type: "string" },
+          difficulty: { type: "string", enum: ["easy", "medium", "hard"] },
+          cognitive_type: {
+            type: "string",
+            enum: ["memory", "conceptual", "logical", "analytical", "application"],
+          },
+        },
+        required: ["type", "prompt", "marks"],
+      },
+    },
+  },
+  required: [
+    "curriculum",
+    "pattern",
+    "duration_minutes",
+    "total_marks",
+    "instructions",
+    "questions",
+  ],
+  additionalProperties: false,
+};
+
+const bandedHomeworkContentSchema = {
+  type: "object",
+  properties: {
+    topic: { type: "string" },
+    due_date: { type: "string" },
+    estimated_minutes_per_band: { type: "number" },
+    bands: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          key: {
+            type: "string",
+            enum: ["mastery_ready", "stable_progress", "reinforcement", "foundational_risk"],
+          },
+          label: { type: "string" },
+          student_count: { type: "number" },
+          instructions: { type: "string" },
+          estimated_minutes: { type: "number" },
+          problems: {
+            type: "array",
+            items: {
+              type: "object",
+              properties: {
+                prompt: { type: "string" },
+                hint: { type: "string" },
+              },
+              required: ["prompt"],
+            },
+          },
+        },
+        required: ["key", "label", "student_count", "instructions", "estimated_minutes", "problems"],
+      },
+    },
+  },
+  required: ["topic", "due_date", "estimated_minutes_per_band", "bands"],
+  additionalProperties: false,
+};
+
 const tools = [
   {
     type: "function",
@@ -16,33 +163,7 @@ const tools = [
       description: "Create a structured lesson plan",
       parameters: {
         type: "object",
-        properties: {
-          title: { type: "string" },
-          content: {
-            type: "object",
-            properties: {
-              duration_minutes: { type: "number" },
-              objectives: { type: "array", items: { type: "string" } },
-              materials: { type: "array", items: { type: "string" } },
-              sections: {
-                type: "array",
-                items: {
-                  type: "object",
-                  properties: {
-                    name: { type: "string" },
-                    minutes: { type: "number" },
-                    description: { type: "string" },
-                  },
-                  required: ["name", "minutes", "description"],
-                  additionalProperties: false,
-                },
-              },
-              homework: { type: "string" },
-            },
-            required: ["duration_minutes", "objectives", "materials", "sections", "homework"],
-            additionalProperties: false,
-          },
-        },
+        properties: { title: { type: "string" }, content: lessonPlanContentSchema },
         required: ["title", "content"],
         additionalProperties: false,
       },
@@ -55,32 +176,7 @@ const tools = [
       description: "Create a slide deck (8-10 slides)",
       parameters: {
         type: "object",
-        properties: {
-          title: { type: "string" },
-          content: {
-            type: "object",
-            properties: {
-              topic: { type: "string" },
-              total_slides: { type: "number" },
-              duration_minutes: { type: "number" },
-              slides: {
-                type: "array",
-                items: {
-                  type: "object",
-                  properties: {
-                    title: { type: "string" },
-                    bullets: { type: "array", items: { type: "string" } },
-                    speaker_notes: { type: "string" },
-                  },
-                  required: ["title", "bullets", "speaker_notes"],
-                  additionalProperties: false,
-                },
-              },
-            },
-            required: ["topic", "total_slides", "duration_minutes", "slides"],
-            additionalProperties: false,
-          },
-        },
+        properties: { title: { type: "string" }, content: pptContentSchema },
         required: ["title", "content"],
         additionalProperties: false,
       },
@@ -94,70 +190,7 @@ const tools = [
         "Create a mixed-format test with rich curriculum, chapter, and per-question metadata so it can be published to the Tests page.",
       parameters: {
         type: "object",
-        properties: {
-          title: { type: "string" },
-          content: {
-            type: "object",
-            properties: {
-              curriculum: {
-                type: "string",
-                description: "e.g. 'CBSE Class 10', 'ICSE Class 9', 'JEE Main'",
-              },
-              chapters: {
-                type: "array",
-                description: "Chapters covered by this test, with topics under each.",
-                items: {
-                  type: "object",
-                  properties: {
-                    name: { type: "string" },
-                    topics: { type: "array", items: { type: "string" } },
-                  },
-                  required: ["name"],
-                },
-              },
-              pattern: {
-                type: "string",
-                enum: ["custom", "jee_main", "jee_advanced", "neet"],
-                description: "Test pattern. Default to 'custom' unless the teacher asks for a specific competitive exam pattern.",
-              },
-              duration_minutes: { type: "number" },
-              total_marks: { type: "number" },
-              instructions: { type: "string" },
-              negative_marking: { type: "boolean" },
-              negative_marks: { type: "number" },
-              questions: {
-                type: "array",
-                items: {
-                  type: "object",
-                  properties: {
-                    type: { type: "string", enum: ["mcq", "short", "long"] },
-                    prompt: { type: "string" },
-                    options: { type: "array", items: { type: "string" } },
-                    answer: { type: "string" },
-                    marks: { type: "number" },
-                    chapter: { type: "string" },
-                    topic: { type: "string" },
-                    difficulty: { type: "string", enum: ["easy", "medium", "hard"] },
-                    cognitive_type: {
-                      type: "string",
-                      enum: ["memory", "conceptual", "logical", "analytical", "application"],
-                    },
-                  },
-                  required: ["type", "prompt", "marks"],
-                },
-              },
-            },
-            required: [
-              "curriculum",
-              "pattern",
-              "duration_minutes",
-              "total_marks",
-              "instructions",
-              "questions",
-            ],
-            additionalProperties: false,
-          },
-        },
+        properties: { title: { type: "string" }, content: testContentSchema },
         required: ["title", "content"],
         additionalProperties: false,
       },
@@ -181,10 +214,7 @@ const tools = [
                 type: "array",
                 items: {
                   type: "object",
-                  properties: {
-                    prompt: { type: "string" },
-                    hint: { type: "string" },
-                  },
+                  properties: { prompt: { type: "string" }, hint: { type: "string" } },
                   required: ["prompt"],
                 },
               },
@@ -206,47 +236,7 @@ const tools = [
         "Create 4-band differentiated homework: mastery_ready, stable_progress, reinforcement, foundational_risk",
       parameters: {
         type: "object",
-        properties: {
-          title: { type: "string" },
-          content: {
-            type: "object",
-            properties: {
-              topic: { type: "string" },
-              due_date: { type: "string" },
-              estimated_minutes_per_band: { type: "number" },
-              bands: {
-                type: "array",
-                items: {
-                  type: "object",
-                  properties: {
-                    key: {
-                      type: "string",
-                      enum: ["mastery_ready", "stable_progress", "reinforcement", "foundational_risk"],
-                    },
-                    label: { type: "string" },
-                    student_count: { type: "number" },
-                    instructions: { type: "string" },
-                    estimated_minutes: { type: "number" },
-                    problems: {
-                      type: "array",
-                      items: {
-                        type: "object",
-                        properties: {
-                          prompt: { type: "string" },
-                          hint: { type: "string" },
-                        },
-                        required: ["prompt"],
-                      },
-                    },
-                  },
-                  required: ["key", "label", "student_count", "instructions", "estimated_minutes", "problems"],
-                },
-              },
-            },
-            required: ["topic", "due_date", "estimated_minutes_per_band", "bands"],
-            additionalProperties: false,
-          },
-        },
+        properties: { title: { type: "string" }, content: bandedHomeworkContentSchema },
         required: ["title", "content"],
         additionalProperties: false,
       },
@@ -278,6 +268,60 @@ const tools = [
       },
     },
   },
+  // ---------- update_* tools (refinement loop) ----------
+  {
+    type: "function",
+    function: {
+      name: "update_test",
+      description:
+        "Apply the teacher's requested change to the existing test artifact and return the FULL updated test (all questions, not just the changed ones).",
+      parameters: {
+        type: "object",
+        properties: { title: { type: "string" }, content: testContentSchema },
+        required: ["title", "content"],
+        additionalProperties: false,
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "update_lesson_plan",
+      description: "Apply the requested change and return the FULL updated lesson plan.",
+      parameters: {
+        type: "object",
+        properties: { title: { type: "string" }, content: lessonPlanContentSchema },
+        required: ["title", "content"],
+        additionalProperties: false,
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "update_ppt",
+      description: "Apply the requested change and return the FULL updated slide deck.",
+      parameters: {
+        type: "object",
+        properties: { title: { type: "string" }, content: pptContentSchema },
+        required: ["title", "content"],
+        additionalProperties: false,
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "update_banded_homework",
+      description: "Apply the requested change and return the FULL updated banded homework.",
+      parameters: {
+        type: "object",
+        properties: { title: { type: "string" }, content: bandedHomeworkContentSchema },
+        required: ["title", "content"],
+        additionalProperties: false,
+      },
+    },
+  },
 ];
 
 const TOOL_TO_TYPE: Record<string, string> = {
@@ -289,12 +333,19 @@ const TOOL_TO_TYPE: Record<string, string> = {
   schedule_homework: "schedule",
 };
 
+const UPDATE_TOOL_TO_TYPE: Record<string, string> = {
+  update_lesson_plan: "lesson_plan",
+  update_ppt: "ppt",
+  update_test: "test",
+  update_banded_homework: "banded_homework",
+};
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
     const body = await req.json();
-    const { thread_id, batch_id, routine_key, messages } = body;
+    const { thread_id, batch_id, routine_key, messages, target_artifact_id } = body;
     if (!thread_id || !batch_id || !routine_key || !Array.isArray(messages)) {
       return new Response(JSON.stringify({ error: "Missing required fields" }), {
         status: 400,
@@ -320,7 +371,18 @@ Deno.serve(async (req) => {
       });
     }
 
-    const systemPrompt = `${routine.default_system_prompt ?? ""}
+    // ---------- Refinement mode: load target artifact ----------
+    let targetArtifact: any = null;
+    if (target_artifact_id) {
+      const { data } = await supabase
+        .from("rp_artifacts")
+        .select("*")
+        .eq("id", target_artifact_id)
+        .maybeSingle();
+      targetArtifact = data;
+    }
+
+    let systemPrompt = `${routine.default_system_prompt ?? ""}
 
 CONTEXT:
 - Batch: ${batch.name} (Grade ${batch.grade}${batch.section ? "-" + batch.section : ""}, Subject: ${batch.subject})
@@ -329,6 +391,32 @@ CONTEXT:
 When you produce structured output (lesson plan, slide deck, test, homework, schedule), CALL THE APPROPRIATE TOOL. Then add a short text confirmation. Do not paste JSON inline.
 
 For tests specifically: ALWAYS infer a sensible curriculum from the batch (e.g. "CBSE Grade ${batch.grade}" if not specified), set pattern to "custom" unless a competitive exam (JEE Main/Advanced, NEET) is explicitly requested, and tag every question with chapter, topic, difficulty (easy/medium/hard) and cognitive_type (memory/conceptual/logical/analytical/application). The teacher will publish this test to their real Tests page, so the metadata MUST be complete.`;
+
+    if (targetArtifact) {
+      const updateToolName =
+        targetArtifact.type === "test"
+          ? "update_test"
+          : targetArtifact.type === "lesson_plan"
+          ? "update_lesson_plan"
+          : targetArtifact.type === "ppt"
+          ? "update_ppt"
+          : targetArtifact.type === "banded_homework"
+          ? "update_banded_homework"
+          : null;
+
+      systemPrompt += `
+
+REFINEMENT MODE — IMPORTANT:
+You are refining an EXISTING ${targetArtifact.type} artifact titled "${targetArtifact.title}".
+Apply ONLY the change the teacher requested. Preserve all other content exactly as it is.
+You MUST call the \`${updateToolName}\` tool with the FULL updated artifact (not a diff).
+Do NOT call any create_* tool in this turn.
+
+Current artifact JSON:
+\`\`\`json
+${JSON.stringify({ title: targetArtifact.title, content: targetArtifact.content }, null, 2)}
+\`\`\``;
+    }
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY missing");
@@ -368,14 +456,12 @@ For tests specifically: ALWAYS infer a sensible curriculum from the batch (e.g. 
       });
     }
 
-    // Stream and intercept tool calls
     const stream = new ReadableStream({
       async start(controller) {
         const reader = aiResp.body!.getReader();
         const decoder = new TextDecoder();
         const encoder = new TextEncoder();
 
-        // Aggregate tool call args by index
         const toolCalls: Record<number, { name: string; args: string }> = {};
         let buffer = "";
 
@@ -412,7 +498,6 @@ For tests specifically: ALWAYS infer a sensible curriculum from the batch (e.g. 
                     if (tc.function?.arguments) toolCalls[idx].args += tc.function.arguments;
                   }
                 }
-                // Forward as-is (text content streams to client)
                 controller.enqueue(encoder.encode(line + "\n"));
               } catch {
                 controller.enqueue(encoder.encode(line + "\n"));
@@ -420,35 +505,65 @@ For tests specifically: ALWAYS infer a sensible curriculum from the batch (e.g. 
             }
           }
 
-          // After stream completes, persist any tool-call artifacts
-          const artifactIds: string[] = [];
+          // Persist tool-call results
+          const createdArtifactIds: string[] = [];
+          const updatedArtifactIds: string[] = [];
+
           for (const idx of Object.keys(toolCalls)) {
             const call = toolCalls[+idx];
-            const type = TOOL_TO_TYPE[call.name];
-            if (!type) continue;
+            let parsed: any;
             try {
-              const parsed = JSON.parse(call.args);
-              const { data: art } = await supabase
-                .from("rp_artifacts")
-                .insert({
-                  batch_id,
-                  thread_id,
-                  type,
-                  title: parsed.title ?? "Untitled",
-                  content: parsed.content ?? {},
-                })
-                .select("id")
-                .single();
-              if (art?.id) artifactIds.push(art.id);
+              parsed = JSON.parse(call.args);
             } catch (e) {
               console.error("Failed to parse tool args:", call.name, e);
+              continue;
             }
+
+            // Update path
+            if (UPDATE_TOOL_TO_TYPE[call.name] && targetArtifact?.id) {
+              const newType = UPDATE_TOOL_TO_TYPE[call.name];
+              if (newType !== targetArtifact.type) {
+                console.warn("Update tool type mismatch:", call.name, targetArtifact.type);
+                continue;
+              }
+              const { data: upd } = await supabase
+                .from("rp_artifacts")
+                .update({
+                  title: parsed.title ?? targetArtifact.title,
+                  content: parsed.content ?? {},
+                })
+                .eq("id", targetArtifact.id)
+                .select("id")
+                .single();
+              if (upd?.id) updatedArtifactIds.push(upd.id);
+              continue;
+            }
+
+            // Create path
+            const type = TOOL_TO_TYPE[call.name];
+            if (!type) continue;
+            const { data: art } = await supabase
+              .from("rp_artifacts")
+              .insert({
+                batch_id,
+                thread_id,
+                type,
+                title: parsed.title ?? "Untitled",
+                content: parsed.content ?? {},
+              })
+              .select("id")
+              .single();
+            if (art?.id) createdArtifactIds.push(art.id);
           }
 
-          // Emit a custom SSE event listing artifact ids so client can refresh
-          if (artifactIds.length) {
+          if (createdArtifactIds.length) {
             controller.enqueue(
-              encoder.encode(`data: ${JSON.stringify({ rp_artifacts_created: artifactIds })}\n\n`)
+              encoder.encode(`data: ${JSON.stringify({ rp_artifacts_created: createdArtifactIds })}\n\n`)
+            );
+          }
+          if (updatedArtifactIds.length) {
+            controller.enqueue(
+              encoder.encode(`data: ${JSON.stringify({ rp_artifacts_updated: updatedArtifactIds })}\n\n`)
             );
           }
           controller.enqueue(encoder.encode("data: [DONE]\n\n"));
