@@ -717,62 +717,171 @@ function resolveReportsTool(
         toolResultText: JSON.stringify({ count: exams.length, exams }),
       };
     }
-    case "get_exam_analysis": {
-      const exams = ctx.recent_exams ?? [];
-      const examId =
-        args.exam_id ||
-        exams[0]?.id;
-      const exam = exams.find((e: any) => e.id === examId) ?? exams[0];
-      if (!exam) {
-        return {
-          event: null,
-          toolResultText: JSON.stringify({ error: "No exam found for this batch." }),
-        };
-      }
-      // Synthetic verdict from the recent_exams + at_risk numbers.
-      const avgPct = exam.total_marks
-        ? Math.round((exam.class_average / exam.total_marks) * 100)
-        : 0;
-      const passed = Math.round((exam.total_students * exam.pass_percentage) / 100);
-      const verdict =
-        `Class average ${avgPct}% on ${exam.total_marks} marks. ` +
-        `${passed} of ${exam.total_students} students cleared the pass threshold ` +
-        `(${exam.pass_percentage}% pass rate). Highest score ${exam.highest_score}.`;
-      const bands = [
-        { key: "mastery", label: "Mastery", count: ctx.student_roster_summary?.mastery ?? 0 },
-        { key: "stable", label: "Stable", count: ctx.student_roster_summary?.stable ?? 0 },
-        { key: "reinforcement", label: "Reinforce", count: ctx.student_roster_summary?.reinforcement ?? 0 },
-        { key: "risk", label: "At Risk", count: ctx.student_roster_summary?.risk ?? 0 },
-      ];
-      const topicFlags = (ctx.priority_topics ?? []).map((t: any) => ({
-        topic: t.topic,
-        success_rate: t.successRate,
-        status: t.successRate < 40 ? "weak" : t.successRate < 70 ? "moderate" : "strong",
-      }));
+    case "get_batch_health_summary": {
       const payload = {
         reports_batch_id: ctx.reports_batch_id,
-        exam_id: exam.id,
-        exam_name: exam.name,
+        reports_batch_name: ctx.reports_batch_name,
+        overall_trend: ctx.overall_trend,
+        recent_exam_avg: ctx.recent_exam_avg,
+        suggested_focus: ctx.suggested_focus,
+        priority_topics: ctx.priority_topics ?? [],
+        students_to_check_in: ctx.students_to_check_in ?? [],
+        at_risk_count: ctx.at_risk_count,
+        weak_topic_count: ctx.weak_topic_count,
+      };
+      return {
+        event: { kind: "todays_focus", payload },
+        toolResultText: JSON.stringify({
+          overall_trend: ctx.overall_trend,
+          recent_exam_avg: ctx.recent_exam_avg,
+          suggested_focus: ctx.suggested_focus,
+          priority_topics: payload.priority_topics.map((t: any) => `${t.topic} (${t.successRate}%)`),
+          students_to_check_in: payload.students_to_check_in.map((s: any) => s.studentName),
+        }),
+      };
+    }
+    case "get_exam_analysis": {
+      const exam = findExam(ctx, args);
+      if (!exam) {
+        return { event: null, toolResultText: JSON.stringify({ error: "No exam found." }) };
+      }
+      const payload = {
+        reports_batch_id: ctx.reports_batch_id,
+        exam_id: exam.exam_id,
+        exam_name: exam.exam_name,
         date: exam.date,
         total_marks: exam.total_marks,
         class_average: exam.class_average,
         highest_score: exam.highest_score,
         pass_percentage: exam.pass_percentage,
         total_students: exam.total_students,
-        verdict_text: verdict,
-        bands,
-        topic_flags: topicFlags,
+        attempted_count: exam.attempted_count,
+        verdict_text: exam.verdict_text,
+        bands: exam.bands,
+        topic_flags: exam.topic_flags,
+        score_distribution: exam.score_distribution,
       };
       return {
         event: { kind: "exam_analysis", payload },
         toolResultText: JSON.stringify({
-          exam_name: exam.name,
-          avg_pct: avgPct,
+          exam_name: exam.exam_name,
+          avg_pct: exam.avg_pct,
           pass_pct: exam.pass_percentage,
           highest: exam.highest_score,
-          verdict,
-          weak_topics: topicFlags.filter((t: any) => t.status === "weak").map((t: any) => t.topic),
+          verdict: exam.verdict_text,
+          bands: exam.bands,
+          weak_topics: (exam.topic_flags ?? [])
+            .filter((t: any) => t.status === "weak")
+            .map((t: any) => `${t.topic} (${t.success_rate}%)`),
         }),
+      };
+    }
+    case "get_question_analysis": {
+      const exam = findExam(ctx, args);
+      if (!exam) return { event: null, toolResultText: JSON.stringify({ error: "No exam found." }) };
+      let qs = exam.question_analysis ?? [];
+      if (args.weakest_only) {
+        qs = qs.filter((q: any) => q.success_rate < 50 || q.difficulty === "hard");
+      }
+      const payload = {
+        reports_batch_id: ctx.reports_batch_id,
+        exam_id: exam.exam_id,
+        exam_name: exam.exam_name,
+        questions: qs,
+      };
+      return {
+        event: { kind: "question_analysis", payload },
+        toolResultText: JSON.stringify({
+          exam_name: exam.exam_name,
+          count: qs.length,
+          weakest: [...qs].sort((a: any, b: any) => a.success_rate - b.success_rate).slice(0, 3),
+        }),
+      };
+    }
+    case "get_difficulty_analysis": {
+      const exam = findExam(ctx, args);
+      if (!exam) return { event: null, toolResultText: JSON.stringify({ error: "No exam found." }) };
+      const payload = {
+        reports_batch_id: ctx.reports_batch_id,
+        exam_id: exam.exam_id,
+        exam_name: exam.exam_name,
+        difficulty_mix: exam.difficulty_mix ?? [],
+        cognitive_mix: exam.cognitive_mix ?? [],
+      };
+      return {
+        event: { kind: "difficulty_mix", payload },
+        toolResultText: JSON.stringify({
+          exam_name: exam.exam_name,
+          difficulty_mix: payload.difficulty_mix,
+          cognitive_mix: payload.cognitive_mix,
+        }),
+      };
+    }
+    case "get_actionable_insights": {
+      const exam = findExam(ctx, args);
+      if (!exam) return { event: null, toolResultText: JSON.stringify({ error: "No exam found." }) };
+      const payload = {
+        reports_batch_id: ctx.reports_batch_id,
+        exam_id: exam.exam_id,
+        exam_name: exam.exam_name,
+        insights: exam.actionable_insights ?? [],
+      };
+      return {
+        event: { kind: "actionable_insights", payload },
+        toolResultText: JSON.stringify({
+          exam_name: exam.exam_name,
+          count: payload.insights.length,
+          insights: payload.insights.map((i: any) => ({
+            type: i.type,
+            severity: i.severity,
+            finding: i.finding,
+            suggested_action: i.suggested_action,
+            affected_count: (i.affected_students ?? []).length,
+          })),
+        }),
+      };
+    }
+    case "get_compare_exams": {
+      const analyses = ctx.exam_analyses ?? [];
+      const a =
+        (args.exam_id_a && analyses.find((x: any) => x.exam_id === args.exam_id_a)) ||
+        analyses[0];
+      const b =
+        (args.exam_id_b && analyses.find((x: any) => x.exam_id === args.exam_id_b)) ||
+        analyses[1];
+      if (!a || !b) {
+        return { event: null, toolResultText: JSON.stringify({ error: "Need at least two exams to compare." }) };
+      }
+      const weakA = new Set((a.topic_flags ?? []).filter((t: any) => t.status === "weak").map((t: any) => t.topic));
+      const weakB = new Set((b.topic_flags ?? []).filter((t: any) => t.status === "weak").map((t: any) => t.topic));
+      const joined = [...weakB].filter((t) => !weakA.has(t));
+      const dropped = [...weakA].filter((t) => !weakB.has(t));
+      const payload = {
+        reports_batch_id: ctx.reports_batch_id,
+        exam_a: {
+          exam_id: a.exam_id,
+          exam_name: a.exam_name,
+          date: a.date,
+          avg_pct: a.avg_pct,
+          pass_percentage: a.pass_percentage,
+          weak_topics: [...weakA],
+        },
+        exam_b: {
+          exam_id: b.exam_id,
+          exam_name: b.exam_name,
+          date: b.date,
+          avg_pct: b.avg_pct,
+          pass_percentage: b.pass_percentage,
+          weak_topics: [...weakB],
+        },
+        delta_avg_pct: a.avg_pct - b.avg_pct,
+        delta_pass_pct: a.pass_percentage - b.pass_percentage,
+        new_weak_topics: joined,
+        improved_topics: dropped,
+      };
+      return {
+        event: { kind: "exam_compare", payload },
+        toolResultText: JSON.stringify(payload),
       };
     }
     case "get_chapter_health": {
@@ -787,9 +896,50 @@ function resolveReportsTool(
         .map((c: any) => `${c.name} (${c.avg_success_rate}%)`);
       return {
         event: { kind: "chapter_health", payload },
+        toolResultText: JSON.stringify({ total: payload.chapters.length, weakest }),
+      };
+    }
+    case "get_chapter_deep_dive": {
+      const ch = findChapter(ctx, { id: args.chapter_id, hint: args.chapter_name_hint });
+      if (!ch) {
+        return { event: null, toolResultText: JSON.stringify({ error: "Chapter not found." }) };
+      }
+      const payload = { reports_batch_id: ctx.reports_batch_id, chapter: ch };
+      return {
+        event: { kind: "chapter_deep_dive", payload },
         toolResultText: JSON.stringify({
-          total: payload.chapters.length,
-          weakest,
+          chapter: ch.chapter,
+          overall_success_rate: ch.overall_success_rate,
+          weak_topics: ch.topics.filter((t: any) => t.status === "weak").map((t: any) => `${t.topic} (${t.success_rate}%)`),
+          buckets: ch.student_buckets.map((b: any) => `${b.label}: ${b.count}`),
+        }),
+      };
+    }
+    case "get_topic_analysis": {
+      const topics = ctx.topics ?? [];
+      const ranked = topics
+        .map((t: any) => ({
+          t,
+          s:
+            fuzzyScore(args.topic_name_hint, t.topic) +
+            (args.chapter_name_hint ? fuzzyScore(args.chapter_name_hint, t.chapter) * 0.4 : 0),
+        }))
+        .filter((x: any) => x.s > 0)
+        .sort((x: any, y: any) => y.s - x.s);
+      const top = ranked[0]?.t;
+      if (!top) {
+        return { event: null, toolResultText: JSON.stringify({ error: "Topic not found.", searched: args.topic_name_hint }) };
+      }
+      const payload = { reports_batch_id: ctx.reports_batch_id, topic: top };
+      return {
+        event: { kind: "topic_analysis", payload },
+        toolResultText: JSON.stringify({
+          topic: top.topic,
+          chapter: top.chapter,
+          success_rate: top.success_rate,
+          status: top.status,
+          affected_count: top.affected_students.length,
+          affected_names: top.affected_students.slice(0, 5).map((s: any) => s.name),
         }),
       };
     }
@@ -804,10 +954,7 @@ function resolveReportsTool(
       };
       return {
         event: { kind: "at_risk_students", payload },
-        toolResultText: JSON.stringify({
-          count: students.length,
-          names: students.map((s: any) => s.name),
-        }),
+        toolResultText: JSON.stringify({ count: students.length, names: students.map((s: any) => s.name) }),
       };
     }
     case "get_top_performers": {
@@ -821,9 +968,94 @@ function resolveReportsTool(
       };
       return {
         event: { kind: "top_performers", payload },
+        toolResultText: JSON.stringify({ count: students.length, names: students.map((s: any) => s.name) }),
+      };
+    }
+    case "get_student_search": {
+      const profiles = ctx.student_profiles ?? [];
+      const ranked = profiles
+        .map((p: any) => ({ p, s: fuzzyScore(args.name_hint ?? "", p.name) }))
+        .filter((x: any) => x.s > 0)
+        .sort((x: any, y: any) => y.s - x.s)
+        .slice(0, 5)
+        .map((x: any) => ({ id: x.p.id, name: x.p.name, roll: x.p.roll, score: x.s }));
+      return {
+        event: null,
+        toolResultText: JSON.stringify({ candidates: ranked }),
+      };
+    }
+    case "get_student_profile": {
+      const sp = findStudent(ctx, { id: args.student_id, hint: args.name_hint });
+      if (!sp) {
+        return { event: null, toolResultText: JSON.stringify({ error: "Student not found." }) };
+      }
+      const payload = { reports_batch_id: ctx.reports_batch_id, student: sp };
+      return {
+        event: { kind: "student_profile", payload },
+        toolResultText: JSON.stringify({
+          name: sp.name,
+          roll: sp.roll,
+          pi: sp.pi,
+          accuracy: sp.accuracy,
+          consistency: sp.consistency,
+          trend: sp.trend,
+          tags: sp.secondary_tags,
+          weak_topics: sp.weak_topic_names,
+          suggested_difficulty: sp.suggested_difficulty,
+          ai_summary: sp.ai_summary,
+          strengths: sp.ai_strengths,
+          priorities: sp.ai_priorities,
+          engagement_note: sp.ai_engagement_note,
+        }),
+      };
+    }
+    case "get_compare_students": {
+      const a = findStudent(ctx, { id: args.student_id_a, hint: args.name_hint_a });
+      const b = findStudent(ctx, { id: args.student_id_b, hint: args.name_hint_b });
+      if (!a || !b) {
+        return { event: null, toolResultText: JSON.stringify({ error: "Need two students to compare." }) };
+      }
+      const payload = {
+        reports_batch_id: ctx.reports_batch_id,
+        student_a: a,
+        student_b: b,
+        delta_pi: a.pi - b.pi,
+        delta_accuracy: a.accuracy - b.accuracy,
+      };
+      return {
+        event: { kind: "student_compare", payload },
+        toolResultText: JSON.stringify({
+          a: { name: a.name, pi: a.pi, accuracy: a.accuracy, trend: a.trend, weak: a.weak_topic_names.slice(0, 3) },
+          b: { name: b.name, pi: b.pi, accuracy: b.accuracy, trend: b.trend, weak: b.weak_topic_names.slice(0, 3) },
+        }),
+      };
+    }
+    case "get_chapter_search": {
+      const details = ctx.chapter_details ?? [];
+      const ranked = details
+        .map((d: any) => ({ d, s: fuzzyScore(args.name_hint ?? "", d.chapter) }))
+        .filter((x: any) => x.s > 0)
+        .sort((x: any, y: any) => y.s - x.s)
+        .slice(0, 5)
+        .map((x: any) => ({ chapter_id: x.d.chapter_id, chapter: x.d.chapter, score: x.s }));
+      return {
+        event: null,
+        toolResultText: JSON.stringify({ candidates: ranked }),
+      };
+    }
+    case "get_multi_subject_risk": {
+      const students = ctx.multi_area_risk ?? [];
+      const payload = { reports_batch_id: ctx.reports_batch_id, students };
+      return {
+        event: { kind: "multi_subject_risk", payload },
         toolResultText: JSON.stringify({
           count: students.length,
-          names: students.map((s: any) => s.name),
+          students: students.slice(0, 10).map((s: any) => ({
+            name: s.name,
+            weak_chapter_count: s.weak_chapter_count,
+            weak_chapters: s.weak_chapters,
+            pi: s.pi,
+          })),
         }),
       };
     }
