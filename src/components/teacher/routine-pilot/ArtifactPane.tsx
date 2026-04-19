@@ -42,6 +42,11 @@ export default function ArtifactPane({ batch, thread, routineKey }: Props) {
         { event: "INSERT", schema: "public", table: "rp_artifacts", filter: `batch_id=eq.${batch.id}` },
         () => load()
       )
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "rp_artifacts", filter: `batch_id=eq.${batch.id}` },
+        () => load()
+      )
       .subscribe();
     return () => {
       cancelled = true;
