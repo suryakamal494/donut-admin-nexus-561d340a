@@ -74,19 +74,27 @@ export default function RoutinePilotPage({ initialBatchId, initialRoutineKey }: 
     })();
   }, []);
 
+  // Shared thread loader used by the effect below and the manual refresh helper.
+  const loadThreads = async (
+    batchId: string,
+    routineId: string
+  ): Promise<Thread[]> => {
+    const { data } = await supabase
+      .from("rp_threads")
+      .select("*")
+      .eq("batch_id", batchId)
+      .eq("routine_id", routineId)
+      .order("last_message_at", { ascending: false });
+    return (data ?? []) as Thread[];
+  };
+
   // Load threads when batch or routine changes
   useEffect(() => {
     if (!selectedBatchId || !selectedRoutineKey) return;
     const routine = routines.find((r) => r.key === selectedRoutineKey);
     if (!routine) return;
     (async () => {
-      const { data } = await supabase
-        .from("rp_threads")
-        .select("*")
-        .eq("batch_id", selectedBatchId)
-        .eq("routine_id", routine.id)
-        .order("last_message_at", { ascending: false });
-      const list = (data ?? []) as Thread[];
+      const list = await loadThreads(selectedBatchId, routine.id);
       setThreads(list);
       setSelectedThreadId(list[0]?.id ?? null);
     })();
@@ -125,13 +133,8 @@ export default function RoutinePilotPage({ initialBatchId, initialRoutineKey }: 
     if (!selectedBatchId || !selectedRoutineKey) return;
     const routine = routines.find((r) => r.key === selectedRoutineKey);
     if (!routine) return;
-    const { data } = await supabase
-      .from("rp_threads")
-      .select("*")
-      .eq("batch_id", selectedBatchId)
-      .eq("routine_id", routine.id)
-      .order("last_message_at", { ascending: false });
-    setThreads((data ?? []) as Thread[]);
+    const list = await loadThreads(selectedBatchId, routine.id);
+    setThreads(list);
   };
 
   const startNewThread = async () => {

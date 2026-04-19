@@ -16,12 +16,76 @@ interface Props {
   onArtifactsCreated: () => void;
 }
 
+/**
+ * Streams an SSE chat response from the routine-pilot-chat edge function.
+ * Calls onDelta for each text chunk and returns whether artifacts were created.
+ */
+async function streamChat(
+  body: Record<string, unknown>,
+  onDelta: (chunk: string) => void
+): Promise<{ ok: boolean; status: number; artifactsCreated: boolean }> {
+  const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/routine-pilot-chat`;
+  const resp = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+    },
+    body: JSON.stringify(body),
+  });
+
+  if (!resp.ok || !resp.body) {
+    return { ok: false, status: resp.status, artifactsCreated: false };
+  }
+
+  const reader = resp.body.getReader();
+  const decoder = new TextDecoder();
+  let buf = "";
+  let artifactsCreated = false;
+  let done = false;
+
+  while (!done) {
+    const { done: d, value } = await reader.read();
+    if (d) break;
+    buf += decoder.decode(value, { stream: true });
+    let nl: number;
+    while ((nl = buf.indexOf("\n")) !== -1) {
+      let line = buf.slice(0, nl);
+      buf = buf.slice(nl + 1);
+      if (line.endsWith("\r")) line = line.slice(0, -1);
+      if (!line.startsWith("data: ")) continue;
+      const json = line.slice(6).trim();
+      if (json === "[DONE]") { done = true; break; }
+      try {
+        const parsed = JSON.parse(json);
+        if (parsed.rp_artifacts_created?.length) {
+          artifactsCreated = true;
+          continue;
+        }
+        const delta = parsed.choices?.[0]?.delta?.content;
+        if (delta) onDelta(delta);
+      } catch {
+        buf = line + "\n" + buf;
+        break;
+      }
+    }
+  }
+
+  return { ok: true, status: resp.status, artifactsCreated };
+}
+
 export default function ChatPane({ batch, routine, thread, onThreadCreated, onArtifactsCreated }: Props) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // IMPORTANT: All hooks must be called before any early return so React's
+  // hook order stays stable across renders (prevents "Rendered more hooks
+  // than during the previous render").
+  const dynamicChips = useDynamicChips(batch?.id ?? null, routine);
+  const isEmpty = messages.length === 0;
 
   useEffect(() => {
     if (!thread) {
@@ -110,65 +174,28 @@ export default function ChatPane({ batch, routine, thread, onThreadCreated, onAr
       { id: assistantId, thread_id: activeThread!.id, role: "assistant", content: "", created_at: new Date().toISOString() },
     ]);
     let assistantText = "";
-    let artifactsCreated = false;
 
     try {
-      const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/routine-pilot-chat`;
-      const resp = await fetch(url, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-        },
-        body: JSON.stringify({
+      const result = await streamChat(
+        {
           thread_id: activeThread.id,
           batch_id: batch.id,
           routine_key: routine.key,
           messages: history,
-        }),
-      });
+        },
+        (delta) => {
+          assistantText += delta;
+          setMessages((prev) => prev.map((m) => m.id === assistantId ? { ...m, content: assistantText } : m));
+        }
+      );
 
-      if (!resp.ok || !resp.body) {
-        if (resp.status === 429) toast.error("Rate limit hit. Try again shortly.");
-        else if (resp.status === 402) toast.error("AI credits exhausted. Add credits in Workspace settings.");
+      if (!result.ok) {
+        if (result.status === 429) toast.error("Rate limit hit. Try again shortly.");
+        else if (result.status === 402) toast.error("AI credits exhausted. Add credits in Workspace settings.");
         else toast.error("AI request failed");
         setMessages((prev) => prev.filter((m) => m.id !== assistantId));
         setLoading(false);
         return;
-      }
-
-      const reader = resp.body.getReader();
-      const decoder = new TextDecoder();
-      let buf = "";
-      let done = false;
-      while (!done) {
-        const { done: d, value } = await reader.read();
-        if (d) break;
-        buf += decoder.decode(value, { stream: true });
-        let nl: number;
-        while ((nl = buf.indexOf("\n")) !== -1) {
-          let line = buf.slice(0, nl);
-          buf = buf.slice(nl + 1);
-          if (line.endsWith("\r")) line = line.slice(0, -1);
-          if (!line.startsWith("data: ")) continue;
-          const json = line.slice(6).trim();
-          if (json === "[DONE]") { done = true; break; }
-          try {
-            const parsed = JSON.parse(json);
-            if (parsed.rp_artifacts_created?.length) {
-              artifactsCreated = true;
-              continue;
-            }
-            const delta = parsed.choices?.[0]?.delta?.content;
-            if (delta) {
-              assistantText += delta;
-              setMessages((prev) => prev.map((m) => m.id === assistantId ? { ...m, content: assistantText } : m));
-            }
-          } catch {
-            buf = line + "\n" + buf;
-            break;
-          }
-        }
       }
 
       // Persist assistant message
@@ -185,7 +212,7 @@ export default function ChatPane({ batch, routine, thread, onThreadCreated, onAr
         .update({ last_message_at: new Date().toISOString() })
         .eq("id", activeThread.id);
 
-      if (artifactsCreated) onArtifactsCreated();
+      if (result.artifactsCreated) onArtifactsCreated();
     } catch (e) {
       console.error(e);
       toast.error("Something went wrong");
@@ -202,9 +229,6 @@ export default function ChatPane({ batch, routine, thread, onThreadCreated, onAr
       </div>
     );
   }
-
-  const isEmpty = messages.length === 0;
-  const dynamicChips = useDynamicChips(batch?.id ?? null, routine);
 
   return (
     <div className="flex flex-col h-full">
