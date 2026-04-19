@@ -1,85 +1,107 @@
 
 
-## What I think you're asking
+## What I understood from your request
 
-You want the Copilot screen to **breathe** like the screenshot. Right now the chat column is suffocating because:
+You want the **Reports routine** in Copilot to be enabled and become a **conversational analytics layer** over the **existing Teacher Reports module**. Concretely:
 
-1. The **suggestion chips wrap and stack vertically** above the composer — on a 1110px viewport with both side panels open, the chat column is ~450px wide, so 4 chips become 4 rows, eating ~150px of chat real estate.
-2. The **left rail wastes a chunky header** ("✨ RoutinePilot") that duplicates the "Copilot" brand already in the top bar.
-3. The **chat header is two lines** ("Lesson Prep" / "All Batches • Subject") instead of one tight row.
-4. The **composer is taller than it needs to be** with `min-h-[44px]` + send button + chips area = ~120px.
-5. There's **no consistent breathing rhythm** — paddings jump between `p-3`, `p-4`, `p-5`, `py-6`.
+1. **Unlock the routine** — right now "Reports" is grayed-out as "Coming soon" because it's marked inactive in the database. Activate it.
 
-The screenshot shows a calmer layout: slim left rail, single-row chat header, **chips inline under the header (not above the composer)**, single-line composer with a soft coral ring, and roomier artifact cards on the right. Same components — just better proportions and chip placement.
+2. **Same source of truth as `/teacher/reports`** — when a teacher asks "How did 10A do in the Wave Optics test?", the answer must come from the *same* numbers the Reports page already shows (batch averages, exam analytics, chapter health, at-risk students, topic flags, performance bands). No invented numbers.
+
+3. **Conversational, batch-scoped Q&A** — the active batch in the left rail = the scope of the conversation. Questions are auto-answered for that batch:
+   - *"Which students are at risk?"* → list of students from `getChapterDetail` / `ExamAnalytics.allStudents`
+   - *"How did the last exam go?"* → verdict + score distribution from `getExamAnalyticsForBatch`
+   - *"Which chapters are weakest?"* → ranked chapter health from `getBatchChapters`
+   - *"Compare last two exams"* → exam history from `getBatchExamHistory`
+   - *"Top performers"*, *"weak topics in Optics"*, *"at-risk in 2+ subjects"*, etc.
+
+4. **Render answers as text + cards inline in the chat (NOT as right-pane artifacts)** — because reports are *read-only conversation*, not generated documents. Charts only when the data calls for it (distributions, trends).
+
+5. **Cross-link to the actual Reports pages** — every card has a "Open in Reports →" link that deep-links to the matching `/teacher/reports/:batchId`, `/teacher/reports/:batchId/exams/:examId`, or `/teacher/reports/:batchId/chapters/:chapterId` page.
+
+## Critical compatibility gap I'll handle
+
+Copilot batches use UUIDs (`11111111-…-111101` "Class 9-A"). Reports mock data uses keys like `batch-10a`, `batch-10b`, `batch-11a`. I'll add a small **batch-mapping layer** on the edge function side so a Copilot batch resolves to the closest Reports batch by grade+section. (No DB migration — just a lookup.)
 
 ## The plan
 
-### 1. Move suggestion chips OUT of the composer area, INTO the chat header zone
+### 1. Activate the Reports routine
+- DB update: `is_active = true` for the `reports` routine.
+- Set sensible quick-start chips:
+  - "How did the last exam go?"
+  - "Which students are at risk?"
+  - "Weakest chapters this term"
+  - "Top performers in 10A"
+  - "Compare last two exams"
+- Update `default_system_prompt` to a Reports-specific analyst prompt.
 
-This is the single biggest fix for "the chat panel feels packed."
+### 2. New read-only data tools in the edge function
+Add to `routine-pilot-chat/index.ts` — only available when `routine_key === "reports"`:
 
-- In `ChatPane.tsx`, render chips as a **single row directly under the chat header** with the label `"Quick starts:"` (matches screenshot).
-- Use `overflow-x-auto scrollbar-hide` so they scroll horizontally instead of wrapping into multiple rows. No more vertical stacking, no matter how narrow.
-- Cap visible chips to 3 (rest scroll). Remove the chips block from above the composer entirely.
+| Tool | Returns |
+|---|---|
+| `get_batch_overview` | Batch health summary (avg, trend, at-risk count, exam count) |
+| `get_recent_exams` | Last N completed exams with averages |
+| `get_exam_analysis` | Verdict, score distribution, performance bands, topic flags for one exam |
+| `get_chapter_health` | Chapter-wise success rates and weak-topic counts |
+| `get_at_risk_students` | Students in `risk` / `reinforcement` bands with names + PI |
 
-### 2. Slim the left rail header
+Each tool runs **server-side** against the same generators used by the Reports pages (we'll import the data from a shared serializer the edge function can call via a small fetch back to the app, OR we mirror the generator logic in the edge function — see "How data flows" below).
 
-In `LeftRail.tsx`:
-- **Remove** the `✨ RoutinePilot` heading row (top bar already shows "Copilot" — it's redundant).
-- Replace with a small uppercase `BATCH` label above the dropdown, matching the screenshot.
-- Add a small **"RoutinePilot · Co-pilot Mode"** footer pill at the bottom of the rail (sticky inside the scroll container).
+### 3. How data flows (the linking mechanism)
+Since the data lives in client-side TS files (`reportsData.ts`, `examResults.ts`), I'll create **one new edge function `teacher-reports-data`** that exposes the same generator outputs as JSON (Deno port of the deterministic seeded generators — same PRNG, same output). The Reports routine's tools call this function internally. Result: **identical numbers** in the Reports page and in Copilot answers.
 
-### 3. Tighten the chat header to one row
+Alternative considered: pre-compute and pass batch context inline. Rejected — would balloon the prompt and miss exam-specific drill-downs.
 
-In `ChatPane.tsx`:
-- Combine routine name + batch into one row: `📝 Lesson Prep · All Batches` with the routine icon on the left.
-- Drop from `py-3` to `py-2.5`. Removes ~15px of vertical waste.
+### 4. New chat-inline render components (no right-pane artifact)
+In `ChatPane.tsx`, when a Reports tool result arrives, render structured cards **inline in the assistant message** instead of going to ArtifactPane:
 
-### 4. Lighten the composer
+- **`ReportSummaryCard`** — batch overview tile (avg, trend arrow, at-risk pill, "Open in Reports →")
+- **`ExamResultCard`** — verdict banner + 4-band performance + mini bar chart of score distribution
+- **`StudentListCard`** — compact list (name, roll, %, trend) with per-row deep link
+- **`ChapterHealthCard`** — sortable chapter list with weak-topic chips
+- **`MiniTrendChart`** — small recharts line for "last N exams"
 
-- Single line, `min-h-[40px]`, soft coral focus ring (`focus-visible:ring-2 ring-primary/40`).
-- Smaller round send button (`h-9 w-9` instead of `h-11 w-11`).
-- Drop the wrapper `bg-card/30` band — let it sit flush on the background like the screenshot.
+Detection: tool calls prefixed `get_*` render inline; existing `create_*` / `update_*` keep their artifact behavior.
 
-### 5. Normalize spacing rhythm
+### 5. Routine-aware chat behavior
+- Hide the right artifact pane (or show "No artifacts in Reports mode") when `routine_key === "reports"` to give the chat full width.
+- Keep the same tutorial, refine, mobile drawer logic — no behavior change.
 
-Standardize all pane paddings to a **4 / 5 / 6 scale**:
-- Left rail body: `p-4`
-- Chat header + composer: `px-5 py-3`
-- Chat scroll content: `px-5 py-5`
-- Artifact pane: `p-4` cards with `gap-3`
-
-### 6. Artifact card polish (right pane)
-
-In `artifacts/ArtifactCard.tsx`:
-- Add the mint **batch badge** (e.g. `10A`) on the top-right (already brand color `donut-teal`).
-- Footer row: `▸ Expand` (left) / `↓ Export` (right), both ghost buttons, `text-xs`.
-- Subtle hover lift (`hover:-translate-y-0.5 hover:shadow-md`).
-
-### What does NOT change
-
-- No new files (except keeping `useDynamicChips`, `CopilotTutorial`, `ArtifactRefineComposer` exactly as they are).
-- No edge function, DB, routing, or behavior changes.
-- Tutorial, refine composer, publish flow, batch switching — untouched.
-- Mobile drawers and bottom sheet — untouched (already responsive).
+### 6. Navigation deep-links
+Card buttons route to existing Reports pages:
+- Batch → `/teacher/reports/:batchId`
+- Exam → `/teacher/reports/:batchId/exams/:examId`
+- Chapter → `/teacher/reports/:batchId/chapters/:chapterId`
+- Student → `/teacher/reports/:batchId/students/:studentId` (if exists, else batch page)
 
 ### Files touched
 
 | File | Change |
 |---|---|
-| `src/components/teacher/routine-pilot/ChatPane.tsx` | Move chips under header (horizontal scroll, no wrap); tighten header to one row; lighter composer |
-| `src/components/teacher/routine-pilot/LeftRail.tsx` | Remove RoutinePilot heading; add `BATCH` label; add footer mode pill |
-| `src/components/teacher/routine-pilot/artifacts/ArtifactCard.tsx` | Mint badge + Expand/Export footer + hover lift |
+| DB — `rp_routines` row | Activate reports routine + chips + prompt (data update) |
+| `supabase/functions/teacher-reports-data/index.ts` | NEW — Deno port of report generators (deterministic JSON) |
+| `supabase/functions/routine-pilot-chat/index.ts` | Add 5 `get_*` tools (Reports-only); pass results back as structured JSON in the SSE stream |
+| `src/components/teacher/routine-pilot/ChatPane.tsx` | Detect `report_data` events from stream; render inline cards under the assistant message |
+| `src/components/teacher/routine-pilot/streamChat.ts` | Add `onReportData` callback for the new event type |
+| `src/components/teacher/routine-pilot/reports-cards/` (NEW folder) | `ReportSummaryCard`, `ExamResultCard`, `StudentListCard`, `ChapterHealthCard`, `MiniTrendChart` |
+| `src/components/teacher/routine-pilot/ArtifactPane.tsx` | Show "Reports mode — answers appear in chat" empty state when routine is reports |
+| `src/components/teacher/routine-pilot/RoutinePilotPage.tsx` | (small) Pass routine key to ArtifactPane (already there) — verify |
 
-Three files. ~80 lines changed. No new components, no new dependencies, no behavior change — only spacing, placement of chips, and visual polish to match the screenshot.
+### What does NOT change
+
+- All other routines (Lesson Prep, Test Creation, Homework) — untouched.
+- The Teacher Reports pages themselves — untouched, just deep-linked into.
+- Tutorial, refine, mobile sheets, batch switcher — untouched.
+- No new DB tables, no schema migrations — only the routines row activation.
 
 ### Out of scope
 
-- Reworking the artifact detail view (`TestView`, `LessonPlanView`, etc.) — those are fine.
-- Changing colors/tokens in `index.css` — we use existing `--primary` (coral), `--accent` (orange), and `--donut-teal` only.
-- Any changes to the tutorial coachmarks.
+- Wiring real (non-mock) student data — Reports module is mock-data-driven today; conversational analytics will be exact replicas of those mocks.
+- Editing reports from the chat (it's read-only).
+- Cross-batch / institute-wide Q&A — strictly scoped to the active batch.
 
 ### Phasing
 
-Single implementation pass.
+Single implementation pass (one approval, then build).
 
