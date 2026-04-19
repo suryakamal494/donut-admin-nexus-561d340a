@@ -111,6 +111,15 @@ export default function LeftRail({
           </div>
         </div>
       </ScrollArea>
+
+      <div className="p-3 border-t">
+        <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-full bg-primary/5 border border-primary/10">
+          <Sparkles className="w-3 h-3 text-primary flex-shrink-0" />
+          <span className="text-[11px] text-muted-foreground truncate">
+            RoutinePilot · Co-pilot Mode
+          </span>
+        </div>
+      </div>
     </div>
   );
 }
