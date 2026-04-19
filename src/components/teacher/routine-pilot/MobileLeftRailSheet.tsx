@@ -29,6 +29,7 @@ export default function MobileLeftRailSheet({
           {...railProps}
           onSelectBatch={(id) => {
             railProps.onSelectBatch(id);
+            onOpenChange(false);
           }}
           onSelectRoutine={(key) => {
             railProps.onSelectRoutine(key);

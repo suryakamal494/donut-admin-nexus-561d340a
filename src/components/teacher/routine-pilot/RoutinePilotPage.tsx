@@ -158,6 +158,21 @@ export default function RoutinePilotPage({ initialBatchId, initialRoutineKey }: 
   const selectedRoutine = routines.find((r) => r.key === selectedRoutineKey) ?? null;
   const selectedThread = threads.find((t) => t.id === selectedThreadId) ?? null;
 
+  const handleSelectBatch = (id: string) => {
+    if (id === selectedBatchId) return;
+    // Force a clean reset so chat/artifacts don't render stale data from previous batch
+    setSelectedThreadId(null);
+    setThreads([]);
+    setSelectedBatchId(id);
+  };
+
+  const handleSelectRoutine = (key: string) => {
+    if (key === selectedRoutineKey) return;
+    setSelectedThreadId(null);
+    setThreads([]);
+    setSelectedRoutineKey(key);
+  };
+
   const railProps = {
     batches,
     routines,
@@ -165,8 +180,8 @@ export default function RoutinePilotPage({ initialBatchId, initialRoutineKey }: 
     selectedBatchId,
     selectedRoutineKey,
     selectedThreadId,
-    onSelectBatch: setSelectedBatchId,
-    onSelectRoutine: setSelectedRoutineKey,
+    onSelectBatch: handleSelectBatch,
+    onSelectRoutine: handleSelectRoutine,
     onSelectThread: setSelectedThreadId,
     onNewThread: startNewThread,
   };
