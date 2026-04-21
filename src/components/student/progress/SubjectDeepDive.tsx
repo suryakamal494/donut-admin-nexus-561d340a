@@ -1,12 +1,11 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, TrendingUp, TrendingDown, Minus, Award, AlertTriangle, BarChart3 } from "lucide-react";
+import { ArrowLeft, TrendingUp, TrendingDown, Minus } from "lucide-react";
 import type { SubjectDetail } from "@/data/student/progressData";
 import ChapterMasteryList from "./ChapterMasteryList";
 import WeakTopicsAlert from "./WeakTopicsAlert";
 import DifficultyBreakdown from "./DifficultyBreakdown";
 import ChapterDetailSheet from "./ChapterDetailSheet";
-import SubjectBatchStanding from "./SubjectBatchStanding";
 
 interface SubjectDeepDiveProps {
   subjectName: string;
@@ -20,8 +19,17 @@ const SubjectDeepDive = ({ subjectName, detail, onBack }: SubjectDeepDiveProps) 
 
   const TrendIcon = profile.trend === "up" ? TrendingUp : profile.trend === "down" ? TrendingDown : Minus;
   const trendColor = profile.trend === "up" ? "text-emerald-500" : profile.trend === "down" ? "text-red-500" : "text-amber-500";
+  const trendLabel = profile.trend === "up" ? "Improving" : profile.trend === "down" ? "Declining" : "Steady";
 
   const selectedChapter = profile.chapterMastery.find(c => c.chapterId === selectedChapterId);
+
+  const deltaFromAvg = profile.overallAccuracy - batchAverage;
+  const topperAccuracy = Math.min(100, batchAverage + 15);
+  const deltaFromTop = profile.overallAccuracy - topperAccuracy;
+  const isAboveAvg = deltaFromAvg > 0;
+  const studentPos = Math.min(100, Math.max(0, profile.overallAccuracy));
+  const avgPos = Math.min(100, Math.max(0, batchAverage));
+  const topPos = Math.min(100, Math.max(0, topperAccuracy));
 
   return (
     <motion.div
@@ -39,33 +47,54 @@ const SubjectDeepDive = ({ subjectName, detail, onBack }: SubjectDeepDiveProps) 
 
         <h2 className="text-lg font-bold text-foreground mb-3">{subjectName}</h2>
 
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-          <div className="bg-muted/10 rounded-xl px-3 py-2 text-center">
-            <p className="text-lg font-bold text-foreground">{profile.performanceIndex}</p>
-            <p className="text-[10px] text-muted-foreground">PI Score</p>
+        {/* Visual rank bar */}
+        <div className="relative h-3 bg-muted/15 rounded-full mb-6 mt-2">
+          <div className="absolute top-0 h-full w-0.5 bg-muted-foreground/40 z-10" style={{ left: `${avgPos}%` }} />
+          <div className="absolute -top-5 text-[9px] text-muted-foreground font-medium whitespace-nowrap" style={{ left: `${avgPos}%`, transform: "translateX(-50%)" }}>
+            Avg {batchAverage}%
           </div>
-          <div className="bg-muted/10 rounded-xl px-3 py-2 text-center">
-            <p className="text-lg font-bold text-foreground">{profile.overallAccuracy}%</p>
+          <div className="absolute top-0 h-full w-0.5 bg-emerald-400 z-10" style={{ left: `${topPos}%` }} />
+          <div className="absolute -bottom-5 text-[9px] text-emerald-600 font-medium whitespace-nowrap" style={{ left: `${topPos}%`, transform: "translateX(-50%)" }}>
+            Top {topperAccuracy}%
+          </div>
+          <motion.div
+            initial={{ left: "0%" }}
+            animate={{ left: `${studentPos}%` }}
+            transition={{ duration: 1, ease: "easeOut" }}
+            className="absolute -top-1 w-5 h-5 rounded-full bg-gradient-to-br from-[hsl(var(--donut-coral))] to-[hsl(var(--donut-orange))] border-2 border-white shadow-lg z-20"
+            style={{ transform: "translateX(-50%)" }}
+          />
+        </div>
+
+        {/* Stats row */}
+        <div className="grid grid-cols-5 gap-2 mt-4">
+          <div className="text-center">
+            <p className="text-base font-bold text-foreground">{profile.overallAccuracy}%</p>
             <p className="text-[10px] text-muted-foreground">Accuracy</p>
           </div>
-          <div className="bg-muted/10 rounded-xl px-3 py-2 text-center flex flex-col items-center">
-            <div className={`flex items-center gap-1 ${trendColor}`}>
+          <div className="text-center flex flex-col items-center">
+            <div className={`flex items-center gap-0.5 ${trendColor}`}>
               <TrendIcon className="w-4 h-4" />
-              <span className="text-lg font-bold">{profile.trend === "up" ? "↑" : profile.trend === "down" ? "↓" : "→"}</span>
             </div>
-            <p className="text-[10px] text-muted-foreground">Trend</p>
+            <p className="text-[10px] text-muted-foreground">{trendLabel}</p>
           </div>
-          <div className="bg-muted/10 rounded-xl px-3 py-2 text-center">
-            <p className="text-lg font-bold text-foreground">#{rank}</p>
-            <p className="text-[10px] text-muted-foreground">of {totalStudents}</p>
+          <div className="text-center">
+            <p className="text-base font-bold text-foreground">#{rank}<span className="text-xs font-normal text-muted-foreground">/{totalStudents}</span></p>
+            <p className="text-[10px] text-muted-foreground">Rank</p>
+          </div>
+          <div className="text-center">
+            <p className={`text-base font-bold ${isAboveAvg ? "text-emerald-600" : "text-red-500"}`}>{isAboveAvg ? "+" : ""}{deltaFromAvg}%</p>
+            <p className="text-[10px] text-muted-foreground">vs Avg</p>
+          </div>
+          <div className="text-center">
+            <p className="text-base font-bold text-muted-foreground">{deltaFromTop}%</p>
+            <p className="text-[10px] text-muted-foreground">vs Top</p>
           </div>
         </div>
 
-        {/* Batch context */}
-        <div className="mt-3 flex items-center gap-3 text-xs text-muted-foreground">
-          <span>Class avg: {batchAverage}%</span>
-          <span>•</span>
-          <span>Percentile: {percentile}th</span>
+        {/* Footer */}
+        <div className="mt-3 flex items-center gap-3 text-[10px] text-muted-foreground">
+          <span>Class avg: {batchAverage}%</span><span>•</span><span>Percentile: {percentile}th</span>
         </div>
       </div>
 
@@ -82,17 +111,6 @@ const SubjectDeepDive = ({ subjectName, detail, onBack }: SubjectDeepDiveProps) 
 
       {/* Difficulty Breakdown */}
       <DifficultyBreakdown data={profile.difficultyBreakdown} />
-
-      {/* Subject Batch Standing */}
-      <SubjectBatchStanding
-        subjectName={subjectName}
-        accuracy={profile.overallAccuracy}
-        batchAverage={batchAverage}
-        topperAccuracy={batchAverage + 15 > 100 ? 100 : batchAverage + 15}
-        rank={rank}
-        totalStudents={totalStudents}
-        percentile={percentile}
-      />
 
       {/* Chapter Detail Sheet */}
       <AnimatePresence>

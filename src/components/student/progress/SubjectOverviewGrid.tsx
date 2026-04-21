@@ -32,9 +32,9 @@ const SubjectOverviewGrid = memo(({ subjects, onSelect, selectedId }: SubjectOve
           const trendColor = subject.trend === "up" ? "text-emerald-500" : subject.trend === "down" ? "text-red-500" : "text-amber-500";
           const isSelected = selectedId === subject.subjectId;
 
-          const piColor = subject.performanceIndex >= 75 ? "bg-emerald-100 text-emerald-700"
-            : subject.performanceIndex >= 50 ? "bg-blue-100 text-blue-700"
-            : subject.performanceIndex >= 35 ? "bg-amber-100 text-amber-700"
+          const accColor = subject.accuracy >= 75 ? "bg-emerald-100 text-emerald-700"
+            : subject.accuracy >= 50 ? "bg-blue-100 text-blue-700"
+            : subject.accuracy >= 35 ? "bg-amber-100 text-amber-700"
             : "bg-red-100 text-red-700";
 
           return (
@@ -60,16 +60,15 @@ const SubjectOverviewGrid = memo(({ subjects, onSelect, selectedId }: SubjectOve
               </div>
 
               <div className="flex items-center justify-between">
-                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${piColor}`}>
-                  PI {subject.performanceIndex}
+                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${accColor}`}>
+                  {subject.accuracy}%
                 </span>
                 <div className={`flex items-center gap-0.5 ${trendColor}`}>
                   <TrendIcon className="w-3 h-3" />
                 </div>
               </div>
 
-              <div className="mt-2 flex items-center justify-between text-[10px] text-muted-foreground">
-                <span>{subject.accuracy}% acc</span>
+              <div className="mt-2 text-[10px] text-muted-foreground text-right">
                 <span>{subject.chaptersStrong}/{subject.chaptersTotal} strong</span>
               </div>
             </motion.button>
