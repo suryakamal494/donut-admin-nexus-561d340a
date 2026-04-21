@@ -1,7 +1,14 @@
 import { memo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, TrendingUp, TrendingDown, Award, Target } from "lucide-react";
+import { X, Award, ExternalLink, Info } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import type { ExamWithContext } from "@/data/student/progressData";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface PerExamStandingCardProps {
   exam: ExamWithContext | null;
@@ -9,13 +16,16 @@ interface PerExamStandingCardProps {
 }
 
 const PerExamStandingCard = memo(({ exam, onClose }: PerExamStandingCardProps) => {
+  const navigate = useNavigate();
   if (!exam) return null;
 
   const isAboveAvg = exam.deltaFromAverage > 0;
 
   return (
-    <AnimatePresence>
+    <TooltipProvider delayDuration={200}>
+    <AnimatePresence mode="wait">
       <motion.div
+        key={exam.examId}
         initial={{ opacity: 0, y: 20, scale: 0.95 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         exit={{ opacity: 0, y: 20, scale: 0.95 }}
@@ -69,19 +79,37 @@ const PerExamStandingCard = memo(({ exam, onClose }: PerExamStandingCardProps) =
         <div className="space-y-2.5">
           {/* vs Average */}
           <div className="flex items-center gap-3">
-            <span className="text-xs text-muted-foreground w-14">vs Avg</span>
-            <div className="flex-1 h-2 bg-muted/15 rounded-full overflow-hidden relative">
-              <div
-                className="absolute h-full bg-muted-foreground/20 rounded-full"
-                style={{ width: `${exam.classAverage}%` }}
-              />
-              <div
-                className={`absolute h-full rounded-full ${
-                  isAboveAvg ? "bg-emerald-400" : "bg-red-400"
-                }`}
-                style={{ width: `${exam.percentage}%` }}
-              />
-            </div>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="flex items-center gap-1 w-16 cursor-help">
+                  <span className="text-xs text-muted-foreground">vs Avg</span>
+                  <Info className="w-3 h-3 text-muted-foreground/50" />
+                </div>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" className="text-xs max-w-[220px]">
+                Compares your score ({exam.percentage}%) against the class average ({exam.classAverage}%). {isAboveAvg ? `You're ${exam.deltaFromAverage}% above average!` : `You need ${Math.abs(exam.deltaFromAverage)}% more to beat the average.`}
+              </TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="flex-1 h-2 bg-muted/15 rounded-full overflow-hidden relative cursor-help">
+                  <div
+                    className="absolute h-full bg-muted-foreground/20 rounded-full"
+                    style={{ width: `${exam.classAverage}%` }}
+                  />
+                  <div
+                    className={`absolute h-full rounded-full ${
+                      isAboveAvg ? "bg-emerald-400" : "bg-red-400"
+                    }`}
+                    style={{ width: `${exam.percentage}%` }}
+                  />
+                </div>
+              </TooltipTrigger>
+              <TooltipContent className="text-xs">
+                <p>Colored bar = Your score ({exam.percentage}%)</p>
+                <p>Grey bar = Class average ({exam.classAverage}%)</p>
+              </TooltipContent>
+            </Tooltip>
             <span
               className={`text-xs font-bold min-w-[40px] text-right ${
                 isAboveAvg ? "text-emerald-600" : "text-red-500"
@@ -94,17 +122,35 @@ const PerExamStandingCard = memo(({ exam, onClose }: PerExamStandingCardProps) =
 
           {/* vs Top */}
           <div className="flex items-center gap-3">
-            <span className="text-xs text-muted-foreground w-14">vs Top</span>
-            <div className="flex-1 h-2 bg-muted/15 rounded-full overflow-hidden relative">
-              <div
-                className="absolute h-full bg-emerald-200 rounded-full"
-                style={{ width: `${exam.highestScore}%` }}
-              />
-              <div
-                className="absolute h-full bg-[hsl(var(--donut-coral))] rounded-full"
-                style={{ width: `${exam.percentage}%` }}
-              />
-            </div>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="flex items-center gap-1 w-16 cursor-help">
+                  <span className="text-xs text-muted-foreground">vs Top</span>
+                  <Info className="w-3 h-3 text-muted-foreground/50" />
+                </div>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" className="text-xs max-w-[220px]">
+                Compares your score ({exam.percentage}%) against the class topper ({exam.highestScore}%). {exam.deltaFromTop === 0 ? "You're the topper! 🎉" : `${Math.abs(exam.deltaFromTop)}% gap to close.`}
+              </TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="flex-1 h-2 bg-muted/15 rounded-full overflow-hidden relative cursor-help">
+                  <div
+                    className="absolute h-full bg-emerald-200 rounded-full"
+                    style={{ width: `${exam.highestScore}%` }}
+                  />
+                  <div
+                    className="absolute h-full bg-[hsl(var(--donut-coral))] rounded-full"
+                    style={{ width: `${exam.percentage}%` }}
+                  />
+                </div>
+              </TooltipTrigger>
+              <TooltipContent className="text-xs">
+                <p>Coral bar = Your score ({exam.percentage}%)</p>
+                <p>Green bar = Topper's score ({exam.highestScore}%)</p>
+              </TooltipContent>
+            </Tooltip>
             <span className="text-xs font-bold text-muted-foreground min-w-[40px] text-right">
               {exam.deltaFromTop}%
             </span>
@@ -117,8 +163,18 @@ const PerExamStandingCard = memo(({ exam, onClose }: PerExamStandingCardProps) =
             ? `You scored ${exam.deltaFromAverage}% above the class average 🎉`
             : `${Math.abs(exam.deltaFromAverage)}% more effort needed to beat the class average`}
         </p>
+
+        {/* View Full Report Button */}
+        <button
+          onClick={() => navigate(`/student/tests/${exam.examId}/results`)}
+          className="w-full mt-3 py-2.5 rounded-xl bg-gradient-to-r from-[hsl(var(--donut-coral))] to-[hsl(var(--donut-orange))] text-white text-sm font-medium flex items-center justify-center gap-2 shadow-md hover:shadow-lg transition-shadow min-h-[44px]"
+        >
+          View Detailed Report
+          <ExternalLink className="w-3.5 h-3.5" />
+        </button>
       </motion.div>
     </AnimatePresence>
+    </TooltipProvider>
   );
 });
 
