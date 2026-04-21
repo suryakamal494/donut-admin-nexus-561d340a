@@ -1,60 +1,177 @@
 
 
-The user wants a **single, copy-pasteable spec/brief** they can hand to the "main environment" team (the production Lovable Cloud build) so that team can wire the **Exam Analysis / Reports agent** end-to-end. The brief must list every report, every metric, every formula, every entity, and every tool the agent needs — so the agent can answer ANY natural-language teacher question about reports.
+# Student Progress Analytics — Phased Implementation Plan
 
-I'll deliver this as a downloadable Markdown file in `/mnt/documents/` plus an inline preview. No code changes — just the spec.
+## Current State
 
-## Plan
+The `/student/progress` page has 5 placeholder components with hardcoded mock data: a circular overall progress card, a flat subject list with chapter counts, a streak calendar, achievement badges, and a weekly activity bar chart. None of it connects to the rich analytics the platform already computes on the teacher/institute side (Performance Index, chapter mastery, topic flags, batch standing, exam history, difficulty breakdown, secondary tags).
 
-Generate one comprehensive document: **`teacher-reports-agent-spec.md`** with these sections:
+## What We Are Building
 
-1. **Mission** — one paragraph stating the agent must answer ANY question about ANY report data with same-source-of-truth numbers.
+A comprehensive, multi-tab student analytics module that reuses the same formulas and generators the teacher reports use — so the student sees the **same source-of-truth numbers** their teacher sees, presented in a student-friendly, motivational UI.
 
-2. **Data inventory** (everything the agent must "know"):
-   - **Batch level**: classAverage, previousAverage, trend, totalExamsConducted, atRiskCount, recentExamAvg, overallTrend, batch health summary
-   - **Exam level**: averageScore, highestScore, lowestScore, passPercentage, scoreDistribution (4 quartiles), attemptedCount, questionAnalysis[], topicFlags[], batchComparison[], verdict, performance bands, difficulty mix, cognitive-type mix, actionable insights (reteach/practice/celebrate/attention)
-   - **Chapter level**: avgSuccessRate, weakTopicCount, status, examsCovering, topics[], examBreakdown, student buckets in chapter
-   - **Topic level**: success rate trend, exams testing it, affected students
-   - **Student level**: overallAccuracy, performanceIndex (with breakdown), consistency, trend, secondaryTags, chapterMastery[], weakTopics[], difficultyBreakdown, examHistory, suggestedDifficulty, AI summary
-   - **Cross-cutting**: compare two exams, compare two students, multi-subject risk, declined-this-term
+---
 
-3. **Formulas** (verbatim, so the wiring team uses identical math):
-   - PI = 0.50×Accuracy + 0.20×Consistency + 0.15×TimeEfficiency + 0.15×AttemptRate
-   - Consistency = 100 − (stdDev/30)×100
-   - Trend = linear regression slope (>2 up, <−2 down)
-   - Plateau = ≥3 exams, stdDev<5, |slope|<1.5
-   - Performance bands: Mastery ≥75, Stable 50–74, Reinforcement 35–49, Risk <35
-   - Topic flags: strong ≥75, moderate ≥50, weak <50
-   - Difficulty: easy >65%, medium >40%, hard ≤40%
-   - Pass = score ≥40% of maxScore
-   - Secondary tags rules (improving, declining, plateaued, inconsistent, speed-issue, low-attempt)
+## Phase 1 — Data Layer and Overall Dashboard (Foundation)
 
-4. **Tool catalogue** (the 18 tools the agent must expose, with input/output schemas):
-   `get_batch_overview`, `get_recent_exams`, `get_exam_analysis`, `get_question_analysis`, `get_difficulty_analysis`, `get_chapter_health`, `get_chapter_deep_dive`, `get_chapter_search`, `get_topic_analysis`, `get_at_risk_students`, `get_top_performers`, `get_student_search`, `get_student_profile`, `get_compare_students`, `get_compare_exams`, `get_batch_health_summary`, `get_actionable_insights`, `get_multi_subject_risk`
+**Goal**: Create `src/data/student/progressData.ts` — a student-facing data adapter that calls into the existing teacher-side generators and reshapes the output for the student view.
 
-5. **Routing decision rules** (so the model picks the right tool):
-   - Names a student → `get_student_search` → `get_student_profile`
-   - Names a topic/chapter → `get_chapter_search` → `get_topic_analysis` or `get_chapter_deep_dive`
-   - "Compare X and Y" → `get_compare_students` / `get_compare_exams`
-   - "What should I reteach?" / "Today's focus" → `get_batch_health_summary` + `get_actionable_insights`
-   - "At risk in 2+ subjects" → `get_multi_subject_risk`
-   - Drill-downs ("now her difficulty mix") → re-use last entity from context
+### Data to expose
 
-6. **Source-of-truth rule** — every tool MUST call existing generators (`getBatchHealth`, `generateVerdictSummary`, `computeStudentPI`, `getStudentBatchProfile`, `getChapterDetail`, `computePerformanceBands`, `computeTopicFlags`, `generateMockActionableInsights`, `generateMockStudentInsight`). No re-implementation.
+| Metric | Source Generator | Student View |
+|--------|-----------------|-------------|
+| Performance Index (PI) + breakdown | `computeStudentPI` from `performanceIndex.ts` | Gauge with accuracy, consistency, time efficiency, attempt rate |
+| Overall accuracy + trend | `getStudentBatchProfile` | Trend arrow + spark line |
+| Batch standing (rank, percentile) | Computed from `getBatchStudentRoster` | "You are #X of Y" + distance from average and top |
+| Secondary tags | `computeStudentPI` | Motivational badges ("Improving", "Consistent") |
+| Subject-level summary | One profile per subject (loop subjects) | Per-subject PI, accuracy, trend |
 
-7. **System prompt** — full ready-to-paste system prompt for the agent (mission + tool list + routing rules + answer format: card + 2–4 sentence plain-language insight).
+### UI components (replace existing)
 
-8. **UI contract** — list of inline cards the agent can emit (StudentProfileCard, ChapterDeepDiveCard, TopicCard, DifficultyMixCard, QuestionAnalysisCard, ExamCompareCard, StudentCompareCard, TodaysFocusCard, ActionableInsightCard, MultiSubjectRiskCard) and the SSE event shape (`rp_report_data`).
+1. **ProgressHeroCard** — replaces `OverallProgressCard`. Shows PI gauge (animated ring), overall accuracy, trend indicator, and batch rank pill. Glassmorphism card with coral/orange gradient accents.
+2. **BatchStandingCard** — new. Horizontal bar showing student position relative to batch average and batch topper. Labels: "Below Average / Average / Above Average / Top 10%". Distance markers in percentage points.
+3. **SubjectOverviewGrid** — replaces `SubjectProgressList`. Scrollable horizontal cards (mobile) / 2-col grid (desktop). Each card: subject icon, PI score, accuracy %, trend arrow, chapter mastery ratio, tap to drill into Phase 2.
 
-9. **Cross-routine handoff** — Generate Homework button payload `{ topic, difficulty, studentIds, contextBanner }` → switches to Homework routine, fresh thread, prefilled draft.
+### Design contract
 
-10. **Quick-start chips** (8): How did the last exam go / How is [top student] doing / Show me [topic] performance / What should I reteach this week / Easy vs hard performance / Compare last two exams / Students at risk in 2+ subjects / Today's focus.
+- All cards: `bg-white/70 backdrop-blur-xl rounded-2xl border border-white/50 shadow-lg`
+- Gradients: `from-[hsl(var(--donut-coral))] to-[hsl(var(--donut-orange))]`
+- Animations: `framer-motion` staggered entrance
+- Touch targets: 44px minimum
+- Mobile-first: single column, horizontal scroll for subject cards
 
-11. **Acceptance criteria / QA script** — 12 sample questions the wiring team must verify (named-student probe, topic probe, compare, drill-down, multi-subject, declined-this-term, etc.) with expected card + insight sentence pattern.
+---
 
-12. **Out of scope** — no editing reports from chat, no cross-batch institute queries, read-only.
+## Phase 2 — Subject Deep Dive (Per-Subject Analytics)
 
-### Deliverable
+**Goal**: When a student taps a subject card, expand or navigate to a detailed subject view.
 
-One file: `/mnt/documents/teacher-reports-agent-spec.md` (~8–10 KB), plus a `<lov-artifact>` tag in the response so the user can download it.
+### Components
+
+1. **SubjectProgressHeader** — Subject name, PI gauge, accuracy, trend, batch rank *in this subject*
+2. **ChapterMasteryList** — Vertical list of chapters with:
+   - Progress bar colored by status (green = strong >= 65%, amber = moderate >= 40%, red = weak < 40%)
+   - Topic count and weak topic count
+   - Trend arrow per chapter
+   - Tap to expand topics (Phase 3)
+3. **WeakTopicsAlert** — Top 3-5 weakest topics across all chapters in this subject, sorted by accuracy ascending. Coral/red tinted card with "Focus on these" motivational copy.
+4. **DifficultyBreakdownCard** — Three horizontal bars (Easy/Medium/Hard) showing accuracy per difficulty level. Helps student understand where they struggle.
+5. **SubjectBatchStanding** — Same horizontal bar as Phase 1 but scoped to this subject. "In Physics, you rank #X of Y"
+
+### Data source
+
+`getStudentBatchProfile(studentId, batchId)` already returns `chapterMastery[]`, `difficultyBreakdown[]`, `weakTopics[]` — direct mapping.
+
+---
+
+## Phase 3 — Exam Performance History
+
+**Goal**: Show how the student has performed across all exams, with batch context.
+
+### Components
+
+1. **ExamHistoryTimeline** — Chronological list of exams with:
+   - Score / Max Score, percentage
+   - Rank in batch + total students
+   - Class average comparison (inline bar: "You: 72% | Class Avg: 65% | Top: 91%")
+   - Color-coded: green if above average, amber if within 5%, red if below
+2. **ExamTrendChart** — Recharts line chart of percentage over time, with a dashed line for class average. Tap any point for exam details.
+3. **PerExamStandingCard** — When an exam is selected: score, rank, percentile, distance from average ("You scored 7% above the class average"), distance from top ("12% below the topper").
+
+### Data source
+
+`examHistory[]` from `StudentBatchProfile` already has score, maxScore, percentage, rank, totalStudents. Class average comes from `BatchExamEntry` in `reportsData.ts`.
+
+---
+
+## Phase 4 — Chapter and Topic Drill-Down
+
+**Goal**: Tap a chapter in Phase 2 to see topic-level mastery.
+
+### Components
+
+1. **ChapterDetailSheet** — Bottom sheet (mobile) / side panel (desktop):
+   - Chapter name, overall success rate, exams appeared in
+   - Topic list with accuracy bars (strong/moderate/weak color coding)
+   - Per-topic question count
+2. **TopicTrendMini** — If data permits, a small sparkline per topic showing accuracy over exams
+
+### Data source
+
+`ChapterMastery.topics[]` from `getStudentBatchProfile` — already has topicName, accuracy, status, questionsAsked.
+
+---
+
+## Phase 5 — Behavioral Insights and Streaks (Polish)
+
+**Goal**: Keep streak/achievements but connect them to real data; add motivational behavioral signals.
+
+### Components
+
+1. **StreakCalendar** — Keep existing but wire to actual study activity data
+2. **AchievementBadges** — Keep existing but derive unlock status from real metrics (e.g., "Consistency King" if consistency > 80)
+3. **InsightBanner** — A single motivational card at the top that uses the same logic as `generateMockStudentInsight`:
+   - Shows summary sentence, top strength, top priority
+   - Styled as a warm gradient card with the Donut Bot personality
+4. **SecondaryTagsPills** — Display tags like "Improving", "Speed Issue", "Plateaued" as colored pills with tooltips explaining what they mean
+5. **WeeklyActivityChart** — Keep but wire to actual time data
+
+---
+
+## Phase 6 — Responsive Polish and Navigation
+
+**Goal**: Ensure the entire progress module is production-ready across all breakpoints.
+
+### Work
+
+1. **Tab navigation** at top of Progress page: Overview | Subjects | Exams | Insights
+   - Mobile: horizontal scrollable pill tabs
+   - Desktop: standard tab bar
+2. **320px audit** — Every card must render without overflow at 320px width
+3. **Swipe gestures** — Swipe between tabs on mobile
+4. **Loading skeletons** — Skeleton variants for each card type during data generation
+5. **Performance** — Memoize all data generators with stable cache keys; lazy-load Phase 2-4 components
+
+---
+
+## Technical Summary
+
+```text
+src/
+├── data/student/
+│   └── progressData.ts          ← NEW: adapter calling teacher generators
+├── components/student/progress/
+│   ├── ProgressHeroCard.tsx      ← Phase 1 (replaces OverallProgressCard)
+│   ├── BatchStandingCard.tsx     ← Phase 1
+│   ├── SubjectOverviewGrid.tsx   ← Phase 1 (replaces SubjectProgressList)
+│   ├── SubjectDeepDive.tsx       ← Phase 2
+│   ├── ChapterMasteryList.tsx    ← Phase 2
+│   ├── WeakTopicsAlert.tsx       ← Phase 2
+│   ├── DifficultyBreakdown.tsx   ← Phase 2
+│   ├── SubjectBatchStanding.tsx  ← Phase 2
+│   ├── ExamHistoryTimeline.tsx   ← Phase 3
+│   ├── ExamTrendChart.tsx        ← Phase 3
+│   ├── PerExamStandingCard.tsx   ← Phase 3
+│   ├── ChapterDetailSheet.tsx    ← Phase 4
+│   ├── InsightBanner.tsx         ← Phase 5
+│   ├── SecondaryTagsPills.tsx    ← Phase 5
+│   ├── StreakCalendar.tsx        ← Phase 5 (keep, rewire)
+│   ├── AchievementBadges.tsx     ← Phase 5 (keep, rewire)
+│   └── WeeklyActivityChart.tsx   ← Phase 5 (keep, rewire)
+├── pages/student/
+│   └── Progress.tsx              ← Rewritten with tab navigation
+```
+
+### Formulas (same source of truth as teacher)
+
+- **PI** = 0.50 x Accuracy + 0.20 x Consistency + 0.15 x TimeEfficiency + 0.15 x AttemptRate
+- **Consistency** = 100 - (stdDev / 30) x 100
+- **Trend** = linear regression slope (> 2 = up, < -2 = down)
+- **Performance bands**: Mastery >= 75, Stable 50-74, Reinforcement 35-49, Risk < 35
+- **Topic flags**: strong >= 65%, moderate >= 40%, weak < 40%
+- **Batch standing**: rank / totalStudents, percentile, delta from class average
+
+### No new database tables needed
+
+All data comes from existing generators. No migrations required.
 
