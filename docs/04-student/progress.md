@@ -204,3 +204,5 @@ Display:
 ---
 
 *Last Updated: January 2025*
+
+> 📘 **Developer Reference:** For detailed component specs, data interfaces, color logic, and implementation guidance, see the [Progress Developer Guide](./progress-developer-guide.md).
