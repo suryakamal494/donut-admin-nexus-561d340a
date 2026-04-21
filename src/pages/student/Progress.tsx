@@ -1,4 +1,4 @@
-import { useState, useMemo, lazy, Suspense } from "react";
+import { useState, useMemo, lazy, Suspense, useCallback } from "react";
 import { TrendingUp } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -7,18 +7,25 @@ import {
   getSubjectDetail,
   getExamsWithContext,
   getStudentInsight,
+  getDerivedStreakData,
+  getDerivedAchievements,
+  getDerivedWeeklyActivity,
 } from "@/data/student/progressData";
 import ProgressHeroCard from "@/components/student/progress/ProgressHeroCard";
 import BatchStandingCard from "@/components/student/progress/BatchStandingCard";
 import SubjectOverviewGrid from "@/components/student/progress/SubjectOverviewGrid";
 import InsightBanner from "@/components/student/progress/InsightBanner";
 import SecondaryTagsPills from "@/components/student/progress/SecondaryTagsPills";
-import SubjectDeepDive from "@/components/student/progress/SubjectDeepDive";
-import ExamHistoryTimeline from "@/components/student/progress/ExamHistoryTimeline";
-import ExamTrendChart from "@/components/student/progress/ExamTrendChart";
-import StreakCalendar from "@/components/student/progress/StreakCalendar";
-import AchievementBadges from "@/components/student/progress/AchievementBadges";
-import WeeklyActivityChart from "@/components/student/progress/WeeklyActivityChart";
+import { Skeleton } from "@/components/ui/skeleton";
+
+// Lazy-loaded heavy components
+const SubjectDeepDive = lazy(() => import("@/components/student/progress/SubjectDeepDive"));
+const ExamHistoryTimeline = lazy(() => import("@/components/student/progress/ExamHistoryTimeline"));
+const ExamTrendChart = lazy(() => import("@/components/student/progress/ExamTrendChart"));
+const PerExamStandingCard = lazy(() => import("@/components/student/progress/PerExamStandingCard"));
+const StreakCalendar = lazy(() => import("@/components/student/progress/StreakCalendar"));
+const AchievementBadges = lazy(() => import("@/components/student/progress/AchievementBadges"));
+const WeeklyActivityChart = lazy(() => import("@/components/student/progress/WeeklyActivityChart"));
 
 type TabKey = "overview" | "subjects" | "exams" | "insights";
 
@@ -29,56 +36,42 @@ const TABS: { key: TabKey; label: string }[] = [
   { key: "insights", label: "Insights" },
 ];
 
-// Mock data for streak/achievements (keep until wired to real data)
-const mockActiveDays = [
-  new Date(2026, 3, 14), new Date(2026, 3, 15), new Date(2026, 3, 16),
-  new Date(2026, 3, 17), new Date(2026, 3, 18), new Date(2026, 3, 19),
-  new Date(2026, 3, 20), new Date(2026, 3, 21),
-];
-
-const mockAchievements = [
-  { id: "1", name: "First Steps", description: "Complete your first chapter", icon: "star", unlocked: true, color: "#F59E0B" },
-  { id: "2", name: "Week Warrior", description: "7 day study streak", icon: "flame", unlocked: true, color: "#EF4444" },
-  { id: "3", name: "Quick Learner", description: "Complete 5 chapters in a day", icon: "zap", unlocked: true, color: "#8B5CF6" },
-  { id: "4", name: "Math Master", description: "Score 90%+ in 3 math tests", icon: "trophy", unlocked: true, color: "#3B82F6" },
-  { id: "5", name: "Science Star", description: "Complete all science subjects", icon: "award", unlocked: false, color: "#10B981" },
-  { id: "6", name: "Perfect Score", description: "Get 100% in any test", icon: "target", unlocked: false, color: "#EC4899" },
-  { id: "7", name: "Bookworm", description: "Study for 100 hours total", icon: "book", unlocked: false, color: "#6366F1" },
-  { id: "8", name: "Champion", description: "Rank #1 in your class", icon: "crown", unlocked: false, color: "#F59E0B" },
-];
-
-const mockWeeklyData = [
-  { day: "Mon", minutes: 45, chapters: 2 },
-  { day: "Tue", minutes: 60, chapters: 3 },
-  { day: "Wed", minutes: 30, chapters: 1 },
-  { day: "Thu", minutes: 75, chapters: 4 },
-  { day: "Fri", minutes: 50, chapters: 2 },
-  { day: "Sat", minutes: 90, chapters: 5 },
-  { day: "Sun", minutes: 40, chapters: 2 },
-];
+const CardSkeleton = ({ className = "" }: { className?: string }) => (
+  <div className={`bg-white/70 backdrop-blur-xl rounded-2xl p-5 border border-white/50 shadow-lg space-y-3 ${className}`}>
+    <Skeleton className="h-4 w-32" />
+    <Skeleton className="h-24 w-full" />
+    <Skeleton className="h-4 w-48" />
+  </div>
+);
 
 const StudentProgress = () => {
   const [activeTab, setActiveTab] = useState<TabKey>("overview");
   const [selectedSubjectId, setSelectedSubjectId] = useState<string | null>(null);
+  const [selectedExamId, setSelectedExamId] = useState<string | null>(null);
 
   // Data
   const overview = useMemo(() => getStudentOverview(), []);
   const subjects = useMemo(() => getSubjectSummaries(), []);
   const exams = useMemo(() => getExamsWithContext(), []);
   const insight = useMemo(() => getStudentInsight(), []);
+  const streakData = useMemo(() => getDerivedStreakData(), []);
+  const achievements = useMemo(() => getDerivedAchievements(), []);
+  const weeklyActivity = useMemo(() => getDerivedWeeklyActivity(), []);
 
   const selectedSubjectDetail = useMemo(
     () => selectedSubjectId ? getSubjectDetail(selectedSubjectId) : null,
     [selectedSubjectId]
   );
 
-  const totalMinutes = mockWeeklyData.reduce((acc, d) => acc + d.minutes, 0);
-  const averageMinutes = Math.round(totalMinutes / mockWeeklyData.length);
+  const selectedExam = useMemo(
+    () => selectedExamId ? exams.find(e => e.examId === selectedExamId) || null : null,
+    [selectedExamId, exams]
+  );
 
-  const handleSubjectSelect = (id: string) => {
+  const handleSubjectSelect = useCallback((id: string) => {
     setSelectedSubjectId(id);
     setActiveTab("subjects");
-  };
+  }, []);
 
   return (
     <div className="w-full pb-24 lg:pb-6">
@@ -145,12 +138,16 @@ const StudentProgress = () => {
               />
             </div>
             <div className="space-y-4">
-              <ExamTrendChart exams={exams} />
-              <WeeklyActivityChart
-                data={mockWeeklyData}
-                totalMinutes={totalMinutes}
-                averageMinutes={averageMinutes}
-              />
+              <Suspense fallback={<CardSkeleton />}>
+                <ExamTrendChart exams={exams} />
+              </Suspense>
+              <Suspense fallback={<CardSkeleton />}>
+                <WeeklyActivityChart
+                  data={weeklyActivity.data}
+                  totalMinutes={weeklyActivity.totalMinutes}
+                  averageMinutes={weeklyActivity.averageMinutes}
+                />
+              </Suspense>
             </div>
           </motion.div>
         )}
@@ -163,11 +160,13 @@ const StudentProgress = () => {
             exit={{ opacity: 0, y: -10 }}
           >
             {selectedSubjectId && selectedSubjectDetail ? (
-              <SubjectDeepDive
-                subjectName={subjects.find(s => s.subjectId === selectedSubjectId)?.subjectName || "Subject"}
-                detail={selectedSubjectDetail}
-                onBack={() => setSelectedSubjectId(null)}
-              />
+              <Suspense fallback={<CardSkeleton />}>
+                <SubjectDeepDive
+                  subjectName={subjects.find(s => s.subjectId === selectedSubjectId)?.subjectName || "Subject"}
+                  detail={selectedSubjectDetail}
+                  onBack={() => setSelectedSubjectId(null)}
+                />
+              </Suspense>
             ) : (
               <div className="space-y-4">
                 <SubjectOverviewGrid
@@ -191,8 +190,19 @@ const StudentProgress = () => {
             exit={{ opacity: 0, y: -10 }}
             className="grid grid-cols-1 lg:grid-cols-2 gap-4"
           >
-            <ExamHistoryTimeline exams={exams} />
-            <ExamTrendChart exams={exams} />
+            <div className="space-y-4">
+              <Suspense fallback={<CardSkeleton />}>
+                <ExamHistoryTimeline exams={exams} onSelectExam={setSelectedExamId} />
+              </Suspense>
+            </div>
+            <div className="space-y-4">
+              <Suspense fallback={<CardSkeleton />}>
+                <PerExamStandingCard exam={selectedExam} onClose={() => setSelectedExamId(null)} />
+              </Suspense>
+              <Suspense fallback={<CardSkeleton />}>
+                <ExamTrendChart exams={exams} />
+              </Suspense>
+            </div>
           </motion.div>
         )}
 
@@ -205,20 +215,28 @@ const StudentProgress = () => {
             className="grid grid-cols-1 lg:grid-cols-2 gap-4"
           >
             <div className="space-y-4">
-              <InsightBanner insight={insight} />
-              <StreakCalendar
-                currentStreak={8}
-                longestStreak={14}
-                activeDays={mockActiveDays}
-              />
+              <Suspense fallback={<CardSkeleton />}>
+                <InsightBanner insight={insight} />
+              </Suspense>
+              <Suspense fallback={<CardSkeleton />}>
+                <StreakCalendar
+                  currentStreak={streakData.currentStreak}
+                  longestStreak={streakData.longestStreak}
+                  activeDays={streakData.activeDays}
+                />
+              </Suspense>
             </div>
             <div className="space-y-4">
-              <AchievementBadges achievements={mockAchievements} />
-              <WeeklyActivityChart
-                data={mockWeeklyData}
-                totalMinutes={totalMinutes}
-                averageMinutes={averageMinutes}
-              />
+              <Suspense fallback={<CardSkeleton />}>
+                <AchievementBadges achievements={achievements} />
+              </Suspense>
+              <Suspense fallback={<CardSkeleton />}>
+                <WeeklyActivityChart
+                  data={weeklyActivity.data}
+                  totalMinutes={weeklyActivity.totalMinutes}
+                  averageMinutes={weeklyActivity.averageMinutes}
+                />
+              </Suspense>
             </div>
           </motion.div>
         )}
