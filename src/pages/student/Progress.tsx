@@ -143,11 +143,11 @@ const StudentProgress = () => {
                 <ExamTrendChart exams={exams} />
               </Suspense>
               <Suspense fallback={<CardSkeleton />}>
-                <WeeklyActivityChart
+                {weeklyActivity && <WeeklyActivityChart
                   data={weeklyActivity.data}
                   totalMinutes={weeklyActivity.totalMinutes}
                   averageMinutes={weeklyActivity.averageMinutes}
-                />
+                />}
               </Suspense>
             </div>
           </motion.div>
@@ -217,14 +217,14 @@ const StudentProgress = () => {
           >
             <div className="space-y-4">
               <Suspense fallback={<CardSkeleton />}>
-                <InsightBanner insight={insight} />
+                {insight && <InsightBanner insight={insight} />}
               </Suspense>
               <Suspense fallback={<CardSkeleton />}>
-                <StreakCalendar
+                {streakData && <StreakCalendar
                   currentStreak={streakData.currentStreak}
                   longestStreak={streakData.longestStreak}
                   activeDays={streakData.activeDays}
-                />
+                />}
               </Suspense>
             </div>
             <div className="space-y-4">
@@ -232,11 +232,11 @@ const StudentProgress = () => {
                 <AchievementBadges achievements={achievements} />
               </Suspense>
               <Suspense fallback={<CardSkeleton />}>
-                <WeeklyActivityChart
+                {weeklyActivity && <WeeklyActivityChart
                   data={weeklyActivity.data}
                   totalMinutes={weeklyActivity.totalMinutes}
                   averageMinutes={weeklyActivity.averageMinutes}
-                />
+                />}
               </Suspense>
             </div>
           </motion.div>
