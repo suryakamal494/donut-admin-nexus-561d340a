@@ -1,4 +1,4 @@
-import { memo } from "react";
+import { memo, useState } from "react";
 import { motion } from "framer-motion";
 import { TrendingUp, TrendingDown, Minus, ChevronRight, AlertCircle } from "lucide-react";
 import type { ChapterMastery } from "@/data/student/progressData";
@@ -14,8 +14,13 @@ const statusConfig = {
   weak: { color: "bg-red-500", bg: "bg-red-50", text: "text-red-700", label: "Weak" },
 };
 
+const INITIAL_SHOW = 8;
+
 const ChapterMasteryList = memo(({ chapters, onSelectChapter }: ChapterMasteryListProps) => {
   const sorted = [...chapters].sort((a, b) => a.avgSuccessRate - b.avgSuccessRate);
+  const [showAll, setShowAll] = useState(false);
+  const visible = showAll ? sorted : sorted.slice(0, INITIAL_SHOW);
+  const hasMore = sorted.length > INITIAL_SHOW;
 
   return (
     <motion.div
@@ -27,7 +32,7 @@ const ChapterMasteryList = memo(({ chapters, onSelectChapter }: ChapterMasteryLi
       <h3 className="text-sm font-medium text-muted-foreground mb-3">Chapter Mastery</h3>
 
       <div className="space-y-2">
-        {sorted.map((ch, i) => {
+        {visible.map((ch, i) => {
           const cfg = statusConfig[ch.status];
           const TrendIcon = ch.trend === "up" ? TrendingUp : ch.trend === "down" ? TrendingDown : Minus;
           const trendColor = ch.trend === "up" ? "text-emerald-500" : ch.trend === "down" ? "text-red-500" : "text-muted-foreground";
@@ -38,7 +43,7 @@ const ChapterMasteryList = memo(({ chapters, onSelectChapter }: ChapterMasteryLi
               key={ch.chapterId}
               initial={{ opacity: 0, x: -10 }}
               animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.05 * i }}
+              transition={{ delay: 0.05 * Math.min(i, 8) }}
               onClick={() => onSelectChapter(ch.chapterId)}
               className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-muted/10 transition-colors text-left min-h-[48px]"
             >
@@ -82,6 +87,15 @@ const ChapterMasteryList = memo(({ chapters, onSelectChapter }: ChapterMasteryLi
             </motion.button>
           );
         })}
+
+        {hasMore && (
+          <button
+            onClick={() => setShowAll(v => !v)}
+            className="w-full text-center text-xs font-medium text-[hsl(var(--donut-coral))] hover:underline py-2 min-h-[44px]"
+          >
+            {showAll ? "Show less" : `Show all ${sorted.length} chapters`}
+          </button>
+        )}
       </div>
     </motion.div>
   );
