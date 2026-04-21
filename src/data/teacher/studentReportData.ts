@@ -199,13 +199,16 @@ function generateStudentProfile(studentId: string, batchId: string): StudentBatc
 
   const rand = seededRandom(hashString(`profile-${studentId}-${batchId}`));
 
-  // Generate exam history
+  // Generate exam history — expand to 50+ entries for scalability testing
   const batchExams = teacherExams.filter(e => e.batchIds.includes(batchId) && e.status === "completed");
-  const examHistory: ExamHistoryItem[] = batchExams.map((exam, i) => {
+  const examHistory: ExamHistoryItem[] = [];
+  
+  // First, add real batch exams
+  batchExams.forEach((exam) => {
     const maxScore = exam.totalMarks;
     const pct = Math.round(20 + rand() * 70);
     const score = Math.round(maxScore * pct / 100);
-    return {
+    examHistory.push({
       examId: exam.id,
       examName: exam.name,
       date: exam.updatedAt,
@@ -214,8 +217,34 @@ function generateStudentProfile(studentId: string, batchId: string): StudentBatc
       percentage: pct,
       rank: 1 + Math.floor(rand() * 20),
       totalStudents: 20 + Math.floor(rand() * 10),
-    };
+    });
   });
+
+  // Then, generate synthetic exams to reach ~60 total for scalability
+  const TARGET_EXAM_COUNT = 60;
+  const examTemplates = ["Unit Test", "Weekly Quiz", "Practice Test", "Mock Exam", "Chapter Test", "Revision Test"];
+  const subjectHints = ["Physics", "Math", "Chemistry", "Biology", "English"];
+  for (let i = examHistory.length; i < TARGET_EXAM_COUNT; i++) {
+    const templateIdx = i % examTemplates.length;
+    const subjectIdx = i % subjectHints.length;
+    const monthOffset = Math.floor(i / 5);
+    const dayOfMonth = 1 + Math.floor(rand() * 27);
+    const month = Math.max(1, 12 - monthOffset);
+    const year = month <= 3 ? 2026 : 2025;
+    const maxScore = 50 + Math.floor(rand() * 3) * 50; // 50, 100, or 150
+    const pct = Math.round(25 + rand() * 65);
+    const score = Math.round(maxScore * pct / 100);
+    examHistory.push({
+      examId: `synth-exam-${i}`,
+      examName: `${subjectHints[subjectIdx]} ${examTemplates[templateIdx]} ${i - batchExams.length + 1}`,
+      date: `${year}-${String(month).padStart(2, '0')}-${String(dayOfMonth).padStart(2, '0')}`,
+      score,
+      maxScore,
+      percentage: pct,
+      rank: 1 + Math.floor(rand() * 25),
+      totalStudents: 22 + Math.floor(rand() * 10),
+    });
+  }
 
   // Chapter mastery
   const chapterMastery: ChapterMastery[] = physicsChapters.map(ch => {
