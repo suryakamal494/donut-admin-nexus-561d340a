@@ -192,7 +192,7 @@ const StudentProgress = () => {
           >
             <div className="space-y-4">
               <Suspense fallback={<CardSkeleton />}>
-                <ExamHistoryTimeline exams={exams} onSelectExam={setSelectedExamId} />
+                <ExamHistoryTimeline exams={exams} onSelectExam={setSelectedExamId} selectedExamId={selectedExamId} />
               </Suspense>
             </div>
             <div className="space-y-4">
