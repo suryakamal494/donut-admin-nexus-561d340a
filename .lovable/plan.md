@@ -1,46 +1,63 @@
 
 
-# Replace Achievements with Subject Comparison Radar Chart
+# Documentation: Student Progress & Analytics Module
 
-## Overview
+## Summary
 
-Remove the Achievements section from the Insights tab and replace it with a radar/spider chart that visualizes the student's accuracy across all subjects at a glance. This helps students instantly identify which subjects need attention.
+Create a detailed developer-facing documentation file for the Student Progress page (`/student/progress`). This will be a comprehensive reference covering all 4 tabs, every card/component, the data each one needs, and how they connect. Phased by tab for readability.
 
-## Changes
+## Output
 
-### 1. New component: `SubjectRadarChart.tsx`
+A single markdown file: `docs/04-student/progress-developer-guide.md`
 
-Create `src/components/student/progress/SubjectRadarChart.tsx`:
+This will be a long, structured document (~2500-3000 lines) organized into these sections:
 
-- Uses Recharts `RadarChart` with `PolarGrid`, `PolarAngleAxis`, and `Radar` fill
-- Receives `SubjectSummary[]` from existing `getSubjectSummaries()`
-- Plots each subject's `accuracy` on the radar axes
-- Subject names as axis labels (abbreviated on mobile to 3-4 chars)
-- Filled area uses a gradient tint (donut-coral or primary)
-- Card wrapper with title "Subject Overview" and a subtle legend
-- Mobile-first: chart height 220px on mobile, 280px on desktop
-- Below the chart, a single-line callout: "Strongest: Physics (72%) · Weakest: Hindi (41%)" derived from the data
+### Document Structure
 
-### 2. Update `Progress.tsx`
+1. **Module Overview** — Route, page layout, tab architecture, lazy loading strategy
+2. **Data Layer** — `progressData.ts` adapter functions, types, caching, and upstream data sources
+3. **Phase 1: Overview Tab** — Each card documented individually:
+   - ProgressHeroCard (PI gauge, accuracy, consistency, trend, rank)
+   - BatchStandingCard (visual bar with Avg/Top markers, delta stats)
+   - SubjectOverviewGrid (compact mode — icon, name, accuracy only)
+   - ExamTrendChart (line chart: your score vs class avg, range selector)
+   - WeeklyActivityChart (bar chart: daily minutes, total/avg stats)
+4. **Phase 2: Subjects Tab** — Two states documented:
+   - SubjectOverviewGrid (detailed mode — trend, chapter bar, weak count)
+   - SubjectDeepDive (drill-down view):
+     - Header with rank bar and 5-column stats
+     - WeakTopicsAlert (red-gradient alert with focus topics)
+     - ChapterMasteryList (sorted weakest-first, status dots, progress bars)
+     - DifficultyBreakdown (Easy/Medium/Hard accuracy bars)
+     - ChapterDetailSheet (bottom sheet with topic-level detail)
+5. **Phase 3: Exams Tab** — Two-column layout:
+   - ExamHistoryTimeline (date-sorted list, comparison bars, show-more)
+   - PerExamStandingCard (auto-selected latest exam, score/rank/percentile, vs-avg/vs-top bars)
+   - ExamTrendChart (reused from Overview)
+6. **Phase 4: Insights Tab** — AI-driven analytics:
+   - InsightBanner (AI summary, strengths, priorities)
+   - StreakCalendar (current/longest streak, monthly grid)
+   - SubjectRadarChart (Recharts radar, strongest/weakest callout)
+   - WeeklyActivityChart (reused from Overview)
+7. **Shared Components** — SecondaryTagsPills (behavior tags with tooltips)
+8. **Cross-Tab Interactions** — How selecting a subject in Overview navigates to Subjects tab, how exam auto-selection works
+9. **Responsive Behavior** — Mobile grid rules, touch targets, scroll behaviors per component
 
-- Remove `AchievementBadges` lazy import and `getDerivedAchievements` import
-- Remove the `achievements` useMemo
-- Add lazy import for `SubjectRadarChart`
-- Feed it `subjects` data (already computed for the subjects tab — adjust the memo to also compute when `activeTab === "insights"`)
-- Replace `<AchievementBadges>` with `<SubjectRadarChart>` in the Insights tab grid
+### Per-Component Documentation Format
 
-### 3. Data layer — no changes needed
+Each component section will include:
+- **Purpose** — What it tells the student
+- **Props / Interface** — TypeScript interface with field descriptions
+- **Data Source** — Which `progressData.ts` function and what upstream data
+- **Visual Layout** — ASCII diagram of the card structure
+- **Color Logic** — Conditional color rules (e.g., accuracy >= 75 = emerald, >= 50 = blue)
+- **Interactions** — Click/tap behaviors, navigation targets
+- **Mobile Behavior** — Grid columns, touch targets, truncation rules
 
-`getSubjectSummaries()` already returns `subjectName`, `accuracy`, and `color` for all 8 subjects. The radar chart consumes this directly.
-
-## Files changed
+## Files Changed
 
 | File | Change |
 |------|--------|
-| `src/components/student/progress/SubjectRadarChart.tsx` | New — Recharts radar chart showing accuracy per subject |
-| `src/pages/student/Progress.tsx` | Remove achievements, add SubjectRadarChart with subject data |
-
-## No files deleted
-
-`AchievementBadges.tsx` stays on disk but is no longer imported.
+| `docs/04-student/progress-developer-guide.md` | New — Complete developer reference for the Progress module |
+| `docs/04-student/progress.md` | Add link to the new developer guide at the bottom |
 
