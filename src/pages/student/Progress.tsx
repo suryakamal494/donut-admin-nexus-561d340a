@@ -136,6 +136,7 @@ const StudentProgress = () => {
               <SubjectOverviewGrid
                 subjects={subjects}
                 onSelect={handleSubjectSelect}
+                compact
               />
             </div>
             <div className="space-y-4">
