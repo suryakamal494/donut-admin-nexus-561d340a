@@ -1,4 +1,4 @@
-import { useState, useMemo, lazy, Suspense, useCallback } from "react";
+ import { useState, useMemo, useEffect, lazy, Suspense, useCallback } from "react";
 import { TrendingUp } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -64,7 +64,17 @@ const StudentProgress = () => {
     [selectedSubjectId]
   );
 
-  const selectedExam = useMemo(
+   // Auto-select latest exam when exams load
+   useEffect(() => {
+     if (exams.length > 0 && !selectedExamId) {
+       const latest = [...exams].sort(
+         (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+       );
+       setSelectedExamId(latest[0].examId);
+     }
+   }, [exams, selectedExamId]);
+ 
+   const selectedExam = useMemo(
     () => selectedExamId ? exams.find(e => e.examId === selectedExamId) || null : null,
     [selectedExamId, exams]
   );
