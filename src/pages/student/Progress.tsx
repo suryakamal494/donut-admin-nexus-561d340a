@@ -8,7 +8,6 @@ import {
   getExamsWithContext,
   getStudentInsight,
   getDerivedStreakData,
-  getDerivedAchievements,
   getDerivedWeeklyActivity,
 } from "@/data/student/progressData";
 import ProgressHeroCard from "@/components/student/progress/ProgressHeroCard";
@@ -24,7 +23,7 @@ const ExamHistoryTimeline = lazy(() => import("@/components/student/progress/Exa
 const ExamTrendChart = lazy(() => import("@/components/student/progress/ExamTrendChart"));
 const PerExamStandingCard = lazy(() => import("@/components/student/progress/PerExamStandingCard"));
 const StreakCalendar = lazy(() => import("@/components/student/progress/StreakCalendar"));
-const AchievementBadges = lazy(() => import("@/components/student/progress/AchievementBadges"));
+const SubjectRadarChart = lazy(() => import("@/components/student/progress/SubjectRadarChart"));
 const WeeklyActivityChart = lazy(() => import("@/components/student/progress/WeeklyActivityChart"));
 
 type TabKey = "overview" | "subjects" | "exams" | "insights";
@@ -56,7 +55,6 @@ const StudentProgress = () => {
   const exams = useMemo(() => (activeTab === "overview" || activeTab === "exams") ? getExamsWithContext() : [], [activeTab]);
   const insight = useMemo(() => activeTab === "insights" ? getStudentInsight() : null, [activeTab]);
   const streakData = useMemo(() => activeTab === "insights" ? getDerivedStreakData() : null, [activeTab]);
-  const achievements = useMemo(() => activeTab === "insights" ? getDerivedAchievements() : [], [activeTab]);
   const weeklyActivity = useMemo(() => (activeTab === "overview" || activeTab === "insights") ? getDerivedWeeklyActivity() : null, [activeTab]);
 
   const selectedSubjectDetail = useMemo(
@@ -240,7 +238,7 @@ const StudentProgress = () => {
             </div>
             <div className="space-y-4">
               <Suspense fallback={<CardSkeleton />}>
-                <AchievementBadges achievements={achievements} />
+                <SubjectRadarChart subjects={subjects} />
               </Suspense>
               <Suspense fallback={<CardSkeleton />}>
                 {weeklyActivity && <WeeklyActivityChart
