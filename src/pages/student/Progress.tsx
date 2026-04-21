@@ -52,11 +52,12 @@ const StudentProgress = () => {
   // Data
   const overview = useMemo(() => getStudentOverview(), []);
   const subjects = useMemo(() => getSubjectSummaries(), []);
-  const exams = useMemo(() => getExamsWithContext(), []);
-  const insight = useMemo(() => getStudentInsight(), []);
-  const streakData = useMemo(() => getDerivedStreakData(), []);
-  const achievements = useMemo(() => getDerivedAchievements(), []);
-  const weeklyActivity = useMemo(() => getDerivedWeeklyActivity(), []);
+  // Lazy: only compute when relevant tab is active
+  const exams = useMemo(() => (activeTab === "overview" || activeTab === "exams") ? getExamsWithContext() : [], [activeTab]);
+  const insight = useMemo(() => activeTab === "insights" ? getStudentInsight() : null, [activeTab]);
+  const streakData = useMemo(() => activeTab === "insights" ? getDerivedStreakData() : null, [activeTab]);
+  const achievements = useMemo(() => activeTab === "insights" ? getDerivedAchievements() : [], [activeTab]);
+  const weeklyActivity = useMemo(() => (activeTab === "overview" || activeTab === "insights") ? getDerivedWeeklyActivity() : null, [activeTab]);
 
   const selectedSubjectDetail = useMemo(
     () => selectedSubjectId ? getSubjectDetail(selectedSubjectId) : null,
@@ -142,11 +143,11 @@ const StudentProgress = () => {
                 <ExamTrendChart exams={exams} />
               </Suspense>
               <Suspense fallback={<CardSkeleton />}>
-                <WeeklyActivityChart
+                {weeklyActivity && <WeeklyActivityChart
                   data={weeklyActivity.data}
                   totalMinutes={weeklyActivity.totalMinutes}
                   averageMinutes={weeklyActivity.averageMinutes}
-                />
+                />}
               </Suspense>
             </div>
           </motion.div>
@@ -216,14 +217,14 @@ const StudentProgress = () => {
           >
             <div className="space-y-4">
               <Suspense fallback={<CardSkeleton />}>
-                <InsightBanner insight={insight} />
+                {insight && <InsightBanner insight={insight} />}
               </Suspense>
               <Suspense fallback={<CardSkeleton />}>
-                <StreakCalendar
+                {streakData && <StreakCalendar
                   currentStreak={streakData.currentStreak}
                   longestStreak={streakData.longestStreak}
                   activeDays={streakData.activeDays}
-                />
+                />}
               </Suspense>
             </div>
             <div className="space-y-4">
@@ -231,11 +232,11 @@ const StudentProgress = () => {
                 <AchievementBadges achievements={achievements} />
               </Suspense>
               <Suspense fallback={<CardSkeleton />}>
-                <WeeklyActivityChart
+                {weeklyActivity && <WeeklyActivityChart
                   data={weeklyActivity.data}
                   totalMinutes={weeklyActivity.totalMinutes}
                   averageMinutes={weeklyActivity.averageMinutes}
-                />
+                />}
               </Suspense>
             </div>
           </motion.div>

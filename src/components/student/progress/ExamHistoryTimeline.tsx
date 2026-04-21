@@ -1,4 +1,4 @@
-import { memo } from "react";
+import { memo, useState } from "react";
 import { motion } from "framer-motion";
 import { Calendar, ChevronRight, FileText } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -19,6 +19,10 @@ interface ExamHistoryTimelineProps {
 const ExamHistoryTimeline = memo(({ exams, onSelectExam, selectedExamId }: ExamHistoryTimelineProps) => {
   const navigate = useNavigate();
   const sorted = [...exams].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  const BATCH_SIZE = 10;
+  const [visibleCount, setVisibleCount] = useState(BATCH_SIZE);
+  const visibleExams = sorted.slice(0, visibleCount);
+  const hasMore = visibleCount < sorted.length;
 
   return (
     <TooltipProvider delayDuration={300}>
@@ -37,7 +41,7 @@ const ExamHistoryTimeline = memo(({ exams, onSelectExam, selectedExamId }: ExamH
         {selectedExamId && <div className="mb-3" />}
 
         <div className="space-y-1.5">
-          {sorted.map((exam, i) => {
+          {visibleExams.map((exam, i) => {
             const isAboveAvg = exam.deltaFromAverage > 0;
             const borderColor = isAboveAvg ? "border-l-emerald-500" : exam.deltaFromAverage >= -5 ? "border-l-amber-500" : "border-l-red-500";
             const isSelected = selectedExamId === exam.examId;
@@ -117,6 +121,30 @@ const ExamHistoryTimeline = memo(({ exams, onSelectExam, selectedExamId }: ExamH
               </motion.div>
             );
           })}
+
+          {/* Show more / count indicator */}
+          {sorted.length > BATCH_SIZE && (
+            <div className="pt-2 flex items-center justify-between">
+              <span className="text-[10px] text-muted-foreground">
+                Showing {Math.min(visibleCount, sorted.length)} of {sorted.length} exams
+              </span>
+              {hasMore ? (
+                <button
+                  onClick={() => setVisibleCount(c => Math.min(c + BATCH_SIZE, sorted.length))}
+                  className="text-xs font-medium text-[hsl(var(--donut-coral))] hover:underline min-h-[44px] px-2"
+                >
+                  Show {Math.min(BATCH_SIZE, sorted.length - visibleCount)} more
+                </button>
+              ) : (
+                <button
+                  onClick={() => setVisibleCount(BATCH_SIZE)}
+                  className="text-xs font-medium text-muted-foreground hover:underline min-h-[44px] px-2"
+                >
+                  Collapse
+                </button>
+              )}
+            </div>
+          )}
         </div>
       </motion.div>
     </TooltipProvider>

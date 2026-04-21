@@ -224,8 +224,11 @@ export function getExamsWithContext(): ExamWithContext[] {
     const profile = getStudentBatchProfile(CURRENT_STUDENT_ID, CURRENT_BATCH_ID);
     const batchExams = getBatchExamHistory(CURRENT_BATCH_ID);
 
+    // Pre-build Map for O(1) lookup
+    const batchExamMap = new Map(batchExams.map(be => [be.examId, be]));
+
     return profile.examHistory.map(exam => {
-      const batchExam = batchExams.find(be => be.examId === exam.examId);
+      const batchExam = batchExamMap.get(exam.examId);
       const classAvg = batchExam?.classAverage 
         ? Math.round((batchExam.classAverage / batchExam.totalMarks) * 100) 
         : 55;

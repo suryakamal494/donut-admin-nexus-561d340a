@@ -17,10 +17,9 @@ const StreakCalendar = ({ currentStreak, longestStreak, activeDays }: StreakCale
   // Get the day of week the month starts on (0 = Sunday)
   const startDayOfWeek = monthStart.getDay();
   
-  // Check if a day is active
-  const isDayActive = (day: Date) => {
-    return activeDays.some(activeDay => isSameDay(activeDay, day));
-  };
+  // Pre-build Set for O(1) active day lookup
+  const activeDaySet = new Set(activeDays.map(d => format(d, 'yyyy-MM-dd')));
+  const isDayActive = (day: Date) => activeDaySet.has(format(day, 'yyyy-MM-dd'));
 
   const weekDays = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 
