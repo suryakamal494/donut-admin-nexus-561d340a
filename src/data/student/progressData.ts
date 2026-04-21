@@ -174,10 +174,10 @@ export function getStudentOverview(): StudentOverview {
 
 export function getSubjectSummaries(): SubjectSummary[] {
   return cached("subjects", () => {
-    return SUBJECT_CONFIGS.map(cfg => {
-      // Use the current student with the batch — all subjects use the same student
-      // but we seed variation by passing a subject-specific batch variant
-      const profile = getStudentBatchProfile(CURRENT_STUDENT_ID, cfg.batchId);
+    return SUBJECT_CONFIGS.map((cfg, idx) => {
+      // Use a different student ID per subject to get varied data
+      const studentId = `student-${cfg.batchId}-${idx}`;
+      const profile = getStudentBatchProfile(studentId, cfg.batchId);
       const chaptersStrong = profile.chapterMastery.filter(c => c.status === "strong").length;
       const chaptersWeak = profile.chapterMastery.filter(c => c.status === "weak").length;
 

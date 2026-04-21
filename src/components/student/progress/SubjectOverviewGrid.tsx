@@ -1,6 +1,6 @@
 import { memo } from "react";
 import { motion } from "framer-motion";
-import { TrendingUp, TrendingDown, Minus, Atom, Calculator, FlaskConical, Leaf, BookOpen, Languages, Globe, Laptop } from "lucide-react";
+import { TrendingUp, TrendingDown, Minus, Atom, Calculator, FlaskConical, Leaf, BookOpen, Languages, Globe, Laptop, AlertTriangle } from "lucide-react";
 import type { SubjectSummary } from "@/data/student/progressData";
 
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -45,31 +45,54 @@ const SubjectOverviewGrid = memo(({ subjects, onSelect, selectedId }: SubjectOve
               transition={{ delay: 0.2 + i * 0.05 }}
               onClick={() => onSelect(subject.subjectId)}
               className={`
-              p-3.5 rounded-xl border transition-all text-left
+              p-3 rounded-xl border transition-all text-left
                 ${isSelected 
                   ? 'border-[hsl(var(--donut-coral))] bg-gradient-to-br from-[hsl(var(--donut-coral))]/5 to-[hsl(var(--donut-orange))]/5 shadow-md' 
                   : 'border-white/50 bg-white/50 hover:bg-white/80 hover:shadow-sm'
                 }
               `}
             >
-              <div className="flex items-center gap-2 mb-2">
-                <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${subject.color}15` }}>
-                  <Icon className="w-4 h-4" style={{ color: subject.color }} />
+              {/* Row 1: Icon + Name + Trend */}
+              <div className="flex items-center gap-2 mb-1.5">
+                <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0" style={{ backgroundColor: `${subject.color}15` }}>
+                  <Icon className="w-3.5 h-3.5" style={{ color: subject.color }} />
                 </div>
-                <span className="text-xs font-semibold text-foreground truncate">{subject.subjectName}</span>
+                <span className="text-xs font-semibold text-foreground truncate flex-1">{subject.subjectName}</span>
+                <div className={`shrink-0 ${trendColor}`}>
+                  <TrendIcon className="w-3.5 h-3.5" />
+                </div>
               </div>
 
+              {/* Row 2: Chapter progress bar */}
+              <div className="mb-1.5">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-[10px] text-muted-foreground">Chapters</span>
+                  <span className="text-[10px] font-medium text-foreground">{subject.chaptersStrong}/{subject.chaptersTotal}</span>
+                </div>
+                <div className="w-full h-1.5 rounded-full bg-muted/40 overflow-hidden">
+                  <div
+                    className="h-full rounded-full transition-all"
+                    style={{
+                      width: `${subject.chaptersTotal > 0 ? (subject.chaptersStrong / subject.chaptersTotal) * 100 : 0}%`,
+                      backgroundColor: subject.color,
+                    }}
+                  />
+                </div>
+              </div>
+
+              {/* Row 3: Accuracy + Weak topics */}
               <div className="flex items-center justify-between">
                 <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${accColor}`}>
                   {subject.accuracy}%
                 </span>
-                <div className={`flex items-center gap-0.5 ${trendColor}`}>
-                  <TrendIcon className="w-3 h-3" />
-                </div>
-              </div>
-
-              <div className="mt-2 text-[10px] text-muted-foreground text-right">
-                <span>{subject.chaptersStrong}/{subject.chaptersTotal} strong</span>
+                {subject.weakTopicCount > 0 ? (
+                  <span className="text-[10px] font-medium text-red-500 flex items-center gap-0.5">
+                    <AlertTriangle className="w-2.5 h-2.5" />
+                    {subject.weakTopicCount} weak
+                  </span>
+                ) : (
+                  <span className="text-[10px] font-medium text-emerald-500">All clear</span>
+                )}
               </div>
             </motion.button>
           );
