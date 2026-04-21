@@ -111,6 +111,10 @@ const SUBJECT_CONFIGS = [
   { id: "math", name: "Mathematics", icon: "Calculator", color: "#3B82F6", batchId: "batch-10a" },
   { id: "chemistry", name: "Chemistry", icon: "FlaskConical", color: "#10B981", batchId: "batch-10a" },
   { id: "biology", name: "Biology", icon: "Leaf", color: "#F59E0B", batchId: "batch-10a" },
+  { id: "english", name: "English", icon: "BookOpen", color: "#EC4899", batchId: "batch-10a" },
+  { id: "hindi", name: "Hindi", icon: "Languages", color: "#F97316", batchId: "batch-10a" },
+  { id: "social-science", name: "Social Science", icon: "Globe", color: "#06B6D4", batchId: "batch-10a" },
+  { id: "computer", name: "Computer Science", icon: "Laptop", color: "#6366F1", batchId: "batch-10a" },
 ];
 
 // ── Helpers ──
@@ -171,8 +175,9 @@ export function getStudentOverview(): StudentOverview {
 export function getSubjectSummaries(): SubjectSummary[] {
   return cached("subjects", () => {
     return SUBJECT_CONFIGS.map(cfg => {
-      const studentId = `student-${cfg.batchId}-${SUBJECT_CONFIGS.indexOf(cfg)}`;
-      const profile = getStudentBatchProfile(studentId, cfg.batchId);
+      // Use the current student with the batch — all subjects use the same student
+      // but we seed variation by passing a subject-specific batch variant
+      const profile = getStudentBatchProfile(CURRENT_STUDENT_ID, cfg.batchId);
       const chaptersStrong = profile.chapterMastery.filter(c => c.status === "strong").length;
       const chaptersWeak = profile.chapterMastery.filter(c => c.status === "weak").length;
 

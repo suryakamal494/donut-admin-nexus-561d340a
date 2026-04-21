@@ -1,10 +1,11 @@
 import { memo } from "react";
 import { motion } from "framer-motion";
-import { TrendingUp, TrendingDown, Minus, Atom, Calculator, FlaskConical, Leaf } from "lucide-react";
+import { TrendingUp, TrendingDown, Minus, Atom, Calculator, FlaskConical, Leaf, BookOpen, Languages, Globe, Laptop } from "lucide-react";
 import type { SubjectSummary } from "@/data/student/progressData";
 
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   Atom, Calculator, FlaskConical, Leaf,
+  BookOpen, Languages, Globe, Laptop,
 };
 
 interface SubjectOverviewGridProps {
@@ -23,8 +24,8 @@ const SubjectOverviewGrid = memo(({ subjects, onSelect, selectedId }: SubjectOve
     >
       <h3 className="text-sm font-medium text-muted-foreground mb-3">Subjects</h3>
 
-      {/* Horizontal scroll on mobile, 2-col grid on desktop */}
-      <div className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory lg:grid lg:grid-cols-2 lg:overflow-visible scrollbar-hide">
+      {/* Responsive grid: 2 cols mobile, 3 tablet, 4 desktop — scales for 2-10+ subjects */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
         {subjects.map((subject, i) => {
           const Icon = iconMap[subject.icon] || Atom;
           const TrendIcon = subject.trend === "up" ? TrendingUp : subject.trend === "down" ? TrendingDown : Minus;
@@ -44,7 +45,7 @@ const SubjectOverviewGrid = memo(({ subjects, onSelect, selectedId }: SubjectOve
               transition={{ delay: 0.2 + i * 0.05 }}
               onClick={() => onSelect(subject.subjectId)}
               className={`
-                snap-start min-w-[160px] lg:min-w-0 p-3.5 rounded-xl border transition-all text-left
+              p-3.5 rounded-xl border transition-all text-left
                 ${isSelected 
                   ? 'border-[hsl(var(--donut-coral))] bg-gradient-to-br from-[hsl(var(--donut-coral))]/5 to-[hsl(var(--donut-orange))]/5 shadow-md' 
                   : 'border-white/50 bg-white/50 hover:bg-white/80 hover:shadow-sm'
