@@ -8,15 +8,15 @@ interface ProgressHeroCardProps {
 
 const ProgressHeroCard = ({ data }: ProgressHeroCardProps) => {
   const circumference = 2 * Math.PI * 52;
-  const strokeDashoffset = circumference - (data.performanceIndex / 100) * circumference;
+  const strokeDashoffset = circumference - (data.overallAccuracy / 100) * circumference;
 
   const TrendIcon = data.trend === "up" ? TrendingUp : data.trend === "down" ? TrendingDown : Minus;
   const trendColor = data.trend === "up" ? "text-emerald-500" : data.trend === "down" ? "text-red-500" : "text-amber-500";
   const trendLabel = data.trend === "up" ? "Improving" : data.trend === "down" ? "Declining" : "Steady";
 
-  const piColor = data.performanceIndex >= 75 ? "#10B981" 
-    : data.performanceIndex >= 50 ? "#3B82F6" 
-    : data.performanceIndex >= 35 ? "#F59E0B" 
+  const piColor = data.overallAccuracy >= 75 ? "#10B981" 
+    : data.overallAccuracy >= 50 ? "#3B82F6" 
+    : data.overallAccuracy >= 35 ? "#F59E0B" 
     : "#EF4444";
 
   return (
@@ -43,8 +43,8 @@ const ProgressHeroCard = ({ data }: ProgressHeroCardProps) => {
             />
           </svg>
           <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <span className="text-2xl font-bold text-foreground">{data.performanceIndex}</span>
-            <span className="text-[10px] text-muted-foreground font-medium">PI Score</span>
+            <span className="text-2xl font-bold text-foreground">{data.overallAccuracy}%</span>
+            <span className="text-[10px] text-muted-foreground font-medium">Accuracy</span>
           </div>
         </div>
 
