@@ -1,39 +1,39 @@
 
-
-# Simplify Subject Cards on Overview Tab
+# Auto-Select Latest Exam on Exams Tab
 
 ## Problem
 
-The Overview tab reuses the same dense subject cards as the Subjects tab. With 8+ subjects in a 2-column grid, subject names get truncated to 1-2 characters ("P...", "M..."), and the chapter bars and weak-topic counts add clutter without value on a summary page.
+On the Exams tab, the right-side detail panel (PerExamStandingCard) is empty until the user clicks an exam. The latest exam should be pre-selected so the detail card is always visible.
 
 ## Solution
 
-Add a `compact` mode to `SubjectOverviewGrid`. The Overview tab passes `compact={true}`, the Subjects tab continues using the full card.
+In `Progress.tsx`, after `exams` are computed, auto-set `selectedExamId` to the most recent exam's ID when:
+- The exams array is loaded and non-empty
+- No exam is currently selected (`selectedExamId` is still `null`)
 
-### Compact card layout (Overview tab)
+Since `exams` are already sorted by date (newest first) in `ExamHistoryTimeline`, we sort once and pick the first entry.
 
-```text
-┌─────────────────┐
-│  [Icon]          │
-│  Physics    72%  │
-└─────────────────┘
+## Implementation
+
+### `src/pages/student/Progress.tsx`
+
+Add a `useEffect` after the `exams` memo:
+
+```typescript
+useEffect(() => {
+  if (exams.length > 0 && !selectedExamId) {
+    const latest = [...exams].sort(
+      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+    );
+    setSelectedExamId(latest[0].examId);
+  }
+}, [exams]);
 ```
 
-- Icon centered or left-aligned, slightly larger (w-8 h-8)
-- Full subject name visible (no truncation — use `text-wrap` and allow 2 lines)
-- Accuracy badge below or beside the name
-- No chapter bar, no weak topics, no trend icon
-- Grid: `grid-cols-3 sm:grid-cols-4 lg:grid-cols-5` — smaller cards, more columns since each card is tiny
-- Tapping still navigates to the Subjects tab deep-dive
-
-### Detailed card (Subjects tab) — unchanged
-
-Keeps the current 3-row layout: icon+name+trend, chapter progress bar, accuracy+weak topics.
+This ensures the latest exam is always pre-selected when the tab loads, and the user can still switch to any other exam by tapping.
 
 ## Files changed
 
 | File | Change |
 |------|--------|
-| `src/components/student/progress/SubjectOverviewGrid.tsx` | Add `compact?: boolean` prop. When `true`, render minimal card (icon, name, accuracy). When `false`/absent, render current detailed card. |
-| `src/pages/student/Progress.tsx` | Pass `compact` to the Overview tab's `SubjectOverviewGrid` instance (line 137) |
-
+| `src/pages/student/Progress.tsx` | Add `useEffect` to auto-select latest exam when exams load |
