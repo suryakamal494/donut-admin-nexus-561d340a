@@ -1,51 +1,39 @@
 
 
-# Redesign Subject Overview Cards — Compact & Information-Dense
+# Simplify Subject Cards on Overview Tab
 
 ## Problem
 
-Each subject card is ~70% white space. Only 3 data points are shown (accuracy, trend, chapters strong) despite having 7+ metrics available in `SubjectSummary`. Additionally, all cards show identical data (54%, 0/10) due to a data seeding issue.
+The Overview tab reuses the same dense subject cards as the Subjects tab. With 8+ subjects in a 2-column grid, subject names get truncated to 1-2 characters ("P...", "M..."), and the chapter bars and weak-topic counts add clutter without value on a summary page.
 
-## What's available in `SubjectSummary` but not displayed
+## Solution
 
-- `chaptersWeak` — number of weak chapters
-- `weakTopicCount` — count of topics needing attention
-- `chaptersTotal` — total chapters (denominator for a progress bar)
-- `trend` — shown as icon only, no label
+Add a `compact` mode to `SubjectOverviewGrid`. The Overview tab passes `compact={true}`, the Subjects tab continues using the full card.
 
-## Design: Compact Info-Dense Card
-
-Each card will be redesigned with zero wasted space:
+### Compact card layout (Overview tab)
 
 ```text
-┌──────────────────────────┐
-│ [Icon] Physics        ↑  │  ← icon + name + trend icon (row)
-│ ████████░░░░  6/10 ch    │  ← thin chapter progress bar + count
-│ 72%  acc   3 weak topics │  ← accuracy badge + weak topic count
-└──────────────────────────┘
+┌─────────────────┐
+│  [Icon]          │
+│  Physics    72%  │
+└─────────────────┘
 ```
 
-Key changes:
-- **Single-row header**: Icon, subject name, and trend icon all in one line (saves vertical space)
-- **Chapter progress bar**: Thin horizontal bar showing `chaptersStrong / chaptersTotal` visually — replaces the text-only "0/10 strong"
-- **Bottom row**: Accuracy badge on left, weak topic count on right (red-tinted if > 0, green if 0)
-- **Tighter padding**: Reduce from `p-3.5` to `p-3`, remove `mb-2` / `mt-2` gaps
-- **No blank zones**: Every pixel carries data
+- Icon centered or left-aligned, slightly larger (w-8 h-8)
+- Full subject name visible (no truncation — use `text-wrap` and allow 2 lines)
+- Accuracy badge below or beside the name
+- No chapter bar, no weak topics, no trend icon
+- Grid: `grid-cols-3 sm:grid-cols-4 lg:grid-cols-5` — smaller cards, more columns since each card is tiny
+- Tapping still navigates to the Subjects tab deep-dive
 
-## Data Fix
+### Detailed card (Subjects tab) — unchanged
 
-The "54% everywhere, 0/10 strong" issue comes from `getSubjectSummaries()` in `progressData.ts`. Each subject uses `getStudentBatchProfile(CURRENT_STUDENT_ID, cfg.batchId)` but the batch IDs may not produce varied data. Will verify and fix the seed variation so each subject shows distinct accuracy, trend, and chapter counts.
+Keeps the current 3-row layout: icon+name+trend, chapter progress bar, accuracy+weak topics.
 
 ## Files changed
 
 | File | Change |
 |------|--------|
-| `src/components/student/progress/SubjectOverviewGrid.tsx` | Redesign card layout: single-row header, progress bar, compact bottom stats row |
-| `src/data/student/progressData.ts` | Fix subject data variation so each subject has distinct metrics |
-
-## Mobile-first
-
-- Cards remain `grid-cols-2` on mobile (320px) — the compact design fits perfectly in narrow columns
-- Progress bar scales with card width
-- Text stays at `text-[10px]` and `text-xs` for density
+| `src/components/student/progress/SubjectOverviewGrid.tsx` | Add `compact?: boolean` prop. When `true`, render minimal card (icon, name, accuracy). When `false`/absent, render current detailed card. |
+| `src/pages/student/Progress.tsx` | Pass `compact` to the Overview tab's `SubjectOverviewGrid` instance (line 137) |
 
