@@ -6,6 +6,7 @@ import ChapterMasteryList from "./ChapterMasteryList";
 import WeakTopicsAlert from "./WeakTopicsAlert";
 import DifficultyBreakdown from "./DifficultyBreakdown";
 import ChapterDetailSheet from "./ChapterDetailSheet";
+import SubjectBatchStanding from "./SubjectBatchStanding";
 
 interface SubjectDeepDiveProps {
   subjectName: string;
@@ -81,6 +82,17 @@ const SubjectDeepDive = ({ subjectName, detail, onBack }: SubjectDeepDiveProps) 
 
       {/* Difficulty Breakdown */}
       <DifficultyBreakdown data={profile.difficultyBreakdown} />
+
+      {/* Subject Batch Standing */}
+      <SubjectBatchStanding
+        subjectName={subjectName}
+        accuracy={profile.overallAccuracy}
+        batchAverage={batchAverage}
+        topperAccuracy={batchAverage + 15 > 100 ? 100 : batchAverage + 15}
+        rank={rank}
+        totalStudents={totalStudents}
+        percentile={percentile}
+      />
 
       {/* Chapter Detail Sheet */}
       <AnimatePresence>
