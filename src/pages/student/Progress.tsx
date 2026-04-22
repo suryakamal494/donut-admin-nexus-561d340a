@@ -141,7 +141,7 @@ const StudentProgress = () => {
 
       {/* Secondary Tags */}
       {overview.secondaryTags.length > 0 && (
-        <div className="mb-4">
+        <div className="mb-2">
           <SecondaryTagsPills tags={overview.secondaryTags} />
         </div>
       )}
@@ -189,7 +189,6 @@ const StudentProgress = () => {
               <SubjectOverviewGrid
                 subjects={subjects}
                 onSelect={handleSubjectSelect}
-                compact
               />
             </div>
             <div className="space-y-3 sm:space-y-4">
@@ -224,7 +223,7 @@ const StudentProgress = () => {
                   onSelect={setSelectedSubjectIdRaw}
                   selectedId={selectedSubjectId || undefined}
                 />
-                <p className="text-sm text-muted-foreground text-center py-8">
+                <p className="text-sm text-muted-foreground text-center py-3">
                   Tap a subject to see detailed analytics
                 </p>
               </div>
@@ -239,7 +238,7 @@ const StudentProgress = () => {
                 <ExamHistoryTimeline exams={exams} onSelectExam={setSelectedExamIdRaw} selectedExamId={selectedExamId} />
               </Suspense>
             </div>
-            <div className="space-y-3 sm:space-y-4">
+            <div className="space-y-3 sm:space-y-4 max-h-[70vh] overflow-y-auto">
               <Suspense fallback={<CardSkeleton />}>
                 <PerExamStandingCard exam={selectedExam} onClose={() => setSelectedExamIdRaw(null)} />
               </Suspense>
@@ -267,6 +266,9 @@ const StudentProgress = () => {
             <div className="space-y-3 sm:space-y-4">
               <Suspense fallback={<RadarSkeleton />}>
                 <SubjectRadarChart subjects={subjects} />
+              </Suspense>
+              <Suspense fallback={<ChartSkeleton />}>
+                {difficultyData && <DifficultyOverview data={difficultyData} />}
               </Suspense>
               <Suspense fallback={<ChartSkeleton />}>
                 {weeklyActivity && <WeeklyActivityChart
