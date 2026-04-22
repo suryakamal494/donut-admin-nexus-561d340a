@@ -18,8 +18,14 @@ import {
   fetchArtifacts,
   updateArtifactContent,
 } from "./api";
-import type { StudentThread, StudentMessage, StudentRoutine, StudentArtifact, ClarificationContent } from "./types";
+import {
+  fetchTopicMastery,
+  fetchNotifications,
+  dismissNotification,
+} from "./api";
+import type { StudentThread, StudentMessage, StudentRoutine, StudentArtifact, TopicMastery, StudentNotification } from "./types";
 import { DEFAULT_ROUTINE_KEY } from "./types";
+import { buildFullStudentContext } from "./context";
 
 const STUDENT_ID = studentProfile.id;
 
@@ -41,6 +47,10 @@ const StudentCopilotPage: React.FC = () => {
 
   // Chat hook
   const { streaming, streamedText, pendingArtifact, send } = useStudentChat();
+
+  // Mastery & notifications state
+  const [mastery, setMastery] = useState<TopicMastery[]>([]);
+  const [notifications, setNotifications] = useState<StudentNotification[]>([]);
 
   // Practice hook
   const { practiceStates, startPractice, answerQuestion, nextQuestion, resetPractice } =
@@ -67,14 +77,18 @@ const StudentCopilotPage: React.FC = () => {
   // Initial data load
   useEffect(() => {
     (async () => {
-      const [rts, ths, arts] = await Promise.all([
+      const [rts, ths, arts, mast, notifs] = await Promise.all([
         fetchStudentRoutines(),
         fetchThreads(STUDENT_ID),
         fetchArtifacts(STUDENT_ID),
+        fetchTopicMastery(STUDENT_ID),
+        fetchNotifications(STUDENT_ID),
       ]);
       setRoutines(rts);
       setThreads(ths);
       setArtifacts(arts);
+      setMastery(mast);
+      setNotifications(notifs);
     })();
   }, []);
 
@@ -90,6 +104,9 @@ const StudentCopilotPage: React.FC = () => {
     })();
   }, [currentThreadId]);
 
+  // Build full student context with mastery data
+  const studentContext = useMemo(() => buildFullStudentContext(mastery), [mastery]);
+
   // Keyboard shortcut: Cmd+K → new chat
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -101,6 +118,34 @@ const StudentCopilotPage: React.FC = () => {
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
   }, [routines]);
+
+  // Refresh mastery after practice completes
+  const refreshMastery = useCallback(async () => {
+    const mast = await fetchTopicMastery(STUDENT_ID);
+    setMastery(mast);
+  }, []);
+
+  const handleDismissNotification = useCallback(async (notifId: string) => {
+    await dismissNotification(notifId);
+    setNotifications((prev) => prev.filter((n) => n.id !== notifId));
+  }, []);
+
+  const handleNotificationAction = useCallback((notif: StudentNotification) => {
+    // Route to appropriate routine based on notification type
+    const routineMap: Record<string, string> = {
+      homework: "s_practice",
+      exam_reminder: "s_exam_prep",
+      chapter_today: "s_doubt",
+      debrief_available: "s_progress",
+    };
+    const routineKey = routineMap[notif.type] ?? DEFAULT_ROUTINE_KEY;
+    handleNewThread(routineKey);
+    // Send the notification as initial prompt
+    setTimeout(() => {
+      const prompt = notif.body ?? notif.title;
+      handleSend(prompt);
+    }, 300);
+  }, [handleNewThread, handleSend]);
 
   const handleNewThread = useCallback(
     async (routineKey?: string) => {
@@ -146,6 +191,7 @@ const StudentCopilotPage: React.FC = () => {
           routine: routine ?? null,
           studentId: STUDENT_ID,
           existingMessages: [],
+          extraSystem: studentContext,
         });
 
         // Refresh messages from DB
@@ -182,6 +228,7 @@ const StudentCopilotPage: React.FC = () => {
         routine: currentRoutine,
         studentId: STUDENT_ID,
         existingMessages: messages,
+        extraSystem: studentContext,
       });
 
       // Refresh messages
@@ -192,7 +239,7 @@ const StudentCopilotPage: React.FC = () => {
         setArtifacts((prev) => [...result.artifacts, ...prev]);
       }
     },
-    [currentThread, currentRoutine, messages, routines, subjectFilter, send]
+    [currentThread, currentRoutine, messages, routines, subjectFilter, send, studentContext]
   );
 
   // Auto-start practice when a new practice_session artifact appears
@@ -205,7 +252,19 @@ const StudentCopilotPage: React.FC = () => {
         }
       }
     }
-  }, [artifacts, practiceStates, startPractice]);
+    // Refresh mastery when practice completes
+    for (const [artId, state] of Object.entries(practiceStates)) {
+      const art = artifacts.find((a) => a.id === artId);
+      if (art && state && typeof state === "object" && "results" in state) {
+        const results = (state as any).results;
+        const content = art.content as any;
+        if (results && content?.questions && results.length >= content.questions.length) {
+          refreshMastery();
+          break;
+        }
+      }
+    }
+  }, [artifacts, practiceStates, startPractice, refreshMastery]);
 
   const handleClarificationSubmit = useCallback(
     async (artifactId: string, answers: Record<string, string | string[]>) => {
