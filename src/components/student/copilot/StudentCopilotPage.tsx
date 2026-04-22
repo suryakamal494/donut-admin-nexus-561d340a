@@ -125,28 +125,6 @@ const StudentCopilotPage: React.FC = () => {
     setMastery(mast);
   }, []);
 
-  const handleDismissNotification = useCallback(async (notifId: string) => {
-    await dismissNotification(notifId);
-    setNotifications((prev) => prev.filter((n) => n.id !== notifId));
-  }, []);
-
-  const handleNotificationAction = useCallback((notif: StudentNotification) => {
-    // Route to appropriate routine based on notification type
-    const routineMap: Record<string, string> = {
-      homework: "s_practice",
-      exam_reminder: "s_exam_prep",
-      chapter_today: "s_doubt",
-      debrief_available: "s_progress",
-    };
-    const routineKey = routineMap[notif.type] ?? DEFAULT_ROUTINE_KEY;
-    handleNewThread(routineKey);
-    // Send the notification as initial prompt
-    setTimeout(() => {
-      const prompt = notif.body ?? notif.title;
-      handleSend(prompt);
-    }, 300);
-  }, [handleNewThread, handleSend]);
-
   const handleNewThread = useCallback(
     async (routineKey?: string) => {
       const key = routineKey ?? DEFAULT_ROUTINE_KEY;
