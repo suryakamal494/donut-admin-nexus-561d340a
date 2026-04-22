@@ -95,8 +95,8 @@ export function useStudentChat(): UseStudentChatReturn {
           student_id: studentId,
           routine_key: routine?.key ?? "s_doubt",
           messages: apiMessages,
-          student_context: studentContext,
-          extra_system: fullExtraSystem || undefined,
+          student_context: fullExtraSystem,
+          extra_system: undefined,
         }),
         signal: controller.signal,
       });
