@@ -1,5 +1,5 @@
 // Comprehensive mock data for Student Copilot seeding
-// Matches exact content interfaces consumed by all 9 artifact view components
+// All IDs are valid UUIDs for database compatibility
 
 const STUDENT_ID = "student-001";
 
@@ -9,9 +9,9 @@ export const MOCK_ROUTINES = [
     key: "s_doubt",
     label: "Ask a Doubt",
     icon: "MessageSquare",
-    description: "Get instant explanations for any concept or problem",
-    default_system_prompt: "You are a friendly CBSE Class 10 tutor. Explain concepts step-by-step with examples. Use LaTeX for math.",
-    quick_start_chips: ["Explain Newton's Third Law", "What is pH scale?", "Solve this quadratic equation", "Difference between mitosis and meiosis"],
+    description: "Get step-by-step help with any concept or problem",
+    default_system_prompt: "You are a patient tutor. Help the student understand concepts step by step.",
+    quick_start_chips: ["Explain Newton's laws of motion", "What is the mole concept?", "Help me with integration by parts", "Explain photosynthesis"],
     audience: "student",
     is_active: true,
     sort_order: 0,
@@ -20,9 +20,9 @@ export const MOCK_ROUTINES = [
     key: "s_practice",
     label: "Practice",
     icon: "Dumbbell",
-    description: "Practice questions on any topic with instant feedback",
-    default_system_prompt: "Generate practice questions for CBSE Class 10. Include explanations for each answer.",
-    quick_start_chips: ["5 MCQs on Optics", "Practice Trigonometry", "Chemical Reactions quiz", "Test me on Heredity"],
+    description: "Adaptive practice sessions calibrated to your weak areas",
+    default_system_prompt: "You are a practice coach. Generate challenging questions calibrated to the student's level.",
+    quick_start_chips: ["10 MCQs on Kinematics", "Quick quiz on organic chemistry", "Practice integration problems", "Test me on cell biology"],
     audience: "student",
     is_active: true,
     sort_order: 1,
@@ -31,9 +31,9 @@ export const MOCK_ROUTINES = [
     key: "s_exam_prep",
     label: "Exam Prep",
     icon: "Target",
-    description: "Set exam targets and get personalized preparation plans",
-    default_system_prompt: "Help the student prepare for upcoming exams. Create target trackers and study plans.",
-    quick_start_chips: ["Prepare for Unit Test", "JEE Mains plan", "Board exam strategy"],
+    description: "Set targets and get personalized study plans",
+    default_system_prompt: "You are an exam preparation strategist. Help the student plan and track their preparation.",
+    quick_start_chips: ["I have JEE in 45 days", "Set target score for boards", "Create a study plan for physics"],
     audience: "student",
     is_active: true,
     sort_order: 2,
@@ -42,9 +42,9 @@ export const MOCK_ROUTINES = [
     key: "s_roadmap",
     label: "Study Roadmap",
     icon: "Map",
-    description: "Create structured study plans for any topic or exam",
-    default_system_prompt: "Create detailed study plans with daily tasks, durations, and resources.",
-    quick_start_chips: ["5-day Physics plan", "Weekly Math revision", "Chapter-wise Chemistry plan"],
+    description: "Get a day-by-day study plan for any topic or exam",
+    default_system_prompt: "You create structured study roadmaps. Build detailed day-by-day plans.",
+    quick_start_chips: ["7-day plan for Thermodynamics", "Plan for organic chemistry in 2 weeks", "Revision roadmap for Math boards"],
     audience: "student",
     is_active: true,
     sort_order: 3,
@@ -53,33 +53,37 @@ export const MOCK_ROUTINES = [
     key: "s_progress",
     label: "My Progress",
     icon: "TrendingUp",
-    description: "View your mastery map, progress reports, and test analysis",
-    default_system_prompt: "Analyze the student's performance data and provide insights and recommendations.",
-    quick_start_chips: ["Show my mastery map", "Weekly progress report", "Analyze last test"],
+    description: "See your mastery map and track improvement",
+    default_system_prompt: "You are a progress analyst. Show the student where they stand and what to focus on next.",
+    quick_start_chips: ["How am I doing in Physics?", "Show my weak topics", "My overall progress report"],
     audience: "student",
     is_active: true,
     sort_order: 4,
   },
 ];
 
-// ─── Thread IDs (deterministic for seeding) ───
-const T1 = "t-mock-doubt-001";
-const T2 = "t-mock-doubt-002";
-const T3 = "t-mock-practice-001";
-const T4 = "t-mock-exam-001";
-const T5 = "t-mock-roadmap-001";
-const T6 = "t-mock-progress-001";
+// ─── Deterministic UUIDs for threads ───
+const T1 = "a0a0a0a0-1111-4000-8000-000000000001";
+const T2 = "a0a0a0a0-1111-4000-8000-000000000002";
+const T3 = "a0a0a0a0-1111-4000-8000-000000000003";
+const T4 = "a0a0a0a0-1111-4000-8000-000000000004";
+const T5 = "a0a0a0a0-1111-4000-8000-000000000005";
+const T6 = "a0a0a0a0-1111-4000-8000-000000000006";
 
-// ─── Artifact IDs ───
-const A1 = "a-mock-concept-001";
-const A2 = "a-mock-solution-001";
-const A3 = "a-mock-formula-001";
-const A4 = "a-mock-practice-001";
-const A5 = "a-mock-studyplan-001";
-const A6 = "a-mock-target-001";
-const A7 = "a-mock-mastery-001";
-const A8 = "a-mock-progress-001";
-const A9 = "a-mock-debrief-001";
+// ─── Deterministic UUIDs for artifacts ───
+const A1 = "b0b0b0b0-2222-4000-8000-000000000001";
+const A2 = "b0b0b0b0-2222-4000-8000-000000000002";
+const A3 = "b0b0b0b0-2222-4000-8000-000000000003";
+const A4 = "b0b0b0b0-2222-4000-8000-000000000004";
+const A5 = "b0b0b0b0-2222-4000-8000-000000000005";
+const A6 = "b0b0b0b0-2222-4000-8000-000000000006";
+const A7 = "b0b0b0b0-2222-4000-8000-000000000007";
+const A8 = "b0b0b0b0-2222-4000-8000-000000000008";
+const A9 = "b0b0b0b0-2222-4000-8000-000000000009";
+
+// ─── Exam UUIDs ───
+const E1 = "e0e0e0e0-3333-4000-8000-000000000001";
+const E2 = "e0e0e0e0-3333-4000-8000-000000000002";
 
 export const MOCK_THREADS = [
   { id: T1, student_id: STUDENT_ID, routine_key: "s_doubt", title: "Newton's Laws of Motion", subject: "Physics", last_message_at: new Date(Date.now() - 3600000).toISOString(), created_at: new Date(Date.now() - 7200000).toISOString() },
@@ -119,7 +123,6 @@ export const MOCK_MESSAGES = [
 ];
 
 // ─── Artifacts ───
-
 export const MOCK_ARTIFACTS = [
   {
     id: A1, student_id: STUDENT_ID, thread_id: T1, type: "concept_explainer",
@@ -251,19 +254,24 @@ export const MOCK_ARTIFACTS = [
       title: "My Mastery Map",
       subjects: [
         { subject: "Physics", overall_accuracy: 74, topics: [
-          { topic: "Motion", accuracy: 85, attempts: 32, band: "mastery_ready" },
-          { topic: "Force & Laws", accuracy: 78, attempts: 28, band: "stable" },
-          { topic: "Gravitation", accuracy: 62, attempts: 15, band: "reinforcement" },
-          { topic: "Work & Energy", accuracy: 45, attempts: 8, band: "foundational_risk" },
+          { topic: "Kinematics", accuracy: 75, attempts: 4, band: "stable" },
+          { topic: "Newton's Laws", accuracy: 80, attempts: 5, band: "mastery_ready" },
         ]},
-        { subject: "Chemistry", overall_accuracy: 65, topics: [
-          { topic: "Chemical Reactions", accuracy: 72, attempts: 25, band: "stable" },
-          { topic: "Acids, Bases & Salts", accuracy: 68, attempts: 20, band: "reinforcement" },
-          { topic: "Metals & Non-metals", accuracy: 55, attempts: 12, band: "foundational_risk" },
+        { subject: "Chemistry", overall_accuracy: 50, topics: [
+          { topic: "Mole Concept", accuracy: 33, attempts: 3, band: "foundational_risk" },
+          { topic: "Atomic Structure", accuracy: 100, attempts: 4, band: "mastery_ready" },
+        ]},
+        { subject: "Math", overall_accuracy: 57, topics: [
+          { topic: "Integration", accuracy: 33, attempts: 3, band: "foundational_risk" },
+          { topic: "Differentiation", accuracy: 100, attempts: 4, band: "mastery_ready" },
+        ]},
+        { subject: "Biology", overall_accuracy: 83, topics: [
+          { topic: "Cell Division", accuracy: 67, attempts: 3, band: "stable" },
+          { topic: "Photosynthesis", accuracy: 100, attempts: 4, band: "mastery_ready" },
         ]},
       ],
-      strongest: ["Motion", "Chemical Reactions"],
-      weakest: ["Work & Energy", "Metals & Non-metals"],
+      strongest: ["Newton's Laws", "Atomic Structure", "Differentiation", "Photosynthesis"],
+      weakest: ["Integration", "Mole Concept"],
       cold_topics: ["Electricity", "Magnetic Effects", "Carbon Compounds"],
     },
   },
@@ -276,23 +284,23 @@ export const MOCK_ARTIFACTS = [
       period: "Apr 14 – Apr 21",
       overall_accuracy: 72,
       overall_trend: "up",
-      total_attempts: 156,
+      total_attempts: 30,
       subjects: [
-        { subject: "Physics", accuracy: 78, trend: "up", total_attempts: 65, mastery_topics: 2, weak_topics: 1 },
-        { subject: "Chemistry", accuracy: 65, trend: "flat", total_attempts: 45, mastery_topics: 1, weak_topics: 2 },
-        { subject: "Math", accuracy: 71, trend: "up", total_attempts: 46, mastery_topics: 1, weak_topics: 1 },
+        { subject: "Physics", accuracy: 78, trend: "up", total_attempts: 9, mastery_topics: 1, weak_topics: 0 },
+        { subject: "Chemistry", accuracy: 57, trend: "flat", total_attempts: 7, mastery_topics: 1, weak_topics: 1 },
+        { subject: "Math", accuracy: 57, trend: "up", total_attempts: 7, mastery_topics: 1, weak_topics: 1 },
+        { subject: "Biology", accuracy: 86, trend: "up", total_attempts: 7, mastery_topics: 1, weak_topics: 0 },
       ],
       weekly_activity: [
-        { week: "W1", attempts: 28, accuracy: 65 },
-        { week: "W2", attempts: 35, accuracy: 68 },
-        { week: "W3", attempts: 42, accuracy: 71 },
-        { week: "W4", attempts: 51, accuracy: 72 },
+        { week: "W1", attempts: 8, accuracy: 63 },
+        { week: "W2", attempts: 10, accuracy: 70 },
+        { week: "W3", attempts: 12, accuracy: 75 },
       ],
       recommendations: [
-        "Focus on Chemistry — Metals & Non-metals needs 15+ more practice attempts",
-        "Your Physics is improving steadily — keep practicing Work & Energy",
+        "Focus on Chemistry — Mole Concept needs more practice (only 33% accuracy)",
+        "Math Integration is weak at 33% — solve 10 more problems",
+        "Biology is your strongest area — keep it up!",
         "Try timed practice sessions to improve speed",
-        "Review incorrect answers from last week's practice",
       ],
     },
   },
@@ -334,31 +342,104 @@ export const MOCK_ARTIFACTS = [
 export const MOCK_NOTIFICATIONS = [
   {
     student_id: STUDENT_ID,
-    type: "homework",
-    title: "Physics Practice Due",
-    body: "You have 5 practice questions on Gravitation due today. Complete them to maintain your streak!",
+    type: "homework_pending",
+    title: "Kinematics Problem Set",
+    body: "Chapter 4 problems 1-15, due tomorrow",
     subject: "Physics",
-    priority: 2,
-    dismissed: false,
-    acted_on: false,
-  },
-  {
-    student_id: STUDENT_ID,
-    type: "exam_reminder",
-    title: "Unit Test 3 in 7 days",
-    body: "Your Unit Test 3 is coming up. Start with the target tracker to identify focus areas.",
     priority: 3,
     dismissed: false,
     acted_on: false,
   },
   {
     student_id: STUDENT_ID,
-    type: "chapter_today",
-    title: "Today's Chapter: Work & Energy",
-    body: "Your class is covering Work & Energy today. Ask doubts to prepare!",
+    type: "exam_upcoming",
+    title: "Physics Unit Test — Mechanics",
+    body: "Covers Chapters 3-5, in 5 days",
     subject: "Physics",
+    priority: 5,
+    dismissed: false,
+    acted_on: false,
+  },
+  {
+    student_id: STUDENT_ID,
+    type: "study_material",
+    title: "Cell Division PPT",
+    body: "Teacher shared new material on Mitosis & Meiosis",
+    subject: "Biology",
+    priority: 2,
+    dismissed: false,
+    acted_on: false,
+  },
+  {
+    student_id: STUDENT_ID,
+    type: "debrief_available",
+    title: "Review: Chemistry Practice #3",
+    body: "You scored 6/10 — let's see what to improve",
+    subject: "Chemistry",
     priority: 1,
     dismissed: false,
     acted_on: false,
+  },
+];
+
+// ─── Student Attempts (for mastery pipeline) ───
+export const MOCK_ATTEMPTS = [
+  // Physics — Kinematics (3/4 correct = 75%)
+  { student_id: STUDENT_ID, subject: "Physics", topic: "Kinematics", question_type: "mcq", correct: true, source: "practice" },
+  { student_id: STUDENT_ID, subject: "Physics", topic: "Kinematics", question_type: "mcq", correct: true, source: "practice" },
+  { student_id: STUDENT_ID, subject: "Physics", topic: "Kinematics", question_type: "short", correct: false, source: "practice" },
+  { student_id: STUDENT_ID, subject: "Physics", topic: "Kinematics", question_type: "mcq", correct: true, source: "practice" },
+  // Physics — Newton's Laws (4/5 correct = 80%)
+  { student_id: STUDENT_ID, subject: "Physics", topic: "Newton's Laws", question_type: "mcq", correct: true, source: "practice" },
+  { student_id: STUDENT_ID, subject: "Physics", topic: "Newton's Laws", question_type: "short", correct: true, source: "practice" },
+  { student_id: STUDENT_ID, subject: "Physics", topic: "Newton's Laws", question_type: "mcq", correct: false, source: "practice" },
+  { student_id: STUDENT_ID, subject: "Physics", topic: "Newton's Laws", question_type: "mcq", correct: true, source: "practice" },
+  { student_id: STUDENT_ID, subject: "Physics", topic: "Newton's Laws", question_type: "short", correct: true, source: "practice" },
+  // Chemistry — Mole Concept (1/3 correct = 33%)
+  { student_id: STUDENT_ID, subject: "Chemistry", topic: "Mole Concept", question_type: "mcq", correct: false, source: "practice" },
+  { student_id: STUDENT_ID, subject: "Chemistry", topic: "Mole Concept", question_type: "mcq", correct: true, source: "practice" },
+  { student_id: STUDENT_ID, subject: "Chemistry", topic: "Mole Concept", question_type: "short", correct: false, source: "practice" },
+  // Chemistry — Atomic Structure (4/4 correct = 100%)
+  { student_id: STUDENT_ID, subject: "Chemistry", topic: "Atomic Structure", question_type: "mcq", correct: true, source: "practice" },
+  { student_id: STUDENT_ID, subject: "Chemistry", topic: "Atomic Structure", question_type: "mcq", correct: true, source: "practice" },
+  { student_id: STUDENT_ID, subject: "Chemistry", topic: "Atomic Structure", question_type: "short", correct: true, source: "practice" },
+  { student_id: STUDENT_ID, subject: "Chemistry", topic: "Atomic Structure", question_type: "mcq", correct: true, source: "practice" },
+  // Math — Integration (1/3 correct = 33%)
+  { student_id: STUDENT_ID, subject: "Math", topic: "Integration", question_type: "short", correct: false, source: "practice" },
+  { student_id: STUDENT_ID, subject: "Math", topic: "Integration", question_type: "short", correct: false, source: "practice" },
+  { student_id: STUDENT_ID, subject: "Math", topic: "Integration", question_type: "mcq", correct: true, source: "practice" },
+  // Math — Differentiation (4/4 correct = 100%)
+  { student_id: STUDENT_ID, subject: "Math", topic: "Differentiation", question_type: "mcq", correct: true, source: "practice" },
+  { student_id: STUDENT_ID, subject: "Math", topic: "Differentiation", question_type: "mcq", correct: true, source: "practice" },
+  { student_id: STUDENT_ID, subject: "Math", topic: "Differentiation", question_type: "short", correct: true, source: "practice" },
+  { student_id: STUDENT_ID, subject: "Math", topic: "Differentiation", question_type: "mcq", correct: true, source: "practice" },
+  // Biology — Cell Division (2/3 correct = 67%)
+  { student_id: STUDENT_ID, subject: "Biology", topic: "Cell Division", question_type: "mcq", correct: true, source: "practice" },
+  { student_id: STUDENT_ID, subject: "Biology", topic: "Cell Division", question_type: "mcq", correct: false, source: "practice" },
+  { student_id: STUDENT_ID, subject: "Biology", topic: "Cell Division", question_type: "short", correct: true, source: "practice" },
+  // Biology — Photosynthesis (4/4 correct = 100%)
+  { student_id: STUDENT_ID, subject: "Biology", topic: "Photosynthesis", question_type: "mcq", correct: true, source: "practice" },
+  { student_id: STUDENT_ID, subject: "Biology", topic: "Photosynthesis", question_type: "mcq", correct: true, source: "practice" },
+  { student_id: STUDENT_ID, subject: "Biology", topic: "Photosynthesis", question_type: "mcq", correct: true, source: "practice" },
+  { student_id: STUDENT_ID, subject: "Biology", topic: "Photosynthesis", question_type: "short", correct: true, source: "practice" },
+];
+
+// ─── Exams ───
+export const MOCK_EXAMS = [
+  {
+    id: E1,
+    student_id: STUDENT_ID,
+    name: "Physics Unit Test — Mechanics",
+    exam_date: new Date(Date.now() + 5 * 86400000).toISOString().split("T")[0],
+    target_score: 85,
+    max_score: 100,
+  },
+  {
+    id: E2,
+    student_id: STUDENT_ID,
+    name: "JEE Main Mock 1",
+    exam_date: new Date(Date.now() + 30 * 86400000).toISOString().split("T")[0],
+    target_score: 180,
+    max_score: 300,
   },
 ];
