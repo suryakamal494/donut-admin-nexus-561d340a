@@ -40,9 +40,16 @@ export default function StudentArtifactPane({
   // Filter artifacts by routine type and thread
   const filtered = useMemo(() => {
     let list = artifacts;
+    // Exclude clarification artifacts from the pane
+    list = list.filter((a) => a.type !== "clarifications");
     // If viewing a thread, show that thread's artifacts first
     if (thread) {
-      list = list.filter((a) => a.thread_id === thread.id);
+      const threadArtifacts = list.filter((a) => a.thread_id === thread.id);
+      // If the thread has artifacts, show them; otherwise fall back to all recent artifacts
+      if (threadArtifacts.length > 0) {
+        list = threadArtifacts;
+      }
+      // else: keep all artifacts as fallback so pane isn't empty
     }
     // Filter by routine artifact types if applicable
     if (routineKey && ROUTINE_ARTIFACT_TYPES[routineKey]) {
