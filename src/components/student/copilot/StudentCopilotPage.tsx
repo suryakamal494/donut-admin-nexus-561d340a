@@ -27,6 +27,7 @@ import type { StudentThread, StudentMessage, StudentRoutine, StudentArtifact, To
 import { DEFAULT_ROUTINE_KEY } from "./types";
 import { buildFullStudentContext } from "./context";
 import { buildAdaptivePracticeContext } from "./chatHelpers";
+import { seedCopilotDataIfNeeded } from "./seedCopilotData";
 
 const STUDENT_ID = studentProfile.id;
 
@@ -78,6 +79,7 @@ const StudentCopilotPage: React.FC = () => {
   // Initial data load
   useEffect(() => {
     (async () => {
+      await seedCopilotDataIfNeeded();
       const [rts, ths, arts, mast, notifs] = await Promise.all([
         fetchStudentRoutines(),
         fetchThreads(STUDENT_ID),

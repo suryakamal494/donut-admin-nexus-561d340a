@@ -1,8 +1,9 @@
 // Student Copilot — Left Rail (threads, tools, subject filter)
 import React, { useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   MessageSquare, Dumbbell, Target, Map, TrendingUp,
-  Plus, GraduationCap, type LucideIcon,
+  Plus, GraduationCap, ArrowLeft, type LucideIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -44,6 +45,8 @@ const StudentLeftRail: React.FC<Props> = ({
   onSubjectFilter,
   onClose,
 }) => {
+  const navigate = useNavigate();
+
   const toolRoutines = useMemo(
     () => routines.filter((r) => r.key !== DEFAULT_ROUTINE_KEY),
     [routines]
@@ -61,8 +64,19 @@ const StudentLeftRail: React.FC<Props> = ({
 
   return (
     <div className="flex flex-col h-full">
+      {/* Exit Copilot */}
+      <div className="px-3 pt-3 pb-1">
+        <button
+          onClick={() => { navigate("/student/dashboard"); onClose?.(); }}
+          className="flex items-center gap-2 w-full px-2 py-2 rounded-lg text-sm font-medium text-muted-foreground hover:bg-muted/50 hover:text-foreground transition-colors"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Exit Copilot
+        </button>
+      </div>
+
       {/* Profile header */}
-      <div className="p-4 border-b">
+      <div className="p-4 border-b border-t">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-full bg-gradient-to-br from-donut-coral to-donut-orange flex items-center justify-center">
             <GraduationCap className="w-5 h-5 text-white" />

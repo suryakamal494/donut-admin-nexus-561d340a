@@ -1,8 +1,9 @@
 // Student Copilot — Chat Pane (center panel)
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import {
-  Send, Paperclip, Menu, PanelRight, Sparkles, X,
+  Send, Paperclip, Menu, PanelRight, Sparkles, X, ArrowLeft,
 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
@@ -60,6 +61,7 @@ const StudentChatPane: React.FC<Props> = ({
   onNotificationDismiss,
 }) => {
   const [input, setInput] = useState("");
+  const navigate = useNavigate();
   const [attachedImages, setAttachedImages] = useState<string[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -148,6 +150,9 @@ const StudentChatPane: React.FC<Props> = ({
         <div className="h-12 px-3 border-b flex items-center justify-between bg-card/30 flex-shrink-0">
           <Button variant="ghost" size="sm" onClick={onToggleLeft} className="h-8 px-2">
             <Menu className="w-4 h-4" />
+          </Button>
+          <Button variant="ghost" size="sm" onClick={() => navigate("/student/dashboard")} className="h-8 px-2 lg:hidden">
+            <ArrowLeft className="w-4 h-4" />
           </Button>
           <Button variant="ghost" size="sm" onClick={onToggleRight} className="h-8 px-2 hidden lg:inline-flex">
             <PanelRight className="w-4 h-4" />
