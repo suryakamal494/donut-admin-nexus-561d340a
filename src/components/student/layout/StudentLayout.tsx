@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import StudentSidebar from "./StudentSidebar";
 import StudentHeader from "./StudentHeader";
 import StudentBottomNav from "./StudentBottomNav";
+import StudentCopilotFAB from "../copilot/StudentCopilotFAB";
 
 const StudentLayout = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -54,6 +55,9 @@ const StudentLayout = () => {
 
       {/* Mobile/Tablet Bottom Navigation */}
       <StudentBottomNav />
+
+      {/* Copilot Floating Action Button */}
+      <StudentCopilotFAB />
     </div>
   );
 };
