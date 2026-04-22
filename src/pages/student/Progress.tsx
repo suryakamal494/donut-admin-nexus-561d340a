@@ -9,6 +9,7 @@ import {
   getStudentInsight,
   getDerivedStreakData,
   getDerivedWeeklyActivity,
+  getAggregatedDifficultyBreakdown,
 } from "@/data/student/progressData";
 import ProgressHeroCard from "@/components/student/progress/ProgressHeroCard";
 import BatchStandingCard from "@/components/student/progress/BatchStandingCard";
