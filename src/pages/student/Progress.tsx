@@ -1,4 +1,4 @@
- import { useState, useMemo, useEffect, lazy, Suspense, useCallback } from "react";
+ import { useMemo, useEffect, lazy, Suspense, useCallback, useRef } from "react";
 import { TrendingUp } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -15,7 +15,18 @@ import BatchStandingCard from "@/components/student/progress/BatchStandingCard";
 import SubjectOverviewGrid from "@/components/student/progress/SubjectOverviewGrid";
 import InsightBanner from "@/components/student/progress/InsightBanner";
 import SecondaryTagsPills from "@/components/student/progress/SecondaryTagsPills";
-import { Skeleton } from "@/components/ui/skeleton";
+import {
+  HeroSkeleton,
+  StandingSkeleton,
+  SubjectGridSkeleton,
+  ChartSkeleton,
+  TimelineSkeleton,
+  InsightSkeleton,
+  RadarSkeleton,
+  StreakSkeleton,
+  CardSkeleton,
+} from "@/components/student/progress/ProgressSkeletons";
+import { useSwipeTabs } from "@/hooks/use-swipe-tabs";
 
 // Lazy-loaded heavy components
 const SubjectDeepDive = lazy(() => import("@/components/student/progress/SubjectDeepDive"));
@@ -28,73 +39,99 @@ const WeeklyActivityChart = lazy(() => import("@/components/student/progress/Wee
 
 type TabKey = "overview" | "subjects" | "exams" | "insights";
 
-const TABS: { key: TabKey; label: string }[] = [
-  { key: "overview", label: "Overview" },
-  { key: "subjects", label: "Subjects" },
-  { key: "exams", label: "Exams" },
-  { key: "insights", label: "Insights" },
-];
-
-const CardSkeleton = ({ className = "" }: { className?: string }) => (
-  <div className={`bg-white/70 backdrop-blur-xl rounded-2xl p-5 border border-white/50 shadow-lg space-y-3 ${className}`}>
-    <Skeleton className="h-4 w-32" />
-    <Skeleton className="h-24 w-full" />
-    <Skeleton className="h-4 w-48" />
-  </div>
-);
+const TAB_KEYS: TabKey[] = ["overview", "subjects", "exams", "insights"];
+const TAB_LABELS: Record<TabKey, string> = {
+  overview: "Overview",
+  subjects: "Subjects",
+  exams: "Exams",
+  insights: "Insights",
+};
+const TABS: { key: TabKey; label: string }[] = TAB_KEYS.map((k) => ({
+  key: k,
+  label: TAB_LABELS[k],
+}));
 
 const StudentProgress = () => {
-  const [activeTab, setActiveTab] = useState<TabKey>("overview");
-  const [selectedSubjectId, setSelectedSubjectId] = useState<string | null>(null);
-  const [selectedExamId, setSelectedExamId] = useState<string | null>(null);
+  const { activeTab, setActiveTab, swipeHandlers } = useSwipeTabs<TabKey>({
+    tabs: TAB_KEYS,
+    initialTab: "overview",
+  });
+  const selectedSubjectIdRef = useRef<string | null>(null);
+  const selectedExamIdRef = useRef<string | null>(null);
+  // We need state for re-render triggers
+  const [selectedSubjectId, setSelectedSubjectIdRaw] = useReducerLike<string | null>(null);
+  const [selectedExamId, setSelectedExamIdRaw] = useReducerLike<string | null>(null);
 
-  // Data
+  // Stable memoized data — computed once (or on relevant tab)
   const overview = useMemo(() => getStudentOverview(), []);
   const subjects = useMemo(() => getSubjectSummaries(), []);
-  // Lazy: only compute when relevant tab is active
-  const exams = useMemo(() => (activeTab === "overview" || activeTab === "exams") ? getExamsWithContext() : [], [activeTab]);
-  const insight = useMemo(() => activeTab === "insights" ? getStudentInsight() : null, [activeTab]);
-  const streakData = useMemo(() => activeTab === "insights" ? getDerivedStreakData() : null, [activeTab]);
-  const weeklyActivity = useMemo(() => (activeTab === "overview" || activeTab === "insights") ? getDerivedWeeklyActivity() : null, [activeTab]);
+  const exams = useMemo(
+    () => (activeTab === "overview" || activeTab === "exams") ? getExamsWithContext() : [],
+    [activeTab]
+  );
+  const insight = useMemo(
+    () => (activeTab === "insights" ? getStudentInsight() : null),
+    [activeTab]
+  );
+  const streakData = useMemo(
+    () => (activeTab === "insights" ? getDerivedStreakData() : null),
+    [activeTab]
+  );
+  const weeklyActivity = useMemo(
+    () => (activeTab === "overview" || activeTab === "insights") ? getDerivedWeeklyActivity() : null,
+    [activeTab]
+  );
 
   const selectedSubjectDetail = useMemo(
-    () => selectedSubjectId ? getSubjectDetail(selectedSubjectId) : null,
+    () => (selectedSubjectId ? getSubjectDetail(selectedSubjectId) : null),
     [selectedSubjectId]
   );
 
-   // Auto-select latest exam when exams load
-   useEffect(() => {
-     if (exams.length > 0 && !selectedExamId) {
-       const latest = [...exams].sort(
-         (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
-       );
-       setSelectedExamId(latest[0].examId);
-     }
-   }, [exams, selectedExamId]);
- 
-   const selectedExam = useMemo(
-    () => selectedExamId ? exams.find(e => e.examId === selectedExamId) || null : null,
+  // Auto-select latest exam when exams load
+  useEffect(() => {
+    if (exams.length > 0 && !selectedExamId) {
+      const latest = [...exams].sort(
+        (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+      );
+      setSelectedExamIdRaw(latest[0].examId);
+    }
+  }, [exams, selectedExamId]);
+
+  const selectedExam = useMemo(
+    () => (selectedExamId ? exams.find((e) => e.examId === selectedExamId) || null : null),
     [selectedExamId, exams]
   );
 
-  const handleSubjectSelect = useCallback((id: string) => {
-    setSelectedSubjectId(id);
-    setActiveTab("subjects");
-  }, []);
+  const handleSubjectSelect = useCallback(
+    (id: string) => {
+      setSelectedSubjectIdRaw(id);
+      setActiveTab("subjects");
+    },
+    [setActiveTab]
+  );
+
+  // Scroll active tab pill into view
+  const tabBarRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!tabBarRef.current) return;
+    const idx = TAB_KEYS.indexOf(activeTab);
+    const btn = tabBarRef.current.children[idx] as HTMLElement | undefined;
+    btn?.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+  }, [activeTab]);
 
   return (
-    <div className="w-full pb-24 lg:pb-6">
+    <div className="w-full pb-24 lg:pb-6 overflow-x-hidden">
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="flex items-center gap-3 mb-4"
+        className="flex items-center gap-3 mb-4 px-0.5"
       >
-        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[hsl(var(--donut-coral))] to-[hsl(var(--donut-orange))] flex items-center justify-center shadow-lg shadow-[hsl(var(--donut-coral))]/25">
+        <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-[hsl(var(--donut-coral))] to-[hsl(var(--donut-orange))] flex items-center justify-center shadow-lg shadow-[hsl(var(--donut-coral))]/25 shrink-0">
           <TrendingUp className="w-5 h-5 text-white" />
         </div>
-        <div>
-          <h1 className="text-xl font-bold text-foreground">My Progress</h1>
+        <div className="min-w-0">
+          <h1 className="text-lg sm:text-xl font-bold text-foreground truncate">My Progress</h1>
           <p className="text-xs text-muted-foreground">Track your learning journey</p>
         </div>
       </motion.div>
@@ -107,16 +144,19 @@ const StudentProgress = () => {
       )}
 
       {/* Tab Navigation — horizontal scroll on mobile */}
-      <div className="flex gap-1.5 overflow-x-auto pb-3 mb-4 scrollbar-hide">
-        {TABS.map(tab => (
+      <div
+        ref={tabBarRef}
+        className="flex gap-1.5 overflow-x-auto pb-3 mb-4 scrollbar-hide -mx-1 px-1 snap-x snap-mandatory"
+      >
+        {TABS.map((tab) => (
           <button
             key={tab.key}
             onClick={() => {
               setActiveTab(tab.key);
-              if (tab.key !== "subjects") setSelectedSubjectId(null);
+              if (tab.key !== "subjects") setSelectedSubjectIdRaw(null);
             }}
             className={`
-              px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all min-h-[44px]
+              px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all min-h-[44px] snap-start shrink-0
               ${activeTab === tab.key
                 ? 'bg-gradient-to-r from-[hsl(var(--donut-coral))] to-[hsl(var(--donut-orange))] text-white shadow-md'
                 : 'bg-white/60 text-muted-foreground hover:bg-white/80'
@@ -130,15 +170,17 @@ const StudentProgress = () => {
 
       {/* Tab Content */}
       <AnimatePresence mode="wait">
+        <motion.div
+          key={activeTab}
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: -20 }}
+          transition={{ duration: 0.2 }}
+          {...swipeHandlers}
+        >
         {activeTab === "overview" && (
-          <motion.div
-            key="overview"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            className="grid grid-cols-1 lg:grid-cols-2 gap-4"
-          >
-            <div className="space-y-4">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
+            <div className="space-y-3 sm:space-y-4">
               <ProgressHeroCard data={overview} />
               <BatchStandingCard data={overview} />
               <SubjectOverviewGrid
@@ -147,11 +189,11 @@ const StudentProgress = () => {
                 compact
               />
             </div>
-            <div className="space-y-4">
-              <Suspense fallback={<CardSkeleton />}>
+            <div className="space-y-3 sm:space-y-4">
+              <Suspense fallback={<ChartSkeleton />}>
                 <ExamTrendChart exams={exams} />
               </Suspense>
-              <Suspense fallback={<CardSkeleton />}>
+              <Suspense fallback={<ChartSkeleton />}>
                 {weeklyActivity && <WeeklyActivityChart
                   data={weeklyActivity.data}
                   totalMinutes={weeklyActivity.totalMinutes}
@@ -159,29 +201,24 @@ const StudentProgress = () => {
                 />}
               </Suspense>
             </div>
-          </motion.div>
+            </div>
         )}
 
         {activeTab === "subjects" && (
-          <motion.div
-            key="subjects"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-          >
+          <div>
             {selectedSubjectId && selectedSubjectDetail ? (
-              <Suspense fallback={<CardSkeleton />}>
+              <Suspense fallback={<SubjectGridSkeleton />}>
                 <SubjectDeepDive
-                  subjectName={subjects.find(s => s.subjectId === selectedSubjectId)?.subjectName || "Subject"}
+                  subjectName={subjects.find((s) => s.subjectId === selectedSubjectId)?.subjectName || "Subject"}
                   detail={selectedSubjectDetail}
-                  onBack={() => setSelectedSubjectId(null)}
+                  onBack={() => setSelectedSubjectIdRaw(null)}
                 />
               </Suspense>
             ) : (
-              <div className="space-y-4">
+              <div className="space-y-3 sm:space-y-4">
                 <SubjectOverviewGrid
                   subjects={subjects}
-                  onSelect={setSelectedSubjectId}
+                  onSelect={setSelectedSubjectIdRaw}
                   selectedId={selectedSubjectId || undefined}
                 />
                 <p className="text-sm text-muted-foreground text-center py-8">
@@ -189,46 +226,34 @@ const StudentProgress = () => {
                 </p>
               </div>
             )}
-          </motion.div>
+          </div>
         )}
 
         {activeTab === "exams" && (
-          <motion.div
-            key="exams"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            className="grid grid-cols-1 lg:grid-cols-2 gap-4"
-          >
-            <div className="space-y-4">
-              <Suspense fallback={<CardSkeleton />}>
-                <ExamHistoryTimeline exams={exams} onSelectExam={setSelectedExamId} selectedExamId={selectedExamId} />
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
+            <div className="space-y-3 sm:space-y-4">
+              <Suspense fallback={<TimelineSkeleton />}>
+                <ExamHistoryTimeline exams={exams} onSelectExam={setSelectedExamIdRaw} selectedExamId={selectedExamId} />
               </Suspense>
             </div>
-            <div className="space-y-4">
+            <div className="space-y-3 sm:space-y-4">
               <Suspense fallback={<CardSkeleton />}>
-                <PerExamStandingCard exam={selectedExam} onClose={() => setSelectedExamId(null)} />
+                <PerExamStandingCard exam={selectedExam} onClose={() => setSelectedExamIdRaw(null)} />
               </Suspense>
-              <Suspense fallback={<CardSkeleton />}>
+              <Suspense fallback={<ChartSkeleton />}>
                 <ExamTrendChart exams={exams} />
               </Suspense>
             </div>
-          </motion.div>
+            </div>
         )}
 
         {activeTab === "insights" && (
-          <motion.div
-            key="insights"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            className="grid grid-cols-1 lg:grid-cols-2 gap-4"
-          >
-            <div className="space-y-4">
-              <Suspense fallback={<CardSkeleton />}>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
+            <div className="space-y-3 sm:space-y-4">
+              <Suspense fallback={<InsightSkeleton />}>
                 {insight && <InsightBanner insight={insight} />}
               </Suspense>
-              <Suspense fallback={<CardSkeleton />}>
+              <Suspense fallback={<StreakSkeleton />}>
                 {streakData && <StreakCalendar
                   currentStreak={streakData.currentStreak}
                   longestStreak={streakData.longestStreak}
@@ -236,11 +261,11 @@ const StudentProgress = () => {
                 />}
               </Suspense>
             </div>
-            <div className="space-y-4">
-              <Suspense fallback={<CardSkeleton />}>
+            <div className="space-y-3 sm:space-y-4">
+              <Suspense fallback={<RadarSkeleton />}>
                 <SubjectRadarChart subjects={subjects} />
               </Suspense>
-              <Suspense fallback={<CardSkeleton />}>
+              <Suspense fallback={<ChartSkeleton />}>
                 {weeklyActivity && <WeeklyActivityChart
                   data={weeklyActivity.data}
                   totalMinutes={weeklyActivity.totalMinutes}
@@ -248,8 +273,9 @@ const StudentProgress = () => {
                 />}
               </Suspense>
             </div>
-          </motion.div>
+            </div>
         )}
+        </motion.div>
       </AnimatePresence>
     </div>
   );
