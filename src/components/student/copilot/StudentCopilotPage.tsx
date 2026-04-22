@@ -1,5 +1,6 @@
 // Student Copilot — Main 3-panel layout (orchestrator)
 import React, { useState, useEffect, useCallback, useMemo } from "react";
+import { useRef } from "react";
 import { PanelLeft, PanelRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
@@ -41,6 +42,9 @@ const StudentCopilotPage: React.FC = () => {
   const [messages, setMessages] = useState<StudentMessage[]>([]);
   const [artifacts, setArtifacts] = useState<StudentArtifact[]>([]);
   const [subjectFilter, setSubjectFilter] = useState<string | null>(null);
+  // Ref for messages to avoid stale closure in handleSend
+  const messagesRef = useRef(messages);
+  messagesRef.current = messages;
 
   // Panel visibility
   const [leftVisible, setLeftVisible] = useState(true);
@@ -212,7 +216,7 @@ const StudentCopilotPage: React.FC = () => {
         thread: currentThread,
         routine: currentRoutine,
         studentId: STUDENT_ID,
-        existingMessages: messages,
+        existingMessages: messagesRef.current,
         extraSystem: studentContext,
       });
 
@@ -224,7 +228,7 @@ const StudentCopilotPage: React.FC = () => {
         setArtifacts((prev) => [...result.artifacts, ...prev]);
       }
     },
-    [currentThread, currentRoutine, messages, routines, subjectFilter, send, studentContext]
+    [currentThread, currentRoutine, routines, subjectFilter, send, studentContext]
   );
 
   // Auto-start practice when a new practice_session artifact appears.
