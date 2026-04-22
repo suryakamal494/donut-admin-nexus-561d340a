@@ -1,5 +1,6 @@
 import React from "react";
 import type { StudentArtifact } from "../types";
+import { normalizeArtifactContent } from "../artifactNormalizers";
 import ConceptExplainerView from "./ConceptExplainerView";
 import WorkedSolutionView from "./WorkedSolutionView";
 import FormulaSheetView from "./FormulaSheetView";
@@ -18,7 +19,7 @@ interface Props {
 }
 
 export default function StudentArtifactView({ artifact, completedTasks, onToggleTask, onPracticeTopic }: Props) {
-  const content = artifact.content as any;
+  const content = normalizeArtifactContent(artifact.type, artifact.content as any);
 
   switch (artifact.type) {
     case "concept_explainer":

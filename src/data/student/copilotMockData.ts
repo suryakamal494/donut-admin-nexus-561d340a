@@ -342,7 +342,7 @@ export const MOCK_ARTIFACTS = [
 export const MOCK_NOTIFICATIONS = [
   {
     student_id: STUDENT_ID,
-    type: "homework_pending",
+    type: "homework",
     title: "Kinematics Problem Set",
     body: "Chapter 4 problems 1-15, due tomorrow",
     subject: "Physics",
@@ -352,7 +352,7 @@ export const MOCK_NOTIFICATIONS = [
   },
   {
     student_id: STUDENT_ID,
-    type: "exam_upcoming",
+    type: "exam_reminder",
     title: "Physics Unit Test — Mechanics",
     body: "Covers Chapters 3-5, in 5 days",
     subject: "Physics",
@@ -362,7 +362,7 @@ export const MOCK_NOTIFICATIONS = [
   },
   {
     student_id: STUDENT_ID,
-    type: "study_material",
+    type: "chapter_today",
     title: "Cell Division PPT",
     body: "Teacher shared new material on Mitosis & Meiosis",
     subject: "Biology",
