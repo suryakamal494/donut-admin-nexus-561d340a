@@ -27,8 +27,8 @@ const SubjectOverviewGrid = memo(({ subjects, onSelect, selectedId, compact = fa
 
       {/* Responsive grid: 2 cols mobile, 3 tablet, 4 desktop — scales for 2-10+ subjects */}
       <div className={compact
-        ? "grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-2"
-        : "grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3"
+        ? "grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-2"
+        : "grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3"
       }>
         {subjects.map((subject, i) => {
           const Icon = iconMap[subject.icon] || Atom;

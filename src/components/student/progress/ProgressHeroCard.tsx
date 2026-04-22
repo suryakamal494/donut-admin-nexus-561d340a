@@ -25,9 +25,9 @@ const ProgressHeroCard = ({ data }: ProgressHeroCardProps) => {
       animate={{ opacity: 1, y: 0 }}
       className="bg-white/70 backdrop-blur-xl rounded-2xl p-5 border border-white/50 shadow-lg"
     >
-      <div className="flex items-start gap-4">
+      <div className="flex items-start gap-3 sm:gap-4">
         {/* PI Gauge */}
-        <div className="relative w-[120px] h-[120px] flex-shrink-0">
+        <div className="relative w-[100px] h-[100px] sm:w-[120px] sm:h-[120px] flex-shrink-0">
           <svg className="w-full h-full transform -rotate-90" viewBox="0 0 120 120">
             <circle cx="60" cy="60" r="52" stroke="hsl(var(--muted)/0.2)" strokeWidth="8" fill="none" />
             <motion.circle
