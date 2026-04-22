@@ -80,6 +80,10 @@ const StudentProgress = () => {
     () => (activeTab === "overview" || activeTab === "insights") ? getDerivedWeeklyActivity() : null,
     [activeTab]
   );
+  const difficultyData = useMemo(
+    () => (activeTab === "insights" ? getAggregatedDifficultyBreakdown() : null),
+    [activeTab]
+  );
 
   const selectedSubjectDetail = useMemo(
     () => (selectedSubjectId ? getSubjectDetail(selectedSubjectId) : null),
@@ -120,6 +124,7 @@ const StudentProgress = () => {
 
   return (
     <div className="w-full pb-24 lg:pb-6 overflow-x-hidden">
+    <div className="w-full pb-24 lg:pb-8 overflow-x-hidden">
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: -10 }}
