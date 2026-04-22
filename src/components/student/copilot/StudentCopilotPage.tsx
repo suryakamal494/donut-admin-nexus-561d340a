@@ -285,6 +285,13 @@ const StudentCopilotPage: React.FC = () => {
     [handleSend]
   );
 
+  const handleStartTask = useCallback(
+    (taskDescription: string, _dayIndex: number, _itemIndex: number) => {
+      handleSend(`Teach me about: ${taskDescription}`);
+    },
+    [handleSend]
+  );
+
   const handleDismissNotification = useCallback(async (notifId: string) => {
     await dismissNotification(notifId);
     setNotifications((prev) => prev.filter((n) => n.id !== notifId));
@@ -383,6 +390,7 @@ const StudentCopilotPage: React.FC = () => {
             thread={currentThread}
             routineKey={currentRoutine?.key}
             onClose={toggleRight}
+            onStartTask={handleStartTask}
           />
         </div>
       )}

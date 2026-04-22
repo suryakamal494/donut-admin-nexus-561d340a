@@ -16,9 +16,10 @@ interface Props {
   completedTasks?: Set<string>;
   onToggleTask?: (dayIndex: number, itemIndex: number) => void;
   onPracticeTopic?: (subject: string, topic: string) => void;
+  onStartTask?: (taskDescription: string, dayIndex: number, itemIndex: number) => void;
 }
 
-export default function StudentArtifactView({ artifact, completedTasks, onToggleTask, onPracticeTopic }: Props) {
+export default function StudentArtifactView({ artifact, completedTasks, onToggleTask, onPracticeTopic, onStartTask }: Props) {
   const content = normalizeArtifactContent(artifact.type, artifact.content as any);
 
   switch (artifact.type) {
@@ -31,7 +32,7 @@ export default function StudentArtifactView({ artifact, completedTasks, onToggle
     case "practice_session":
       return <PracticeSessionView content={content} />;
     case "study_plan":
-      return <StudyPlanView content={content} completedTasks={completedTasks} onToggleTask={onToggleTask} />;
+      return <StudyPlanView content={content} completedTasks={completedTasks} onToggleTask={onToggleTask} onStartTask={onStartTask} />;
     case "target_tracker":
       return <TargetTrackerView content={content} />;
     case "mastery_map":

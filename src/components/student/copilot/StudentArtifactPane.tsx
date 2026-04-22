@@ -16,6 +16,7 @@ interface Props {
   completedTasks?: Set<string>;
   onToggleTask?: (dayIndex: number, itemIndex: number) => void;
   onPracticeTopic?: (subject: string, topic: string) => void;
+  onStartTask?: (taskDescription: string, dayIndex: number, itemIndex: number) => void;
 }
 
 function timeGroup(dateStr: string): string {
@@ -34,6 +35,7 @@ export default function StudentArtifactPane({
   completedTasks,
   onToggleTask,
   onPracticeTopic,
+  onStartTask,
 }: Props) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
@@ -94,6 +96,7 @@ export default function StudentArtifactPane({
               completedTasks={completedTasks}
               onToggleTask={onToggleTask}
               onPracticeTopic={onPracticeTopic}
+              onStartTask={onStartTask}
             />
           </div>
         </ScrollArea>

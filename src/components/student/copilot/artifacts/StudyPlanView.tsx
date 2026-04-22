@@ -1,7 +1,8 @@
 import React, { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { CheckCircle2, Circle, Calendar, BookOpen } from "lucide-react";
+import { CheckCircle2, Circle, Calendar, BookOpen, Play } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import MathMarkdown from "../MathMarkdown";
 
@@ -30,9 +31,10 @@ interface Props {
   content: StudyPlanContent;
   completedTasks?: Set<string>;
   onToggleTask?: (dayIndex: number, itemIndex: number) => void;
+  onStartTask?: (taskDescription: string, dayIndex: number, itemIndex: number) => void;
 }
 
-export default function StudyPlanView({ content, completedTasks, onToggleTask }: Props) {
+export default function StudyPlanView({ content, completedTasks, onToggleTask, onStartTask }: Props) {
   const [expandedDays, setExpandedDays] = useState<Set<number>>(new Set([0]));
 
   const toggleDay = (d: number) => {
@@ -100,15 +102,31 @@ export default function StudyPlanView({ content, completedTasks, onToggleTask }:
                         )}
                         onClick={() => onToggleTask?.(dIdx, iIdx)}
                       >
-                        {done ? (
-                          <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 shrink-0 mt-0.5" />
-                        ) : (
-                          <Circle className="h-3.5 w-3.5 text-muted-foreground shrink-0 mt-0.5" />
-                        )}
-                        <div>
-                          <MathMarkdown compact className="text-xs">{item.task}</MathMarkdown>
-                          {item.duration && <span className="text-[10px] text-muted-foreground">{item.duration}</span>}
+                        <div className="flex items-start gap-2 flex-1 min-w-0">
+                          {done ? (
+                            <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 shrink-0 mt-0.5" />
+                          ) : (
+                            <Circle className="h-3.5 w-3.5 text-muted-foreground shrink-0 mt-0.5" />
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <MathMarkdown compact className="text-xs">{item.task}</MathMarkdown>
+                            {item.duration && <span className="text-[10px] text-muted-foreground">{item.duration}</span>}
+                          </div>
                         </div>
+                        {onStartTask && !done && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 px-2 text-[10px] text-primary hover:text-primary shrink-0 gap-1"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onStartTask(item.task, dIdx, iIdx);
+                            }}
+                          >
+                            <Play className="h-3 w-3" />
+                            Start
+                          </Button>
+                        )}
                       </div>
                     );
                   })}

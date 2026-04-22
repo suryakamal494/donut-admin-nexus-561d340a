@@ -77,7 +77,7 @@ const ChatMessageList: React.FC<Props> = ({
   const findPracticeArtifact = (msg: StudentMessage): StudentArtifact | null => {
     if (msg.role !== "assistant") return null;
     const candidate = practiceArtifactMap.get(msg.thread_id);
-    if (candidate && Math.abs(new Date(candidate.created_at).getTime() - new Date(msg.created_at).getTime()) < 30000) {
+    if (candidate && Math.abs(new Date(candidate.created_at).getTime() - new Date(msg.created_at).getTime()) < 120000) {
       return candidate;
     }
     // Fallback for multiple practice artifacts in same thread
@@ -85,21 +85,21 @@ const ChatMessageList: React.FC<Props> = ({
         (a) =>
           a.type === "practice_session" &&
           a.thread_id === msg.thread_id &&
-          Math.abs(new Date(a.created_at).getTime() - new Date(msg.created_at).getTime()) < 30000
+          Math.abs(new Date(a.created_at).getTime() - new Date(msg.created_at).getTime()) < 120000
     ) ?? null;
   };
 
   const findClarificationArtifact = (msg: StudentMessage): StudentArtifact | null => {
     if (msg.role !== "assistant") return null;
     const candidate = clarificationArtifactMap.get(msg.thread_id);
-    if (candidate && Math.abs(new Date(candidate.created_at).getTime() - new Date(msg.created_at).getTime()) < 30000) {
+    if (candidate && Math.abs(new Date(candidate.created_at).getTime() - new Date(msg.created_at).getTime()) < 120000) {
       return candidate;
     }
     return artifacts.find(
         (a) =>
           a.type === "clarifications" &&
           a.thread_id === msg.thread_id &&
-          Math.abs(new Date(a.created_at).getTime() - new Date(msg.created_at).getTime()) < 30000
+          Math.abs(new Date(a.created_at).getTime() - new Date(msg.created_at).getTime()) < 120000
     ) ?? null;
   };
 
