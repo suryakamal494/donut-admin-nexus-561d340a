@@ -1,6 +1,7 @@
 // Student Copilot — Chat helper utilities
 import { SUBJECTS, type Subject } from "./types";
-import { studentProfile } from "@/data/student/profile";
+import type { TopicMastery } from "./types";
+import { getWeakestTopics } from "./context/bandContext";
 
 // ---------- Subject classification ----------
 
@@ -81,12 +82,25 @@ export function embedImages(text: string, images: string[]): string {
   return content;
 }
 
-// ---------- Student context builder ----------
+// ---------- Adaptive practice context ----------
 
-export function buildStudentContext(): string {
-  const p = studentProfile;
-  return `STUDENT CONTEXT:
-- Name: ${p.name}
-- Grade: ${p.grade}
-- Current streak: ${p.streak} days`;
+/**
+ * Build extra system prompt context that focuses practice on weak topics.
+ * Called when the routine is s_practice to weight 60-70% of questions toward weakest areas.
+ */
+export function buildAdaptivePracticeContext(mastery: TopicMastery[]): string {
+  const weakest = getWeakestTopics(mastery, 3);
+  if (weakest.length === 0) return "";
+
+  let ctx = "ADAPTIVE PRACTICE INSTRUCTIONS:";
+  ctx += "\nThe student has weak spots. When generating practice questions:";
+  ctx += "\n- 60-70% of questions should focus on these weak topics:";
+  for (const w of weakest) {
+    ctx += `\n  • ${w.subject}/${w.topic} (${w.accuracy}% accuracy, band: ${w.band})`;
+  }
+  ctx += "\n- 30-40% can be from other topics for variety and confidence building.";
+  ctx += "\n- Gradually increase difficulty as accuracy improves (scaffold upward).";
+  ctx += "\n- Do NOT tell the student which topics are weak — present all questions naturally.";
+
+  return ctx;
 }
