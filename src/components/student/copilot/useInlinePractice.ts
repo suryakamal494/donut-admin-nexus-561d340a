@@ -3,6 +3,7 @@ import { useState, useCallback, useRef } from "react";
 import { insertAttempts } from "./api";
 import type { StudentArtifact, StudentAttempt } from "./types";
 import type { PracticeQuestion } from "./InlinePracticeCard";
+import { normalizePracticeSession } from "./artifactNormalizers";
 
 export interface PracticeResult {
   given: string;
@@ -25,8 +26,21 @@ export function useInlinePractice(studentId: string) {
   statesRef.current = practiceStates;
 
   const startPractice = useCallback((artifact: StudentArtifact) => {
-    const content = artifact.content as any;
-    const questions: PracticeQuestion[] = content?.questions ?? [];
+    const content = normalizePracticeSession(artifact.content as any);
+    // Map normalized questions to InlinePracticeCard format
+    const questions: PracticeQuestion[] = (content?.questions ?? []).map((q: any) => ({
+      question: q.question ?? q.prompt ?? "",
+      type: q.type ?? "mcq",
+      options: q.options
+        ? Array.isArray(q.options) && q.options.length > 0 && typeof q.options[0] === "object"
+          ? q.options.map((o: any) => o.text) // {label,text}[] → string[]
+          : q.options
+        : undefined,
+      answer: q.correct_answer ?? q.answer ?? "",
+      explanation: q.explanation,
+      topic: q.topic,
+      subject: q.subject,
+    }));
     if (questions.length === 0) return;
 
     setPracticeStates((prev) => ({
