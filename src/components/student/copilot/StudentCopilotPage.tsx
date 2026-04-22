@@ -271,6 +271,26 @@ const StudentCopilotPage: React.FC = () => {
     [handleSend]
   );
 
+  const handleDismissNotification = useCallback(async (notifId: string) => {
+    await dismissNotification(notifId);
+    setNotifications((prev) => prev.filter((n) => n.id !== notifId));
+  }, []);
+
+  const handleNotificationAction = useCallback((notif: StudentNotification) => {
+    const routineMap: Record<string, string> = {
+      homework: "s_practice",
+      exam_reminder: "s_exam_prep",
+      chapter_today: "s_doubt",
+      debrief_available: "s_progress",
+    };
+    const routineKey = routineMap[notif.type] ?? DEFAULT_ROUTINE_KEY;
+    handleNewThread(routineKey);
+    setTimeout(() => {
+      const prompt = notif.body ?? notif.title;
+      handleSend(prompt);
+    }, 300);
+  }, [handleNewThread, handleSend]);
+
   const handleSelectThread = useCallback((id: string) => {
     setCurrentThreadId(id);
   }, []);
@@ -335,6 +355,9 @@ const StudentCopilotPage: React.FC = () => {
           onPracticeRetry={resetPractice}
           onClarificationSubmit={handleClarificationSubmit}
           onPracticeWeak={handlePracticeWeak}
+          notifications={notifications}
+          onNotificationAction={handleNotificationAction}
+          onNotificationDismiss={handleDismissNotification}
         />
       </div>
 
