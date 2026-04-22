@@ -7,6 +7,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { studentProfile } from "@/data/student/profile";
 import StudentLeftRail from "./StudentLeftRail";
 import StudentChatPane from "./StudentChatPane";
+import StudentArtifactPane from "./StudentArtifactPane";
 import { useStudentChat } from "./useStudentChat";
 import {
   fetchStudentRoutines,
@@ -254,13 +255,15 @@ const StudentCopilotPage: React.FC = () => {
         />
       </div>
 
-      {/* Desktop right artifact pane (placeholder for Phase 3) */}
+      {/* Desktop right artifact pane */}
       {!isMobile && rightVisible && (
-        <div className="hidden lg:flex w-[360px] flex-shrink-0 bg-card/40 flex-col items-center justify-center">
-          <div className="text-center text-muted-foreground p-6">
-            <p className="text-sm font-medium mb-1">Artifacts</p>
-            <p className="text-xs">Generated artifacts will appear here</p>
-          </div>
+        <div className="hidden lg:flex w-[360px] flex-shrink-0 bg-card/40 flex-col">
+          <StudentArtifactPane
+            artifacts={artifacts}
+            thread={currentThread}
+            routineKey={currentRoutine?.key}
+            onClose={toggleRight}
+          />
         </div>
       )}
     </div>
