@@ -1,9 +1,11 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { Brain, Dumbbell } from "lucide-react";
 import { cn } from "@/lib/utils";
+import SubjectRadarChart from "@/components/student/progress/SubjectRadarChart";
+import { getSubjectSummaries } from "@/data/student/progressData";
 
 interface TopicRow {
   topic: string;
@@ -40,12 +42,27 @@ const bandConfig: Record<string, { color: string; bg: string; label: string }> =
 };
 
 export default function MasteryMapView({ content, onPracticeTopic }: Props) {
+  // Render platform radar chart for visual overview
+  const radarData = useMemo(() => {
+    try {
+      return getSubjectSummaries().map((s) => ({
+        subjectName: s.subjectName,
+        accuracy: s.accuracy,
+        color: s.color,
+      }));
+    } catch { return []; }
+  }, []);
+
   return (
     <div className="space-y-3">
       <div className="flex items-center gap-2">
         <Brain className="h-4 w-4 text-primary" />
         <h3 className="font-semibold text-sm text-foreground">{content.title}</h3>
       </div>
+
+      {radarData.length > 0 && (
+        <SubjectRadarChart subjects={radarData} />
+      )}
 
       {/* Summary chips */}
       <div className="grid grid-cols-3 gap-2">
