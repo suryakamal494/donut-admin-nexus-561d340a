@@ -85,6 +85,15 @@ export interface DerivedStreak {
   activeDays: Date[];
 }
 
+export interface DerivedAchievement {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  unlocked: boolean;
+  color: string;
+}
+
 export interface DerivedWeeklyActivity {
   day: string;
   minutes: number;
@@ -310,6 +319,24 @@ export function getDerivedStreakData(): DerivedStreak {
   });
 }
 
+export function getDerivedAchievements(): DerivedAchievement[] {
+  return cached("achievements", () => {
+    const overview = getStudentOverview();
+    const profile = getStudentBatchProfile(CURRENT_STUDENT_ID, CURRENT_BATCH_ID);
+
+    return [
+      { id: "1", name: "First Steps", description: "Complete your first exam", icon: "star", unlocked: profile.totalExams >= 1, color: "#F59E0B" },
+      { id: "2", name: "Week Warrior", description: "7+ day study streak", icon: "flame", unlocked: profile.totalExams >= 5, color: "#EF4444" },
+      { id: "3", name: "Quick Learner", description: "Score 70%+ in any exam", icon: "zap", unlocked: profile.examHistory.some(e => e.percentage >= 70), color: "#8B5CF6" },
+      { id: "4", name: "Consistent", description: "Consistency score above 80", icon: "trophy", unlocked: overview.consistency >= 80, color: "#3B82F6" },
+      { id: "5", name: "Above Average", description: "Beat the class average", icon: "award", unlocked: overview.deltaFromAverage > 0, color: "#10B981" },
+      { id: "6", name: "Perfect Score", description: "Get 100% in any exam", icon: "target", unlocked: profile.examHistory.some(e => e.percentage >= 100), color: "#EC4899" },
+      { id: "7", name: "Exam Pro", description: "Complete 10+ exams", icon: "book", unlocked: profile.totalExams >= 10, color: "#6366F1" },
+      { id: "8", name: "Champion", description: "Rank #1 in your batch", icon: "crown", unlocked: overview.rank === 1, color: "#F59E0B" },
+    ];
+  });
+}
+
 export function getDerivedWeeklyActivity(): { data: DerivedWeeklyActivity[]; totalMinutes: number; averageMinutes: number } {
   return cached("weekly-activity", () => {
     const profile = getStudentBatchProfile(CURRENT_STUDENT_ID, CURRENT_BATCH_ID);
@@ -324,52 +351,5 @@ export function getDerivedWeeklyActivity(): { data: DerivedWeeklyActivity[]; tot
     const totalMinutes = data.reduce((s, d) => s + d.minutes, 0);
     const averageMinutes = Math.round(totalMinutes / 7);
     return { data, totalMinutes, averageMinutes };
-  });
-}
-
-// ── Aggregated Difficulty Breakdown ──
-
-export interface AggregatedDifficultyItem {
-  level: "easy" | "medium" | "hard";
-  accuracy: number;
-  questionsAttempted: number;
-  avgTimePerQuestion: number;
-}
-
-export function getAggregatedDifficultyBreakdown(): AggregatedDifficultyItem[] {
-  return cached("aggregated-difficulty", () => {
-    const totals: Record<string, { attempts: number; correctSum: number; timeSum: number }> = {
-      easy: { attempts: 0, correctSum: 0, timeSum: 0 },
-      medium: { attempts: 0, correctSum: 0, timeSum: 0 },
-      hard: { attempts: 0, correctSum: 0, timeSum: 0 },
-    };
-
-    for (const subj of SUBJECT_CONFIGS) {
-      try {
-        const profile = getStudentBatchProfile(CURRENT_STUDENT_ID, subj.batchId);
-        if (profile.difficultyBreakdown) {
-          for (const d of profile.difficultyBreakdown) {
-            const t = totals[d.level];
-            if (t) {
-              t.correctSum += Math.round(d.accuracy * d.questionsAttempted / 100);
-              t.attempts += d.questionsAttempted;
-              t.timeSum += d.avgTimePerQuestion * d.questionsAttempted;
-            }
-          }
-        }
-      } catch {
-        // skip subjects without data
-      }
-    }
-
-    return (["easy", "medium", "hard"] as const).map(level => {
-      const t = totals[level];
-      return {
-        level,
-        accuracy: t.attempts > 0 ? Math.round(t.correctSum / t.attempts * 100) : 0,
-        questionsAttempted: t.attempts,
-        avgTimePerQuestion: t.attempts > 0 ? Math.round(t.timeSum / t.attempts) : 0,
-      };
-    }).filter(d => d.questionsAttempted > 0);
   });
 }

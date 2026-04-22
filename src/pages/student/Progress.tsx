@@ -9,7 +9,6 @@ import {
   getStudentInsight,
   getDerivedStreakData,
   getDerivedWeeklyActivity,
-  getAggregatedDifficultyBreakdown,
 } from "@/data/student/progressData";
 import ProgressHeroCard from "@/components/student/progress/ProgressHeroCard";
 import BatchStandingCard from "@/components/student/progress/BatchStandingCard";
@@ -37,7 +36,6 @@ const PerExamStandingCard = lazy(() => import("@/components/student/progress/Per
 const StreakCalendar = lazy(() => import("@/components/student/progress/StreakCalendar"));
 const SubjectRadarChart = lazy(() => import("@/components/student/progress/SubjectRadarChart"));
 const WeeklyActivityChart = lazy(() => import("@/components/student/progress/WeeklyActivityChart"));
-const DifficultyOverview = lazy(() => import("@/components/student/progress/DifficultyOverview"));
 
 type TabKey = "overview" | "subjects" | "exams" | "insights";
 
@@ -80,10 +78,6 @@ const StudentProgress = () => {
     () => (activeTab === "overview" || activeTab === "insights") ? getDerivedWeeklyActivity() : null,
     [activeTab]
   );
-  const difficultyData = useMemo(
-    () => (activeTab === "insights" ? getAggregatedDifficultyBreakdown() : null),
-    [activeTab]
-  );
 
   const selectedSubjectDetail = useMemo(
     () => (selectedSubjectId ? getSubjectDetail(selectedSubjectId) : null),
@@ -123,7 +117,7 @@ const StudentProgress = () => {
   }, [activeTab]);
 
   return (
-    <div className="w-full pb-24 lg:pb-8 overflow-x-hidden">
+    <div className="w-full pb-24 lg:pb-6 overflow-x-hidden">
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: -10 }}
@@ -141,7 +135,7 @@ const StudentProgress = () => {
 
       {/* Secondary Tags */}
       {overview.secondaryTags.length > 0 && (
-        <div className="mb-2">
+        <div className="mb-4">
           <SecondaryTagsPills tags={overview.secondaryTags} />
         </div>
       )}
@@ -189,6 +183,7 @@ const StudentProgress = () => {
               <SubjectOverviewGrid
                 subjects={subjects}
                 onSelect={handleSubjectSelect}
+                compact
               />
             </div>
             <div className="space-y-3 sm:space-y-4">
@@ -223,7 +218,7 @@ const StudentProgress = () => {
                   onSelect={setSelectedSubjectIdRaw}
                   selectedId={selectedSubjectId || undefined}
                 />
-                <p className="text-sm text-muted-foreground text-center py-3">
+                <p className="text-sm text-muted-foreground text-center py-8">
                   Tap a subject to see detailed analytics
                 </p>
               </div>
@@ -238,7 +233,7 @@ const StudentProgress = () => {
                 <ExamHistoryTimeline exams={exams} onSelectExam={setSelectedExamIdRaw} selectedExamId={selectedExamId} />
               </Suspense>
             </div>
-            <div className="space-y-3 sm:space-y-4 max-h-[70vh] overflow-y-auto">
+            <div className="space-y-3 sm:space-y-4">
               <Suspense fallback={<CardSkeleton />}>
                 <PerExamStandingCard exam={selectedExam} onClose={() => setSelectedExamIdRaw(null)} />
               </Suspense>
@@ -266,9 +261,6 @@ const StudentProgress = () => {
             <div className="space-y-3 sm:space-y-4">
               <Suspense fallback={<RadarSkeleton />}>
                 <SubjectRadarChart subjects={subjects} />
-              </Suspense>
-              <Suspense fallback={<ChartSkeleton />}>
-                {difficultyData && <DifficultyOverview data={difficultyData} />}
               </Suspense>
               <Suspense fallback={<ChartSkeleton />}>
                 {weeklyActivity && <WeeklyActivityChart
