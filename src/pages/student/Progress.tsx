@@ -123,7 +123,6 @@ const StudentProgress = () => {
   }, [activeTab]);
 
   return (
-    <div className="w-full pb-24 lg:pb-6 overflow-x-hidden">
     <div className="w-full pb-24 lg:pb-8 overflow-x-hidden">
       {/* Header */}
       <motion.div
