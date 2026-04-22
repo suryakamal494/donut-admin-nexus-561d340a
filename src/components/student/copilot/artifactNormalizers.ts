@@ -152,6 +152,31 @@ export function normalizeTestDebrief(content: any): any {
 }
 
 /**
+ * Normalize study_plan content.
+ * AI outputs: { focus, minutes } per item/day
+ * View expects: { label, duration, task } per item, { day, label, items } per day
+ */
+export function normalizeStudyPlan(content: any): any {
+  if (!content?.days) return content;
+  return {
+    ...content,
+    title: content.title ?? content.exam ?? "Study Plan",
+    total_days: content.total_days ?? content.days?.length ?? 0,
+    days: content.days.map((d: any, i: number) => ({
+      day: d.day ?? i + 1,
+      label: d.label ?? d.focus ?? undefined,
+      date: d.date,
+      items: (d.items ?? []).map((item: any) => ({
+        task: item.task ?? item.description ?? "Task",
+        duration: item.duration ?? (item.minutes ? `${item.minutes} min` : undefined),
+        resource: item.resource ?? item.type,
+      })),
+    })),
+    tips: content.tips,
+  };
+}
+
+/**
  * Master normalizer — dispatches by artifact type.
  */
 export function normalizeArtifactContent(type: string, content: any): any {
@@ -168,6 +193,8 @@ export function normalizeArtifactContent(type: string, content: any): any {
       return normalizeProgressReport(content);
     case "test_debrief":
       return normalizeTestDebrief(content);
+    case "study_plan":
+      return normalizeStudyPlan(content);
     default:
       return content;
   }
