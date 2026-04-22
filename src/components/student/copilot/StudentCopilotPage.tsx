@@ -16,6 +16,7 @@ import {
   createThread,
   fetchMessages,
   fetchArtifacts,
+  updateArtifactContent,
 } from "./api";
 import type { StudentThread, StudentMessage, StudentRoutine, StudentArtifact, ClarificationContent } from "./types";
 import { DEFAULT_ROUTINE_KEY } from "./types";
