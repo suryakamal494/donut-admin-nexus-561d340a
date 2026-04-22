@@ -1,15 +1,14 @@
 // Student Copilot — Chat Pane (center panel)
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import {
-  Send, Paperclip, Menu, PanelRight, Sparkles, Loader2, X,
+  Send, Paperclip, Menu, PanelRight, Sparkles, X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
-import MathMarkdown from "./MathMarkdown";
-import { splitStoredContent } from "./chatHelpers";
-import type { StudentThread, StudentMessage, StudentRoutine, StudentArtifact } from "./types";
+import ChatMessageList from "./ChatMessageList";
+import type { StudentThread, StudentMessage, StudentRoutine, StudentArtifact, ClarificationContent } from "./types";
+import type { PracticeState } from "./useInlinePractice";
 
 interface Props {
   thread: StudentThread | null;
@@ -23,6 +22,12 @@ interface Props {
   onToggleLeft: () => void;
   onToggleRight: () => void;
   quickStartChips?: string[];
+  practiceStates: Record<string, PracticeState>;
+  onPracticeAnswer: (artifactId: string, given: string, correct: boolean) => void;
+  onPracticeNext: (artifactId: string) => void;
+  onPracticeRetry: (artifactId: string) => void;
+  onClarificationSubmit: (artifactId: string, answers: Record<string, string | string[]>) => void;
+  onPracticeWeak?: (topic: string) => void;
 }
 
 const MAX_IMAGES = 3;
@@ -40,6 +45,12 @@ const StudentChatPane: React.FC<Props> = ({
   onToggleLeft,
   onToggleRight,
   quickStartChips,
+  practiceStates,
+  onPracticeAnswer,
+  onPracticeNext,
+  onPracticeRetry,
+  onClarificationSubmit,
+  onPracticeWeak,
 }) => {
   const [input, setInput] = useState("");
   const [attachedImages, setAttachedImages] = useState<string[]>([]);
@@ -179,109 +190,22 @@ const StudentChatPane: React.FC<Props> = ({
         onDragOver={(e) => e.preventDefault()}
         onDrop={handleDrop}
       >
-        {/* Empty thread — quick start chips */}
-        {messages.length === 0 && !streaming && (
-          <div className="flex flex-col items-center justify-center py-12">
-            <Sparkles className="w-10 h-10 text-donut-coral mb-3" />
-            {routine && (
-              <>
-                <h3 className="text-lg font-semibold mb-1">{routine.label}</h3>
-                {routine.description && (
-                  <p className="text-sm text-muted-foreground mb-4 text-center max-w-xs">
-                    {routine.description}
-                  </p>
-                )}
-              </>
-            )}
-            {quickStartChips && quickStartChips.length > 0 && (
-              <div className="flex flex-wrap gap-2 justify-center max-w-md">
-                {quickStartChips.map((chip) => (
-                  <button
-                    key={chip}
-                    onClick={() => onSend(chip)}
-                    className="px-3 py-1.5 rounded-full border text-sm text-muted-foreground hover:bg-muted/50 hover:text-foreground transition-colors"
-                  >
-                    {chip}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Message bubbles */}
-        {messages.map((msg) => {
-          const { text, images } = splitStoredContent(msg.content);
-          const isUser = msg.role === "user";
-
-          return (
-            <div
-              key={msg.id}
-              className={cn(
-                "flex",
-                isUser ? "justify-end" : "justify-start"
-              )}
-            >
-              <div
-                className={cn(
-                  "max-w-[85%] md:max-w-[75%] rounded-2xl px-4 py-2.5",
-                  isUser
-                    ? "bg-gradient-to-br from-donut-coral to-donut-orange text-white rounded-br-md"
-                    : "bg-muted rounded-bl-md"
-                )}
-              >
-                {images.length > 0 && (
-                  <div className="flex gap-2 mb-2 flex-wrap">
-                    {images.map((img, i) => (
-                      <img
-                        key={i}
-                        src={img}
-                        alt="Attached"
-                        className="w-24 h-24 object-cover rounded-lg"
-                      />
-                    ))}
-                  </div>
-                )}
-                {isUser ? (
-                  <p className="text-sm whitespace-pre-wrap">{text}</p>
-                ) : (
-                  <MathMarkdown compact className={cn(!isUser && "text-foreground")}>
-                    {text}
-                  </MathMarkdown>
-                )}
-              </div>
-            </div>
-          );
-        })}
-
-        {/* Streaming bubble */}
-        {streaming && (
-          <div className="flex justify-start">
-            <div className="max-w-[85%] md:max-w-[75%] rounded-2xl rounded-bl-md bg-muted px-4 py-2.5">
-              {streamedText ? (
-                <MathMarkdown compact>{streamedText}</MathMarkdown>
-              ) : (
-                <div className="flex items-center gap-1.5 py-1">
-                  <span className="w-2 h-2 rounded-full bg-donut-coral animate-bounce [animation-delay:0ms]" />
-                  <span className="w-2 h-2 rounded-full bg-donut-coral animate-bounce [animation-delay:150ms]" />
-                  <span className="w-2 h-2 rounded-full bg-donut-coral animate-bounce [animation-delay:300ms]" />
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Pending artifact skeleton */}
-        {pendingArtifact && (
-          <div className="flex justify-start">
-            <div className="max-w-[85%] rounded-2xl rounded-bl-md border border-donut-coral/30 bg-donut-coral/5 px-4 py-3">
-              <div className="flex items-center gap-2 text-sm text-donut-coral">
-                <Loader2 className="w-4 h-4 animate-spin" />
-                Generating artifact…
-              </div>
-            </div>
-          </div>
-        )}
+        <ChatMessageList
+          messages={messages}
+          streaming={streaming}
+          streamedText={streamedText}
+          pendingArtifact={pendingArtifact}
+          artifacts={artifacts}
+          routine={routine}
+          quickStartChips={quickStartChips}
+          practiceStates={practiceStates}
+          onSend={(text) => onSend(text)}
+          onPracticeAnswer={onPracticeAnswer}
+          onPracticeNext={onPracticeNext}
+          onPracticeRetry={onPracticeRetry}
+          onClarificationSubmit={onClarificationSubmit}
+          onPracticeWeak={onPracticeWeak}
+        />
       </div>
 
       {/* Composer */}

@@ -9,19 +9,16 @@ import StudentLeftRail from "./StudentLeftRail";
 import StudentChatPane from "./StudentChatPane";
 import StudentArtifactPane from "./StudentArtifactPane";
 import { useStudentChat } from "./useStudentChat";
+import { useInlinePractice } from "./useInlinePractice";
 import {
   fetchStudentRoutines,
   fetchThreads,
   createThread,
   fetchMessages,
   fetchArtifacts,
+  updateArtifactContent,
 } from "./api";
-import type {
-  StudentThread,
-  StudentMessage,
-  StudentRoutine,
-  StudentArtifact,
-} from "./types";
+import type { StudentThread, StudentMessage, StudentRoutine, StudentArtifact, ClarificationContent } from "./types";
 import { DEFAULT_ROUTINE_KEY } from "./types";
 
 const STUDENT_ID = studentProfile.id;
@@ -44,6 +41,10 @@ const StudentCopilotPage: React.FC = () => {
 
   // Chat hook
   const { streaming, streamedText, pendingArtifact, send } = useStudentChat();
+
+  // Practice hook
+  const { practiceStates, startPractice, answerQuestion, nextQuestion, resetPractice } =
+    useInlinePractice(STUDENT_ID);
 
   // Current thread/routine
   const currentThread = useMemo(
@@ -194,6 +195,45 @@ const StudentCopilotPage: React.FC = () => {
     [currentThread, currentRoutine, messages, routines, subjectFilter, send]
   );
 
+  // Auto-start practice when a new practice_session artifact appears
+  useEffect(() => {
+    for (const a of artifacts) {
+      if (a.type === "practice_session" && !practiceStates[a.id]) {
+        const content = a.content as any;
+        if (content?.questions?.length > 0) {
+          startPractice(a);
+        }
+      }
+    }
+  }, [artifacts, practiceStates, startPractice]);
+
+  const handleClarificationSubmit = useCallback(
+    async (artifactId: string, answers: Record<string, string | string[]>) => {
+      // Mark artifact as answered
+      const artifact = artifacts.find((a) => a.id === artifactId);
+      if (!artifact) return;
+      const updatedContent = { ...(artifact.content as any), answered: true };
+      await updateArtifactContent(artifactId, updatedContent);
+      setArtifacts((prev) =>
+        prev.map((a) => (a.id === artifactId ? { ...a, content: updatedContent } : a))
+      );
+
+      // Format answers and send as user message
+      const lines = Object.entries(answers)
+        .map(([, v]) => (Array.isArray(v) ? v.join(", ") : v))
+        .join("\n");
+      handleSend(lines);
+    },
+    [artifacts, handleSend]
+  );
+
+  const handlePracticeWeak = useCallback(
+    (topic: string) => {
+      handleSend(`Practice more on ${topic}`);
+    },
+    [handleSend]
+  );
+
   const handleSelectThread = useCallback((id: string) => {
     setCurrentThreadId(id);
   }, []);
@@ -252,6 +292,12 @@ const StudentCopilotPage: React.FC = () => {
           onToggleLeft={toggleLeft}
           onToggleRight={toggleRight}
           quickStartChips={quickStartChips}
+          practiceStates={practiceStates}
+          onPracticeAnswer={answerQuestion}
+          onPracticeNext={nextQuestion}
+          onPracticeRetry={resetPractice}
+          onClarificationSubmit={handleClarificationSubmit}
+          onPracticeWeak={handlePracticeWeak}
         />
       </div>
 
