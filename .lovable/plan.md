@@ -1,37 +1,79 @@
 
 
-# Add Student Copilot Access — Floating Action Button
+# Add Exit Button + Seed Mock Data for Student Copilot
 
-## What's Missing
+## What's Happening Now
 
-The student copilot (all 6 phases) is fully built and lives at `/student/copilot`, but there is zero way to reach it from the student panel. No button, no nav entry, no link anywhere.
+1. The copilot page has no way to go back to the student panel — no "Exit" button.
+2. The copilot is completely static — no mock artifacts, threads, messages, or notifications are seeded. All lists are empty.
 
 ## What We'll Build
 
-A floating "Copilot" button on the bottom-right of every student page (similar to the teacher panel's `CopilotLauncher`), which navigates to `/student/copilot`.
+### 1. Exit Copilot Button
 
-## Implementation
+Add an "Exit Copilot" button in the left rail, above Arjun Sharma's profile section. On click, navigates back to `/student/dashboard`.
 
-### 1. Create `StudentCopilotFAB.tsx`
+**File**: `src/components/student/copilot/StudentLeftRail.tsx`
+- Add an `ArrowLeft` icon button at the very top: "← Exit Copilot"
+- `useNavigate()` to `/student/dashboard`
+- Also add this button to the chat pane header (for mobile, where left rail is hidden)
 
-New file: `src/components/student/copilot/StudentCopilotFAB.tsx`
+**File**: `src/components/student/copilot/StudentChatPane.tsx`
+- Add a small "← Back" button visible on the welcome screen header for mobile users
 
-- A floating action button positioned `fixed bottom-20 right-4` on mobile (above bottom nav) and `bottom-6 right-6` on desktop
-- Gradient background matching student panel warm theme (donut-coral to donut-orange)
-- Sparkles icon + "Copilot" label
-- On click: `navigate('/student/copilot')`
-- Hidden when already on the copilot page
-- 44px+ touch target, shadow, hover/active scale transitions
+### 2. Create Mock Data File
 
-### 2. Add FAB to `StudentLayout.tsx`
+**New file**: `src/data/student/copilotMockData.ts`
 
-Import and render `StudentCopilotFAB` inside the layout, so it appears on all student pages (dashboard, subjects, tests, progress, notifications).
+A comprehensive mock data generator that creates:
 
-### 3. Add Copilot to `StudentSidebar.tsx` (Desktop)
+- **5 student routines** (seeded into `rp_routines` with audience='student'): s_doubt, s_practice, s_exam_prep, s_roadmap, s_progress
+- **6 sample threads** across different routines and subjects
+- **12+ messages** across threads (user + assistant pairs showing realistic conversations)
+- **9 sample artifacts** (one per artifact type):
+  - `concept_explainer` — Newton's Laws with progressive steps
+  - `worked_solution` — Projectile motion with Given/To Find/Steps/Answer
+  - `formula_sheet` — Kinematics formulas with LaTeX expressions
+  - `practice_session` — 5 MCQ questions on Mechanics
+  - `study_plan` — 5-day plan with daily tasks
+  - `target_tracker` — JEE Mains target with subject gaps
+  - `mastery_map` — Physics + Chemistry topics with bands
+  - `progress_report` — Weekly stats with trends
+  - `test_debrief` — 10-question test analysis with wrong answers
+- **3 notifications** (homework_pending, exam_upcoming, chapter_today)
 
-Add a "Copilot" nav item with a Sparkles icon to the sidebar navigation list, linking to `/student/copilot`. This gives desktop users a secondary way to access it.
+All data structures match the exact content interfaces consumed by the 9 artifact view components.
 
----
+### 3. Seed Data into Database on First Load
 
-No changes to routing needed — the `/student/copilot` route already exists as a standalone page outside the layout.
+**File**: `src/components/student/copilot/seedCopilotData.ts`
+
+A one-time seeder function that:
+1. Checks if student routines exist in `rp_routines` with `audience='student'`
+2. If not, inserts the 5 routines
+3. Checks if any threads exist for `student-001`
+4. If not, inserts mock threads, messages, artifacts, and notifications
+5. Uses a localStorage flag `copilot_seeded` to avoid re-running
+
+**File**: `src/components/student/copilot/StudentCopilotPage.tsx`
+- Call `seedCopilotDataIfNeeded()` before the main data fetch in the initial `useEffect`
+- After seeding, proceed with normal fetch flow — artifacts, threads, messages all populate naturally
+
+### 4. Files Changed
+
+| File | Action |
+|------|--------|
+| `src/data/student/copilotMockData.ts` | Create — all mock data definitions |
+| `src/components/student/copilot/seedCopilotData.ts` | Create — DB seeder logic |
+| `src/components/student/copilot/StudentLeftRail.tsx` | Edit — add Exit Copilot button |
+| `src/components/student/copilot/StudentChatPane.tsx` | Edit — add Back button on mobile |
+| `src/components/student/copilot/StudentCopilotPage.tsx` | Edit — call seeder on mount |
+
+### Technical Notes
+
+- Mock artifacts use realistic CBSE Class 10 Physics/Chemistry/Math content
+- Practice session questions have proper `id`, `type`, `options`, `correct_answer`, and `explanation` fields
+- Study plan has proper `days[].items[].task` structure with durations
+- All seeding uses the existing `supabase` client with `insert` calls
+- The seeder is idempotent — safe to run multiple times
 
