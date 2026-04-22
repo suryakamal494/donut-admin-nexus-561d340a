@@ -26,6 +26,7 @@ import {
 import type { StudentThread, StudentMessage, StudentRoutine, StudentArtifact, TopicMastery, StudentNotification } from "./types";
 import { DEFAULT_ROUTINE_KEY } from "./types";
 import { buildFullStudentContext } from "./context";
+import { buildAdaptivePracticeContext } from "./chatHelpers";
 
 const STUDENT_ID = studentProfile.id;
 
@@ -105,7 +106,11 @@ const StudentCopilotPage: React.FC = () => {
   }, [currentThreadId]);
 
   // Build full student context with mastery data
-  const studentContext = useMemo(() => buildFullStudentContext(mastery), [mastery]);
+  const studentContext = useMemo(() => {
+    const base = buildFullStudentContext(mastery);
+    const adaptive = buildAdaptivePracticeContext(mastery);
+    return adaptive ? `${base}\n\n${adaptive}` : base;
+  }, [mastery]);
 
   // Keyboard shortcut: Cmd+K → new chat
   useEffect(() => {
