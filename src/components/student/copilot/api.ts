@@ -18,10 +18,11 @@ export async function fetchStudentRoutines(): Promise<StudentRoutine[]> {
   const { data } = await supabase
     .from("rp_routines")
     .select("*")
-    .eq("audience" as any, "student")
     .eq("is_active", true)
     .order("sort_order");
-  return (data ?? []) as unknown as StudentRoutine[];
+  // Filter for student audience client-side since column was just added
+  const all = (data ?? []) as any[];
+  return all.filter((r) => r.audience === "student") as StudentRoutine[];
 }
 
 // ---------- Threads ----------
