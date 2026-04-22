@@ -1,7 +1,7 @@
 // useStudentChat — streaming chat hook for student copilot
 import { useState, useCallback, useRef } from "react";
 import { insertMessage, updateThread, insertArtifact, fetchMessages } from "./api";
-import { classifySubject, splitStoredContent, embedImages, buildStudentContext } from "./chatHelpers";
+import { classifySubject, splitStoredContent, embedImages, buildAdaptivePracticeContext } from "./chatHelpers";
 import type { StudentThread, StudentMessage, StudentArtifact, StudentRoutine } from "./types";
 
 const ARTIFACT_RE = /__ARTIFACT__([\s\S]*?)__END__/g;
@@ -68,10 +68,8 @@ export function useStudentChat(): UseStudentChatReturn {
       ...(images.length > 0 ? { images } : {}),
     });
 
-    // Build system context
-    const studentContext = buildStudentContext();
-    let fullExtraSystem = "";
-    if (extraSystem) fullExtraSystem = extraSystem;
+    // Build system context — extraSystem now contains the full student context from orchestrator
+    let fullExtraSystem = extraSystem ?? "";
 
     // Start streaming
     setStreaming(true);
