@@ -186,6 +186,7 @@ export type Database = {
       }
       rp_routines: {
         Row: {
+          audience: string
           created_at: string
           default_system_prompt: string | null
           description: string | null
@@ -198,6 +199,7 @@ export type Database = {
           sort_order: number
         }
         Insert: {
+          audience?: string
           created_at?: string
           default_system_prompt?: string | null
           description?: string | null
@@ -210,6 +212,7 @@ export type Database = {
           sort_order?: number
         }
         Update: {
+          audience?: string
           created_at?: string
           default_system_prompt?: string | null
           description?: string | null
@@ -265,9 +268,337 @@ export type Database = {
           },
         ]
       }
+      student_attempts: {
+        Row: {
+          artifact_id: string | null
+          correct: boolean
+          created_at: string
+          expected_answer: string | null
+          given_answer: string | null
+          id: string
+          question_text: string | null
+          question_type: string
+          source: string
+          student_id: string
+          subject: string | null
+          thread_id: string | null
+          time_seconds: number | null
+          topic: string | null
+        }
+        Insert: {
+          artifact_id?: string | null
+          correct?: boolean
+          created_at?: string
+          expected_answer?: string | null
+          given_answer?: string | null
+          id?: string
+          question_text?: string | null
+          question_type?: string
+          source?: string
+          student_id: string
+          subject?: string | null
+          thread_id?: string | null
+          time_seconds?: number | null
+          topic?: string | null
+        }
+        Update: {
+          artifact_id?: string | null
+          correct?: boolean
+          created_at?: string
+          expected_answer?: string | null
+          given_answer?: string | null
+          id?: string
+          question_text?: string | null
+          question_type?: string
+          source?: string
+          student_id?: string
+          subject?: string | null
+          thread_id?: string | null
+          time_seconds?: number | null
+          topic?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_attempts_artifact_id_fkey"
+            columns: ["artifact_id"]
+            isOneToOne: false
+            referencedRelation: "student_copilot_artifacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_attempts_thread_id_fkey"
+            columns: ["thread_id"]
+            isOneToOne: false
+            referencedRelation: "student_copilot_threads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      student_copilot_artifacts: {
+        Row: {
+          content: Json
+          created_at: string
+          id: string
+          source: string
+          student_id: string
+          thread_id: string | null
+          title: string
+          type: string
+        }
+        Insert: {
+          content?: Json
+          created_at?: string
+          id?: string
+          source?: string
+          student_id: string
+          thread_id?: string | null
+          title: string
+          type: string
+        }
+        Update: {
+          content?: Json
+          created_at?: string
+          id?: string
+          source?: string
+          student_id?: string
+          thread_id?: string | null
+          title?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_copilot_artifacts_thread_id_fkey"
+            columns: ["thread_id"]
+            isOneToOne: false
+            referencedRelation: "student_copilot_threads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      student_copilot_messages: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          role: string
+          thread_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          role: string
+          thread_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          role?: string
+          thread_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_copilot_messages_thread_id_fkey"
+            columns: ["thread_id"]
+            isOneToOne: false
+            referencedRelation: "student_copilot_threads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      student_copilot_threads: {
+        Row: {
+          created_at: string
+          id: string
+          last_message_at: string
+          routine_key: string
+          student_id: string
+          subject: string | null
+          title: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          last_message_at?: string
+          routine_key: string
+          student_id: string
+          subject?: string | null
+          title?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          last_message_at?: string
+          routine_key?: string
+          student_id?: string
+          subject?: string | null
+          title?: string
+        }
+        Relationships: []
+      }
+      student_exams: {
+        Row: {
+          created_at: string
+          exam_date: string
+          id: string
+          max_score: number | null
+          name: string
+          notes: string | null
+          roadmap_artifact_id: string | null
+          student_id: string
+          target_score: number | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          exam_date: string
+          id?: string
+          max_score?: number | null
+          name: string
+          notes?: string | null
+          roadmap_artifact_id?: string | null
+          student_id: string
+          target_score?: number | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          exam_date?: string
+          id?: string
+          max_score?: number | null
+          name?: string
+          notes?: string | null
+          roadmap_artifact_id?: string | null
+          student_id?: string
+          target_score?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_exams_roadmap_artifact_id_fkey"
+            columns: ["roadmap_artifact_id"]
+            isOneToOne: false
+            referencedRelation: "student_copilot_artifacts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      student_notifications: {
+        Row: {
+          acted_on: boolean
+          artifact_id: string | null
+          body: string | null
+          created_at: string
+          dismissed: boolean
+          exam_id: string | null
+          id: string
+          priority: number
+          student_id: string
+          subject: string | null
+          title: string
+          type: string
+        }
+        Insert: {
+          acted_on?: boolean
+          artifact_id?: string | null
+          body?: string | null
+          created_at?: string
+          dismissed?: boolean
+          exam_id?: string | null
+          id?: string
+          priority?: number
+          student_id: string
+          subject?: string | null
+          title: string
+          type: string
+        }
+        Update: {
+          acted_on?: boolean
+          artifact_id?: string | null
+          body?: string | null
+          created_at?: string
+          dismissed?: boolean
+          exam_id?: string | null
+          id?: string
+          priority?: number
+          student_id?: string
+          subject?: string | null
+          title?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_notifications_artifact_id_fkey"
+            columns: ["artifact_id"]
+            isOneToOne: false
+            referencedRelation: "student_copilot_artifacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_notifications_exam_id_fkey"
+            columns: ["exam_id"]
+            isOneToOne: false
+            referencedRelation: "student_exams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      student_study_tasks: {
+        Row: {
+          artifact_id: string
+          completed: boolean
+          completed_at: string | null
+          created_at: string
+          day_index: number
+          id: string
+          item_index: number
+          student_id: string
+        }
+        Insert: {
+          artifact_id: string
+          completed?: boolean
+          completed_at?: string | null
+          created_at?: string
+          day_index: number
+          id?: string
+          item_index: number
+          student_id: string
+        }
+        Update: {
+          artifact_id?: string
+          completed?: boolean
+          completed_at?: string | null
+          created_at?: string
+          day_index?: number
+          id?: string
+          item_index?: number
+          student_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_study_tasks_artifact_id_fkey"
+            columns: ["artifact_id"]
+            isOneToOne: false
+            referencedRelation: "student_copilot_artifacts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
-      [_ in never]: never
+      student_topic_mastery: {
+        Row: {
+          accuracy: number | null
+          attempts: number | null
+          band: string | null
+          last_attempt_at: string | null
+          student_id: string | null
+          subject: string | null
+          topic: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       [_ in never]: never
