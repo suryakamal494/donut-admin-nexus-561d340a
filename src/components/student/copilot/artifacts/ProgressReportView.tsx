@@ -1,8 +1,18 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { TrendingUp, TrendingDown, Minus, BarChart3 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import ProgressHeroCard from "@/components/student/progress/ProgressHeroCard";
+import SubjectRadarChart from "@/components/student/progress/SubjectRadarChart";
+import ExamTrendChart from "@/components/student/progress/ExamTrendChart";
+import WeeklyActivityChart from "@/components/student/progress/WeeklyActivityChart";
+import {
+  getStudentOverview,
+  getSubjectSummaries,
+  getExamsWithContext,
+  getDerivedWeeklyActivity,
+} from "@/data/student/progressData";
 
 interface SubjectStat {
   subject: string;
@@ -41,6 +51,26 @@ const TrendIcon = ({ trend }: { trend: string }) => {
 };
 
 export default function ProgressReportView({ content }: Props) {
+  // Load platform data for rich chart rendering
+  const overview = useMemo(() => {
+    try { return getStudentOverview(); } catch { return null; }
+  }, []);
+  const subjectSummaries = useMemo(() => {
+    try { return getSubjectSummaries(); } catch { return []; }
+  }, []);
+  const exams = useMemo(() => {
+    try { return getExamsWithContext(); } catch { return []; }
+  }, []);
+  const weeklyActivity = useMemo(() => {
+    try { return getDerivedWeeklyActivity(); } catch { return null; }
+  }, []);
+
+  const radarData = subjectSummaries.map((s) => ({
+    subjectName: s.subjectName,
+    accuracy: s.accuracy,
+    color: s.color,
+  }));
+
   return (
     <div className="space-y-3">
       <div className="flex items-center gap-2">
@@ -48,6 +78,27 @@ export default function ProgressReportView({ content }: Props) {
         <h3 className="font-semibold text-sm text-foreground">{content.title}</h3>
         {content.period && <span className="text-[10px] text-muted-foreground ml-auto">{content.period}</span>}
       </div>
+
+      {/* Platform charts — reuses proven student progress components */}
+      {overview && (
+        <ProgressHeroCard data={overview} />
+      )}
+
+      {radarData.length > 0 && (
+        <SubjectRadarChart subjects={radarData} />
+      )}
+
+      {exams.length > 0 && (
+        <ExamTrendChart exams={exams} />
+      )}
+
+      {weeklyActivity && (
+        <WeeklyActivityChart
+          data={weeklyActivity.data}
+          totalMinutes={weeklyActivity.totalMinutes}
+          averageMinutes={weeklyActivity.averageMinutes}
+        />
+      )}
 
       {/* Overall stats */}
       <div className="grid grid-cols-3 gap-2">
