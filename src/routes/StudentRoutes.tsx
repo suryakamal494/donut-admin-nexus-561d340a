@@ -20,6 +20,7 @@ import StudentTestPlayer from "@/pages/student/TestPlayer";
 import StudentTestResults from "@/pages/student/TestResults";
 import StudentProgress from "@/pages/student/Progress";
 import StudentNotifications from "@/pages/student/Notifications";
+import StudentCopilot from "@/pages/student/Copilot";
 
 export default function StudentRoutes() {
   return (
@@ -31,6 +32,7 @@ export default function StudentRoutes() {
       <Route path="subjects/:subjectId/:chapterId/:bundleId/:contentId" element={<StudentContentViewer />} />
       <Route path="tests/:testId" element={<StudentTestPlayer />} />
       <Route path="tests/:testId/results" element={<StudentTestResults />} />
+      <Route path="copilot" element={<StudentCopilot />} />
       
       {/* Main student routes with layout */}
       <Route element={<StudentLayout />}>
