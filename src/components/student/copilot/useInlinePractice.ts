@@ -1,5 +1,5 @@
 // useInlinePractice — manages inline practice question flow within chat
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { insertAttempts } from "./api";
 import type { StudentArtifact, StudentAttempt } from "./types";
 import type { PracticeQuestion } from "./InlinePracticeCard";
@@ -20,6 +20,9 @@ export interface PracticeState {
 
 export function useInlinePractice(studentId: string) {
   const [practiceStates, setPracticeStates] = useState<Record<string, PracticeState>>({});
+  // Use ref to avoid stale closure in answerQuestion
+  const statesRef = useRef(practiceStates);
+  statesRef.current = practiceStates;
 
   const startPractice = useCallback((artifact: StudentArtifact) => {
     const content = artifact.content as any;
@@ -54,8 +57,8 @@ export function useInlinePractice(studentId: string) {
         };
       });
 
-      // Record attempt
-      const state = practiceStates[artifactId];
+      // Record attempt — use ref for fresh state
+      const state = statesRef.current[artifactId];
       if (state) {
         const q = state.questions[state.currentIndex];
         const attempt: StudentAttempt = {
@@ -73,7 +76,7 @@ export function useInlinePractice(studentId: string) {
         await insertAttempts([attempt]);
       }
     },
-    [studentId, practiceStates]
+    [studentId]
   );
 
   const nextQuestion = useCallback((artifactId: string) => {

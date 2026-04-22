@@ -1,5 +1,5 @@
 // MathMarkdown — renders markdown with LaTeX math and mhchem chemistry notation
-import React, { useMemo } from "react";
+import React, { useMemo, useRef } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
@@ -7,6 +7,10 @@ import rehypeKatex from "rehype-katex";
 import "katex/dist/katex.min.css";
 import "katex/contrib/mhchem";
 import { cn } from "@/lib/utils";
+
+// Stable plugin arrays — created once, never recreated
+const REMARK_PLUGINS = [remarkGfm, remarkMath] as any[];
+const REHYPE_PLUGINS = [[rehypeKatex, { throwOnError: false, strict: false }]] as any[];
 
 function normalizeMathDelimiters(text: string): string {
   // Convert \[...\] → $$...$$ and \(...\) → $...$
@@ -42,8 +46,8 @@ const MathMarkdown: React.FC<MathMarkdownProps> = ({
       )}
     >
       <ReactMarkdown
-        remarkPlugins={[remarkGfm, remarkMath]}
-        rehypePlugins={[[rehypeKatex, { throwOnError: false, strict: false }]]}
+        remarkPlugins={REMARK_PLUGINS}
+        rehypePlugins={REHYPE_PLUGINS}
       >
         {normalized}
       </ReactMarkdown>
