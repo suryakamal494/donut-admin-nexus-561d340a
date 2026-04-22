@@ -37,6 +37,7 @@ const PerExamStandingCard = lazy(() => import("@/components/student/progress/Per
 const StreakCalendar = lazy(() => import("@/components/student/progress/StreakCalendar"));
 const SubjectRadarChart = lazy(() => import("@/components/student/progress/SubjectRadarChart"));
 const WeeklyActivityChart = lazy(() => import("@/components/student/progress/WeeklyActivityChart"));
+const DifficultyOverview = lazy(() => import("@/components/student/progress/DifficultyOverview"));
 
 type TabKey = "overview" | "subjects" | "exams" | "insights";
 
