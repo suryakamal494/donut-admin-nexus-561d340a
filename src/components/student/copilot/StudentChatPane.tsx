@@ -7,8 +7,9 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import ChatMessageList from "./ChatMessageList";
-import type { StudentThread, StudentMessage, StudentRoutine, StudentArtifact, ClarificationContent } from "./types";
+import type { StudentThread, StudentMessage, StudentRoutine, StudentArtifact, StudentNotification } from "./types";
 import type { PracticeState } from "./useInlinePractice";
+import ProactiveCards from "./ProactiveCards";
 
 interface Props {
   thread: StudentThread | null;
@@ -28,6 +29,9 @@ interface Props {
   onPracticeRetry: (artifactId: string) => void;
   onClarificationSubmit: (artifactId: string, answers: Record<string, string | string[]>) => void;
   onPracticeWeak?: (topic: string) => void;
+  notifications?: StudentNotification[];
+  onNotificationAction?: (notif: StudentNotification) => void;
+  onNotificationDismiss?: (notifId: string) => void;
 }
 
 const MAX_IMAGES = 3;
@@ -51,6 +55,9 @@ const StudentChatPane: React.FC<Props> = ({
   onPracticeRetry,
   onClarificationSubmit,
   onPracticeWeak,
+  notifications = [],
+  onNotificationAction,
+  onNotificationDismiss,
 }) => {
   const [input, setInput] = useState("");
   const [attachedImages, setAttachedImages] = useState<string[]>([]);
@@ -155,6 +162,16 @@ const StudentChatPane: React.FC<Props> = ({
             <p className="text-sm text-muted-foreground">
               Start a new chat, practice, or plan your study roadmap.
             </p>
+            {/* Proactive cards on welcome screen */}
+            {notifications.length > 0 && onNotificationAction && onNotificationDismiss && (
+              <div className="mt-6 text-left">
+                <ProactiveCards
+                  notifications={notifications}
+                  onAction={onNotificationAction}
+                  onDismiss={onNotificationDismiss}
+                />
+              </div>
+            )}
           </div>
         </div>
       </div>
