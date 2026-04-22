@@ -62,7 +62,7 @@ const ExamHistoryTimeline = memo(({ exams, onSelectExam, selectedExamId }: ExamH
                 `}
               >
                 <div className="flex items-center justify-between mb-1">
-                  <span className="text-sm font-medium text-foreground truncate">{exam.examName}</span>
+                  <span className="text-xs sm:text-sm font-medium text-foreground truncate">{exam.examName}</span>
                   <div className="flex items-center gap-1.5 ml-2 flex-shrink-0">
                     <span className="text-xs text-muted-foreground">
                       {new Date(exam.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
@@ -73,7 +73,7 @@ const ExamHistoryTimeline = memo(({ exams, onSelectExam, selectedExamId }: ExamH
 
                 {/* Score bar */}
                 <div className="flex items-center gap-2 text-[10px]">
-                  <div className="flex-1 flex items-center gap-1">
+                  <div className="flex-1 flex items-center gap-1 flex-wrap">
                     <span className="font-bold text-foreground">{exam.percentage}%</span>
                     <span className="text-muted-foreground">•</span>
                     <span className="text-muted-foreground">Avg {exam.classAverage}%</span>
