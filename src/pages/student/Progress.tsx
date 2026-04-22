@@ -1,4 +1,4 @@
- import { useMemo, useEffect, lazy, Suspense, useCallback, useRef } from "react";
+ import { useState, useMemo, useEffect, lazy, Suspense, useCallback, useRef } from "react";
 import { TrendingUp } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -56,11 +56,8 @@ const StudentProgress = () => {
     tabs: TAB_KEYS,
     initialTab: "overview",
   });
-  const selectedSubjectIdRef = useRef<string | null>(null);
-  const selectedExamIdRef = useRef<string | null>(null);
-  // We need state for re-render triggers
-  const [selectedSubjectId, setSelectedSubjectIdRaw] = useReducerLike<string | null>(null);
-  const [selectedExamId, setSelectedExamIdRaw] = useReducerLike<string | null>(null);
+  const [selectedSubjectId, setSelectedSubjectIdRaw] = useState<string | null>(null);
+  const [selectedExamId, setSelectedExamIdRaw] = useState<string | null>(null);
 
   // Stable memoized data — computed once (or on relevant tab)
   const overview = useMemo(() => getStudentOverview(), []);
