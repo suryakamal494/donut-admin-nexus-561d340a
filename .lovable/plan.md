@@ -1,221 +1,141 @@
 
-# Student Copilot Artifact Audit — Why Artifacts Are Not Showing
 
-## What the audit confirmed
+# Make Student Copilot Interactive — Chat-First Learning Flow
 
-The issue is real, and it is not just a UI glitch.
+## What You Asked For (My Understanding)
 
-Current backend state for `student-001` shows:
-- Many threads exist
-- Only **2 artifacts** exist in the database
-- **0 active notifications** exist
-- The seeded mock artifact set is **not present**
+You want the copilot to feel like talking to a real teacher or friend:
 
-So the frontend is mostly showing exactly what the database currently contains: almost no artifacts.
+1. **Practice questions inline in chat** — When a student asks for 5-10 MCQs, questions appear one-by-one inside the chat bubble. After each answer, the AI responds contextually: "Great job!" if correct, or explains what went wrong if incorrect, then presents the next question. Only if there are 10+ questions, create a separate artifact.
 
-## Root Causes
+2. **Study plan tasks trigger learning flows** — When a student clicks "Revise distance, displacement, speed & velocity" in Day 1 of a study plan, the chat opens a revision session: explains key concepts, shows reading material, asks memory-check questions inline, and adapts based on the student's responses. The next task is shaped by how they performed on the current one.
 
-### 1. The seeder is skipping artifact seeding for existing users
-In `seedCopilotData.ts`, threads/messages/artifacts/notifications are all seeded only when this condition is true:
+3. **Conversational, adaptive interaction** — Not a silent "here's your artifact" response. The AI should scaffold, ask follow-ups, check understanding, and adjust difficulty — like a tutor sitting next to the student.
 
-```ts
-if (!existingThreads || existingThreads.length === 0) { ... }
-```
+## Root Causes (Why It Doesn't Work Today)
 
-That means:
-- if the user already has even **1 thread**
-- the seeder will **not insert mock messages**
-- will **not insert mock artifacts**
-- will **not insert mock notifications**
+### 1. Edge function creates artifacts silently, doesn't chat
+The system prompt tells the AI to route requests to tool calls (artifacts) but doesn't instruct it to also provide inline conversational text. When a student asks "5 MCQs on Kinematics", the AI calls `create_practice_session` and says nothing else, or just says "I've created a practice session."
 
-So once a few live threads were created, the mock artifact set stopped seeding entirely.
+### 2. Inline practice exists but isn't triggered properly
+`useInlinePractice` + `InlinePracticeCard` are built and functional, but:
+- The artifact-to-message linking in `ChatMessageList` uses a 30-second timestamp window which may not match
+- After answering a question, there's no AI follow-up — just a static "Next" button
+- No contextual encouragement or explanation from the AI after each answer
 
-This is the main reason your planned artifact library never appeared.
+### 3. Study plan tasks have no click-to-chat wiring
+`StudyPlanView` has `onToggleTask` which just toggles a checkbox. There's no callback to send a learning prompt to chat. The `StudentCopilotPage` doesn't pass a handler that would start a chat-based learning session from a task click.
 
-### 2. The artifact schemas are inconsistent across the system
-The mock data, the artifact views, the inline practice flow, and the AI tool output are not using one shared shape.
+### 4. Study plan normalizer is missing
+`artifactNormalizers.ts` handles practice, concept, worked_solution, target_tracker, progress_report, test_debrief — but NOT `study_plan`. The edge function outputs `{ focus, minutes }` per item, while the view expects `{ task, duration }`. Currently this works for mock data (which uses `task/duration` directly), but AI-generated study plans would break.
 
-Examples:
-- `practice_session`
-  - edge function outputs `prompt`, `answer`, `options: string[]`
-  - pane view expects `question`, `correct_answer`, `options: {label,text}[]`
-  - inline practice expects `question`, `answer`, `options: string[]`
-- `target_tracker`
-  - edge function outputs `exam`, `gap_analysis`, `todays_plan`, `weekly_progress`
-  - current view expects `exam_name`, `subjects`, `today_plan`, `days_remaining`
-- `progress_report`
-  - edge function outputs `questions_attempted`, `accuracy_by_topic`, `time_by_subject`, `highlights`
-  - current view expects `total_attempts`, `subjects`, `weekly_activity`, `recommendations`
-- `test_debrief`, `worked_solution`, `concept_explainer`, `mastery_map` also have similar mismatches
-
-So even when artifacts are created, several of them will render partially, incorrectly, or blank.
-
-### 3. The artifact pane filters too aggressively
-Right now `StudentArtifactPane` does this:
-- if a thread is selected, it shows only artifacts from that thread
-- if that thread has no artifacts, the pane becomes empty
-
-But the spec says:
-- show thread artifacts first
-- if none exist, fall back to recent relevant artifacts
-
-That fallback is missing, so many threads appear to have “nothing working” even when artifacts exist elsewhere.
-
-### 4. Some planned interactivity is not wired yet
-The following are still not connected end-to-end:
-- study-plan task completion loading/saving into the pane
-- task click → open learning flow → mark task complete
-- consistent proactive notification generation
-- artifact-linked learning journeys from roadmap tasks
-
-So the system currently has isolated pieces, not the full interactive artifact workflow you described.
-
-### 5. Notification types are inconsistent
-Mock notification types do not match the action mapping used in `handleNotificationAction`, so even if seeded, some cards would not route correctly.
+### 5. No feedback loop after inline practice answers
+When a student answers a practice question correctly or incorrectly via `InlinePracticeCard`, the result is saved to `student_attempts` but no follow-up message is injected into the chat. The student just sees a static green/red indicator and clicks "Next."
 
 ---
 
-## What I will fix
+## Implementation Plan
 
-### Step 1 — Fix seeding so artifacts seed independently
-Refactor `seedCopilotData.ts` so each dataset is checked and seeded separately:
+### Step 1 — Update Edge Function System Prompt for Interactive Behavior
 
-- routines seeded if student routines missing
-- threads seeded if seeded thread IDs missing
-- messages seeded if seeded message set missing
-- artifacts seeded if seeded artifact IDs missing
-- notifications seeded if seeded notification set missing
-- attempts seeded if missing
-- exams seeded if missing
+**File**: `supabase/functions/student-copilot-chat/index.ts`
 
-This removes the current “threads gate everything” problem.
+Add explicit instructions to the system prompt:
 
-Also:
-- bump the seed version key again
-- clear old keys
-- use deterministic IDs so reseeding is safe
-- only mark seeded after all required inserts succeed
+- **For small practice requests (up to 10 questions)**: Present questions one at a time in the chat text itself (not as an artifact). Format each question clearly with options. Wait for the student's response before presenting the next question.
+- **For larger practice sets (10+ questions)**: Use `create_practice_session` tool to create an artifact.
+- **After each student answer**: Respond with encouragement if correct ("Great job! You nailed it."), or explain the concept if wrong ("Not quite — here's why..."), then present the next question.
+- **For study plan task flows**: When the student says something like "Start Day 1 Task 1" or "Teach me about displacement", deliver the content conversationally — explain the concept, ask check questions, and adapt.
+- **General tone**: Be warm, use occasional emojis, ask "Ready for the next one?" or "Want to try a harder version?"
 
-### Step 2 — Introduce one canonical artifact normalization layer
-Create a shared artifact adapter/normalizer so every artifact type can render from:
-- seeded mock data
-- edge-function generated data
-- future database records
+### Step 2 — Add Study Plan Normalizer
 
-This will normalize all shapes before rendering.
+**File**: `src/components/student/copilot/artifactNormalizers.ts`
 
-Planned normalizations:
-- `concept_explainer`: `intro/body/try_yourself` ↔ `summary/explanation/challenge`
-- `worked_solution`: `given[]/find/step/expression/justification` ↔ current view model
-- `practice_session`: `prompt` → `question`, `answer` → canonical answer field, options normalized
-- `study_plan`: `focus/minutes` ↔ `label/duration`
-- `target_tracker`: `exam/gap_analysis/todays_plan/weekly_progress` ↔ pane-friendly model
-- `mastery_map`: `strongest_3/weakest_3` aliases
-- `progress_report`: `questions_attempted/highlights/time_by_subject` ↔ current report model
-- `test_debrief`: `q/why_wrong/followups` ↔ current debrief model
+Add `normalizeStudyPlan()`:
+- Map `focus` to `label` for each day
+- Map `minutes` to `duration` string for each item  
+- Ensure `task` field exists (from AI's `task` or fallback)
+- Register in `normalizeArtifactContent` switch
 
-### Step 3 — Make practice artifacts work in both chat and pane
-Unify the practice question model used by:
-- `useInlinePractice.ts`
-- `InlinePracticeCard.tsx`
-- `PracticeSessionView.tsx`
-- mock data
-- AI output
+### Step 3 — Wire Study Plan Task Click to Chat
 
-This will ensure:
-- seeded practice artifacts are playable
-- AI-created practice artifacts are playable
-- result tracking writes correct `student_attempts`
-- mastery refresh stays accurate
-
-### Step 4 — Fix artifact pane behavior
-Update `StudentArtifactPane.tsx` to follow the intended behavior:
-
-- exclude `clarifications` from the pane
-- show current thread artifacts first
-- if selected thread has none, fall back to recent relevant artifacts
-- optionally prefer same routine and subject
-- keep the pane populated instead of showing empty states too easily
-
-Additional polish:
-- pin latest `target_tracker` at top for exam prep
-- support nested `test_debrief` under practice sessions later if needed
-
-### Step 5 — Wire study-plan interaction properly
-Complete the roadmap/study-plan loop:
-
-- load `student_study_tasks` completion data
-- pass completion state into `StudentArtifactPane`
-- clicking a study-plan task sends a contextual learning prompt into chat
-- after teaching/help flow, mark task complete
-- persist progress visually in the study plan
-
-This is required for the “study plan → click task → learn concept/question → continue” workflow you described.
-
-### Step 6 — Fix notification seeding and routing
-Align seeded notification types with the routing logic so proactive cards can actually launch the correct flows.
-
-Examples:
-- homework → practice
-- exam reminder → exam prep
-- debrief available → insights
-- study material / chapter today → doubt/learning flow
-
-### Step 7 — Clean up the progress artifacts so they show copilot data, not unrelated platform data
-`MasteryMapView` and `ProgressReportView` currently pull chart data from general student progress generators. That can make the artifact feel disconnected from the copilot dataset.
-
-I will refactor them so they primarily render from artifact content / mastery data passed into the copilot flow, with fallback only when needed.
-
----
-
-## Files to update
-
-### Core logic
-- `src/components/student/copilot/seedCopilotData.ts`
-- `src/data/student/copilotMockData.ts`
-- `src/components/student/copilot/StudentCopilotPage.tsx`
+**Files**: 
 - `src/components/student/copilot/StudentArtifactPane.tsx`
-- `src/components/student/copilot/useInlinePractice.ts`
-- `src/components/student/copilot/InlinePracticeCard.tsx`
-- `src/components/student/copilot/artifacts/ArtifactView.tsx`
-
-### Artifact renderers likely needing normalization support
-- `src/components/student/copilot/artifacts/ConceptExplainerView.tsx`
-- `src/components/student/copilot/artifacts/WorkedSolutionView.tsx`
-- `src/components/student/copilot/artifacts/FormulaSheetView.tsx`
-- `src/components/student/copilot/artifacts/PracticeSessionView.tsx`
+- `src/components/student/copilot/StudentCopilotPage.tsx`
 - `src/components/student/copilot/artifacts/StudyPlanView.tsx`
-- `src/components/student/copilot/artifacts/TargetTrackerView.tsx`
-- `src/components/student/copilot/artifacts/MasteryMapView.tsx`
-- `src/components/student/copilot/artifacts/ProgressReportView.tsx`
-- `src/components/student/copilot/artifacts/TestDebriefView.tsx`
 
-### Optional new shared utility
-- `src/components/student/copilot/artifactNormalizers.ts`
+Add a new callback `onStartTask` to `StudyPlanView`:
+- When a task item is clicked, instead of just toggling completion, send a contextual prompt to chat: e.g., "Teach me about: Revise distance, displacement, speed & velocity (Day 1, Physics)"
+- Pass this callback from `StudentCopilotPage` through `StudentArtifactPane` to `StudyPlanView`
+- The chat then handles it as a normal user message, and the AI (with updated system prompt) starts an interactive teaching session
+
+### Step 4 — Add Post-Answer AI Follow-Up in Chat
+
+**Files**:
+- `src/components/student/copilot/StudentCopilotPage.tsx`
+- `src/components/student/copilot/useInlinePractice.ts`
+
+After a student answers an inline practice question:
+- If correct: Auto-inject a brief encouragement message into the chat ("Correct! Well done. Ready for the next one?")
+- If wrong: Auto-inject an explanation message ("Not quite. The correct answer is X because... Let's try the next one.")
+- These are local UI messages (not sent to the AI API), providing immediate feedback
+- The existing `onPracticeAnswer` callback already knows `correct` and has access to `explanation` — extend it to also append a feedback message to the messages list
+
+### Step 5 — Improve Inline Practice Question Display
+
+**File**: `src/components/student/copilot/InlinePracticeCard.tsx`
+
+Polish the inline card for chat context:
+- Make the question card feel more conversational (less "test-like")
+- After answering wrong, show the explanation more prominently with the AI's avatar
+- Add a "Want to try a similar one?" option after wrong answers
+
+### Step 6 — Fix Practice Artifact Linking in Chat
+
+**File**: `src/components/student/copilot/ChatMessageList.tsx`
+
+The current 30-second timestamp window for linking practice artifacts to messages is fragile. Change to:
+- Link by `thread_id` + check if the assistant message content mentions "practice" or similar keywords
+- Or store `artifact_id` in the message metadata when the edge function creates one
 
 ---
 
-## Expected result after the fix
+## Files to Update
 
-After implementation, the student copilot should behave like this:
+| File | Action |
+|------|--------|
+| `supabase/functions/student-copilot-chat/index.ts` | Update system prompt for interactive tutoring |
+| `src/components/student/copilot/artifactNormalizers.ts` | Add study_plan normalizer |
+| `src/components/student/copilot/StudentCopilotPage.tsx` | Wire task-click-to-chat, post-answer feedback |
+| `src/components/student/copilot/StudentArtifactPane.tsx` | Pass onStartTask callback through |
+| `src/components/student/copilot/artifacts/StudyPlanView.tsx` | Add onStartTask click handler |
+| `src/components/student/copilot/ChatMessageList.tsx` | Improve artifact-message linking |
+| `src/components/student/copilot/InlinePracticeCard.tsx` | Polish for conversational feel |
+| `src/components/student/copilot/useInlinePractice.ts` | Support feedback message injection |
 
-```text
-Open Copilot
-→ seeded threads appear
-→ seeded artifacts are visible immediately
-→ selecting roadmap/exam/practice/progress threads shows real artifacts
-→ practice artifacts run interactively
-→ study plans show actionable tasks
-→ progress/mastery artifacts render meaningful data
-→ fallback artifact pane prevents “empty” dead-ends
+## Expected Result
+
+```
+Student: "5 MCQs on Kinematics"
+AI: "Let's test your Kinematics knowledge! Here's Q1:"
+     [Inline MCQ card appears]
+Student: clicks option B
+AI: "Correct! Displacement can be zero even if distance is not. Ready for Q2?"
+     [Next MCQ card appears]
+Student: clicks wrong option
+AI: "Not quite — the correct answer is B. Here's why: v = u + at = 0 + 2×5 = 10 m/s. Let's try Q3!"
+
+Student: clicks "Revise distance & displacement" in study plan
+Chat: "Let's revise Distance vs Displacement!
+
+Distance is the total path length traveled. It's a scalar — always positive.
+Displacement is the shortest distance from start to end. It's a vector.
+
+Quick check: If you walk 3m east then 4m north, what's the distance? What's the displacement?"
+
+Student: "distance is 7m, displacement is 5m"
+AI: "Perfect! You used the Pythagorean theorem correctly. √(3²+4²) = 5m. 
+     Ready for the next concept — Speed vs Velocity?"
 ```
 
-## Technical conclusion
-
-Why artifacts are not showing today:
-1. the seeder skips artifacts once any thread exists
-2. the database therefore contains almost no artifacts
-3. the pane only shows current-thread artifacts with no fallback
-4. several artifact types use incompatible schemas, so even created artifacts are not reliably renderable
-
-So this is a combined **data-seeding + schema-contract + pane-filtering** problem, not a single frontend bug.
