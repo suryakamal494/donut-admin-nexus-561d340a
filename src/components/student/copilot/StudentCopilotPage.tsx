@@ -227,7 +227,8 @@ const StudentCopilotPage: React.FC = () => {
     [currentThread, currentRoutine, messages, routines, subjectFilter, send, studentContext]
   );
 
-  // Auto-start practice when a new practice_session artifact appears
+  // Auto-start practice when a new practice_session artifact appears.
+  // Only depend on artifacts — not practiceStates, to avoid infinite loops.
   useEffect(() => {
     for (const a of artifacts) {
       if (a.type === "practice_session" && !practiceStates[a.id]) {
@@ -237,19 +238,21 @@ const StudentCopilotPage: React.FC = () => {
         }
       }
     }
-    // Refresh mastery when practice completes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [artifacts, startPractice]);
+
+  // Refresh mastery when any practice finishes — separate effect to avoid loops
+  useEffect(() => {
     for (const [artId, state] of Object.entries(practiceStates)) {
+      if (!state?.finished) continue;
       const art = artifacts.find((a) => a.id === artId);
-      if (art && state && typeof state === "object" && "results" in state) {
-        const results = (state as any).results;
-        const content = art.content as any;
-        if (results && content?.questions && results.length >= content.questions.length) {
-          refreshMastery();
-          break;
-        }
+      if (art) {
+        refreshMastery();
+        return; // Only refresh once per cycle
       }
     }
-  }, [artifacts, practiceStates, startPractice, refreshMastery]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [practiceStates]);
 
   const handleClarificationSubmit = useCallback(
     async (artifactId: string, answers: Record<string, string | string[]>) => {

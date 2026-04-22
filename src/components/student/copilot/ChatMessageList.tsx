@@ -1,5 +1,5 @@
 // ChatMessageList — extracted message rendering with inline interactive cards
-import React from "react";
+import React, { useMemo } from "react";
 import { Sparkles, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import MathMarkdown from "./MathMarkdown";
@@ -43,31 +43,64 @@ const ChatMessageList: React.FC<Props> = ({
   onClarificationSubmit,
   onPracticeWeak,
 }) => {
-  // Find practice artifacts linked to messages (check if text mentions the artifact)
+  // Pre-build lookup maps for practice and clarification artifacts to avoid O(n²) per render
+  const practiceArtifactMap = useMemo(() => {
+    const map = new Map<string, StudentArtifact>();
+    const practiceArts = artifacts.filter((a) => a.type === "practice_session");
+    // Build a simple thread-based lookup
+    for (const a of practiceArts) {
+      if (a.thread_id) {
+        // Use thread_id as key — works for single practice per thread
+        const existing = map.get(a.thread_id);
+        if (!existing || new Date(a.created_at) > new Date(existing.created_at)) {
+          map.set(a.thread_id, a);
+        }
+      }
+    }
+    return map;
+  }, [artifacts]);
+
+  const clarificationArtifactMap = useMemo(() => {
+    const map = new Map<string, StudentArtifact>();
+    const clarArts = artifacts.filter((a) => a.type === "clarifications");
+    for (const a of clarArts) {
+      if (a.thread_id) {
+        const existing = map.get(a.thread_id);
+        if (!existing || new Date(a.created_at) > new Date(existing.created_at)) {
+          map.set(a.thread_id, a);
+        }
+      }
+    }
+    return map;
+  }, [artifacts]);
+
   const findPracticeArtifact = (msg: StudentMessage): StudentArtifact | null => {
     if (msg.role !== "assistant") return null;
-    // Look for practice_session artifacts in the same thread
-    return (
-      artifacts.find(
+    const candidate = practiceArtifactMap.get(msg.thread_id);
+    if (candidate && Math.abs(new Date(candidate.created_at).getTime() - new Date(msg.created_at).getTime()) < 30000) {
+      return candidate;
+    }
+    // Fallback for multiple practice artifacts in same thread
+    return artifacts.find(
         (a) =>
           a.type === "practice_session" &&
           a.thread_id === msg.thread_id &&
-          // Created around the same time as the message (within 30s)
           Math.abs(new Date(a.created_at).getTime() - new Date(msg.created_at).getTime()) < 30000
-      ) ?? null
-    );
+    ) ?? null;
   };
 
   const findClarificationArtifact = (msg: StudentMessage): StudentArtifact | null => {
     if (msg.role !== "assistant") return null;
-    return (
-      artifacts.find(
+    const candidate = clarificationArtifactMap.get(msg.thread_id);
+    if (candidate && Math.abs(new Date(candidate.created_at).getTime() - new Date(msg.created_at).getTime()) < 30000) {
+      return candidate;
+    }
+    return artifacts.find(
         (a) =>
           a.type === "clarifications" &&
           a.thread_id === msg.thread_id &&
           Math.abs(new Date(a.created_at).getTime() - new Date(msg.created_at).getTime()) < 30000
-      ) ?? null
-    );
+    ) ?? null;
   };
 
   return (
