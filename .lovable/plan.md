@@ -1,58 +1,32 @@
 
 
-# Student Timetable — Lesson Plan Links and Exam Slots
+# Student Timetable — Lesson Plan Icon Repositioning and Linking
 
 ## Summary
 
-Two enhancements: (1) show a small lesson plan icon on class cards when the teacher has shared one, tappable to view it; (2) add exam/test slots into the daily schedule with a visually distinct design (purple/violet theme) so students can immediately distinguish exams from regular classes.
+Move the lesson plan icon from the far-right corner into the meta row (inline with time, teacher, room), change the icon to `BookOpen` for better clarity, add a small "Plan" label next to it, and wire it to navigate to the lesson plan route.
 
 ## Changes
 
-### 1. Extend `ScheduleItem` Interface — `src/data/student/dashboard.ts`
+### `src/components/student/timetable/TimetableDayCard.tsx`
 
-Add optional fields to `ScheduleItem`:
-- `lessonPlanId?: string` — present when teacher has shared a lesson plan for this class
-- `type` expanded from `'class' | 'break'` to `'class' | 'break' | 'exam'`
-- `examTitle?: string` — name of the exam (e.g., "Unit Test - Quadratic Equations")
-- `examType?: 'quiz' | 'test' | 'exam'` — to show severity level
+**Remove the icon from the subject header row:**
+- Remove the `{item.lessonPlanId && ...}` block from the `flex items-center justify-between` div that contains the subject name
 
-### 2. Add Mock Exam Slots and Lesson Plan IDs — `src/data/student/weeklySchedule.ts`
+**Add it to the meta row instead:**
+- Place a new chip-style element at the end of the meta row (after time, teacher, room)
+- Use `BookOpen` icon (from lucide) instead of `FileText` -- visually communicates "lesson plan" better than a generic document
+- Add a tiny "Plan" label next to the icon so it's self-explanatory
+- Style it as a subtle tappable chip: `bg-primary/10 text-primary rounded-full px-2 py-0.5` so it looks like a mini action button within the row
+- On tap, navigate to `/student/subjects` as a placeholder route (the actual lesson plan viewer can be wired later, but the navigation call will be in place using `useNavigate`)
 
-- Add `lessonPlanId` to some class entries (e.g., 60% of classes have a shared lesson plan) to simulate teacher sharing
-- For today's date specifically, inject one exam slot (e.g., replacing the 4th period with an exam) so it's immediately visible as a demo
-- Add a Wednesday exam slot as well for variety
-- Exam slots use `type: 'exam'` with `examTitle`, `examType`, and relevant subject/time fields
+**Result:** The icon sits right next to the class metadata, visible but not floating in empty space. On mobile the meta row wraps naturally so the chip appears near the other details. On desktop it stays inline instead of drifting to the far edge.
 
-### 3. Update `TimetableDayCard` — `src/components/student/timetable/TimetableDayCard.tsx`
-
-**Lesson Plan Icon on Class Cards:**
-- When `item.lessonPlanId` exists, show a small `FileText` icon (from lucide) in the top-right area of the class card
-- Tapping it navigates to `/student/lesson-plan/{lessonPlanId}` (or opens a sheet — for now, just a link placeholder)
-- Icon styled subtly (muted color, 14px) with a tooltip-like label "Lesson Plan"
-
-**Exam Card Design (distinct from class cards):**
-- `type === 'exam'` renders a completely different card style:
-  - Purple/violet gradient border and left accent stripe
-  - `ClipboardCheck` or `Award` icon instead of subject dot
-  - Exam title displayed prominently
-  - Badge showing exam type ("Quiz", "Unit Test", "Exam") in purple
-  - Slightly larger card with more visual weight than regular class cards
-  - No teacher/room meta (or optional if present)
-- Day header class count updated to also show exam count (e.g., "4 classes, 1 exam")
-
-### 4. Update Day Header in `TimetableDayCard`
-
-- Count exams separately: `items.filter(i => i.type === 'exam').length`
-- Show "4 classes · 1 exam" in the subtitle when exams exist
-- Exam count shown in purple text for visual distinction
-
-## Files Changed
+### Files Changed
 
 | File | Action |
 |------|--------|
-| `src/data/student/dashboard.ts` | Edit — extend `ScheduleItem` with `lessonPlanId`, expand `type` to include `'exam'`, add `examTitle` and `examType` |
-| `src/data/student/weeklySchedule.ts` | Edit — add lesson plan IDs to some classes, inject exam slots on select days |
-| `src/components/student/timetable/TimetableDayCard.tsx` | Edit — add lesson plan icon on class cards, add distinct exam card rendering, update day header counts |
+| `src/components/student/timetable/TimetableDayCard.tsx` | Edit -- move lesson plan from header to meta row, change icon, add label, wire navigation |
 
-No routing or navigation changes needed. No database changes.
+No new files. No data or routing changes.
 
