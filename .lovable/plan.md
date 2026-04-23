@@ -1,34 +1,45 @@
 
 
-# Fix: Student Panel Slow Loading
+# Student Timetable — Auto-scroll, Day Selector Strip, and Compact Layout
 
-## Problem
+## Summary
 
-The student module **eagerly imports all 15 pages** in `StudentRoutes.tsx`, meaning every page (including heavy ones like TestPlayer, Copilot, ContentViewer, TestResults) loads upfront when you first visit any student URL. In contrast, the Teacher module lazy-loads its heavy pages, which is why it feels faster.
-
-The comment in `StudentRoutes.tsx` says "EAGER LOADED (no lazy loading per requirement)" but this requirement is outdated and causing the performance issue.
-
-## Solution
-
-Apply the same pattern the Teacher module uses: **eager-load core pages** (Dashboard, Subjects, Timetable) and **lazy-load heavy pages** (TestPlayer, Copilot, ContentViewer, TestResults, Progress, etc.).
+Three improvements to the timetable page: (1) auto-scroll to today on load, (2) a horizontal day selector strip for quick day jumping, and (3) tighter spacing throughout to reduce whitespace.
 
 ## Changes
 
-### `src/routes/StudentRoutes.tsx`
+### 1. Auto-scroll to Today — `src/pages/student/Timetable.tsx`
 
-- Keep eager imports for frequently visited pages: Dashboard, Subjects, SubjectDetail, Timetable, Tests
-- Convert heavy/infrequent pages to `lazy()` imports with `Suspense` fallback:
-  - `StudentCopilot` (401-line orchestrator with AI chat, artifacts, multiple sub-modules)
-  - `StudentTestPlayer` (483-line full-screen test engine)
-  - `StudentTestResults` (226-line results with charts)
-  - `StudentContentViewer` (311-line full-screen viewer with animations)
-  - `StudentBundleDetail`
-  - `StudentChapterView`
-  - `StudentProgress`
-  - `StudentNotifications`
-  - `StudentSubjectTests`
-- Wrap lazy routes in `Suspense` with the student-appropriate `PageSkeleton` fallback
-- Add `LazyErrorBoundary` wrapper for error recovery
+- Add a `useEffect` that runs after initial render (and when `weekStart` changes)
+- If today's date exists in the current week's schedule, scroll the corresponding `TimetableDayCard` into view using `scrollIntoView({ behavior: 'smooth', block: 'start' })`
+- Each day card gets a `ref` via a `data-date` attribute or a ref map keyed by date string
+- No "Jump to Today" button needed — it happens automatically
 
-This is a single-file change that should dramatically reduce the initial bundle size when entering the student panel.
+### 2. Horizontal Day Selector Strip — New section in `src/pages/student/Timetable.tsx`
+
+- A row of 6 pill-shaped day buttons (Mon–Sat) placed between the week navigator and the day cards
+- Each pill shows: short day name + date number (e.g., "Mon 21")
+- Today's pill gets the orange gradient highlight; selected/tapped pill gets a subtle ring
+- Tapping a pill scrolls to that day's card smoothly
+- Horizontally scrollable on very narrow screens, but 6 pills fit comfortably on 320px+
+
+### 3. Compact Layout — `src/components/student/timetable/TimetableDayCard.tsx` and `Timetable.tsx`
+
+- Reduce `space-y-6` between day cards to `space-y-4`
+- Reduce day header date box from `w-12 h-12` to `w-10 h-10` with smaller text
+- Reduce period card padding from `p-3` to `p-2.5`
+- Reduce `space-y-2` between period cards to `space-y-1.5`
+- Reduce meta row `mt-2` to `mt-1`
+- Reduce left indent `pl-[60px]` to `pl-[52px]` to match smaller date box
+- Trim the navigator wrapper padding from `p-3` to `p-2.5` and `mb-6` to `mb-3`
+- Reduce page header `mb-4` to `mb-3`
+
+### Files Changed
+
+| File | Action |
+|------|--------|
+| `src/pages/student/Timetable.tsx` | Edit — add auto-scroll logic, day selector strip, tighten spacing |
+| `src/components/student/timetable/TimetableDayCard.tsx` | Edit — compact padding, smaller date box, tighter gaps |
+
+No new files created. No data or routing changes.
 
