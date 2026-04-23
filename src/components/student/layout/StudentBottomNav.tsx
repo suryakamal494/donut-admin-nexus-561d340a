@@ -7,7 +7,6 @@ import {
   BookOpen, 
   Trophy, 
   TrendingUp, 
-  Bell,
   type LucideIcon
 } from "lucide-react";
 import { cn } from "@/lib/utils";
