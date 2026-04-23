@@ -19,12 +19,12 @@ export const TimetableDayCard = ({ dateStr, items, isToday }: TimetableDayCardPr
   const classCount = items.filter(i => i.type === 'class').length;
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-1.5">
       {/* Day Header */}
       <div className="flex items-center gap-3">
         <div
           className={cn(
-            "w-12 h-12 rounded-xl flex flex-col items-center justify-center text-center shrink-0",
+            "w-10 h-10 rounded-xl flex flex-col items-center justify-center text-center shrink-0",
             isToday
               ? "bg-gradient-to-br from-donut-coral to-donut-orange text-white shadow-lg shadow-orange-300/40"
               : "bg-muted text-muted-foreground"
@@ -42,7 +42,7 @@ export const TimetableDayCard = ({ dateStr, items, isToday }: TimetableDayCardPr
       </div>
 
       {/* Period Cards */}
-      <div className="space-y-2 pl-[60px]">
+      <div className="space-y-1.5 pl-[52px]">
         {items.map((item) => {
           if (item.type === 'break') {
             return (
@@ -63,7 +63,7 @@ export const TimetableDayCard = ({ dateStr, items, isToday }: TimetableDayCardPr
             <div
               key={item.id}
               className={cn(
-                "relative p-3 rounded-xl border transition-all",
+                "relative p-2.5 rounded-xl border transition-all",
                 isCurrent
                   ? "bg-gradient-to-r from-donut-coral/5 to-donut-orange/5 border-donut-coral/30 shadow-md shadow-orange-200/20"
                   : "bg-card border-border/50 hover:shadow-sm"
@@ -91,7 +91,7 @@ export const TimetableDayCard = ({ dateStr, items, isToday }: TimetableDayCardPr
                   )}
 
                   {/* Meta row */}
-                  <div className="flex items-center gap-3 mt-2 flex-wrap">
+                  <div className="flex items-center gap-3 mt-1 flex-wrap">
                     <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
                       <Clock className="w-3 h-3" />
                       {item.time} – {item.endTime}
