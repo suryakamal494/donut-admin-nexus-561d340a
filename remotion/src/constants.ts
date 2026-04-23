@@ -20,7 +20,16 @@ export const VIDEO_CONFIG = {
   width: 1280,
   height: 720,
   fps: 30,
-  durationPerScene: 150, // 5 seconds per scene
+  durationPerScene: 150,
+};
+
+// Audio durations in seconds (from ElevenLabs TTS)
+export const AUDIO_DURATIONS: Record<string, number> = {
+  q1: 58.3,
+  q2: 67.9,
+  q3: 46.3,
+  q4: 59.7,
+  q5: 51.5,
 };
 
 // Question data for 5 demo videos

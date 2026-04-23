@@ -2,9 +2,11 @@ import { bundle } from "@remotion/bundler";
 import { renderMedia, selectComposition, openBrowser } from "@remotion/renderer";
 import path from "path";
 import { fileURLToPath } from "url";
+import { execSync } from "child_process";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const outputDir = "/mnt/documents";
+const audioDir = path.resolve(__dirname, "../public/audio");
 
 const compositionIds = [
   "wrong-answer-q1",
@@ -50,7 +52,25 @@ for (const id of toRender) {
     muted: true,
     concurrency: 1,
   });
-  console.log(`  ✓ ${id}.mp4 saved`);
+
+  // Mux audio if available
+  const qId = id.replace("wrong-answer-", "");
+  const audioPath = path.join(audioDir, `${qId}.mp3`);
+  const videoPath = path.join(outputDir, `${id}.mp4`);
+  const finalPath = path.join(outputDir, `${id}-final.mp4`);
+  
+  try {
+    const stat = await import("fs").then(fs => fs.statSync(audioPath));
+    console.log(`  Muxing audio (${(stat.size / 1024).toFixed(0)} KB)...`);
+    execSync(
+      `ffmpeg -y -i "${videoPath}" -i "${audioPath}" -c:v copy -c:a aac -b:a 128k -shortest "${finalPath}" 2>/dev/null`
+    );
+    // Replace original with final
+    execSync(`mv "${finalPath}" "${videoPath}"`);
+    console.log(`  ✓ ${id}.mp4 saved (with audio)`);
+  } catch (e) {
+    console.log(`  ✓ ${id}.mp4 saved (no audio file found)`);
+  }
 }
 
 await browser.close({ silent: false });

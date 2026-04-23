@@ -1,6 +1,6 @@
 import { Composition } from "remotion";
 import { WrongAnswerVideo } from "./WrongAnswerVideo";
-import { DEMO_QUESTIONS } from "./constants";
+import { DEMO_QUESTIONS, AUDIO_DURATIONS, VIDEO_CONFIG } from "./constants";
 
 export const RemotionRoot: React.FC = () => {
   return (
@@ -10,10 +10,10 @@ export const RemotionRoot: React.FC = () => {
           key={q.id}
           id={`wrong-answer-${q.id}`}
           component={WrongAnswerVideo}
-          durationInFrames={500}
-          fps={30}
-          width={1280}
-          height={720}
+          durationInFrames={Math.ceil((AUDIO_DURATIONS[q.id] || 60) * VIDEO_CONFIG.fps) + 30}
+          fps={VIDEO_CONFIG.fps}
+          width={VIDEO_CONFIG.width}
+          height={VIDEO_CONFIG.height}
           defaultProps={{ data: q }}
         />
       ))}
