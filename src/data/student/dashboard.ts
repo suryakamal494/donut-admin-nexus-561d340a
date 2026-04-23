@@ -264,3 +264,22 @@ export const formatTestTime = (dateString: string): string => {
   const date = new Date(dateString);
   return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
 };
+
+// Last test result mock data
+export const lastTestResult: LastTestResult = {
+  id: 'kinematics-quiz-1',
+  testName: 'Kinematics Quiz',
+  subject: 'physics',
+  score: 72,
+  totalMarks: 100,
+  rank: 5,
+  totalStudents: 32,
+  accuracy: 72,
+  date: '2026-01-09T14:30:00',
+};
+
+// Daily study goal mock data
+export const dailyStudyGoal: DailyStudyGoal = {
+  current: 45,
+  target: 60,
+};
