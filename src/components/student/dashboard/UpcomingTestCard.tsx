@@ -2,7 +2,7 @@
 // Individual card for upcoming tests/exams
 
 import { useNavigate } from "react-router-dom";
-import { FileText, Calendar } from "lucide-react";
+import { FileText, Calendar, Sparkles } from "lucide-react";
 import { subjectColors, formatRelativeDate, formatTestTime, type UpcomingTest } from "@/data/student/dashboard";
 import { cn } from "@/lib/utils";
 
@@ -63,6 +63,22 @@ const UpcomingTestCard = ({ test }: UpcomingTestCardProps) => {
         <span>•</span>
         <span>{time}</span>
       </div>
+
+      {/* Prepare with AI chip */}
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          const params = new URLSearchParams();
+          params.set('routine', 's_exam_prep');
+          params.set('subject', test.subject);
+          params.set('prompt', `Help me prepare for my upcoming ${test.type}: ${test.title}`);
+          navigate(`/student/copilot?${params.toString()}`);
+        }}
+        className="mt-2.5 w-full px-2 py-1.5 rounded-xl bg-violet-50 text-violet-600 text-[10px] font-medium flex items-center justify-center gap-1.5 hover:bg-violet-100 transition-colors"
+      >
+        <Sparkles className="w-3 h-3" />
+        Prepare
+      </button>
     </div>
   );
 };

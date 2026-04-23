@@ -3,7 +3,7 @@
 
 import { memo } from "react";
 import { useNavigate } from "react-router-dom";
-import { ChevronRight, Play, AlertCircle, Trophy, Sparkles } from "lucide-react";
+import { Play, AlertCircle, Trophy, Sparkles } from "lucide-react";
 import type { AIRecommendation } from "@/data/student/dashboard";
 
 interface AIRecommendationCardProps {
@@ -24,44 +24,18 @@ const getIcon = (type: AIRecommendation['type']) => {
   }
 };
 
-// Map subject names to subject IDs
-const subjectIdMap: Record<string, string> = {
-  physics: 'physics',
-  math: 'math',
-  chemistry: 'chemistry',
-  biology: 'biology',
-  english: 'english',
-  cs: 'cs',
-};
-
 const AIRecommendationCard = memo(function AIRecommendationCard({ recommendation, compact = false }: AIRecommendationCardProps) {
   const navigate = useNavigate();
 
   const handleClick = () => {
-    const subjectId = recommendation.subject ? subjectIdMap[recommendation.subject] : null;
-    
-    if (!subjectId) {
-      // Fallback to subjects page if no subject specified
-      navigate('/student/subjects');
-      return;
-    }
-
-    switch (recommendation.type) {
-      case 'continue':
-        // Navigate to subject detail page to continue learning
-        navigate(`/student/subjects/${subjectId}`);
-        break;
-      case 'focus':
-        // Navigate to subject with AI Path mode (My Personalized Journey)
-        // The ChapterView will default show mode options
-        navigate(`/student/subjects/${subjectId}`);
-        break;
-      case 'quick-win':
-        // Navigate to specific subject to complete quick wins
-        navigate(`/student/subjects/${subjectId}`);
-        break;
-      default:
-        navigate('/student/subjects');
+    if (recommendation.copilotRoutine) {
+      const params = new URLSearchParams();
+      params.set('routine', recommendation.copilotRoutine);
+      if (recommendation.subject) params.set('subject', recommendation.subject);
+      if (recommendation.copilotPrompt) params.set('prompt', recommendation.copilotPrompt);
+      navigate(`/student/copilot?${params.toString()}`);
+    } else {
+      navigate('/student/copilot');
     }
   };
 
@@ -93,8 +67,8 @@ const AIRecommendationCard = memo(function AIRecommendationCard({ recommendation
         
         {/* Action arrow */}
         <div className="flex-shrink-0 flex items-center">
-          <div className="w-8 h-8 rounded-full bg-muted/50 flex items-center justify-center">
-            <ChevronRight className="w-4 h-4 text-muted-foreground" />
+          <div className="w-8 h-8 rounded-full bg-donut-coral/10 flex items-center justify-center">
+            <Sparkles className="w-4 h-4 text-donut-coral" />
           </div>
         </div>
       </div>
