@@ -1,32 +1,36 @@
 
 
-# Student Timetable — Lesson Plan Icon Repositioning and Linking
+# Student Timetable — Rename "Plan" Label and Link to Lesson Bundles
 
 ## Summary
 
-Move the lesson plan icon from the far-right corner into the meta row (inline with time, teacher, room), change the icon to `BookOpen` for better clarity, add a small "Plan" label next to it, and wire it to navigate to the lesson plan route.
+Rename the "Plan" chip to "Notes" (better describes teacher-shared materials — PDFs, images, resources), and wire it to navigate directly to the specific lesson bundle within the subject's chapter view.
 
 ## Changes
 
-### `src/components/student/timetable/TimetableDayCard.tsx`
+### 1. Update Mock Data Mapping — `src/data/student/weeklySchedule.ts`
 
-**Remove the icon from the subject header row:**
-- Remove the `{item.lessonPlanId && ...}` block from the `flex items-center justify-between` div that contains the subject name
+- Replace arbitrary `lessonPlanId` values (e.g., `lp-math-quad-01`) with actual bundle IDs from the lesson bundles data (e.g., `bundle-math-ch1-1`)
+- Add a corresponding `lessonBundleRoute` or reuse existing subject/chapter info to construct the full navigation path
+- Since each schedule entry already has `subject`, we can derive the `subjectId` from it; the `lessonPlanId` will now store a real bundle ID that maps to a known `chapterId`
 
-**Add it to the meta row instead:**
-- Place a new chip-style element at the end of the meta row (after time, teacher, room)
-- Use `BookOpen` icon (from lucide) instead of `FileText` -- visually communicates "lesson plan" better than a generic document
-- Add a tiny "Plan" label next to the icon so it's self-explanatory
-- Style it as a subtle tappable chip: `bg-primary/10 text-primary rounded-full px-2 py-0.5` so it looks like a mini action button within the row
-- On tap, navigate to `/student/subjects` as a placeholder route (the actual lesson plan viewer can be wired later, but the navigation call will be in place using `useNavigate`)
+### 2. Update `TimetableDayCard.tsx`
 
-**Result:** The icon sits right next to the class metadata, visible but not floating in empty space. On mobile the meta row wraps naturally so the chip appears near the other details. On desktop it stays inline instead of drifting to the far edge.
+**Label change:**
+- Rename "Plan" to "Notes" — this better communicates "teacher-shared materials" rather than "lesson plan" which sounds like a teacher-internal document
+
+**Navigation update:**
+- Instead of navigating to `/student/subjects` (generic), navigate to `/student/subjects/:subjectId/:chapterId/:bundleId`
+- Import `getLessonBundleById` from the lesson bundles data to look up the bundle and get its `chapterId`
+- Construct the full route: `/student/subjects/${subjectId}/${bundle.chapterId}/${bundleId}`
+- The `subject` field on the schedule item maps to the subject ID directly
 
 ### Files Changed
 
 | File | Action |
 |------|--------|
-| `src/components/student/timetable/TimetableDayCard.tsx` | Edit -- move lesson plan from header to meta row, change icon, add label, wire navigation |
+| `src/data/student/weeklySchedule.ts` | Edit — replace fake lessonPlanId values with real bundle IDs from bundles data |
+| `src/components/student/timetable/TimetableDayCard.tsx` | Edit — rename "Plan" to "Notes", update navigation to full bundle route |
 
-No new files. No data or routing changes.
+No new files. No database changes.
 
