@@ -1,140 +1,137 @@
 
 
-# Student Dashboard — New Sections and Copilot Activity Integration
+# Student Dashboard — Layout Optimization and Section Cleanup
 
 ## Summary
 
-Add three new sections to the student dashboard: (1) a **Last Test Result** snapshot card, (2) a **Recent Copilot Activity / Continue Learning** card that surfaces the student's last AI-assisted study session, and (3) a **Daily Study Goal** progress ring. Skip a standalone "AI Sessions" tracker — the copilot already tracks every interaction as threads with artifacts, so the "Recent Copilot Activity" card naturally covers this by surfacing the last practice session, doubt solved, or study plan created.
+Simplify the dashboard by removing low-value sections, promoting homework visibility, replacing the "Recent Study Session" card with an **Exam Target Tracker** (e.g., JEE/NEET goal from `student_exams` table), and making the Last Test Result conditional (48-hour window) with graceful layout adaptation when it disappears.
 
-**Why not a separate "AI Sessions" section?** The copilot stores threads (`student_copilot_threads`), messages, artifacts, and attempts. Each thread *is* a session. Building a separate session tracker would duplicate this data. Instead, we query the most recent thread and its artifact to show a "pick up where you left off" card — same value, zero redundancy.
+## What Changes
 
----
+### 1. Remove QuickStatsBar entirely
 
-## Current Dashboard Layout (for reference)
+The "24 Subjects, 4 Tests, 12d Streak" pills add no actionable value. The streak is already in the header. Remove the component from the dashboard page and the `QuickStatsBar` import. The `DailyStudyGoalRing` compact variant that lived inside it moves into the header area on desktop as a small inline element.
 
-```text
-Header (greeting + streak)
-QuickStatsBar (desktop only)
-AI Suggestions Carousel (copilot-linked)
-[Homework | Schedule] (2-col on desktop)
-Upcoming Tests
-```
+### 2. Replace "Recent Study Session" with Exam Target Tracker
 
-## New Layout
-
-```text
-Header (greeting + streak)
-QuickStatsBar (desktop only)
-AI Suggestions Carousel (copilot-linked)
-[Last Test Result | Recent Copilot Activity] (2-col on desktop, stacked on mobile)
-[Homework | Schedule] (2-col on desktop)
-Daily Study Goal (compact ring — mobile: above homework, desktop: in QuickStatsBar)
-Upcoming Tests
-```
-
----
-
-## Changes
-
-### 1. Last Test Result Card — New Component
-
-A compact card showing the student's most recent completed test:
+Instead of surfacing the last copilot thread (which is just a link back to copilot — the AI Suggestions already do that), show the student's **active exam target** from the `student_exams` table:
 
 ```text
 ┌──────────────────────────────────┐
-│ 📊 Last Test Result              │
+│ 🎯 My Target                    │
 │                                  │
-│ Kinematics Quiz — Physics        │
-│ 72/100  •  Rank #5/32            │
-│ ████████████░░░░  72%            │
+│ JEE Mains 2026                   │
+│ Target: 250/300                  │
+│ ░░░░░░░░░░░░░░░░  83 days left  │
 │                                  │
-│ [View Details]  [Prepare ✨]     │
+│ [Study Plan ✨]                  │
 └──────────────────────────────────┘
 ```
 
-- Shows: test name, subject, score, batch rank, accuracy bar
-- "View Details" navigates to `/student/tests/:testId/results`
-- "Prepare" chip opens copilot with `s_exam_prep` routine for that subject
-- Data source: mock data in `dashboard.ts` (a new `lastTestResult` object) — mirrors the `TestResultData` interface structure but simplified
+- Fetches the nearest upcoming exam from `student_exams` where `exam_date > now()`
+- Shows exam name, target score, countdown, and a progress-style days-remaining bar
+- "Study Plan" chip opens copilot with `s_exam_prep` routine pre-filled
+- If no exam target exists, shows a prompt: "Set your exam target" linking to copilot's `s_roadmap` routine
+- This gives the dashboard a **purpose** — the student sees their goal every day
 
-**Files:**
-- `src/components/student/dashboard/LastTestResultCard.tsx` — New component
-- `src/data/student/dashboard.ts` — Add `LastTestResult` interface and mock data
-- `src/components/student/dashboard/index.ts` — Export new component
+### 3. Last Test Result — 48-hour conditional display
 
-### 2. Recent Copilot Activity Card — New Component
+- Add a `date` field check: only render the card if `lastTestResult.date` is within the last 48 hours
+- When the card is hidden, the Exam Target card spans full width on mobile (already full width) and on desktop takes the full row or sits alongside the Daily Study Goal ring
+- The layout grid becomes responsive: `grid-cols-1` when only one card is visible, `grid-cols-2` when both are present
 
-This replaces the need for a separate "AI Sessions" tracker. Shows the last copilot thread:
+### 4. Move Homework UP — directly after AI Suggestions
 
-```text
-┌──────────────────────────────────┐
-│ ✨ Recent Study Session          │
-│                                  │
-│ Practice: Laws of Motion         │
-│ Physics  •  2 hours ago          │
-│ Solved 8/10 questions            │
-│                                  │
-│ [Continue]                       │
-└──────────────────────────────────┘
-```
-
-- Fetches the most recent thread from `student_copilot_threads` via Supabase
-- If a `practice_session` artifact exists, shows question stats
-- "Continue" navigates to `/student/copilot` with the thread auto-selected
-- Falls back to a "Start a study session" prompt if no threads exist
-- Shows routine label (Doubt, Practice, Exam Prep) as a colored badge
-
-**Files:**
-- `src/components/student/dashboard/RecentCopilotCard.tsx` — New component, uses Supabase query
-- `src/components/student/dashboard/index.ts` — Export new component
-
-### 3. Daily Study Goal Ring — New Component
-
-A compact circular progress indicator:
+Homework is the most urgent daily item. It should not be buried below two cards and a study goal ring. New order:
 
 ```text
-┌────────────────────────┐
-│    ╭───╮               │
-│   │ 45 │  45 min today │
-│    ╰───╯  Goal: 60 min │
-│                        │
-└────────────────────────┘
+Header (greeting + streak)
+AI Suggestions Carousel
+Pending Homework  ← moved up
+[Last Test Result (if <48h) | Exam Target]  ← conditional row
+Daily Study Goal Ring (mobile only)
+Today's Schedule
+Upcoming Tests
 ```
 
-- **Mobile**: Appears as a small horizontal card above the homework/schedule grid
-- **Desktop**: Added as a 4th pill in `QuickStatsBar`
-- Uses a simple SVG circle for the ring (no extra library needed)
-- Data: mock value in `dashboard.ts` (`dailyStudyGoal: { current: 45, target: 60 }`)
-- Tapping opens copilot with a generic "Let's study" prompt
+### 5. Daily Study Goal Ring — stays but repositioned
 
-**Files:**
-- `src/components/student/dashboard/DailyStudyGoalRing.tsx` — New component
-- `src/data/student/dashboard.ts` — Add `dailyStudyGoal` mock data
-- `src/components/student/dashboard/QuickStatsBar.tsx` — Add study goal as 4th stat pill on desktop
-- `src/components/student/dashboard/index.ts` — Export new component
-
-### 4. Dashboard Page Layout Update
-
-Update `src/pages/student/Dashboard.tsx` to include the new sections in the correct order:
-
-- Import `LastTestResultCard`, `RecentCopilotCard`, `DailyStudyGoalRing`
-- Add the test result + copilot activity row between AI Suggestions and the homework/schedule grid
-- Add the study goal ring for mobile (visible only on mobile, above the homework grid)
-- Desktop study goal is handled inside QuickStatsBar
+- **Mobile**: compact horizontal card between the conditional row and the schedule
+- **Desktop**: inline in the header area as a small ring next to the streak badge (replaces its former home in the removed QuickStatsBar)
 
 ---
 
-## Files Summary
+## New Dashboard Layout (Mobile)
+
+```text
+┌─ Hi, Arjun! 👋 ─────────── 🔥 12 ─┐
+│ Let's continue learning             │
+├─────────────────────────────────────┤
+│ ✨ AI Suggestions  [carousel >>>]   │
+├─────────────────────────────────────┤
+│ 📚 Pending Homework (4)            │
+│  • Quadratic Equations   Today  ⚠️  │
+│  • Cell Structure Diagram  2 days   │
+│  • Motion Worksheet       3 days    │
+├─────────────────────────────────────┤
+│ 🎯 My Target                       │
+│ JEE Mains 2026 • 83 days left      │
+│ Target: 250/300  [Study Plan ✨]    │
+├─────────────────────────────────────┤
+│ ⏱ 45/60 min today [study goal]     │
+├─────────────────────────────────────┤
+│ 📅 Today's Schedule                │
+│  9:00  Math - Quadratic Equations   │
+│  10:15 Chemistry - Organic          │
+│  ...                                │
+├─────────────────────────────────────┤
+│ 📝 Upcoming Tests (4)              │
+│  [Kinematics Quiz] [Algebra Test]   │
+└─────────────────────────────────────┘
+```
+
+When Last Test Result is active (within 48h), it appears as a card above the Exam Target, stacked on mobile, side-by-side on desktop.
+
+---
+
+## Technical Details
+
+### Files Changed
 
 | File | Action |
 |------|--------|
-| `src/data/student/dashboard.ts` | Edit — add `LastTestResult` interface, mock data, `dailyStudyGoal` object |
-| `src/components/student/dashboard/LastTestResultCard.tsx` | New — test result snapshot card |
-| `src/components/student/dashboard/RecentCopilotCard.tsx` | New — recent copilot thread card with Supabase query |
-| `src/components/student/dashboard/DailyStudyGoalRing.tsx` | New — SVG ring progress for daily study time |
-| `src/components/student/dashboard/QuickStatsBar.tsx` | Edit — add study goal as 4th pill |
-| `src/components/student/dashboard/index.ts` | Edit — export 3 new components |
-| `src/pages/student/Dashboard.tsx` | Edit — integrate new sections into layout |
+| `src/components/student/dashboard/ExamTargetCard.tsx` | **New** — fetches from `student_exams`, shows countdown + target, links to copilot |
+| `src/components/student/dashboard/LastTestResultCard.tsx` | **Edit** — add 48-hour check, return `null` when expired |
+| `src/pages/student/Dashboard.tsx` | **Edit** — remove QuickStatsBar, reorder sections, add ExamTargetCard, make test result row conditional |
+| `src/components/student/dashboard/index.ts` | **Edit** — export ExamTargetCard, remove QuickStatsBar export |
+| `src/components/student/dashboard/QuickStatsBar.tsx` | **Delete** — no longer used |
 
-No database changes. No new routes. The `RecentCopilotCard` reads from existing `student_copilot_threads` table.
+### ExamTargetCard Data Source
+
+Reads from existing `student_exams` table (already seeded by copilot):
+```sql
+SELECT * FROM student_exams 
+WHERE student_id = 'student-001' AND exam_date > now()
+ORDER BY exam_date ASC LIMIT 1
+```
+
+Shows: `name`, `target_score`, `max_score`, days until `exam_date`.
+
+### Conditional Layout Logic (Dashboard.tsx)
+
+```tsx
+// 48-hour check for Last Test Result
+const testDate = new Date(lastTestResult.date);
+const hoursSinceTest = (Date.now() - testDate.getTime()) / (1000 * 60 * 60);
+const showTestResult = hoursSinceTest <= 48;
+
+// Layout adapts:
+// - Both visible: 2-col grid on desktop
+// - Only exam target: full-width card
+// - Only test result (no exam target): full-width card
+```
+
+### No database changes needed
+
+The `student_exams` table already exists with the right schema (`name`, `exam_date`, `target_score`, `max_score`). The copilot seeds mock exam data. No migrations required.
 
