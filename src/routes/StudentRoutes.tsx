@@ -21,6 +21,7 @@ import StudentTestResults from "@/pages/student/TestResults";
 import StudentProgress from "@/pages/student/Progress";
 import StudentNotifications from "@/pages/student/Notifications";
 import StudentCopilot from "@/pages/student/Copilot";
+import StudentTimetable from "@/pages/student/Timetable";
 
 export default function StudentRoutes() {
   return (
@@ -38,6 +39,7 @@ export default function StudentRoutes() {
       <Route element={<StudentLayout />}>
         <Route index element={<Navigate to="dashboard" replace />} />
         <Route path="dashboard" element={<StudentDashboard />} />
+        <Route path="timetable" element={<StudentTimetable />} />
         <Route path="subjects" element={<StudentSubjects />} />
         <Route path="subjects/:subjectId" element={<StudentSubjectDetail />} />
         <Route path="subjects/:subjectId/:chapterId" element={<StudentChapterView />} />
