@@ -4,6 +4,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { BookOpen, ChevronDown, ChevronRight, Clock, AlertTriangle } from "lucide-react";
+import { Sparkles } from "lucide-react";
 import { studentHomework, getHomeworkUrgency, formatRelativeDate, subjectColors } from "@/data/student/dashboard";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
@@ -108,6 +109,20 @@ const HomeworkSection = () => {
                       {urgencyStyles.text}
                     </span>
                   )}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const params = new URLSearchParams();
+                      params.set('routine', 's_doubt');
+                      params.set('subject', hw.subject);
+                      params.set('prompt', `Help me with my homework: ${hw.title}`);
+                      navigate(`/student/copilot?${params.toString()}`);
+                    }}
+                    className="px-2 py-0.5 rounded-full bg-donut-coral/10 text-donut-coral text-[10px] font-medium flex items-center gap-1 hover:bg-donut-coral/20 transition-colors"
+                  >
+                    <Sparkles className="w-2.5 h-2.5" />
+                    Ask AI
+                  </button>
                 </div>
               </div>
               
