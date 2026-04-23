@@ -18,6 +18,9 @@ import { OptionDisplay } from "./review/OptionDisplay";
 import { IntegerDisplay } from "./review/IntegerDisplay";
 import { FillBlankDisplay } from "./review/FillBlankDisplay";
 import { MatrixMatchDisplay } from "./review/MatrixMatchDisplay";
+import { WrongAnswerVideoButton } from "./WrongAnswerVideoButton";
+import { VideoPlayerModal } from "./VideoPlayerModal";
+import { getVideoForQuestionNumber } from "@/data/student/videoExplanations";
 
 interface QuestionReviewProps {
   questions: EnhancedQuestionResult[];
@@ -32,6 +35,7 @@ const QuestionReview = memo(function QuestionReview({
 }: QuestionReviewProps) {
   const [filter, setFilter] = useState<FilterType>("all");
   const [expandedQuestions, setExpandedQuestions] = useState<Set<string>>(new Set());
+  const [videoModal, setVideoModal] = useState<{ open: boolean; url: string; title: string }>({ open: false, url: "", title: "" });
   const [solutionVisible, setSolutionVisible] = useState<Set<string>>(new Set());
   const [activeSection, setActiveSection] = useState<string | null>(null);
   const questionRefs = useRef<Record<string, HTMLDivElement | null>>({});
@@ -94,6 +98,7 @@ const QuestionReview = memo(function QuestionReview({
   };
 
   return (
+    <>
     <div className="space-y-4">
       {/* Question Jump Strip */}
       <div className="bg-white rounded-xl border border-border p-3">
@@ -321,6 +326,18 @@ const QuestionReview = memo(function QuestionReview({
 
                           {question.solution && (
                             <div>
+                              {/* Video explanation button for wrong answers */}
+                              {!question.isCorrect && (() => {
+                                const video = getVideoForQuestionNumber(question.questionNumber);
+                                return video ? (
+                                  <div className="mb-2 flex justify-center">
+                                    <WrongAnswerVideoButton
+                                      duration={video.duration}
+                                      onClick={() => setVideoModal({ open: true, url: video.videoUrl, title: `Q${question.questionNumber} — ${video.chapter}` })}
+                                    />
+                                  </div>
+                                ) : null;
+                              })()}
                               <Button
                                 variant="ghost"
                                 size="sm"
@@ -361,7 +378,15 @@ const QuestionReview = memo(function QuestionReview({
           )}
         </div>
       </div>
+
+    <VideoPlayerModal
+      open={videoModal.open}
+      onOpenChange={(open) => setVideoModal(prev => ({ ...prev, open }))}
+      videoUrl={videoModal.url}
+      title={videoModal.title}
+    />
     </div>
+    </>
   );
 });
 

@@ -3,6 +3,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { CheckCircle2, XCircle, MinusCircle, ClipboardList } from "lucide-react";
 import { cn } from "@/lib/utils";
 import MathMarkdown from "../MathMarkdown";
+import { VideoExplanationButton } from "./VideoExplanationButton";
+import { VideoPlayerModal } from "@/components/student/tests/results/VideoPlayerModal";
+import { getVideoForQuestionNumber } from "@/data/student/videoExplanations";
 
 interface DebriefQuestion {
   question_number: number;
@@ -33,6 +36,8 @@ interface Props {
 }
 
 export default function TestDebriefView({ content }: Props) {
+  const [videoModal, setVideoModal] = React.useState<{ open: boolean; url: string; title: string }>({ open: false, url: "", title: "" });
+
   return (
     <div className="space-y-3">
       <div className="flex items-center gap-2">
@@ -100,6 +105,15 @@ export default function TestDebriefView({ content }: Props) {
                   <div className="flex items-center gap-2">
                     <span className="text-xs font-medium">Q{q.question_number}</span>
                     {q.topic && <span className="text-[9px] bg-accent px-1.5 py-0.5 rounded">{q.topic}</span>}
+                  {(() => {
+                    const video = getVideoForQuestionNumber(q.question_number);
+                    return video ? (
+                      <VideoExplanationButton
+                        duration={video.duration}
+                        onClick={() => setVideoModal({ open: true, url: video.videoUrl, title: `Q${q.question_number} — ${video.chapter}` })}
+                      />
+                    ) : null;
+                  })()}
                   </div>
                   {q.question_text && <MathMarkdown compact className="text-xs mt-1">{q.question_text}</MathMarkdown>}
                 </div>
@@ -146,6 +160,13 @@ export default function TestDebriefView({ content }: Props) {
           </CardContent>
         </Card>
       )}
+
+      <VideoPlayerModal
+        open={videoModal.open}
+        onOpenChange={(open) => setVideoModal(prev => ({ ...prev, open }))}
+        videoUrl={videoModal.url}
+        title={videoModal.title}
+      />
     </div>
   );
 }
