@@ -1,82 +1,140 @@
 
 
-# Student Dashboard — Copilot Integration and AI Suggestions Upgrade
+# Student Dashboard — New Sections and Copilot Activity Integration
 
 ## Summary
 
-The current AI Suggestions section uses hardcoded static cards that just navigate to subjects. With the copilot now active, these should become **copilot triggers** — tapping a card opens the copilot with pre-filled context (e.g., "Practice Laws of Motion"). Additionally, add small copilot entry points on homework and test cards so students can get instant help without leaving the dashboard flow.
+Add three new sections to the student dashboard: (1) a **Last Test Result** snapshot card, (2) a **Recent Copilot Activity / Continue Learning** card that surfaces the student's last AI-assisted study session, and (3) a **Daily Study Goal** progress ring. Skip a standalone "AI Sessions" tracker — the copilot already tracks every interaction as threads with artifacts, so the "Recent Copilot Activity" card naturally covers this by surfacing the last practice session, doubt solved, or study plan created.
+
+**Why not a separate "AI Sessions" section?** The copilot stores threads (`student_copilot_threads`), messages, artifacts, and attempts. Each thread *is* a session. Building a separate session tracker would duplicate this data. Instead, we query the most recent thread and its artifact to show a "pick up where you left off" card — same value, zero redundancy.
 
 ---
 
-## What Changes and Why
+## Current Dashboard Layout (for reference)
 
-### 1. Replace Static AI Recommendations with Copilot-Linked Smart Cards
+```text
+Header (greeting + streak)
+QuickStatsBar (desktop only)
+AI Suggestions Carousel (copilot-linked)
+[Homework | Schedule] (2-col on desktop)
+Upcoming Tests
+```
 
-**Current problem:** The three AI suggestion cards are hardcoded strings that all navigate to `/student/subjects/:id` — no connection to the copilot at all.
+## New Layout
 
-**New behavior:** Each card carries a `copilotAction` — tapping it navigates to `/student/copilot` with query params that pre-select the routine and subject:
-
-- **"Continue where you left off"** → Opens copilot in `s_doubt` mode with the subject pre-selected
-- **"Needs your attention"** → Opens copilot in `s_practice` mode for weak topics
-- **"Almost there!"** → Opens copilot in `s_practice` mode for near-mastery topics
-
-The URL pattern: `/student/copilot?routine=s_practice&subject=Physics&prompt=Practice+weak+topics+in+Laws+of+Motion`
-
-### 2. Add "Ask Copilot" Chip on Homework Cards
-
-A small `Sparkles` icon chip ("Ask AI") on each homework item. Tapping it opens copilot with the homework topic as context — so the student can ask doubts about the assignment immediately.
-
-### 3. Add "Prepare" Button on Upcoming Test Cards
-
-Each test card gets a subtle "Prepare" chip that opens copilot in `s_exam_prep` mode with the test subject and title pre-filled.
-
-### 4. Copilot Page Reads Query Params on Mount
-
-The copilot page needs to read `routine`, `subject`, and `prompt` from the URL search params and auto-start a conversation with that context. This is what makes the dashboard cards actually functional.
+```text
+Header (greeting + streak)
+QuickStatsBar (desktop only)
+AI Suggestions Carousel (copilot-linked)
+[Last Test Result | Recent Copilot Activity] (2-col on desktop, stacked on mobile)
+[Homework | Schedule] (2-col on desktop)
+Daily Study Goal (compact ring — mobile: above homework, desktop: in QuickStatsBar)
+Upcoming Tests
+```
 
 ---
 
-## Technical Details
+## Changes
 
-### Files Changed
+### 1. Last Test Result Card — New Component
+
+A compact card showing the student's most recent completed test:
+
+```text
+┌──────────────────────────────────┐
+│ 📊 Last Test Result              │
+│                                  │
+│ Kinematics Quiz — Physics        │
+│ 72/100  •  Rank #5/32            │
+│ ████████████░░░░  72%            │
+│                                  │
+│ [View Details]  [Prepare ✨]     │
+└──────────────────────────────────┘
+```
+
+- Shows: test name, subject, score, batch rank, accuracy bar
+- "View Details" navigates to `/student/tests/:testId/results`
+- "Prepare" chip opens copilot with `s_exam_prep` routine for that subject
+- Data source: mock data in `dashboard.ts` (a new `lastTestResult` object) — mirrors the `TestResultData` interface structure but simplified
+
+**Files:**
+- `src/components/student/dashboard/LastTestResultCard.tsx` — New component
+- `src/data/student/dashboard.ts` — Add `LastTestResult` interface and mock data
+- `src/components/student/dashboard/index.ts` — Export new component
+
+### 2. Recent Copilot Activity Card — New Component
+
+This replaces the need for a separate "AI Sessions" tracker. Shows the last copilot thread:
+
+```text
+┌──────────────────────────────────┐
+│ ✨ Recent Study Session          │
+│                                  │
+│ Practice: Laws of Motion         │
+│ Physics  •  2 hours ago          │
+│ Solved 8/10 questions            │
+│                                  │
+│ [Continue]                       │
+└──────────────────────────────────┘
+```
+
+- Fetches the most recent thread from `student_copilot_threads` via Supabase
+- If a `practice_session` artifact exists, shows question stats
+- "Continue" navigates to `/student/copilot` with the thread auto-selected
+- Falls back to a "Start a study session" prompt if no threads exist
+- Shows routine label (Doubt, Practice, Exam Prep) as a colored badge
+
+**Files:**
+- `src/components/student/dashboard/RecentCopilotCard.tsx` — New component, uses Supabase query
+- `src/components/student/dashboard/index.ts` — Export new component
+
+### 3. Daily Study Goal Ring — New Component
+
+A compact circular progress indicator:
+
+```text
+┌────────────────────────┐
+│    ╭───╮               │
+│   │ 45 │  45 min today │
+│    ╰───╯  Goal: 60 min │
+│                        │
+└────────────────────────┘
+```
+
+- **Mobile**: Appears as a small horizontal card above the homework/schedule grid
+- **Desktop**: Added as a 4th pill in `QuickStatsBar`
+- Uses a simple SVG circle for the ring (no extra library needed)
+- Data: mock value in `dashboard.ts` (`dailyStudyGoal: { current: 45, target: 60 }`)
+- Tapping opens copilot with a generic "Let's study" prompt
+
+**Files:**
+- `src/components/student/dashboard/DailyStudyGoalRing.tsx` — New component
+- `src/data/student/dashboard.ts` — Add `dailyStudyGoal` mock data
+- `src/components/student/dashboard/QuickStatsBar.tsx` — Add study goal as 4th stat pill on desktop
+- `src/components/student/dashboard/index.ts` — Export new component
+
+### 4. Dashboard Page Layout Update
+
+Update `src/pages/student/Dashboard.tsx` to include the new sections in the correct order:
+
+- Import `LastTestResultCard`, `RecentCopilotCard`, `DailyStudyGoalRing`
+- Add the test result + copilot activity row between AI Suggestions and the homework/schedule grid
+- Add the study goal ring for mobile (visible only on mobile, above the homework grid)
+- Desktop study goal is handled inside QuickStatsBar
+
+---
+
+## Files Summary
 
 | File | Action |
 |------|--------|
-| `src/data/student/dashboard.ts` | Edit — add `copilotRoutine` and `copilotPrompt` fields to `AIRecommendation` interface; update mock data |
-| `src/components/student/dashboard/AIRecommendationCard.tsx` | Edit — change `handleClick` to navigate to `/student/copilot?routine=...&subject=...&prompt=...` instead of subjects |
-| `src/components/student/dashboard/HomeworkSection.tsx` | Edit — add small "Ask AI" chip on each homework card that links to copilot with doubt context |
-| `src/components/student/dashboard/UpcomingTestCard.tsx` | Edit — add "Prepare" chip linking to copilot in exam prep mode |
-| `src/components/student/copilot/StudentCopilotPage.tsx` | Edit — on mount, read `routine`, `subject`, `prompt` from `useSearchParams`; if present, auto-create a thread with that routine/subject and send the prompt as the first message |
+| `src/data/student/dashboard.ts` | Edit — add `LastTestResult` interface, mock data, `dailyStudyGoal` object |
+| `src/components/student/dashboard/LastTestResultCard.tsx` | New — test result snapshot card |
+| `src/components/student/dashboard/RecentCopilotCard.tsx` | New — recent copilot thread card with Supabase query |
+| `src/components/student/dashboard/DailyStudyGoalRing.tsx` | New — SVG ring progress for daily study time |
+| `src/components/student/dashboard/QuickStatsBar.tsx` | Edit — add study goal as 4th pill |
+| `src/components/student/dashboard/index.ts` | Edit — export 3 new components |
+| `src/pages/student/Dashboard.tsx` | Edit — integrate new sections into layout |
 
-### Data Changes (dashboard.ts)
-
-```typescript
-export interface AIRecommendation {
-  // ...existing fields...
-  copilotRoutine?: string;  // e.g. 's_practice', 's_exam_prep', 's_doubt'
-  copilotPrompt?: string;   // pre-filled message for copilot
-}
-```
-
-Updated mock data examples:
-- `{ type: 'continue', copilotRoutine: 's_doubt', copilotPrompt: 'Help me continue with Laws of Motion' }`
-- `{ type: 'focus', copilotRoutine: 's_practice', copilotPrompt: 'Practice weak topics in Biology' }`
-- `{ type: 'quick-win', copilotRoutine: 's_practice', copilotPrompt: 'Quick practice on Chemistry Ch.5 to finish the unit' }`
-
-### Navigation Pattern
-
-All copilot-linked elements use the same URL scheme:
-```
-/student/copilot?routine={key}&subject={name}&prompt={encoded_message}
-```
-
-The `StudentCopilotPage` reads these on mount via `useSearchParams`, creates a thread with the matching routine and subject, and auto-sends the prompt — giving the student an instant, contextual conversation.
-
-### Visual Design
-
-- **AI Suggestion cards**: Keep existing coral/orange design, add a small `Sparkles` icon in the action arrow area to signal "opens copilot"
-- **Homework "Ask AI" chip**: Tiny `Sparkles` icon + "Ask AI" text, styled `bg-donut-coral/10 text-donut-coral rounded-full px-2 py-0.5`, placed after the due date
-- **Test "Prepare" chip**: Same style, `bg-violet-100 text-violet-600`, with `Sparkles` icon + "Prepare"
-
-No new files created. No database changes needed.
+No database changes. No new routes. The `RecentCopilotCard` reads from existing `student_copilot_threads` table.
 
