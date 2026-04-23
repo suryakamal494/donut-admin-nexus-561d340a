@@ -18,8 +18,11 @@ export interface ScheduleItem {
   room?: string;
   teacher?: string;
   status: 'completed' | 'current' | 'upcoming';
-  type?: 'class' | 'break';
+  type?: 'class' | 'break' | 'exam';
   label?: string;
+  lessonPlanId?: string;
+  examTitle?: string;
+  examType?: 'quiz' | 'test' | 'exam';
 }
 
 export interface UpcomingTest {

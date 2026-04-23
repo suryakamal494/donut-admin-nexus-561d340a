@@ -2,7 +2,8 @@
 
 import { ScheduleItem, subjectColors } from "@/data/student/dashboard";
 import { cn } from "@/lib/utils";
-import { Clock, MapPin, User, Radio } from "lucide-react";
+import { Clock, MapPin, User, Radio, FileText, ClipboardCheck } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
 interface TimetableDayCardProps {
   dateStr: string;
@@ -17,6 +18,7 @@ export const TimetableDayCard = ({ dateStr, items, isToday }: TimetableDayCardPr
   const dayNum = date.getDate();
   const dayName = dayLabels[date.getDay()];
   const classCount = items.filter(i => i.type === 'class').length;
+  const examCount = items.filter(i => i.type === 'exam').length;
 
   return (
     <div className="space-y-1.5">
@@ -37,7 +39,12 @@ export const TimetableDayCard = ({ dateStr, items, isToday }: TimetableDayCardPr
           <p className={cn("text-sm font-semibold", isToday && "text-donut-coral")}>
             {isToday ? "Today" : date.toLocaleDateString('en-US', { weekday: 'long' })}
           </p>
-          <p className="text-xs text-muted-foreground">{classCount} classes</p>
+          <p className="text-xs text-muted-foreground">
+            {classCount} classes
+            {examCount > 0 && (
+              <span className="text-purple-500 font-medium"> · {examCount} exam{examCount > 1 ? 's' : ''}</span>
+            )}
+          </p>
         </div>
       </div>
 
@@ -52,6 +59,41 @@ export const TimetableDayCard = ({ dateStr, items, isToday }: TimetableDayCardPr
               >
                 <span className="text-xs text-muted-foreground">{item.time} – {item.endTime}</span>
                 <span className="text-xs font-medium text-muted-foreground">{item.label}</span>
+              </div>
+            );
+          }
+
+          if (item.type === 'exam') {
+            const examTypeLabel = item.examType === 'quiz' ? 'Quiz' : item.examType === 'exam' ? 'Exam' : 'Unit Test';
+            return (
+              <div
+                key={item.id}
+                className="relative p-3 rounded-xl border-2 border-purple-300/60 bg-gradient-to-r from-purple-50 to-violet-50 dark:from-purple-950/30 dark:to-violet-950/30 dark:border-purple-700/40 shadow-sm"
+              >
+                <div className="flex items-start gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-400 to-violet-500 flex items-center justify-center shrink-0 mt-0.5">
+                    <ClipboardCheck className="w-4 h-4 text-white" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <p className="text-sm font-bold text-purple-700 dark:text-purple-300">{item.examTitle}</p>
+                      <Badge className="bg-purple-100 text-purple-700 dark:bg-purple-900/50 dark:text-purple-300 border-purple-200 dark:border-purple-700 text-[10px] px-1.5 py-0">{examTypeLabel}</Badge>
+                    </div>
+                    <p className="text-xs text-purple-600/70 dark:text-purple-400/70 capitalize mt-0.5">{item.subject}</p>
+                    <div className="flex items-center gap-3 mt-1 flex-wrap">
+                      <span className="flex items-center gap-1 text-[11px] text-purple-500/80 dark:text-purple-400/60">
+                        <Clock className="w-3 h-3" />
+                        {item.time} – {item.endTime}
+                      </span>
+                      {item.room && (
+                        <span className="flex items-center gap-1 text-[11px] text-purple-500/80 dark:text-purple-400/60">
+                          <MapPin className="w-3 h-3" />
+                          {item.room}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
               </div>
             );
           }
@@ -85,7 +127,18 @@ export const TimetableDayCard = ({ dateStr, items, isToday }: TimetableDayCardPr
 
                 <div className="flex-1 min-w-0">
                   {/* Subject & Topic */}
-                  <p className="text-sm font-semibold text-foreground capitalize">{item.subject}</p>
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm font-semibold text-foreground capitalize">{item.subject}</p>
+                    {item.lessonPlanId && (
+                      <button
+                        onClick={() => {/* TODO: navigate to lesson plan */}}
+                        className="flex items-center gap-1 px-1.5 py-0.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-colors"
+                        title="View Lesson Plan"
+                      >
+                        <FileText className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
                   {item.topic && (
                     <p className="text-xs text-muted-foreground mt-0.5 truncate">{item.topic}</p>
                   )}
