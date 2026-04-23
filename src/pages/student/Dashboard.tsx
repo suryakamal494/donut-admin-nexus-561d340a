@@ -1,16 +1,14 @@
-// Student Dashboard - Complete Mobile-First Redesign
-// Shows quick snapshot of learning journey with AI recommendations
+// Student Dashboard - Simplified Mobile-First Layout
 
 import { studentProfile } from "@/data/student";
 import { Flame } from "lucide-react";
-import { 
-  QuickStatsBar, 
-  AIRecommendationsCarousel, 
-  HomeworkSection, 
-  ScheduleTimeline, 
+import {
+  AIRecommendationsCarousel,
+  HomeworkSection,
+  ScheduleTimeline,
   UpcomingTestsSection,
   LastTestResultCard,
-  RecentCopilotCard,
+  ExamTargetCard,
   DailyStudyGoalRing
 } from "@/components/student/dashboard";
 
@@ -19,7 +17,7 @@ const StudentDashboard = () => {
 
   return (
     <div className="w-full pb-24 lg:pb-6">
-      {/* Mobile Header with greeting */}
+      {/* Mobile Header */}
       <div className="lg:hidden flex items-start justify-between mb-5">
         <div>
           <h1 className="text-2xl font-bold text-foreground">
@@ -29,15 +27,13 @@ const StudentDashboard = () => {
             Let's continue learning
           </p>
         </div>
-        
-        {/* Streak badge */}
         <div className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-br from-donut-coral to-donut-orange rounded-full shadow-lg shadow-orange-300/40">
           <Flame className="w-4 h-4 text-white" />
           <span className="text-sm font-bold text-white">{studentProfile.streak}</span>
         </div>
       </div>
 
-      {/* Desktop greeting */}
+      {/* Desktop Header */}
       <div className="hidden lg:flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-foreground">
@@ -47,41 +43,40 @@ const StudentDashboard = () => {
             Here's your learning snapshot for today
           </p>
         </div>
-        <div className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-br from-donut-coral to-donut-orange rounded-full shadow-lg shadow-orange-300/40">
-          <Flame className="w-5 h-5 text-white" />
-          <span className="text-sm font-bold text-white">{studentProfile.streak} day streak</span>
+        <div className="flex items-center gap-3">
+          <DailyStudyGoalRing compact />
+          <div className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-br from-donut-coral to-donut-orange rounded-full shadow-lg shadow-orange-300/40">
+            <Flame className="w-5 h-5 text-white" />
+            <span className="text-sm font-bold text-white">{studentProfile.streak} day streak</span>
+          </div>
         </div>
       </div>
 
-      {/* Quick Stats Row - Desktop only */}
-      <div className="hidden lg:block mb-6">
-        <QuickStatsBar />
-      </div>
-
-      {/* AI Recommendations Carousel */}
+      {/* AI Recommendations */}
       <AIRecommendationsCarousel />
 
-      {/* Last Test Result + Recent Copilot Activity */}
+      {/* Pending Homework — high priority */}
+      <div className="mb-4">
+        <HomeworkSection />
+      </div>
+
+      {/* Last Test Result (48h) + Exam Target */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
         <LastTestResultCard />
-        <RecentCopilotCard />
+        <ExamTargetCard />
       </div>
 
       {/* Daily Study Goal — Mobile only */}
-      <div className="mb-4">
+      <div className="mb-4 lg:hidden">
         <DailyStudyGoalRing />
       </div>
 
-      {/* Two Column Layout for Tablet/Desktop */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
-        {/* Pending Homework */}
-        <HomeworkSection />
-        
-        {/* Today's Schedule Timeline */}
+      {/* Today's Schedule */}
+      <div className="mb-4">
         <ScheduleTimeline />
       </div>
 
-      {/* Upcoming Tests Section */}
+      {/* Upcoming Tests */}
       <UpcomingTestsSection />
     </div>
   );
