@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import { Clock, MapPin, User, Radio, BookOpen, ClipboardCheck } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
+import { getLessonBundleById } from "@/data/student/lessonBundles";
 
 interface TimetableDayCardProps {
   dateStr: string;
@@ -156,11 +157,19 @@ export const TimetableDayCard = ({ dateStr, items, isToday }: TimetableDayCardPr
                     )}
                       {item.lessonPlanId && (
                         <button
-                          onClick={() => navigate('/student/subjects')}
+                          onClick={() => {
+                            const bundle = item.lessonPlanId ? getLessonBundleById(item.lessonPlanId) : undefined;
+                            if (bundle) {
+                              const subjectId = item.subject === 'math' ? 'mathematics' : item.subject || '';
+                              navigate(`/student/subjects/${subjectId}/${bundle.chapterId}/${bundle.id}`);
+                            } else {
+                              navigate('/student/subjects');
+                            }
+                          }}
                           className="flex items-center gap-1 text-[11px] font-medium bg-primary/10 text-primary rounded-full px-2 py-0.5 hover:bg-primary/20 transition-colors"
                         >
                           <BookOpen className="w-3 h-3" />
-                          Plan
+                          Notes
                         </button>
                       )}
                   </div>

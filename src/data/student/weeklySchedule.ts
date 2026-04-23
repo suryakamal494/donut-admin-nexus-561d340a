@@ -16,54 +16,54 @@ interface DayScheduleTemplate {
 const weekTemplates: Record<string, DayScheduleTemplate> = {
   monday: {
     subjects: [
-      { subject: 'math', topic: 'Quadratic Equations', teacher: 'Mrs. Gupta', room: '105', lessonPlanId: 'lp-math-quad-01' },
-      { subject: 'chemistry', topic: 'Organic Compounds', teacher: 'Mrs. Sharma', room: '302', lessonPlanId: 'lp-chem-org-01' },
+      { subject: 'math', topic: 'Quadratic Equations', teacher: 'Mrs. Gupta', room: '105', lessonPlanId: 'bundle-math-ch1-1' },
+      { subject: 'chemistry', topic: 'Organic Compounds', teacher: 'Mrs. Sharma', room: '302', lessonPlanId: 'bundle-chem-ch1-1' },
       { subject: 'physics', topic: 'Laws of Motion', teacher: 'Mr. Verma', room: '201' },
-      { subject: 'english', topic: 'Essay Writing', teacher: 'Ms. Reddy', room: '110', lessonPlanId: 'lp-eng-essay-01' },
+      { subject: 'english', topic: 'Essay Writing', teacher: 'Ms. Reddy', room: '110' },
       { subject: 'biology', topic: 'Cell Biology', teacher: 'Dr. Kumar', room: '205' },
     ],
   },
   tuesday: {
     subjects: [
-      { subject: 'physics', topic: 'Newtons Laws', teacher: 'Mr. Verma', room: '201', lessonPlanId: 'lp-phy-newton-01' },
-      { subject: 'math', topic: 'Polynomials', teacher: 'Mrs. Gupta', room: '105', lessonPlanId: 'lp-math-poly-01' },
+      { subject: 'physics', topic: 'Newtons Laws', teacher: 'Mr. Verma', room: '201', lessonPlanId: 'bundle-physics-ch1-1' },
+      { subject: 'math', topic: 'Polynomials', teacher: 'Mrs. Gupta', room: '105', lessonPlanId: 'bundle-math-ch1-2' },
       { subject: 'biology', topic: 'Genetics', teacher: 'Dr. Kumar', room: '205' },
-      { subject: 'chemistry', topic: 'Chemical Bonding', teacher: 'Mrs. Sharma', room: '302', lessonPlanId: 'lp-chem-bond-01' },
-      { subject: 'cs', topic: 'Python Basics', teacher: 'Mr. Rao', room: '401', lessonPlanId: 'lp-cs-python-01' },
+      { subject: 'chemistry', topic: 'Chemical Bonding', teacher: 'Mrs. Sharma', room: '302', lessonPlanId: 'bundle-chem-ch1-1' },
+      { subject: 'cs', topic: 'Python Basics', teacher: 'Mr. Rao', room: '401' },
     ],
   },
   wednesday: {
     subjects: [
-      { subject: 'english', topic: 'Comprehension', teacher: 'Ms. Reddy', room: '110', lessonPlanId: 'lp-eng-comp-01' },
-      { subject: 'math', topic: 'Trigonometry', teacher: 'Mrs. Gupta', room: '105', lessonPlanId: 'lp-math-trig-01' },
+      { subject: 'english', topic: 'Comprehension', teacher: 'Ms. Reddy', room: '110' },
+      { subject: 'math', topic: 'Trigonometry', teacher: 'Mrs. Gupta', room: '105', lessonPlanId: 'bundle-math-ch1-3' },
       { subject: 'physics', topic: 'Work & Energy', teacher: 'Mr. Verma', room: '201' },
-      { subject: 'biology', topic: 'Plant Anatomy', teacher: 'Dr. Kumar', room: '205', lessonPlanId: 'lp-bio-plant-01' },
+      { subject: 'biology', topic: 'Plant Anatomy', teacher: 'Dr. Kumar', room: '205' },
       { subject: 'chemistry', topic: 'Acids & Bases', teacher: 'Mrs. Sharma', room: '302' },
     ],
   },
   thursday: {
     subjects: [
-      { subject: 'chemistry', topic: 'Redox Reactions', teacher: 'Mrs. Sharma', room: '302', lessonPlanId: 'lp-chem-redox-01' },
+      { subject: 'chemistry', topic: 'Redox Reactions', teacher: 'Mrs. Sharma', room: '302', lessonPlanId: 'bundle-chem-ch1-1' },
       { subject: 'physics', topic: 'Gravitation', teacher: 'Mr. Verma', room: '201' },
-      { subject: 'math', topic: 'Coordinate Geometry', teacher: 'Mrs. Gupta', room: '105', lessonPlanId: 'lp-math-coord-01' },
+      { subject: 'math', topic: 'Coordinate Geometry', teacher: 'Mrs. Gupta', room: '105', lessonPlanId: 'bundle-math-ch1-1' },
       { subject: 'cs', topic: 'Data Structures', teacher: 'Mr. Rao', room: '401' },
-      { subject: 'english', topic: 'Poetry Analysis', teacher: 'Ms. Reddy', room: '110', lessonPlanId: 'lp-eng-poetry-01' },
+      { subject: 'english', topic: 'Poetry Analysis', teacher: 'Ms. Reddy', room: '110' },
     ],
   },
   friday: {
     subjects: [
-      { subject: 'biology', topic: 'Human Physiology', teacher: 'Dr. Kumar', room: '205', lessonPlanId: 'lp-bio-physio-01' },
+      { subject: 'biology', topic: 'Human Physiology', teacher: 'Dr. Kumar', room: '205' },
       { subject: 'math', topic: 'Statistics', teacher: 'Mrs. Gupta', room: '105' },
-      { subject: 'chemistry', topic: 'Thermodynamics', teacher: 'Mrs. Sharma', room: '302', lessonPlanId: 'lp-chem-thermo-01' },
+      { subject: 'chemistry', topic: 'Thermodynamics', teacher: 'Mrs. Sharma', room: '302', lessonPlanId: 'bundle-chem-ch1-1' },
       { subject: 'physics', topic: 'Waves & Optics', teacher: 'Mr. Verma', room: '201' },
-      { subject: 'english', topic: 'Grammar Review', teacher: 'Ms. Reddy', room: '110', lessonPlanId: 'lp-eng-grammar-01' },
+      { subject: 'english', topic: 'Grammar Review', teacher: 'Ms. Reddy', room: '110' },
     ],
   },
   saturday: {
     subjects: [
-      { subject: 'math', topic: 'Problem Solving', teacher: 'Mrs. Gupta', room: '105', lessonPlanId: 'lp-math-prob-01' },
+      { subject: 'math', topic: 'Problem Solving', teacher: 'Mrs. Gupta', room: '105', lessonPlanId: 'bundle-math-ch1-2' },
       { subject: 'physics', topic: 'Numericals Practice', teacher: 'Mr. Verma', room: '201' },
-      { subject: 'chemistry', topic: 'Lab Session', teacher: 'Mrs. Sharma', room: '302', lessonPlanId: 'lp-chem-lab-01' },
+      { subject: 'chemistry', topic: 'Lab Session', teacher: 'Mrs. Sharma', room: '302', lessonPlanId: 'bundle-chem-ch1-1' },
     ],
   },
 };
