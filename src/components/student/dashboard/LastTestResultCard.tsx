@@ -8,6 +8,10 @@ const LastTestResultCard = () => {
   const result = lastTestResult;
   const colors = subjectColors[result.subject] || subjectColors.math;
 
+  // 48-hour visibility window
+  const hoursSinceTest = (Date.now() - new Date(result.date).getTime()) / (1000 * 60 * 60);
+  if (hoursSinceTest > 48) return null;
+
   const handlePrepare = (e: React.MouseEvent) => {
     e.stopPropagation();
     const params = new URLSearchParams();
