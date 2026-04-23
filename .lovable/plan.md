@@ -1,141 +1,135 @@
 
 
-# Make Student Copilot Interactive — Chat-First Learning Flow
+# Phase 1: Remotion Video Explanations — Demo Implementation
 
-## What You Asked For (My Understanding)
+## What You Get Today
 
-You want the copilot to feel like talking to a real teacher or friend:
+3-5 pre-rendered branded MP4 videos using Remotion, built from your existing mock exam data. These videos will be playable from two places in the platform:
 
-1. **Practice questions inline in chat** — When a student asks for 5-10 MCQs, questions appear one-by-one inside the chat bubble. After each answer, the AI responds contextually: "Great job!" if correct, or explains what went wrong if incorrect, then presents the next question. Only if there are 10+ questions, create a separate artifact.
+1. **Test Results page** — a "Watch Explanation" button next to each wrong answer in the Question Review tab
+2. **Student Copilot** — the Test Debrief artifact shows a play icon next to wrong answers, and the AI agent can proactively offer video links
 
-2. **Study plan tasks trigger learning flows** — When a student clicks "Revise distance, displacement, speed & velocity" in Day 1 of a study plan, the chat opens a revision session: explains key concepts, shows reading material, asks memory-check questions inline, and adapts based on the student's responses. The next task is shaped by how they performed on the current one.
-
-3. **Conversational, adaptive interaction** — Not a silent "here's your artifact" response. The AI should scaffold, ask follow-ups, check understanding, and adjust difficulty — like a tutor sitting next to the student.
-
-## Root Causes (Why It Doesn't Work Today)
-
-### 1. Edge function creates artifacts silently, doesn't chat
-The system prompt tells the AI to route requests to tool calls (artifacts) but doesn't instruct it to also provide inline conversational text. When a student asks "5 MCQs on Kinematics", the AI calls `create_practice_session` and says nothing else, or just says "I've created a practice session."
-
-### 2. Inline practice exists but isn't triggered properly
-`useInlinePractice` + `InlinePracticeCard` are built and functional, but:
-- The artifact-to-message linking in `ChatMessageList` uses a 30-second timestamp window which may not match
-- After answering a question, there's no AI follow-up — just a static "Next" button
-- No contextual encouragement or explanation from the AI after each answer
-
-### 3. Study plan tasks have no click-to-chat wiring
-`StudyPlanView` has `onToggleTask` which just toggles a checkbox. There's no callback to send a learning prompt to chat. The `StudentCopilotPage` doesn't pass a handler that would start a chat-based learning session from a task click.
-
-### 4. Study plan normalizer is missing
-`artifactNormalizers.ts` handles practice, concept, worked_solution, target_tracker, progress_report, test_debrief — but NOT `study_plan`. The edge function outputs `{ focus, minutes }` per item, while the view expects `{ task, duration }`. Currently this works for mock data (which uses `task/duration` directly), but AI-generated study plans would break.
-
-### 5. No feedback loop after inline practice answers
-When a student answers a practice question correctly or incorrectly via `InlinePracticeCard`, the result is saved to `student_attempts` but no follow-up message is injected into the chat. The student just sees a static green/red indicator and clicks "Next."
+No AWS account or external infrastructure needed. Videos are rendered in the sandbox using Remotion CLI and stored in your platform's file storage.
 
 ---
 
-## Implementation Plan
+## What Gets Built
 
-### Step 1 — Update Edge Function System Prompt for Interactive Behavior
+### A. Remotion Video Templates (rendered to MP4 in sandbox)
 
-**File**: `supabase/functions/student-copilot-chat/index.ts`
+**Wrong Answer Explanation Video** (~20 seconds, 1280x720, 30fps)
 
-Add explicit instructions to the system prompt:
+4 scenes per the feature doc:
+1. Question Recap — question text fades in, wrong option highlighted red
+2. Correct Answer Reveal — correct option highlights green
+3. Step-by-step Explanation — each step animates in sequentially
+4. Summary — key takeaway + DonutAI branding
 
-- **For small practice requests (up to 10 questions)**: Present questions one at a time in the chat text itself (not as an artifact). Format each question clearly with options. Wait for the student's response before presenting the next question.
-- **For larger practice sets (10+ questions)**: Use `create_practice_session` tool to create an artifact.
-- **After each student answer**: Respond with encouragement if correct ("Great job! You nailed it."), or explain the concept if wrong ("Not quite — here's why..."), then present the next question.
-- **For study plan task flows**: When the student says something like "Start Day 1 Task 1" or "Teach me about displacement", deliver the content conversationally — explain the concept, ask check questions, and adapt.
-- **General tone**: Be warm, use occasional emojis, ask "Ready for the next one?" or "Want to try a harder version?"
+Data source: 3-5 wrong answers from `testResultsGenerator.ts` mock data (Physics/Math questions with solutions already written).
 
-### Step 2 — Add Study Plan Normalizer
+**Visual direction**: "Sophisticated Warmth" matching DonutAI brand — warm coral/orange palette, Plus Jakarta Sans, clean card-based layouts, spring animations.
 
-**File**: `src/components/student/copilot/artifactNormalizers.ts`
+### B. Frontend UI Components (4 new files)
 
-Add `normalizeStudyPlan()`:
-- Map `focus` to `label` for each day
-- Map `minutes` to `duration` string for each item  
-- Ensure `task` field exists (from AI's `task` or fallback)
-- Register in `normalizeArtifactContent` switch
+| Component | Purpose | Location |
+|-----------|---------|----------|
+| `VideoPlayerModal.tsx` | Full-screen modal with HTML5 video player, close button, loading/error states | `src/components/student/tests/results/` |
+| `WrongAnswerVideoButton.tsx` | "Watch Explanation" pill button with play icon | `src/components/student/tests/results/` |
+| `WeeklyReportCard.tsx` | Dashboard card showing "Week 34 Report — Watch (0:40)" | `src/components/student/dashboard/` |
+| `VideoExplanationButton.tsx` | Compact play button for copilot debrief cards | `src/components/student/copilot/artifacts/` |
 
-### Step 3 — Wire Study Plan Task Click to Chat
+### C. Integration Points (4 existing files modified)
 
-**Files**: 
-- `src/components/student/copilot/StudentArtifactPane.tsx`
-- `src/components/student/copilot/StudentCopilotPage.tsx`
-- `src/components/student/copilot/artifacts/StudyPlanView.tsx`
-
-Add a new callback `onStartTask` to `StudyPlanView`:
-- When a task item is clicked, instead of just toggling completion, send a contextual prompt to chat: e.g., "Teach me about: Revise distance, displacement, speed & velocity (Day 1, Physics)"
-- Pass this callback from `StudentCopilotPage` through `StudentArtifactPane` to `StudyPlanView`
-- The chat then handles it as a normal user message, and the AI (with updated system prompt) starts an interactive teaching session
-
-### Step 4 — Add Post-Answer AI Follow-Up in Chat
-
-**Files**:
-- `src/components/student/copilot/StudentCopilotPage.tsx`
-- `src/components/student/copilot/useInlinePractice.ts`
-
-After a student answers an inline practice question:
-- If correct: Auto-inject a brief encouragement message into the chat ("Correct! Well done. Ready for the next one?")
-- If wrong: Auto-inject an explanation message ("Not quite. The correct answer is X because... Let's try the next one.")
-- These are local UI messages (not sent to the AI API), providing immediate feedback
-- The existing `onPracticeAnswer` callback already knows `correct` and has access to `explanation` — extend it to also append a feedback message to the messages list
-
-### Step 5 — Improve Inline Practice Question Display
-
-**File**: `src/components/student/copilot/InlinePracticeCard.tsx`
-
-Polish the inline card for chat context:
-- Make the question card feel more conversational (less "test-like")
-- After answering wrong, show the explanation more prominently with the AI's avatar
-- Add a "Want to try a similar one?" option after wrong answers
-
-### Step 6 — Fix Practice Artifact Linking in Chat
-
-**File**: `src/components/student/copilot/ChatMessageList.tsx`
-
-The current 30-second timestamp window for linking practice artifacts to messages is fragile. Change to:
-- Link by `thread_id` + check if the assistant message content mentions "practice" or similar keywords
-- Or store `artifact_id` in the message metadata when the edge function creates one
-
----
-
-## Files to Update
-
-| File | Action |
+| File | Change |
 |------|--------|
-| `supabase/functions/student-copilot-chat/index.ts` | Update system prompt for interactive tutoring |
-| `src/components/student/copilot/artifactNormalizers.ts` | Add study_plan normalizer |
-| `src/components/student/copilot/StudentCopilotPage.tsx` | Wire task-click-to-chat, post-answer feedback |
-| `src/components/student/copilot/StudentArtifactPane.tsx` | Pass onStartTask callback through |
-| `src/components/student/copilot/artifacts/StudyPlanView.tsx` | Add onStartTask click handler |
-| `src/components/student/copilot/ChatMessageList.tsx` | Improve artifact-message linking |
-| `src/components/student/copilot/InlinePracticeCard.tsx` | Polish for conversational feel |
-| `src/components/student/copilot/useInlinePractice.ts` | Support feedback message injection |
+| `QuestionReview.tsx` | Add `WrongAnswerVideoButton` next to each incorrect question's solution section |
+| `TestDebriefView.tsx` | Add `VideoExplanationButton` next to each wrong question card |
+| `StudentCopilotPage.tsx` | Wire video button click to open `VideoPlayerModal` |
+| Student dashboard page | Add `WeeklyReportCard` component |
 
-## Expected Result
+### D. Mock Video Data Layer
 
+A `src/data/student/videoExplanations.ts` file mapping question IDs to video URLs (pointing to the pre-rendered MP4s stored in platform storage). This acts as the bridge between the existing question data and the video player.
+
+---
+
+## Technical Approach
+
+### Remotion Rendering (sandbox, not in the app)
+
+1. Create `remotion/` directory in project root with the WrongAnswerVideo composition
+2. Install Remotion packages via bun
+3. Build 4 scene components using `useCurrentFrame()` + `interpolate()` + `spring()` — no CSS animations
+4. Render 3-5 MP4s using the programmatic render script, one per wrong question from mock data
+5. Upload rendered MP4s to platform storage bucket (`explanation-videos`)
+6. Map video URLs in `videoExplanations.ts`
+
+### Video Storage
+
+Create a `explanation-videos` storage bucket (public read) via SQL migration. Upload pre-rendered MP4s there. Frontend references them by signed URL.
+
+### UI Flow
+
+```text
+Student finishes exam → Views Results → Review tab
+  → Sees wrong answer Q3
+  → Clicks "Watch Explanation (0:20)"
+  → VideoPlayerModal opens → plays MP4
+
+Student opens Copilot → Test Debrief artifact
+  → Wrong answer card for Q3 has play icon
+  → Clicks → same VideoPlayerModal
 ```
-Student: "5 MCQs on Kinematics"
-AI: "Let's test your Kinematics knowledge! Here's Q1:"
-     [Inline MCQ card appears]
-Student: clicks option B
-AI: "Correct! Displacement can be zero even if distance is not. Ready for Q2?"
-     [Next MCQ card appears]
-Student: clicks wrong option
-AI: "Not quite — the correct answer is B. Here's why: v = u + at = 0 + 2×5 = 10 m/s. Let's try Q3!"
 
-Student: clicks "Revise distance & displacement" in study plan
-Chat: "Let's revise Distance vs Displacement!
+---
 
-Distance is the total path length traveled. It's a scalar — always positive.
-Displacement is the shortest distance from start to end. It's a vector.
+## Remotion Project Structure
 
-Quick check: If you walk 3m east then 4m north, what's the distance? What's the displacement?"
-
-Student: "distance is 7m, displacement is 5m"
-AI: "Perfect! You used the Pythagorean theorem correctly. √(3²+4²) = 5m. 
-     Ready for the next concept — Speed vs Velocity?"
+```text
+remotion/
+  tsconfig.json
+  package.json
+  scripts/
+    render-remotion.mjs
+  src/
+    index.ts
+    Root.tsx
+    WrongAnswerVideo.tsx
+    scenes/
+      QuestionRecap.tsx
+      CorrectReveal.tsx
+      ExplanationSteps.tsx
+      Summary.tsx
+    components/
+      AnimatedText.tsx
+      OptionBubble.tsx
+      ProgressBar.tsx
+    constants.ts
 ```
+
+---
+
+## Implementation Order
+
+1. Set up Remotion project in `remotion/` directory, install deps, configure compositor
+2. Build WrongAnswerVideo composition (4 scenes) with DonutAI branding
+3. Render 3-5 MP4s from mock exam data
+4. Create storage bucket and upload videos
+5. Build `VideoPlayerModal` and `WrongAnswerVideoButton` components
+6. Build `VideoExplanationButton` for copilot debrief
+7. Create `videoExplanations.ts` mock data mapping
+8. Integrate into `QuestionReview.tsx` (Test Results)
+9. Integrate into `TestDebriefView.tsx` (Copilot)
+10. Build `WeeklyReportCard` for dashboard (static demo — points to a placeholder video)
+
+---
+
+## What This Does NOT Include (Future Phase 2)
+
+- Dynamic on-demand video rendering (requires AWS Lambda)
+- Weekly report video generation (requires cron + batch rendering)
+- Real student data integration (requires live database)
+- Parent WhatsApp notifications with video links
+
+These require AWS S3 + Lambda infrastructure which will be set up in a future phase.
 
