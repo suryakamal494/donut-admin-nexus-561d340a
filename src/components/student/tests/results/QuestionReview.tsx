@@ -324,20 +324,21 @@ const QuestionReview = memo(function QuestionReview({
                             </span>
                           </div>
 
+                          {/* Video explanation button — shown for any question with a video */}
+                          {(() => {
+                            const video = getVideoForQuestionNumber(question.questionNumber);
+                            return video ? (
+                              <div className="mb-2 flex justify-center">
+                                <WrongAnswerVideoButton
+                                  duration={video.duration}
+                                  onClick={() => setVideoModal({ open: true, url: video.videoUrl, title: `Q${question.questionNumber} — ${video.chapter}` })}
+                                />
+                              </div>
+                            ) : null;
+                          })()}
+
                           {question.solution && (
                             <div>
-                              {/* Video explanation button for wrong answers */}
-                              {!question.isCorrect && (() => {
-                                const video = getVideoForQuestionNumber(question.questionNumber);
-                                return video ? (
-                                  <div className="mb-2 flex justify-center">
-                                    <WrongAnswerVideoButton
-                                      duration={video.duration}
-                                      onClick={() => setVideoModal({ open: true, url: video.videoUrl, title: `Q${question.questionNumber} — ${video.chapter}` })}
-                                    />
-                                  </div>
-                                ) : null;
-                              })()}
                               <Button
                                 variant="ghost"
                                 size="sm"

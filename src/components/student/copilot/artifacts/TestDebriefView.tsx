@@ -90,9 +90,9 @@ export default function TestDebriefView({ content }: Props) {
         ))}
       </div>
 
-      {/* Question details — only incorrect/unattempted */}
+      {/* Question details — incorrect/unattempted + correct with videos */}
       <div className="space-y-2">
-        {content.questions?.filter((q) => !q.correct).map((q) => (
+        {content.questions?.filter((q) => !q.correct || getVideoForQuestionNumber(q.question_number)).map((q) => (
           <Card key={q.question_number} className={cn(!q.attempted ? "border-border" : "border-red-500/20")}>
             <CardContent className="p-3 space-y-1.5">
               <div className="flex items-start gap-2">
