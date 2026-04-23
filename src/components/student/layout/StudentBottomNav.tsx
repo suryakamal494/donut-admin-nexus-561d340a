@@ -7,7 +7,6 @@ import {
   BookOpen, 
   Trophy, 
   TrendingUp, 
-  Bell,
   type LucideIcon
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -25,7 +24,6 @@ const navItems: NavItem[] = [
   { id: "subjects", label: "Subjects", icon: BookOpen, path: "/student/subjects" },
   { id: "tests", label: "Tests", icon: Trophy, path: "/student/tests" },
   { id: "progress", label: "Progress", icon: TrendingUp, path: "/student/progress" },
-  { id: "notifications", label: "Alerts", icon: Bell, path: "/student/notifications", badge: 3 },
 ];
 
 const StudentBottomNav = () => {

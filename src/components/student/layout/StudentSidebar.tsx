@@ -7,8 +7,6 @@ import {
   BookOpen, 
   Trophy, 
   TrendingUp, 
-  Bell,
-  Sparkles,
   ChevronLeft,
   ChevronRight,
   type LucideIcon
@@ -43,8 +41,6 @@ const navItems: NavItem[] = [
   { id: "subjects", label: "Subjects", icon: BookOpen, path: "/student/subjects" },
   { id: "tests", label: "Tests", icon: Trophy, path: "/student/tests" },
   { id: "progress", label: "Progress", icon: TrendingUp, path: "/student/progress" },
-  { id: "notifications", label: "Notifications", icon: Bell, path: "/student/notifications", badge: 3 },
-  { id: "copilot", label: "Copilot", icon: Sparkles, path: "/student/copilot" },
 ];
 
 const StudentSidebar = ({ collapsed, onToggle }: StudentSidebarProps) => {
