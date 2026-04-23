@@ -1,6 +1,7 @@
 // Student Copilot — Main 3-panel layout (orchestrator)
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useRef } from "react";
+import { useSearchParams } from "react-router-dom";
 import { PanelLeft, PanelRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
@@ -34,6 +35,7 @@ const STUDENT_ID = studentProfile.id;
 
 const StudentCopilotPage: React.FC = () => {
   const isMobile = useIsMobile();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   // Data state
   const [routines, setRoutines] = useState<StudentRoutine[]>([]);
@@ -80,6 +82,9 @@ const StudentCopilotPage: React.FC = () => {
     return [];
   }, [currentRoutine]);
 
+  // Track if we've handled the initial query params
+  const initialParamsHandled = useRef(false);
+
   // Initial data load
   useEffect(() => {
     (async () => {
@@ -98,6 +103,63 @@ const StudentCopilotPage: React.FC = () => {
       setNotifications(notifs);
     })();
   }, []);
+
+  // Handle query params from dashboard deep-links
+  useEffect(() => {
+    if (initialParamsHandled.current) return;
+    if (routines.length === 0) return; // Wait for routines to load
+
+    const routine = searchParams.get('routine');
+    const prompt = searchParams.get('prompt');
+    if (!routine && !prompt) return;
+
+    initialParamsHandled.current = true;
+
+    // Clear search params from URL
+    setSearchParams({}, { replace: true });
+
+    const subject = searchParams.get('subject');
+    if (subject) setSubjectFilter(subject);
+
+    // Create thread with the specified routine and auto-send prompt
+    (async () => {
+      const routineKey = routine || DEFAULT_ROUTINE_KEY;
+      const routineObj = routines.find((r) => r.key === routineKey);
+      const title = prompt ? prompt.slice(0, 60).trim() : `New ${routineObj?.label ?? ''} chat`;
+      const thread = await createThread(STUDENT_ID, routineKey, title, subject);
+      if (!thread) return;
+      setThreads((prev) => [thread, ...prev]);
+      setCurrentThreadId(thread.id);
+      setMessages([]);
+
+      if (prompt) {
+        const tempUserMsg: StudentMessage = {
+          id: `temp-${Date.now()}`,
+          thread_id: thread.id,
+          role: "user",
+          content: prompt,
+          created_at: new Date().toISOString(),
+        };
+        setMessages([tempUserMsg]);
+
+        const result = await send({
+          text: prompt,
+          thread,
+          routine: routineObj ?? null,
+          studentId: STUDENT_ID,
+          existingMessages: [],
+          extraSystem: buildFullStudentContext(mastery),
+        });
+
+        const msgs = await fetchMessages(thread.id);
+        setMessages(msgs);
+
+        if (result.artifacts.length > 0) {
+          setArtifacts((prev) => [...result.artifacts, ...prev]);
+        }
+      }
+    })();
+  }, [routines, searchParams, setSearchParams, send, mastery]);
 
   // Load messages when thread changes
   useEffect(() => {
