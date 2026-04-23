@@ -2,8 +2,9 @@
 
 import { ScheduleItem, subjectColors } from "@/data/student/dashboard";
 import { cn } from "@/lib/utils";
-import { Clock, MapPin, User, Radio, FileText, ClipboardCheck } from "lucide-react";
+import { Clock, MapPin, User, Radio, BookOpen, ClipboardCheck } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { useNavigate } from "react-router-dom";
 
 interface TimetableDayCardProps {
   dateStr: string;
@@ -14,6 +15,7 @@ interface TimetableDayCardProps {
 const dayLabels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 export const TimetableDayCard = ({ dateStr, items, isToday }: TimetableDayCardProps) => {
+  const navigate = useNavigate();
   const date = new Date(dateStr + 'T00:00:00');
   const dayNum = date.getDate();
   const dayName = dayLabels[date.getDay()];
@@ -129,15 +131,6 @@ export const TimetableDayCard = ({ dateStr, items, isToday }: TimetableDayCardPr
                   {/* Subject & Topic */}
                   <div className="flex items-center justify-between">
                     <p className="text-sm font-semibold text-foreground capitalize">{item.subject}</p>
-                    {item.lessonPlanId && (
-                      <button
-                        onClick={() => {/* TODO: navigate to lesson plan */}}
-                        className="flex items-center gap-1 px-1.5 py-0.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-colors"
-                        title="View Lesson Plan"
-                      >
-                        <FileText className="w-3.5 h-3.5" />
-                      </button>
-                    )}
                   </div>
                   {item.topic && (
                     <p className="text-xs text-muted-foreground mt-0.5 truncate">{item.topic}</p>
@@ -161,6 +154,15 @@ export const TimetableDayCard = ({ dateStr, items, isToday }: TimetableDayCardPr
                         Room {item.room}
                       </span>
                     )}
+                      {item.lessonPlanId && (
+                        <button
+                          onClick={() => navigate('/student/subjects')}
+                          className="flex items-center gap-1 text-[11px] font-medium bg-primary/10 text-primary rounded-full px-2 py-0.5 hover:bg-primary/20 transition-colors"
+                        >
+                          <BookOpen className="w-3 h-3" />
+                          Plan
+                        </button>
+                      )}
                   </div>
                 </div>
               </div>
