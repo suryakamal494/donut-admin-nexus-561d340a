@@ -44,6 +44,23 @@ export interface AIRecommendation {
   copilotPrompt?: string;
 }
 
+export interface LastTestResult {
+  id: string;
+  testName: string;
+  subject: string;
+  score: number;
+  totalMarks: number;
+  rank: number;
+  totalStudents: number;
+  accuracy: number;
+  date: string;
+}
+
+export interface DailyStudyGoal {
+  current: number;
+  target: number;
+}
+
 // Subject color mapping for consistency
 export const subjectColors: Record<string, { bg: string; text: string; icon: string }> = {
   math: { bg: 'bg-blue-500', text: 'text-blue-500', icon: 'from-blue-400 to-indigo-500' },
