@@ -378,6 +378,13 @@ const QuestionReview = memo(function QuestionReview({
         </div>
       </div>
     </div>
+
+    <VideoPlayerModal
+      open={videoModal.open}
+      onOpenChange={(open) => setVideoModal(prev => ({ ...prev, open }))}
+      videoUrl={videoModal.url}
+      title={videoModal.title}
+    />
   );
 });
 
