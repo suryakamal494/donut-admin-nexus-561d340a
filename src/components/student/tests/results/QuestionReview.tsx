@@ -98,6 +98,7 @@ const QuestionReview = memo(function QuestionReview({
   };
 
   return (
+    <>
     <div className="space-y-4">
       {/* Question Jump Strip */}
       <div className="bg-white rounded-xl border border-border p-3">
@@ -377,7 +378,6 @@ const QuestionReview = memo(function QuestionReview({
           )}
         </div>
       </div>
-    </div>
 
     <VideoPlayerModal
       open={videoModal.open}
@@ -385,6 +385,8 @@ const QuestionReview = memo(function QuestionReview({
       videoUrl={videoModal.url}
       title={videoModal.title}
     />
+    </div>
+    </>
   );
 });
 
