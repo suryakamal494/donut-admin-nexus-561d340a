@@ -47,7 +47,6 @@ for (const id of toRender) {
     codec: "h264",
     outputLocation: path.join(outputDir, `${id}.mp4`),
     puppeteerInstance: browser,
-    muted: true,
     concurrency: 1,
   });
   console.log(`  ✓ ${id}.mp4 saved`);
