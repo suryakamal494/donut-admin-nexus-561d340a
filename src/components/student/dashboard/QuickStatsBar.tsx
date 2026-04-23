@@ -5,6 +5,7 @@ import { BookOpen, Calendar, Flame } from "lucide-react";
 import { studentSubjects } from "@/data/student";
 import { upcomingTests } from "@/data/student/dashboard";
 import { studentProfile } from "@/data/student";
+import DailyStudyGoalRing from "./DailyStudyGoalRing";
 
 interface StatPill {
   icon: React.ReactNode;
@@ -55,6 +56,7 @@ const QuickStatsBar = () => {
           </div>
         </div>
       ))}
+      <DailyStudyGoalRing compact />
     </div>
   );
 };

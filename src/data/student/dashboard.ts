@@ -44,6 +44,23 @@ export interface AIRecommendation {
   copilotPrompt?: string;
 }
 
+export interface LastTestResult {
+  id: string;
+  testName: string;
+  subject: string;
+  score: number;
+  totalMarks: number;
+  rank: number;
+  totalStudents: number;
+  accuracy: number;
+  date: string;
+}
+
+export interface DailyStudyGoal {
+  current: number;
+  target: number;
+}
+
 // Subject color mapping for consistency
 export const subjectColors: Record<string, { bg: string; text: string; icon: string }> = {
   math: { bg: 'bg-blue-500', text: 'text-blue-500', icon: 'from-blue-400 to-indigo-500' },
@@ -246,4 +263,23 @@ export const formatRelativeDate = (dateString: string): string => {
 export const formatTestTime = (dateString: string): string => {
   const date = new Date(dateString);
   return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+};
+
+// Last test result mock data
+export const lastTestResult: LastTestResult = {
+  id: 'kinematics-quiz-1',
+  testName: 'Kinematics Quiz',
+  subject: 'physics',
+  score: 72,
+  totalMarks: 100,
+  rank: 5,
+  totalStudents: 32,
+  accuracy: 72,
+  date: '2026-01-09T14:30:00',
+};
+
+// Daily study goal mock data
+export const dailyStudyGoal: DailyStudyGoal = {
+  current: 45,
+  target: 60,
 };

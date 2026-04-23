@@ -8,7 +8,10 @@ import {
   AIRecommendationsCarousel, 
   HomeworkSection, 
   ScheduleTimeline, 
-  UpcomingTestsSection 
+  UpcomingTestsSection,
+  LastTestResultCard,
+  RecentCopilotCard,
+  DailyStudyGoalRing
 } from "@/components/student/dashboard";
 
 const StudentDashboard = () => {
@@ -57,6 +60,17 @@ const StudentDashboard = () => {
 
       {/* AI Recommendations Carousel */}
       <AIRecommendationsCarousel />
+
+      {/* Last Test Result + Recent Copilot Activity */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
+        <LastTestResultCard />
+        <RecentCopilotCard />
+      </div>
+
+      {/* Daily Study Goal — Mobile only */}
+      <div className="mb-4">
+        <DailyStudyGoalRing />
+      </div>
 
       {/* Two Column Layout for Tablet/Desktop */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
