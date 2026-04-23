@@ -1,5 +1,5 @@
 import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { X } from "lucide-react";
+import { X, VolumeX } from "lucide-react";
 import { useState } from "react";
 
 interface Props {
@@ -26,7 +26,8 @@ export function VideoPlayerModal({ open, onOpenChange, videoUrl, title }: Props)
 
           {/* Title bar */}
           {title && (
-            <div className="absolute top-3 left-4 z-10 text-white/80 text-xs font-medium bg-black/40 px-3 py-1 rounded-full">
+            <div className="absolute top-3 left-4 z-10 text-white/80 text-xs font-medium bg-black/40 px-3 py-1 rounded-full flex items-center gap-1.5">
+              <VolumeX className="w-3 h-3" />
               {title}
             </div>
           )}
