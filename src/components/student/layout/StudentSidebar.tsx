@@ -7,6 +7,7 @@ import {
   BookOpen, 
   Trophy, 
   TrendingUp, 
+  Calendar,
   ChevronLeft,
   ChevronRight,
   type LucideIcon
@@ -38,6 +39,7 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { id: "dashboard", label: "Home", icon: Home, path: "/student/dashboard" },
+  { id: "timetable", label: "Timetable", icon: Calendar, path: "/student/timetable" },
   { id: "subjects", label: "Subjects", icon: BookOpen, path: "/student/subjects" },
   { id: "tests", label: "Tests", icon: Trophy, path: "/student/tests" },
   { id: "progress", label: "Progress", icon: TrendingUp, path: "/student/progress" },
