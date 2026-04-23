@@ -275,7 +275,7 @@ export const lastTestResult: LastTestResult = {
   rank: 5,
   totalStudents: 32,
   accuracy: 72,
-  date: '2026-01-09T14:30:00',
+  date: new Date(Date.now() - 1 * 60 * 60 * 1000).toISOString(),
 };
 
 // Daily study goal mock data
