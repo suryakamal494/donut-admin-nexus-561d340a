@@ -40,6 +40,8 @@ export interface AIRecommendation {
   description: string;
   action: string;
   subject?: string;
+  copilotRoutine?: string;
+  copilotPrompt?: string;
 }
 
 // Subject color mapping for consistency
@@ -191,7 +193,9 @@ export const aiRecommendations: AIRecommendation[] = [
     title: 'Continue where you left off', 
     description: 'Physics - Chapter 4: Force and Motion', 
     action: 'Continue',
-    subject: 'physics'
+    subject: 'physics',
+    copilotRoutine: 's_doubt',
+    copilotPrompt: 'Help me continue with Force and Motion in Physics Chapter 4'
   },
   { 
     id: 2, 
@@ -199,7 +203,9 @@ export const aiRecommendations: AIRecommendation[] = [
     title: 'Needs your attention', 
     description: 'Biology is 2 chapters behind schedule', 
     action: 'Review',
-    subject: 'biology'
+    subject: 'biology',
+    copilotRoutine: 's_practice',
+    copilotPrompt: 'Practice weak topics in Biology to catch up on the 2 chapters I am behind'
   },
   { 
     id: 3, 
@@ -207,7 +213,9 @@ export const aiRecommendations: AIRecommendation[] = [
     title: 'Almost there!', 
     description: 'Complete Chemistry Ch.5 to finish the unit', 
     action: 'Finish',
-    subject: 'chemistry'
+    subject: 'chemistry',
+    copilotRoutine: 's_practice',
+    copilotPrompt: 'Quick practice on Chemistry Chapter 5 to finish the unit'
   },
 ];
 
