@@ -1,45 +1,58 @@
 
 
-# Student Timetable — Auto-scroll, Day Selector Strip, and Compact Layout
+# Student Timetable — Lesson Plan Links and Exam Slots
 
 ## Summary
 
-Three improvements to the timetable page: (1) auto-scroll to today on load, (2) a horizontal day selector strip for quick day jumping, and (3) tighter spacing throughout to reduce whitespace.
+Two enhancements: (1) show a small lesson plan icon on class cards when the teacher has shared one, tappable to view it; (2) add exam/test slots into the daily schedule with a visually distinct design (purple/violet theme) so students can immediately distinguish exams from regular classes.
 
 ## Changes
 
-### 1. Auto-scroll to Today — `src/pages/student/Timetable.tsx`
+### 1. Extend `ScheduleItem` Interface — `src/data/student/dashboard.ts`
 
-- Add a `useEffect` that runs after initial render (and when `weekStart` changes)
-- If today's date exists in the current week's schedule, scroll the corresponding `TimetableDayCard` into view using `scrollIntoView({ behavior: 'smooth', block: 'start' })`
-- Each day card gets a `ref` via a `data-date` attribute or a ref map keyed by date string
-- No "Jump to Today" button needed — it happens automatically
+Add optional fields to `ScheduleItem`:
+- `lessonPlanId?: string` — present when teacher has shared a lesson plan for this class
+- `type` expanded from `'class' | 'break'` to `'class' | 'break' | 'exam'`
+- `examTitle?: string` — name of the exam (e.g., "Unit Test - Quadratic Equations")
+- `examType?: 'quiz' | 'test' | 'exam'` — to show severity level
 
-### 2. Horizontal Day Selector Strip — New section in `src/pages/student/Timetable.tsx`
+### 2. Add Mock Exam Slots and Lesson Plan IDs — `src/data/student/weeklySchedule.ts`
 
-- A row of 6 pill-shaped day buttons (Mon–Sat) placed between the week navigator and the day cards
-- Each pill shows: short day name + date number (e.g., "Mon 21")
-- Today's pill gets the orange gradient highlight; selected/tapped pill gets a subtle ring
-- Tapping a pill scrolls to that day's card smoothly
-- Horizontally scrollable on very narrow screens, but 6 pills fit comfortably on 320px+
+- Add `lessonPlanId` to some class entries (e.g., 60% of classes have a shared lesson plan) to simulate teacher sharing
+- For today's date specifically, inject one exam slot (e.g., replacing the 4th period with an exam) so it's immediately visible as a demo
+- Add a Wednesday exam slot as well for variety
+- Exam slots use `type: 'exam'` with `examTitle`, `examType`, and relevant subject/time fields
 
-### 3. Compact Layout — `src/components/student/timetable/TimetableDayCard.tsx` and `Timetable.tsx`
+### 3. Update `TimetableDayCard` — `src/components/student/timetable/TimetableDayCard.tsx`
 
-- Reduce `space-y-6` between day cards to `space-y-4`
-- Reduce day header date box from `w-12 h-12` to `w-10 h-10` with smaller text
-- Reduce period card padding from `p-3` to `p-2.5`
-- Reduce `space-y-2` between period cards to `space-y-1.5`
-- Reduce meta row `mt-2` to `mt-1`
-- Reduce left indent `pl-[60px]` to `pl-[52px]` to match smaller date box
-- Trim the navigator wrapper padding from `p-3` to `p-2.5` and `mb-6` to `mb-3`
-- Reduce page header `mb-4` to `mb-3`
+**Lesson Plan Icon on Class Cards:**
+- When `item.lessonPlanId` exists, show a small `FileText` icon (from lucide) in the top-right area of the class card
+- Tapping it navigates to `/student/lesson-plan/{lessonPlanId}` (or opens a sheet — for now, just a link placeholder)
+- Icon styled subtly (muted color, 14px) with a tooltip-like label "Lesson Plan"
 
-### Files Changed
+**Exam Card Design (distinct from class cards):**
+- `type === 'exam'` renders a completely different card style:
+  - Purple/violet gradient border and left accent stripe
+  - `ClipboardCheck` or `Award` icon instead of subject dot
+  - Exam title displayed prominently
+  - Badge showing exam type ("Quiz", "Unit Test", "Exam") in purple
+  - Slightly larger card with more visual weight than regular class cards
+  - No teacher/room meta (or optional if present)
+- Day header class count updated to also show exam count (e.g., "4 classes, 1 exam")
+
+### 4. Update Day Header in `TimetableDayCard`
+
+- Count exams separately: `items.filter(i => i.type === 'exam').length`
+- Show "4 classes · 1 exam" in the subtitle when exams exist
+- Exam count shown in purple text for visual distinction
+
+## Files Changed
 
 | File | Action |
 |------|--------|
-| `src/pages/student/Timetable.tsx` | Edit — add auto-scroll logic, day selector strip, tighten spacing |
-| `src/components/student/timetable/TimetableDayCard.tsx` | Edit — compact padding, smaller date box, tighter gaps |
+| `src/data/student/dashboard.ts` | Edit — extend `ScheduleItem` with `lessonPlanId`, expand `type` to include `'exam'`, add `examTitle` and `examType` |
+| `src/data/student/weeklySchedule.ts` | Edit — add lesson plan IDs to some classes, inject exam slots on select days |
+| `src/components/student/timetable/TimetableDayCard.tsx` | Edit — add lesson plan icon on class cards, add distinct exam card rendering, update day header counts |
 
-No new files created. No data or routing changes.
+No routing or navigation changes needed. No database changes.
 
