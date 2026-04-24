@@ -3,19 +3,11 @@ import React, { useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   MessageSquare, Dumbbell, Target, Map, TrendingUp,
-  Plus, GraduationCap, ArrowLeft, MoreHorizontal, ChevronRight,
+  ArrowLeft, ChevronRight,
   type LucideIcon,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
-import { studentProfile } from "@/data/student/profile";
 import type { StudentThread, StudentRoutine } from "./types";
 import { SUBJECTS, DEFAULT_ROUTINE_KEY } from "./types";
 
@@ -73,8 +65,12 @@ const StudentLeftRail: React.FC<Props> = ({
       archived: [],
     };
     for (const t of filteredThreads) {
-      const s = (t.status as "active" | "recent" | "archived") ?? "active";
-      (buckets[s] ?? buckets.active).push(t);
+      // Unstatused threads are auto-created by the router; they haven't been
+      // touched by the lifecycle sweep yet, so the safe bucket is "recent"
+      // (not "active"). Active is reserved for sessions explicitly being
+      // worked on today.
+      const s = (t.status as "active" | "recent" | "archived") ?? "recent";
+      (buckets[s] ?? buckets.recent).push(t);
     }
     return buckets;
   }, [filteredThreads]);
@@ -126,42 +122,13 @@ const StudentLeftRail: React.FC<Props> = ({
         </button>
       </div>
 
-      {/* Profile header */}
-      <div className="p-4 border-b border-t">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-donut-coral to-donut-orange flex items-center justify-center">
-            <GraduationCap className="w-5 h-5 text-white" />
-          </div>
-          <div className="min-w-0">
-            <p className="text-sm font-semibold truncate">{studentProfile.name}</p>
-            <p className="text-xs text-muted-foreground">{studentProfile.grade}</p>
-          </div>
-          {/* Demoted: "Start fresh" lives in a secondary menu. The router
-              handles continuation by default — see Rule 1. */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="h-8 w-8 p-0 ml-auto">
-                <MoreHorizontal className="w-4 h-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => { onNewThread(); onClose?.(); }}>
-                <Plus className="w-4 h-4 mr-2" />
-                Start fresh chat
-                <span className="ml-auto text-[10px] opacity-60">⌘K</span>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      </div>
-
-      {/* Subject filter chips */}
-      <div className="px-3 py-2">
-        <div className="flex flex-wrap gap-1.5">
+      {/* Subject filter chips — single-row scroll to save vertical space. */}
+      <div className="px-3 py-2 border-t">
+        <div className="flex gap-1.5 overflow-x-auto scrollbar-none -mx-1 px-1 pb-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           <button
             onClick={() => onSubjectFilter(null)}
             className={cn(
-              "px-2.5 py-1 rounded-full text-xs font-medium transition-colors",
+              "shrink-0 px-2.5 py-1 rounded-full text-xs font-medium transition-colors",
               !subjectFilter
                 ? "bg-foreground text-background"
                 : "bg-muted text-muted-foreground hover:bg-muted/80"
@@ -174,7 +141,7 @@ const StudentLeftRail: React.FC<Props> = ({
               key={s}
               onClick={() => onSubjectFilter(subjectFilter === s ? null : s)}
               className={cn(
-                "flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium transition-colors",
+                "shrink-0 flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium transition-colors",
                 subjectFilter === s
                   ? "bg-foreground text-background"
                   : "bg-muted text-muted-foreground hover:bg-muted/80"
@@ -298,21 +265,24 @@ const LifecycleSection: React.FC<LifecycleSectionProps> = ({
   const styles = TONE_STYLES[tone];
 
   return (
-    <div className="rounded-lg border border-border/60 overflow-hidden bg-card">
+    <div
+      className={cn(
+        "rounded-lg border border-border/60 overflow-hidden bg-card transition-shadow",
+        isOpen && "shadow-sm",
+      )}
+    >
       <button
         onClick={onToggle}
-        disabled={isEmpty}
         className={cn(
           "flex items-center gap-2 w-full px-3 py-2.5 text-left transition-colors",
           isOpen ? "bg-muted/70" : "bg-muted/30 hover:bg-muted/50",
-          isEmpty && "opacity-60 cursor-not-allowed hover:bg-muted/30",
         )}
       >
         <ChevronRight
           className={cn(
             "w-4 h-4 flex-shrink-0 text-foreground transition-transform",
             isOpen && "rotate-90",
-            isEmpty && "opacity-40",
+            isEmpty && "opacity-50",
           )}
         />
         <span className={cn("w-1.5 h-1.5 rounded-full flex-shrink-0", styles.dot)} />

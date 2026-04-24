@@ -419,6 +419,7 @@ const StudentCopilotPage: React.FC = () => {
           onSend={handleSend}
           onToggleLeft={toggleLeft}
           onToggleRight={toggleRight}
+          onNewThread={() => handleNewThread()}
           quickStartChips={quickStartChips}
           practiceStates={practiceStates}
           onPracticeAnswer={answerQuestion}

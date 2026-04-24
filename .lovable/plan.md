@@ -1,101 +1,149 @@
-# Left Rail Restructure — Accordion Lifecycle + Quick Tools Placement
+# Left Rail Audit + Restructure
 
-## What's wrong right now (from your screenshots)
+## What I found (audit)
 
-1. **Group headers blend into the list.** `ACTIVE (41)` and `RECENT (5)` are tiny uppercase muted text, indistinguishable from a thread row. The eye reads them as just another chat.
-2. **No accordion behavior.** Active has 41 items, so the user must scroll past all 41 just to reach Recent. The grouping exists logically, but there is no spatial separation.
-3. **Quick Tools is muted and buried at the bottom.** It looks "disabled" rather than "secondary."
+I reviewed `StudentLeftRail.tsx`, `StudentCopilotPage.tsx`, `StudentChatPane.tsx`, and the mock data. Three real problems:
 
----
+### 1. The accordion code is *technically* correct — but you can't see it work
 
-## The Quick Tools placement question — my honest reasoning
+`toggleBucket` already does `prev === b ? null : b`, and the three `LifecycleSection` blocks all render. So why does it feel "stuck"?
 
-You asked *why* I put Quick Tools at the bottom. Here is the trade-off:
-
-**Argument for top placement (your instinct):**
-- Tools are actions. Actions usually live above content.
-- Power users scan top-down; they will discover tools faster.
-- Visually, top placement signals "this is important."
-
-**Argument for bottom placement (what I did):**
-- Per Rule 1 of the rulebook, the **global chat input is the primary entry point**. Every CTA on the dashboard already routes through the router. Tools in the rail are an **escape hatch** for the rare case where the student wants to skip the router and force a specific tool.
-- If tools sit at the top, students start using them as their main path again — which **defeats the entire session-continuity work** we just built. We're back to "click Practice, get a fresh thread" sprawl.
-- Hence: history (the meaningful artifact of past work) gets the prime real estate; tools sit quietly below as power-user escape.
-
-**My recommendation:** Keep tools at the bottom on principle, but make them **visible and inviting** — not faded. The current dullness is a styling bug, not a placement decision. A clear separator, normal foreground color, hover affordance, and a subtle icon tint will make them feel intentional rather than disabled.
-
-If after using it for a week you still feel they should move up, we move them — but the architectural reason to keep them down is real.
-
----
-
-## Proposed redesign
-
-### 1. Lifecycle accordion (replaces flat headers)
-
-Replace the three flat `ThreadGroup` blocks with a true **single-expand accordion**:
+Because the rail is so vertically packed that **Recent and Archived bars sit below the visible scroll fold**:
 
 ```text
-┌─────────────────────────────────────┐
-│ ▼ Active           6                │  ← bold, expanded by default
-│   • Newton's Laws                   │
-│   • Mechanics 6/10                  │
-│   • JEE Main 2026                   │
-│   …                                 │
-├─────────────────────────────────────┤
-│ ▶ Recent           5                │  ← bold, collapsed
-├─────────────────────────────────────┤
-│ ▶ Archived         5                │  ← bold, collapsed
-└─────────────────────────────────────┘
+┌───────────────────┐  ← top
+│ ← Exit Copilot    │  ~40px
+├───────────────────┤
+│ 👤 Arjun Sharma   │  ~72px  ← profile block
+│    Class 10  ⋯    │
+├───────────────────┤
+│ [All][Phy][Chem]… │  ~60px  ← subject chips wrap to 2 rows
+├───────────────────┤
+│ ▼ Active   (41)   │  ← only this fits
+│   thread…         │
+│   thread… (×40)   │  ← fills remaining height
+│ ─ ─ ─ fold ─ ─ ─  │
+│ ▶ Recent  (5)     │  ← off-screen until you scroll
+│ ▶ Archived (5)    │
+├───────────────────┤
+│ Quick tools       │  pinned bottom
+└───────────────────┘
 ```
 
-Behavior:
-- Click `Recent` → Active **collapses automatically**, Recent expands. Single-pane at a time.
-- Empty bucket: header still renders but disabled (no chevron, muted count).
-- Default open: `Active`. If Active is empty, default to `Recent`.
+So when you click Active, it *does* collapse — but with 41 items above and Recent/Archived hidden below, the only visible feedback is the chevron rotating. The other bars never come into view without scrolling.
 
-Visual contract for the headers:
-- Background bar: `bg-muted/40` for collapsed, `bg-muted/70` for expanded.
-- Typography: `text-sm font-semibold text-foreground` (bold, full-contrast).
-- Chevron icon (rotates on expand) + count pill on the right.
-- 1 px divider between sections.
+### 2. Active says **41** because unstatused threads default to active
 
-This makes the three buckets feel like **distinct compartments**, not labels inside one long list.
+Mock data has 6 active / 5 recent / 5 archived = 16. Every new chat the router auto-creates (`handleNewThread`) saves a thread with no `status`, and the rail's fallback (`status ?? "active"`) dumps all 25+ unstatused threads into Active. That's how you got "Active (41)".
 
-### 2. Thread items get a clearer visual hierarchy
+### 3. Profile + 3-dot menu is wasted vertical space in the rail
 
-Inside an expanded section:
-- Thread title: `text-sm` (was `text-sm`, same) but in `text-foreground/85`.
-- Subject dot stays.
-- Active section gets a left coral accent border on the item to reinforce "this is live."
-
-### 3. Quick Tools: stay at the bottom, but make it look intentional
-
-- Replace the muted footer with a clearly delineated card:
-  - Solid divider above.
-  - `bg-background` (not muted) so it doesn't look "off."
-  - Header `Quick tools` in `text-xs font-semibold text-foreground` (not muted).
-  - Each item: full-contrast text (`text-foreground/90`), icon at `text-donut-coral/70`, hover shifts to `bg-donut-coral/10`.
-  - Subtle helper line at the very bottom: *"Skip the router — start a tool directly."* So students understand the placement is deliberate.
-
-### 4. Subject filter stays at the top, unchanged
-
-It's a filter for the entire history view, so it logically sits above the accordion.
+Your suggestion is right — `Arjun Sharma · Class 10` belongs in the top bar of the chat pane (the "welcome bar"), not eating ~72px in a 260px-wide rail. The 3-dot menu only contains "Start fresh chat", which a `+` icon communicates better and faster.
 
 ---
 
-## File changes (only one)
+## The fix (one structural pass)
 
-`src/components/student/copilot/StudentLeftRail.tsx`
-- Add local state `expandedBucket: "active" | "recent" | "archived"`.
-- Replace the three `ThreadGroup` calls with three `LifecycleSection` blocks rendered as an accordion.
-- Restyle the Quick Tools footer per the new spec; add the helper line.
+### A. Move profile out of the left rail → into the chat pane header
 
-No DB, router, or other component changes. No new dependencies — uses existing `lucide-react` chevron icons and existing tokens.
+Replace the chat pane's plain 48px header (currently just a hamburger + a panel-toggle) with a richer top bar:
+
+```text
+┌──────────────────────────────────────────────────────────┐
+│ ☰   👤 Arjun Sharma · Class 10              [+]   [▣]   │  ← 56px top bar
+├──────────────────────────────────────────────────────────┤
+│  routine pill · thread title                             │  ← thin sub-header (only when in a thread)
+├──────────────────────────────────────────────────────────┤
+│                                                          │
+│   chat / welcome content                                 │
+```
+
+- `☰` toggles the left rail (same as today).
+- `👤 Arjun Sharma · Class 10` — small avatar + name + grade.
+- `+` button → starts a fresh chat (replaces 3-dot dropdown).
+- `▣` toggles the artifact pane (existing).
+- Thread title + routine pill drop into a thin secondary line, so the top bar stays clean.
+
+This top bar is shared between the welcome screen and the in-thread view.
+
+### B. Slim the left rail
+
+Remove the entire profile block (lines 130–156) and the 3-dot dropdown. The rail becomes:
+
+```text
+┌───────────────────┐
+│ ← Exit Copilot    │  ~36px
+├───────────────────┤
+│ [All][Phy][Chem]… │  ~52px (chips, single row scroll)
+├───────────────────┤
+│ ▼ Active     (6)  │  ← all three bars now fit above the fold
+│   • thread…       │
+│   • thread…       │
+├───────────────────┤
+│ ▶ Recent     (5)  │
+├───────────────────┤
+│ ▶ Archived   (5)  │
+├───────────────────┤
+│ Quick tools       │
+│ • Practice  • …   │
+└───────────────────┘
+```
+
+Subject chips switch from `flex-wrap` to a single horizontal scroll row (`overflow-x-auto`, no wrap) so they don't take 2 lines on narrow rails. Roughly **~110px reclaimed** at the top of the rail.
+
+### C. Fix the "Active (41)" bloat
+
+Change the grouping fallback so unstatused threads land in **Recent**, not Active:
+
+```ts
+// before
+const s = (t.status as Bucket) ?? "active";
+// after
+const s = (t.status as Bucket) ?? "recent";
+```
+
+Rationale: a thread with no explicit status is "I don't know if it's still being worked on" — the safe bucket is Recent. Active should only contain threads actively touched today (per Rule 5 / `archiveStaleThreads`). After this change, the pre-seeded labels remain authoritative (6 / 5 / 5), and any new chats you create show up under Recent until they get touched again, then promoted by the lifecycle sweep.
+
+### D. Make the accordion clearly interactive
+
+Small polish so it doesn't look "stuck":
+
+- Even when a bucket is empty, the header stays clickable (just shows the empty hint inside) — no more `disabled` / muted feel that reads as "broken."
+- Add a 1px shadow under the open header so the active bar visually pops.
+- Smooth height transition on expand/collapse using `max-h` + `transition-[max-height]`.
+
+### E. Quick tools — keep at the bottom, no styling change
+
+Audit-confirmed. The current contrast + helper line is fine. The only reason they looked dull before was that the rail above was so dense the eye gave up before reaching them. Once the rail is slimmed (A + B), Quick Tools sits in a clean ~120px footer with nothing competing for attention.
+
+---
+
+## Files to change
+
+1. **`src/components/student/copilot/StudentLeftRail.tsx`**
+   - Remove the Exit Copilot? **Keep** — it's the only way back to the dashboard.
+   - Remove the profile block (lines 130–156) + dropdown menu + unused `MoreHorizontal`, `DropdownMenu*` imports.
+   - Subject chips → single-row scroll (`flex-nowrap overflow-x-auto`).
+   - Change grouping fallback `"active"` → `"recent"`.
+   - Make `LifecycleSection` always clickable (drop `disabled={isEmpty}`); show the empty hint when expanded.
+   - Add `shadow-sm` to the open header.
+
+2. **`src/components/student/copilot/StudentChatPane.tsx`**
+   - Replace the 48px header with a 56px top bar containing: hamburger, avatar + name + grade, `+` (new chat), artifact-pane toggle.
+   - Add a thin secondary line below for routine pill + thread title (only when a thread is selected).
+   - Welcome screen reuses the same top bar (no `+` action needed since the next user message creates a thread automatically).
+
+3. **`src/components/student/copilot/StudentCopilotPage.tsx`**
+   - Pass `onNewThread` and `studentProfile` props down to `StudentChatPane` so the new top bar's `+` button works.
+
+No changes to the router, edge functions, or DB. No new dependencies.
 
 ---
 
 ## What you'll see after
 
-- Three bold, separated bars: **Active 6**, **Recent 5**, **Archived 5**.
-- Active is open by default. Click Recent → Active folds, Recent unfurls.
-- Quick Tools at the bottom now reads as a deliberate, full-contrast section — not a forgotten footer.
+- Top bar: **👤 Arjun Sharma · Class 10** with a clean `+` button, replacing the 3-dot menu.
+- Left rail: ~110px shorter at the top → all three bars (**Active 6 · Recent 5 · Archived 5**) visible above the fold without scrolling.
+- Click Active → it collapses, Recent/Archived stay in view. Click Recent → Active was already collapsed; Recent expands. Click Archived → Recent collapses; Archived expands. Single-pane behaviour is now visually obvious because the other two bars are always on screen.
+- Counts are realistic (6/5/5), not 41/5/0.
+- Quick Tools at the bottom reads as a deliberate footer, not a forgotten one.

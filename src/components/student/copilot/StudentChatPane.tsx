@@ -1,9 +1,8 @@
 // Student Copilot — Chat Pane (center panel)
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import {
-  Send, Paperclip, Menu, PanelRight, Sparkles, X, ArrowLeft,
+  Send, Paperclip, Menu, PanelRight, Sparkles, X, Plus, GraduationCap,
 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
@@ -11,6 +10,7 @@ import ChatMessageList from "./ChatMessageList";
 import type { StudentThread, StudentMessage, StudentRoutine, StudentArtifact, StudentNotification } from "./types";
 import type { PracticeState } from "./useInlinePractice";
 import ProactiveCards from "./ProactiveCards";
+import { studentProfile } from "@/data/student/profile";
 
 interface Props {
   thread: StudentThread | null;
@@ -23,6 +23,7 @@ interface Props {
   onSend: (text: string, images?: string[]) => void;
   onToggleLeft: () => void;
   onToggleRight: () => void;
+  onNewThread: () => void;
   quickStartChips?: string[];
   practiceStates: Record<string, PracticeState>;
   onPracticeAnswer: (artifactId: string, given: string, correct: boolean) => void;
@@ -52,6 +53,7 @@ const StudentChatPane: React.FC<Props> = ({
   onSend,
   onToggleLeft,
   onToggleRight,
+  onNewThread,
   quickStartChips,
   practiceStates,
   onPracticeAnswer,
@@ -65,7 +67,6 @@ const StudentChatPane: React.FC<Props> = ({
   continuationBanner,
 }) => {
   const [input, setInput] = useState("");
-  const navigate = useNavigate();
   const [attachedImages, setAttachedImages] = useState<string[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -150,18 +151,11 @@ const StudentChatPane: React.FC<Props> = ({
   if (!thread) {
     return (
       <div className="flex-1 flex flex-col">
-        {/* Header */}
-        <div className="h-12 px-3 border-b flex items-center justify-between bg-card/30 flex-shrink-0">
-          <Button variant="ghost" size="sm" onClick={onToggleLeft} className="h-8 px-2">
-            <Menu className="w-4 h-4" />
-          </Button>
-          <Button variant="ghost" size="sm" onClick={() => navigate("/student/dashboard")} className="h-8 px-2 lg:hidden">
-            <ArrowLeft className="w-4 h-4" />
-          </Button>
-          <Button variant="ghost" size="sm" onClick={onToggleRight} className="h-8 px-2 hidden lg:inline-flex">
-            <PanelRight className="w-4 h-4" />
-          </Button>
-        </div>
+        <CopilotTopBar
+          onToggleLeft={onToggleLeft}
+          onToggleRight={onToggleRight}
+          onNewThread={onNewThread}
+        />
         <div className="flex-1 flex items-center justify-center p-6">
           <div className="text-center max-w-sm">
             <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-donut-coral to-donut-orange flex items-center justify-center">
@@ -189,24 +183,19 @@ const StudentChatPane: React.FC<Props> = ({
 
   return (
     <div className="flex-1 flex flex-col min-h-0">
-      {/* Header */}
-      <div className="h-12 px-3 border-b flex items-center justify-between bg-card/30 flex-shrink-0">
-        <div className="flex items-center gap-2 min-w-0">
-          <Button variant="ghost" size="sm" onClick={onToggleLeft} className="h-8 px-2 lg:hidden">
-            <Menu className="w-4 h-4" />
-          </Button>
-          <div className="flex items-center gap-1.5 min-w-0">
-            {routine && (
-              <span className="text-xs font-medium text-donut-coral bg-donut-coral/10 px-2 py-0.5 rounded-full whitespace-nowrap">
-                {routine.label}
-              </span>
-            )}
-            <span className="text-sm font-medium truncate">{thread.title}</span>
-          </div>
-        </div>
-        <Button variant="ghost" size="sm" onClick={onToggleRight} className="h-8 px-2 hidden lg:inline-flex">
-          <PanelRight className="w-4 h-4" />
-        </Button>
+      <CopilotTopBar
+        onToggleLeft={onToggleLeft}
+        onToggleRight={onToggleRight}
+        onNewThread={onNewThread}
+      />
+      {/* Sub-header — routine pill + thread title (only when in a thread). */}
+      <div className="px-4 py-1.5 border-b bg-card/20 flex items-center gap-2 min-w-0 flex-shrink-0">
+        {routine && (
+          <span className="text-xs font-medium text-donut-coral bg-donut-coral/10 px-2 py-0.5 rounded-full whitespace-nowrap">
+            {routine.label}
+          </span>
+        )}
+        <span className="text-sm font-medium truncate text-foreground/85">{thread.title}</span>
       </div>
 
       {/* Messages area */}
@@ -296,3 +285,59 @@ const StudentChatPane: React.FC<Props> = ({
 };
 
 export default React.memo(StudentChatPane);
+
+// ─── Shared top bar ─────────────────────────────────────────────────────
+// Profile + new-chat + panel toggles. Lives at the top of the chat pane
+// (welcome and in-thread alike) so the left rail can stay slim.
+interface TopBarProps {
+  onToggleLeft: () => void;
+  onToggleRight: () => void;
+  onNewThread: () => void;
+}
+
+const CopilotTopBar: React.FC<TopBarProps> = ({ onToggleLeft, onToggleRight, onNewThread }) => {
+  return (
+    <div className="h-14 px-3 border-b bg-card/30 flex items-center gap-2 flex-shrink-0">
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={onToggleLeft}
+        className="h-9 w-9 p-0 flex-shrink-0"
+        aria-label="Toggle history"
+      >
+        <Menu className="w-4 h-4" />
+      </Button>
+
+      <div className="flex items-center gap-2.5 min-w-0 flex-1">
+        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-donut-coral to-donut-orange flex items-center justify-center flex-shrink-0">
+          <GraduationCap className="w-4 h-4 text-white" />
+        </div>
+        <div className="min-w-0 leading-tight">
+          <p className="text-sm font-semibold truncate">{studentProfile.name}</p>
+          <p className="text-[11px] text-muted-foreground truncate">{studentProfile.grade}</p>
+        </div>
+      </div>
+
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={onNewThread}
+        className="h-9 w-9 p-0 flex-shrink-0 text-foreground hover:bg-donut-coral/10 hover:text-donut-coral"
+        aria-label="Start new chat"
+        title="New chat (⌘K)"
+      >
+        <Plus className="w-4 h-4" />
+      </Button>
+
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={onToggleRight}
+        className="h-9 w-9 p-0 flex-shrink-0 hidden lg:inline-flex"
+        aria-label="Toggle artifact panel"
+      >
+        <PanelRight className="w-4 h-4" />
+      </Button>
+    </div>
+  );
+};
