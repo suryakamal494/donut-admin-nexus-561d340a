@@ -4,13 +4,16 @@ import {
   Plus, 
   CheckCircle2,
   MapPin,
-  Clock
+  Clock,
+  Sparkles
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { type TeacherTimetableSlot } from "@/data/teacherData";
+import { useTeacherFeatures } from "@/config/featureFlags";
+import { useCopilot } from "@/components/teacher/routine-pilot/CopilotContext";
 
 interface ClassCardProps {
   slot: TeacherTimetableSlot;
@@ -22,6 +25,8 @@ interface ClassCardProps {
 
 export const ClassCard = ({ slot, index, isSelected, onSelect, onConfirm }: ClassCardProps) => {
   const navigate = useNavigate();
+  const { hasCopilot } = useTeacherFeatures();
+  const { openCopilot } = useCopilot();
   const now = new Date();
   const currentTime = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
   
