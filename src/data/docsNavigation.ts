@@ -141,6 +141,7 @@ export const docsNavigation: DocSection[] = [
       { title: "Test Results", path: "04-student/test-results" },
       { title: "Homework", path: "04-student/homework" },
       { title: "Progress", path: "04-student/progress" },
+      { title: "Copilot — Session Continuity", path: "04-student/copilot-session-continuity" },
     ],
   },
   {

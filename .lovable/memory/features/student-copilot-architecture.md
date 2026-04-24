@@ -44,3 +44,21 @@ type: feature
 - Phase 4: Interactive inline practice, clarifications, proactive cards
 - Phase 5: Platform context integration (timetable, banded homework, reports)
 - Phase 6: Navigation, polish, mobile UX
+
+## Session Continuity (Phase 7 — in progress)
+
+Canonical reference: `docs/04-student/copilot-session-continuity.md`. Any change to copilot routing or thread creation MUST update that doc first.
+
+Core principle: **Zero-search copilot.** One global chat. A router classifies intent + scope and silently resumes or creates the right thread. Students never pick a thread.
+
+Schema additions on `student_copilot_threads`: `tool`, `scope_key`, `scope_meta`, `status` (active/recent/archived), `last_activity_at`, `archived_at`. Index `(student_id, tool, scope_key, status)` powers the router lookup. New `router_decisions` table logs every routing choice for debugging.
+
+Tool ↔ scope identity matrix (the "what makes it the same session" rule):
+- doubt: subject + chapter + concept-cluster (7 days)
+- practice: subject + chapter (until done or 14 days idle)
+- plan: plan window (until end_date)
+- exam: exam_id (until exam_date)
+- debrief: test_attempt_id (permanent)
+- progress: rolling weekly window (7 days)
+
+Dashboard CTA contract: navigate to `/student/copilot?intent=<scope-hinted-prompt>` — never call `createThread` directly. The router is the only code path that creates threads from the chat flow.
