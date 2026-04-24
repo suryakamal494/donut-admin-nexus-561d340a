@@ -1,137 +1,124 @@
 
 
-# Student Dashboard — Layout Optimization and Section Cleanup
+# Teacher Dashboard — Strategy Discussion (Not Two Dashboards, One Adaptive Dashboard)
 
-## Summary
+## Direct answer to your question
 
-Simplify the dashboard by removing low-value sections, promoting homework visibility, replacing the "Recent Study Session" card with an **Exam Target Tracker** (e.g., JEE/NEET goal from `student_exams` table), and making the Last Test Result conditional (48-hour window) with graceful layout adaptation when it disappears.
+**No — you don't need two dashboards. You need ONE adaptive dashboard with conditional sections.**
 
-## What Changes
+Two dashboards = double the maintenance, double the bugs, divergent UX. Instead, the dashboard renders the same baseline (greeting, current class, today's classes, syllabus tracker, alerts) for every teacher, and **inserts agentic Copilot blocks ONLY when the premium flag is on**. Free teachers see a single soft "Unlock AI Assistant" tile in the sidebar where the agentic blocks would otherwise appear. Same file, same components, one `hasCopilot` boolean.
 
-### 1. Remove QuickStatsBar entirely
-
-The "24 Subjects, 4 Tests, 12d Streak" pills add no actionable value. The streak is already in the header. Remove the component from the dashboard page and the `QuickStatsBar` import. The `DailyStudyGoalRing` compact variant that lived inside it moves into the header area on desktop as a small inline element.
-
-### 2. Replace "Recent Study Session" with Exam Target Tracker
-
-Instead of surfacing the last copilot thread (which is just a link back to copilot — the AI Suggestions already do that), show the student's **active exam target** from the `student_exams` table:
-
-```text
-┌──────────────────────────────────┐
-│ 🎯 My Target                    │
-│                                  │
-│ JEE Mains 2026                   │
-│ Target: 250/300                  │
-│ ░░░░░░░░░░░░░░░░  83 days left  │
-│                                  │
-│ [Study Plan ✨]                  │
-└──────────────────────────────────┘
-```
-
-- Fetches the nearest upcoming exam from `student_exams` where `exam_date > now()`
-- Shows exam name, target score, countdown, and a progress-style days-remaining bar
-- "Study Plan" chip opens copilot with `s_exam_prep` routine pre-filled
-- If no exam target exists, shows a prompt: "Set your exam target" linking to copilot's `s_roadmap` routine
-- This gives the dashboard a **purpose** — the student sees their goal every day
-
-### 3. Last Test Result — 48-hour conditional display
-
-- Add a `date` field check: only render the card if `lastTestResult.date` is within the last 48 hours
-- When the card is hidden, the Exam Target card spans full width on mobile (already full width) and on desktop takes the full row or sits alongside the Daily Study Goal ring
-- The layout grid becomes responsive: `grid-cols-1` when only one card is visible, `grid-cols-2` when both are present
-
-### 4. Move Homework UP — directly after AI Suggestions
-
-Homework is the most urgent daily item. It should not be buried below two cards and a study goal ring. New order:
-
-```text
-Header (greeting + streak)
-AI Suggestions Carousel
-Pending Homework  ← moved up
-[Last Test Result (if <48h) | Exam Target]  ← conditional row
-Daily Study Goal Ring (mobile only)
-Today's Schedule
-Upcoming Tests
-```
-
-### 5. Daily Study Goal Ring — stays but repositioned
-
-- **Mobile**: compact horizontal card between the conditional row and the schedule
-- **Desktop**: inline in the header area as a small ring next to the streak badge (replaces its former home in the removed QuickStatsBar)
+This is exactly how Notion, Linear, and Slack do their "AI tier" — same shell, AI surfaces appear contextually.
 
 ---
 
-## New Dashboard Layout (Mobile)
+## What "agentic dashboard" actually means here
 
-```text
-┌─ Hi, Arjun! 👋 ─────────── 🔥 12 ─┐
-│ Let's continue learning             │
-├─────────────────────────────────────┤
-│ ✨ AI Suggestions  [carousel >>>]   │
-├─────────────────────────────────────┤
-│ 📚 Pending Homework (4)            │
-│  • Quadratic Equations   Today  ⚠️  │
-│  • Cell Structure Diagram  2 days   │
-│  • Motion Worksheet       3 days    │
-├─────────────────────────────────────┤
-│ 🎯 My Target                       │
-│ JEE Mains 2026 • 83 days left      │
-│ Target: 250/300  [Study Plan ✨]    │
-├─────────────────────────────────────┤
-│ ⏱ 45/60 min today [study goal]     │
-├─────────────────────────────────────┤
-│ 📅 Today's Schedule                │
-│  9:00  Math - Quadratic Equations   │
-│  10:15 Chemistry - Organic          │
-│  ...                                │
-├─────────────────────────────────────┤
-│ 📝 Upcoming Tests (4)              │
-│  [Kinematics Quiz] [Algebra Test]   │
-└─────────────────────────────────────┘
-```
+An agentic dashboard is **not** a button that opens chat. It is the dashboard **doing pre-work for the teacher** so they land on it and see:
+- "I noticed Period 5 has no lesson plan. Want me to draft one based on your last Physics class?" → [Generate] [Skip]
+- "Quiz on Newton's Laws got 42% avg. I drafted a remediation worksheet for the bottom 6 students." → [Review] [Send]
+- "Tomorrow's 11A class is on Thermodynamics — your last 2 batches struggled with this chapter. Open prep brief?" → [Open]
 
-When Last Test Result is active (within 48h), it appears as a card above the Exam Target, stacked on mobile, side-by-side on desktop.
+Each of these is a **proactive Copilot invocation** rendered as a card on the dashboard. The teacher clicks → it deep-links into the Copilot with the routine, batch, and seed prompt **already populated**. No empty chat box, no thinking required.
 
 ---
 
-## Technical Details
+## The proposed unified layout
 
-### Files Changed
-
-| File | Action |
-|------|--------|
-| `src/components/student/dashboard/ExamTargetCard.tsx` | **New** — fetches from `student_exams`, shows countdown + target, links to copilot |
-| `src/components/student/dashboard/LastTestResultCard.tsx` | **Edit** — add 48-hour check, return `null` when expired |
-| `src/pages/student/Dashboard.tsx` | **Edit** — remove QuickStatsBar, reorder sections, add ExamTargetCard, make test result row conditional |
-| `src/components/student/dashboard/index.ts` | **Edit** — export ExamTargetCard, remove QuickStatsBar export |
-| `src/components/student/dashboard/QuickStatsBar.tsx` | **Delete** — no longer used |
-
-### ExamTargetCard Data Source
-
-Reads from existing `student_exams` table (already seeded by copilot):
-```sql
-SELECT * FROM student_exams 
-WHERE student_id = 'student-001' AND exam_date > now()
-ORDER BY exam_date ASC LIMIT 1
+```text
+┌─ Greeting (same for all) ──────────────────────────┐
+├─ Current/Next Class widget (same for all) ─────────┤
+├─ ⚡ Smart Nudges row (PREMIUM ONLY)                 │  ← agentic
+│   [Prep Period 5] [Remediate Quiz X] [Draft HW]    │
+├─ Pending Confirmations banner (same for all) ──────┤
+├─ Today's Classes (left, 2/3 width) ────────────────┤
+│  Each ClassCard now shows:                          │
+│  - "No lesson plan" → [Generate with AI ✨] (prem)  │  ← agentic inline
+│  - "No lesson plan" → [Create Manually]    (free)   │
+├─ Syllabus Tracker MINI (left, below classes) ──────┤  ← MANDATORY for everyone
+│  3 chapters with completion %, [Update] CTA         │
+│  Premium adds: "AI suggests you mark X as done      │
+│  based on confirmations" nudge                      │
+├─ Sidebar (right, 1/3 width):                       │
+│  • Alerts & Tasks (same for all)                    │
+│  • PREMIUM: Recent Copilot Artifacts (last 3)       │
+│    "Newton Lesson Plan • 2h ago [Use] [Edit]"       │
+│  • PREMIUM: "Continue with Copilot" deep links      │
+│  • FREE: Single "Unlock AI Assistant" upsell tile   │
+└─────────────────────────────────────────────────────┘
 ```
 
-Shows: `name`, `target_score`, `max_score`, days until `exam_date`.
+**Syllabus tracker is mandatory and stays for everyone** — it's the source-of-truth for teaching progress. Premium just adds intelligent nudges around it (e.g. auto-suggest marking topics done based on confirmation history).
 
-### Conditional Layout Logic (Dashboard.tsx)
+---
 
-```tsx
-// 48-hour check for Last Test Result
-const testDate = new Date(lastTestResult.date);
-const hoursSinceTest = (Date.now() - testDate.getTime()) / (1000 * 60 * 60);
-const showTestResult = hoursSinceTest <= 48;
+## How "agentic" gets implemented (the mechanic)
 
-// Layout adapts:
-// - Both visible: 2-col grid on desktop
-// - Only exam target: full-width card
-// - Only test result (no exam target): full-width card
-```
+Three reusable patterns, all powered by deep links into the existing `/teacher/routine-pilot`:
 
-### No database changes needed
+1. **Smart Nudge Card** — a generated card with: icon, one-line context, one-line proposed action, primary CTA. Click → opens Copilot at the right routine with prefilled batch/subject/prompt. Dismissible. Generated by a lightweight rules engine (no LLM call needed for the dashboard itself — the LLM runs only when the teacher accepts).
 
-The `student_exams` table already exists with the right schema (`name`, `exam_date`, `target_score`, `max_score`). The copilot seeds mock exam data. No migrations required.
+2. **Inline Action Promotion** — existing UI (ClassCard, SyllabusRow, AlertCard) gets an extra "✨ Do with AI" button when `hasCopilot` is true. Same destination pattern: deep link to Copilot with context.
+
+3. **Recent Artifacts Strip** — pulls the last 3 rows from `rp_artifacts` for this teacher. Shows title, type, age, [Use in Class] / [Edit]. This is the "dashboard reminds them of work in progress" loop.
+
+---
+
+## Nudge generation rules (no AI needed for v1)
+
+Rules-based triggers checked on dashboard mount:
+
+| Trigger condition | Nudge shown | Routine deep-link |
+|---|---|---|
+| Class today has `hasLessonPlan = false` | "Draft plan for {Subject} P{N}" | `r_lesson_plan` + batch + chapter |
+| Past quiz in last 7d, avg < 60% | "Remediate {QuizName} — {N} students struggled" | `r_remediation` + exam_id |
+| Confirmed class but no homework assigned | "Assign homework for {Chapter}" | `r_homework` + chapter |
+| Class tomorrow, syllabus tracker shows chapter <40% covered | "Prep brief for {Chapter}" | `r_prep_brief` + chapter |
+| No nudges fire | Show "Continue from where you left off" with most recent thread | open last `rp_thread` |
+
+Max 2 nudges visible, dismissible per-day, reordered by priority (lesson plan missing > remediation > homework > prep).
+
+---
+
+## Free vs Premium — the only differences
+
+| Section | Free | Premium |
+|---|---|---|
+| Greeting | ✓ | ✓ |
+| Current Class widget | ✓ | ✓ + "Brief me ✨" button |
+| Smart Nudges row | hidden | **shown** (1-2 cards) |
+| Today's Classes | ✓ | ✓ + "Generate plan ✨" on missing-plan cards |
+| Syllabus Tracker | ✓ (manual update) | ✓ + AI suggestion nudges |
+| Pending Confirmations | ✓ | ✓ + bulk "Generate from notes ✨" |
+| Sidebar — Alerts | ✓ | ✓ |
+| Sidebar — Recent Artifacts | hidden | **shown** |
+| Sidebar — Upsell tile | **shown** ("Unlock AI") | hidden |
+| Floating Copilot launcher | hidden | **shown** (already exists) |
+
+The free version is **complete and useful on its own**. Premium layers proactive intelligence on top — every Copilot surface is contextual, never a "here's a chat box" dead end.
+
+---
+
+## What I need decided before building
+
+| # | Decision | Default if you say "you pick" |
+|---|---|---|
+| 1 | Confirm: one adaptive dashboard with `hasCopilot` flag, NOT two separate dashboards? | Yes — one adaptive |
+| 2 | How is `hasCopilot` determined right now? Hardcoded constant for demo, or a real `tier` field somewhere? | Hardcoded `true` constant in a config file for now, wire to real tier later |
+| 3 | Max nudges shown at once? | 2, dismissible for the day |
+| 4 | Should the syllabus tracker mini live ON the dashboard, or just a link to the full page? | Mini on dashboard (3 chapters + Update CTA) — keeps it visible & mandatory |
+| 5 | Recent Artifacts — show all types or filter (e.g., only lesson_plan + homework)? | All types, last 3, with type badge |
+
+---
+
+## What I'm NOT proposing (intentionally)
+
+- No removing the syllabus tracker — you said it's mandatory and I agree, it's the only way the institute knows what got taught.
+- No second route, no second component tree, no `/teacher/dashboard-pro`.
+- No LLM call on dashboard load — nudges are rule-based, fast, and free. LLM only runs when the teacher accepts a nudge.
+- No replacing the floating Copilot launcher — it stays for free-form access. Dashboard nudges are the **guided** path; the launcher is the **explore** path.
+
+---
+
+**Reply with your answers to the 5 decisions above (or just "yes, you pick the defaults") and I'll write the implementation plan with exact files, components, and the rules engine.**
 
