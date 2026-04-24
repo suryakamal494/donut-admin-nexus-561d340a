@@ -15,9 +15,8 @@ const LastTestResultCard = () => {
   const handlePrepare = (e: React.MouseEvent) => {
     e.stopPropagation();
     const params = new URLSearchParams();
-    params.set('routine', 's_exam_prep');
     params.set('subject', result.subject);
-    params.set('prompt', `Help me prepare for my next ${result.testName} in ${result.subject}`);
+    params.set('intent', `Debrief my ${result.testName} in ${result.subject} and plan what to fix`);
     navigate(`/student/copilot?${params.toString()}`);
   };
 

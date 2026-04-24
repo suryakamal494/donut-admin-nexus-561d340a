@@ -69,9 +69,8 @@ const UpcomingTestCard = ({ test }: UpcomingTestCardProps) => {
         onClick={(e) => {
           e.stopPropagation();
           const params = new URLSearchParams();
-          params.set('routine', 's_exam_prep');
           params.set('subject', test.subject);
-          params.set('prompt', `Help me prepare for my upcoming ${test.type}: ${test.title}`);
+          params.set('intent', `Resume prep for upcoming ${test.type}: ${test.title}`);
           navigate(`/student/copilot?${params.toString()}`);
         }}
         className="mt-2.5 w-full px-2 py-1.5 rounded-xl bg-violet-50 text-violet-600 text-[10px] font-medium flex items-center justify-center gap-1.5 hover:bg-violet-100 transition-colors"
