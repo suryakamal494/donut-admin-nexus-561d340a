@@ -10,7 +10,6 @@ import {
   CheckCircle2,
   ClipboardCheck,
   FileText,
-  Sparkles,
   TrendingUp,
   Bell,
   AlertTriangle,
@@ -55,7 +54,6 @@ const TeacherDashboard = () => {
 
   // Premium AI surfaces gate
   const { hasCopilot } = useTeacherFeatures();
-  const { openCopilot } = useCopilot();
 
   // Get greeting based on time
   const getGreeting = () => {
