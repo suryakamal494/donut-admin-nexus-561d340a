@@ -124,8 +124,9 @@ const StudentCopilotPage: React.FC = () => {
     const intent = searchParams.get('intent');
     const legacyRoutine = searchParams.get('routine');
     const legacyPrompt = searchParams.get('prompt');
+    const threadParam = searchParams.get('thread');
     const prompt = intent ?? legacyPrompt;
-    if (!prompt && !legacyRoutine) return;
+    if (!prompt && !legacyRoutine && !threadParam) return;
 
     initialParamsHandled.current = true;
 
@@ -137,6 +138,11 @@ const StudentCopilotPage: React.FC = () => {
 
     // Route the deep-link prompt — resume or create automatically.
     (async () => {
+      // Direct-thread deep-link (e.g. RecentCopilotCard "Resume").
+      if (threadParam && !prompt) {
+        setCurrentThreadId(threadParam);
+        return;
+      }
       if (!prompt) return;
       // Defer to handleSend so the same router path is used everywhere.
       // We need handleSend to be defined first; the effect re-runs once it is
