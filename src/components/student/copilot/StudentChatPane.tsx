@@ -1,9 +1,8 @@
 // Student Copilot — Chat Pane (center panel)
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import {
-  Send, Paperclip, Menu, PanelRight, Sparkles, X, ArrowLeft, Plus, GraduationCap,
+  Send, Paperclip, Menu, PanelRight, Sparkles, X, Plus, GraduationCap,
 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
@@ -68,7 +67,6 @@ const StudentChatPane: React.FC<Props> = ({
   continuationBanner,
 }) => {
   const [input, setInput] = useState("");
-  const navigate = useNavigate();
   const [attachedImages, setAttachedImages] = useState<string[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
