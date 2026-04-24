@@ -30,6 +30,9 @@ import { DEFAULT_ROUTINE_KEY } from "./types";
 import { buildFullStudentContext } from "./context";
 import { buildAdaptivePracticeContext } from "./chatHelpers";
 import { seedCopilotDataIfNeeded } from "./seedCopilotData";
+import { route as routeMessage, archiveStaleThreads } from "./router/sessionRouter";
+import type { RouteDecision } from "./types";
+import ContinuationBanner from "./ContinuationBanner";
 
 const STUDENT_ID = studentProfile.id;
 
@@ -44,6 +47,11 @@ const StudentCopilotPage: React.FC = () => {
   const [messages, setMessages] = useState<StudentMessage[]>([]);
   const [artifacts, setArtifacts] = useState<StudentArtifact[]>([]);
   const [subjectFilter, setSubjectFilter] = useState<string | null>(null);
+  // Last router decision (for the continuation banner). Cleared when the
+  // user starts fresh or sends another message.
+  const [lastDecision, setLastDecision] = useState<RouteDecision | null>(null);
+  // When set, the next send forces a brand-new thread (escape hatch).
+  const forceNewRef = useRef(false);
   // Ref for messages to avoid stale closure in handleSend
   const messagesRef = useRef(messages);
   messagesRef.current = messages;
@@ -89,6 +97,8 @@ const StudentCopilotPage: React.FC = () => {
   useEffect(() => {
     (async () => {
       await seedCopilotDataIfNeeded();
+      // Lifecycle sweep — auto-archives stale threads (Rule 8).
+      await archiveStaleThreads(STUDENT_ID);
       const [rts, ths, arts, mast, notifs] = await Promise.all([
         fetchStudentRoutines(),
         fetchThreads(STUDENT_ID),
@@ -109,9 +119,13 @@ const StudentCopilotPage: React.FC = () => {
     if (initialParamsHandled.current) return;
     if (routines.length === 0) return; // Wait for routines to load
 
-    const routine = searchParams.get('routine');
-    const prompt = searchParams.get('prompt');
-    if (!routine && !prompt) return;
+    // New contract: dashboards use ?intent=<scope-hinted-prompt>.
+    // Legacy ?routine=...&prompt=... is still accepted and routed the same way.
+    const intent = searchParams.get('intent');
+    const legacyRoutine = searchParams.get('routine');
+    const legacyPrompt = searchParams.get('prompt');
+    const prompt = intent ?? legacyPrompt;
+    if (!prompt && !legacyRoutine) return;
 
     initialParamsHandled.current = true;
 
@@ -121,45 +135,16 @@ const StudentCopilotPage: React.FC = () => {
     const subject = searchParams.get('subject');
     if (subject) setSubjectFilter(subject);
 
-    // Create thread with the specified routine and auto-send prompt
+    // Route the deep-link prompt — resume or create automatically.
     (async () => {
-      const routineKey = routine || DEFAULT_ROUTINE_KEY;
-      const routineObj = routines.find((r) => r.key === routineKey);
-      const title = prompt ? prompt.slice(0, 60).trim() : `New ${routineObj?.label ?? ''} chat`;
-      const thread = await createThread(STUDENT_ID, routineKey, title, subject);
-      if (!thread) return;
-      setThreads((prev) => [thread, ...prev]);
-      setCurrentThreadId(thread.id);
-      setMessages([]);
-
-      if (prompt) {
-        const tempUserMsg: StudentMessage = {
-          id: `temp-${Date.now()}`,
-          thread_id: thread.id,
-          role: "user",
-          content: prompt,
-          created_at: new Date().toISOString(),
-        };
-        setMessages([tempUserMsg]);
-
-        const result = await send({
-          text: prompt,
-          thread,
-          routine: routineObj ?? null,
-          studentId: STUDENT_ID,
-          existingMessages: [],
-          extraSystem: buildFullStudentContext(mastery),
-        });
-
-        const msgs = await fetchMessages(thread.id);
-        setMessages(msgs);
-
-        if (result.artifacts.length > 0) {
-          setArtifacts((prev) => [...result.artifacts, ...prev]);
-        }
-      }
+      if (!prompt) return;
+      // Defer to handleSend so the same router path is used everywhere.
+      // We need handleSend to be defined first; the effect re-runs once it is
+      // because `send` is in its dependency list.
+      handleSend(prompt);
     })();
-  }, [routines, searchParams, setSearchParams, send, mastery]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [routines, searchParams]);
 
   // Load messages when thread changes
   useEffect(() => {
@@ -215,75 +200,64 @@ const StudentCopilotPage: React.FC = () => {
 
   const handleSend = useCallback(
     async (text: string, images?: string[]) => {
-      if (!currentThread) {
-        // Auto-create thread
-        const key = DEFAULT_ROUTINE_KEY;
-        const routine = routines.find((r) => r.key === key);
-        const title = text.slice(0, 60).trim() || "New chat";
-        const thread = await createThread(STUDENT_ID, key, title, subjectFilter);
-        if (!thread) return;
-        setThreads((prev) => [thread, ...prev]);
-        setCurrentThreadId(thread.id);
+      // ── ROUTER PATH ─────────────────────────────────────────────────────
+      // Every send goes through the router. It decides resume-vs-new.
+      // The student never picks a thread.
+      const decision = await routeMessage(text, {
+        studentId: STUDENT_ID,
+        fallbackSubject: subjectFilter,
+        forceNew: forceNewRef.current,
+      });
+      forceNewRef.current = false;
 
-        // Add user message to UI optimistically
-        const tempUserMsg: StudentMessage = {
-          id: `temp-${Date.now()}`,
-          thread_id: thread.id,
-          role: "user",
-          content: text,
-          created_at: new Date().toISOString(),
-        };
-        setMessages([tempUserMsg]);
-
-        const result = await send({
-          text,
-          images,
-          thread,
-          routine: routine ?? null,
-          studentId: STUDENT_ID,
-          existingMessages: [],
-          extraSystem: studentContext,
-        });
-
-        // Refresh messages from DB
-        const msgs = await fetchMessages(thread.id);
-        setMessages(msgs);
-
-        if (result.artifacts.length > 0) {
-          setArtifacts((prev) => [...result.artifacts, ...prev]);
-        }
-        if (result.detectedSubject) {
-          setThreads((prev) =>
-            prev.map((t) =>
-              t.id === thread.id ? { ...t, subject: result.detectedSubject, title } : t
-            )
-          );
-        }
-        return;
+      // If the decision picked a different (or new) thread, switch to it and
+      // load its existing messages (if any).
+      let activeThread: StudentThread | null = null;
+      if (decision.threadId !== currentThread?.id) {
+        // Fetch the canonical thread row (esp. if it was just created).
+        const ths = await fetchThreads(STUDENT_ID);
+        setThreads(ths);
+        activeThread = ths.find((t) => t.id === decision.threadId) ?? null;
+        setCurrentThreadId(decision.threadId);
+        const existingMsgs = decision.isNew ? [] : await fetchMessages(decision.threadId);
+        setMessages(existingMsgs);
+      } else {
+        activeThread = currentThread;
       }
+      setLastDecision(decision.isNew ? null : decision);
 
-      // Existing thread
+      if (!activeThread) return;
+
+      // Pick the routine for the chat hook based on the routed tool.
+      const routedRoutine =
+        routines.find((r) => r.key === activeThread.routine_key) ?? currentRoutine;
+
+      // Optimistic user message.
       const tempUserMsg: StudentMessage = {
         id: `temp-${Date.now()}`,
-        thread_id: currentThread.id,
+        thread_id: activeThread.id,
         role: "user",
         content: text,
         created_at: new Date().toISOString(),
       };
       setMessages((prev) => [...prev, tempUserMsg]);
 
+      // Prepare existing messages context for the model (when resuming).
+      const baseMessages = decision.isNew
+        ? []
+        : (await fetchMessages(activeThread.id)).filter((m) => m.id !== tempUserMsg.id);
+
       const result = await send({
         text,
         images,
-        thread: currentThread,
-        routine: currentRoutine,
+        thread: activeThread,
+        routine: routedRoutine ?? null,
         studentId: STUDENT_ID,
-        existingMessages: messagesRef.current,
+        existingMessages: baseMessages,
         extraSystem: studentContext,
       });
 
-      // Refresh messages
-      const msgs = await fetchMessages(currentThread.id);
+      const msgs = await fetchMessages(activeThread.id);
       setMessages(msgs);
 
       if (result.artifacts.length > 0) {
@@ -292,6 +266,14 @@ const StudentCopilotPage: React.FC = () => {
     },
     [currentThread, currentRoutine, routines, subjectFilter, send, studentContext]
   );
+
+  // Escape hatch — the "Start fresh" link in the continuation banner.
+  const handleStartFresh = useCallback(() => {
+    forceNewRef.current = true;
+    setCurrentThreadId(null);
+    setMessages([]);
+    setLastDecision(null);
+  }, []);
 
   // Auto-start practice when a new practice_session artifact appears.
   // Only depend on artifacts — not practiceStates, to avoid infinite loops.
@@ -441,6 +423,17 @@ const StudentCopilotPage: React.FC = () => {
           notifications={notifications}
           onNotificationAction={handleNotificationAction}
           onNotificationDismiss={handleDismissNotification}
+          continuationBanner={
+            lastDecision && currentThread
+              ? (
+                <ContinuationBanner
+                  threadTitle={lastDecision.matchedThreadTitle ?? currentThread.title}
+                  toolLabel={lastDecision.tool}
+                  onStartFresh={handleStartFresh}
+                />
+              )
+              : null
+          }
         />
       </div>
 
