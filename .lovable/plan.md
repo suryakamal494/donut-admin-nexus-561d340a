@@ -1,96 +1,101 @@
-# Audit & Mock Data Fix — Session Continuity
+# Left Rail Restructure — Accordion Lifecycle + Quick Tools Placement
 
-## Audit results vs. the 10 rules in `docs/04-student/copilot-session-continuity.md`
+## What's wrong right now (from your screenshots)
 
-| # | Rule | Status | Notes |
-|---|---|---|---|
-| 1 | One global chat, no manual picking | Done | "+ New chat" demoted to dropdown menu |
-| 2 | Session identity = Tool + Scope | **Schema only** | Columns exist (`tool`, `scope_key`), but mock threads were seeded **without** them — that's why every thread shows up as `active` |
-| 3 | Router decides | Done | `sessionRouter.ts` has `classifyIntent`, `extractScope`, `findActiveSession`, `route` |
-| 4 | Continuation banner | Done | `ContinuationBanner.tsx` rendered above replies |
-| 5 | Active / Recent / Archived grouping | **Logic done, data missing** | `StudentLeftRail` groups correctly, but every seeded thread defaults to `active` so only one bucket shows |
-| 6 | Artifact reuse | Done | Reuse guard injected into the `student-copilot-chat` system prompt |
-| 7 | Dashboard CTAs use `?intent=` | Done | All 7 cards refactored |
-| 8 | Auto-archive | **Half** | Client-side sweep runs on copilot mount; the documented `copilot-archive-sweep` edge function is **not built** |
-| 9 | Escape hatches | Done | "Start fresh" in dropdown, "Show archived" toggle, banner override |
-| 10 | Determinism & traceability | Done | `router_decisions` table + insert path |
-
-**Why you only see "Active 41":** the grouping UI is correct. The mock data is wrong — every thread was inserted with the column default `status='active'`, no `tool`, no `scope_key`, no `last_activity_at` distribution. The buckets have nothing to fill them.
+1. **Group headers blend into the list.** `ACTIVE (41)` and `RECENT (5)` are tiny uppercase muted text, indistinguishable from a thread row. The eye reads them as just another chat.
+2. **No accordion behavior.** Active has 41 items, so the user must scroll past all 41 just to reach Recent. The grouping exists logically, but there is no spatial separation.
+3. **Quick Tools is muted and buried at the bottom.** It looks "disabled" rather than "secondary."
 
 ---
 
-## What this plan fixes
+## The Quick Tools placement question — my honest reasoning
 
-### 1. Rebuild mock thread data so all three buckets render
+You asked *why* I put Quick Tools at the bottom. Here is the trade-off:
 
-Update `src/data/student/copilotMockData.ts` so the seeded threads cover the full lifecycle:
+**Argument for top placement (your instinct):**
+- Tools are actions. Actions usually live above content.
+- Power users scan top-down; they will discover tools faster.
+- Visually, top placement signals "this is important."
 
-- **Active (5–6 threads)** — `last_activity_at` within 48 h, or unfinished artifact. Examples:
-  - Physics — Newton's Laws (practice, 6/10 done)
-  - Chemistry — Acids & Bases (doubt, today)
-  - JEE Main 2026 prep (exam)
-  - Week of Apr 22 plan (plan)
-- **Recent (5–6 threads)** — `last_activity_at` 3–7 days ago, no unfinished work. Examples:
-  - Math — Trigonometry doubt (4 days ago)
-  - Biology — Cell structure practice (5 days ago, completed)
-  - Last week's progress report
-- **Archived (4–5 threads)** — `last_activity_at` >14 days, `archived_at` set. Examples:
-  - Old Physics chapter (kinematics, 30 days)
-  - Closed exam debrief (Unit Test 2, 21 days)
-  - Old weekly plan (Mar 15)
+**Argument for bottom placement (what I did):**
+- Per Rule 1 of the rulebook, the **global chat input is the primary entry point**. Every CTA on the dashboard already routes through the router. Tools in the rail are an **escape hatch** for the rare case where the student wants to skip the router and force a specific tool.
+- If tools sit at the top, students start using them as their main path again — which **defeats the entire session-continuity work** we just built. We're back to "click Practice, get a fresh thread" sprawl.
+- Hence: history (the meaningful artifact of past work) gets the prime real estate; tools sit quietly below as power-user escape.
 
-Each thread also gets:
-- `tool` — `doubt` | `practice` | `plan` | `exam` | `debrief` | `progress`
-- `scope_key` — deterministic, e.g. `practice:physics:newtons-laws`
-- `scope_meta` — `{ subject, chapter }` JSON
-- `status` — `active` | `recent` | `archived`
-- `last_activity_at` — staggered timestamps so sorting/grouping look natural
-- `archived_at` — non-null for archived rows
+**My recommendation:** Keep tools at the bottom on principle, but make them **visible and inviting** — not faded. The current dullness is a styling bug, not a placement decision. A clear separator, normal foreground color, hover affordance, and a subtle icon tint will make them feel intentional rather than disabled.
 
-### 2. Force a re-seed so the new data actually lands
-
-The seeder skips when the localStorage flag is set. Bump the seed key to `copilot_mock_seeded_v5` and clear v4 on load, so existing browsers re-seed once.
-
-Because the same fixed UUIDs are reused, the existing rows in the DB must be updated (not duplicated). The seeder will:
-1. Detect existing v4 rows for the same IDs.
-2. Run an `update` to backfill `tool`, `scope_key`, `scope_meta`, `status`, `last_activity_at`, `archived_at`.
-3. Insert any new mock threads that don't yet exist.
-
-### 3. Build the missing `copilot-archive-sweep` edge function (Rule 8)
-
-Currently only the client sweep exists. Add a thin edge function that runs the same archive logic server-side so it can later be scheduled. It will:
-- Move `practice` threads with no activity for 14 days → `archived`.
-- Move `doubt` threads with no follow-up for 7 days → `archived`.
-- Move `plan` threads past `plan_window.end_date` → `archived`.
-- Move `exam` threads past `exam_date` → `archived` (but keep readable).
-- Set `archived_at = now()` on each archived row.
-
-This makes Rule 8 truly complete and unblocks scheduled cleanup later.
-
-### 4. Small UX polish to make the new buckets visible
-
-- Always render the "Active" / "Recent" headers (even when one bucket has 0) so the structure is visible at a glance — current code hides empty buckets.
-- Show a count next to "Recent" too (currently only "Active" shows a count).
+If after using it for a week you still feel they should move up, we move them — but the architectural reason to keep them down is real.
 
 ---
 
-## Files touched
+## Proposed redesign
 
-| File | Change |
-|---|---|
-| `src/data/student/copilotMockData.ts` | Expand `MOCK_THREADS` to ~16 threads spread across active/recent/archived with `tool`, `scope_key`, `scope_meta`, `status`, `last_activity_at`, `archived_at` |
-| `src/components/student/copilot/seedCopilotData.ts` | Bump to `copilot_mock_seeded_v5`; add an `update` pass that backfills the new columns on existing rows |
-| `src/components/student/copilot/StudentLeftRail.tsx` | Show "Recent" count; render headers consistently |
-| `supabase/functions/copilot-archive-sweep/index.ts` | New edge function implementing Rule 8 server-side |
-| `docs/04-student/copilot-session-continuity.md` | Mark §7 (lifecycle) and §11 (audit appendix) as fully implemented; add a note that the seed data now covers all three buckets |
-| `.lovable/memory/features/student-copilot-architecture.md` | Note that Session Continuity is now end-to-end complete with seeded mock buckets |
+### 1. Lifecycle accordion (replaces flat headers)
 
-## Out of scope (intentionally)
+Replace the three flat `ThreadGroup` blocks with a true **single-expand accordion**:
 
-- Real-data scope inference from existing message bodies — the seeder writes scope keys directly; back-classifying historical messages isn't needed for the demo.
-- A scheduled cron for the new edge function — Lovable Cloud doesn't expose cron yet; the function is callable manually and will be wired to a schedule later.
-- Changing the router itself — its logic already matches the rulebook.
+```text
+┌─────────────────────────────────────┐
+│ ▼ Active           6                │  ← bold, expanded by default
+│   • Newton's Laws                   │
+│   • Mechanics 6/10                  │
+│   • JEE Main 2026                   │
+│   …                                 │
+├─────────────────────────────────────┤
+│ ▶ Recent           5                │  ← bold, collapsed
+├─────────────────────────────────────┤
+│ ▶ Archived         5                │  ← bold, collapsed
+└─────────────────────────────────────┘
+```
 
-## Result you'll see after approval
+Behavior:
+- Click `Recent` → Active **collapses automatically**, Recent expands. Single-pane at a time.
+- Empty bucket: header still renders but disabled (no chevron, muted count).
+- Default open: `Active`. If Active is empty, default to `Recent`.
 
-The left rail will show three labelled groups with realistic counts (e.g. **Active (6) · Recent (5) · Archived (5)**), threads will carry the new `tool` + `scope_key` so the router can actually match them, the archive sweep is callable from the server, and every rule in the rulebook moves to "done."
+Visual contract for the headers:
+- Background bar: `bg-muted/40` for collapsed, `bg-muted/70` for expanded.
+- Typography: `text-sm font-semibold text-foreground` (bold, full-contrast).
+- Chevron icon (rotates on expand) + count pill on the right.
+- 1 px divider between sections.
+
+This makes the three buckets feel like **distinct compartments**, not labels inside one long list.
+
+### 2. Thread items get a clearer visual hierarchy
+
+Inside an expanded section:
+- Thread title: `text-sm` (was `text-sm`, same) but in `text-foreground/85`.
+- Subject dot stays.
+- Active section gets a left coral accent border on the item to reinforce "this is live."
+
+### 3. Quick Tools: stay at the bottom, but make it look intentional
+
+- Replace the muted footer with a clearly delineated card:
+  - Solid divider above.
+  - `bg-background` (not muted) so it doesn't look "off."
+  - Header `Quick tools` in `text-xs font-semibold text-foreground` (not muted).
+  - Each item: full-contrast text (`text-foreground/90`), icon at `text-donut-coral/70`, hover shifts to `bg-donut-coral/10`.
+  - Subtle helper line at the very bottom: *"Skip the router — start a tool directly."* So students understand the placement is deliberate.
+
+### 4. Subject filter stays at the top, unchanged
+
+It's a filter for the entire history view, so it logically sits above the accordion.
+
+---
+
+## File changes (only one)
+
+`src/components/student/copilot/StudentLeftRail.tsx`
+- Add local state `expandedBucket: "active" | "recent" | "archived"`.
+- Replace the three `ThreadGroup` calls with three `LifecycleSection` blocks rendered as an accordion.
+- Restyle the Quick Tools footer per the new spec; add the helper line.
+
+No DB, router, or other component changes. No new dependencies — uses existing `lucide-react` chevron icons and existing tokens.
+
+---
+
+## What you'll see after
+
+- Three bold, separated bars: **Active 6**, **Recent 5**, **Archived 5**.
+- Active is open by default. Click Recent → Active folds, Recent unfurls.
+- Quick Tools at the bottom now reads as a deliberate, full-contrast section — not a forgotten footer.
