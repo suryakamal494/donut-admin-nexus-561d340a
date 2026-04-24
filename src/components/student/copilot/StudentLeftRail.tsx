@@ -1,5 +1,5 @@
 // Student Copilot — Left Rail (threads, tools, subject filter)
-import React, { useMemo } from "react";
+import React, { useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   MessageSquare, Dumbbell, Target, Map, TrendingUp,
@@ -82,14 +82,31 @@ const StudentLeftRail: React.FC<Props> = ({
   // Single-expand accordion state for the lifecycle buckets (Rule 5).
   // Default to whichever bucket has content, preferring active → recent → archived.
   type Bucket = "active" | "recent" | "archived";
-  const [expandedBucket, setExpandedBucket] = React.useState<Bucket>(() => {
+  const [expandedBucket, setExpandedBucket] = React.useState<Bucket | null>(() => {
     if (grouped.active.length > 0) return "active";
     if (grouped.recent.length > 0) return "recent";
     return "archived";
   });
 
+  useEffect(() => {
+    if (expandedBucket && grouped[expandedBucket].length > 0) return;
+    if (grouped.active.length > 0) {
+      setExpandedBucket("active");
+      return;
+    }
+    if (grouped.recent.length > 0) {
+      setExpandedBucket("recent");
+      return;
+    }
+    if (grouped.archived.length > 0) {
+      setExpandedBucket("archived");
+      return;
+    }
+    setExpandedBucket(null);
+  }, [expandedBucket, grouped]);
+
   const toggleBucket = (b: Bucket) =>
-    setExpandedBucket((prev) => (prev === b ? prev : b));
+    setExpandedBucket((prev) => (prev === b ? null : b));
 
   const handleThreadClick = (id: string) => {
     onSelectThread(id);
@@ -97,7 +114,7 @@ const StudentLeftRail: React.FC<Props> = ({
   };
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex h-full min-h-0 flex-col">
       {/* Exit Copilot */}
       <div className="px-3 pt-3 pb-1">
         <button
@@ -219,7 +236,7 @@ const StudentLeftRail: React.FC<Props> = ({
       {/* Quick Tools — escape hatch for direct tool access.
           Stays at the bottom by design (Rule 1: chat is the primary path),
           but styled to look intentional, not faded. */}
-      <div className="border-t-2 border-border px-3 pt-2.5 pb-3 bg-background space-y-0.5">
+      <div className="shrink-0 border-t-2 border-border bg-background px-3 pt-2.5 pb-3 space-y-0.5">
         <p className="text-[11px] font-bold text-foreground uppercase tracking-wider px-2 mb-1.5">
           Quick tools
         </p>
