@@ -319,8 +319,6 @@ const TeacherDashboard = () => {
             )}
           </div>
 
-          {/* Mandatory syllabus tracker — shown for everyone */}
-          <SyllabusTrackerMini hasCopilot={hasCopilot} />
         </div>
 
         {/* Sidebar - Mobile: Horizontal scroll cards, Desktop: Vertical stack */}
