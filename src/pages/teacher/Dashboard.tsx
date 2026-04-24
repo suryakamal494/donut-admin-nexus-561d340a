@@ -25,6 +25,14 @@ import { TeachingConfirmationDialog } from "@/components/teacher/TeachingConfirm
 import { ClassCard } from "@/components/teacher/ClassCard";
 import { TeacherNotificationCard, PushNotificationBanner } from "@/components/teacher/notifications";
 import { useTeacherNotifications } from "@/hooks/useTeacherNotifications";
+import {
+  SmartNudgesRow,
+  RecentArtifactsCard,
+  SyllabusTrackerMini,
+  UnlockCopilotCard,
+} from "@/components/teacher/dashboard";
+import { useTeacherFeatures } from "@/config/featureFlags";
+import { useCopilot } from "@/components/teacher/routine-pilot/CopilotContext";
 import { 
   currentTeacher, 
   teacherPendingActions,
@@ -44,6 +52,10 @@ const TeacherDashboard = () => {
   
   // Get urgent alerts from notifications
   const { urgentAlerts, markAsRead } = useTeacherNotifications();
+
+  // Premium AI surfaces gate
+  const { hasCopilot } = useTeacherFeatures();
+  const { openCopilot } = useCopilot();
 
   // Get greeting based on time
   const getGreeting = () => {
