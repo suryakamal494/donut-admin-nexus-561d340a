@@ -156,18 +156,32 @@ export const ClassCard = ({ slot, index, isSelected, onSelect, onConfirm }: Clas
                 </span>
               </Badge>
             ) : (
-              <Button 
-                size="sm"
-                variant="outline"
-                className="h-8 sm:h-9 px-2.5 sm:px-3 text-xs font-medium border-dashed border-teal-300 text-teal-600 hover:bg-teal-50 hover:border-teal-400"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  navigate("/teacher/lesson-plans/new");
-                }}
-              >
-                <Plus className="w-3.5 h-3.5 sm:mr-1" />
-                <span className="hidden sm:inline">Add Plan</span>
-              </Button>
+              hasCopilot && !isLive ? (
+                <Button
+                  size="sm"
+                  className="h-8 sm:h-9 px-2.5 sm:px-3 text-xs font-semibold bg-gradient-to-r from-violet-500 to-fuchsia-500 hover:from-violet-600 hover:to-fuchsia-600 text-white border-0 shadow-md shadow-violet-500/25"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    openCopilot({ routineKey: "lesson_prep", batchId: slot.batchId });
+                  }}
+                >
+                  <Sparkles className="w-3.5 h-3.5 sm:mr-1" />
+                  <span className="hidden sm:inline">Generate</span>
+                </Button>
+              ) : (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-8 sm:h-9 px-2.5 sm:px-3 text-xs font-medium border-dashed border-teal-300 text-teal-600 hover:bg-teal-50 hover:border-teal-400"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigate("/teacher/lesson-plans/new");
+                  }}
+                >
+                  <Plus className="w-3.5 h-3.5 sm:mr-1" />
+                  <span className="hidden sm:inline">Add Plan</span>
+                </Button>
+              )
             )}
           </div>
         </div>
