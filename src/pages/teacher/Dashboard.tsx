@@ -173,6 +173,27 @@ const TeacherDashboard = () => {
       {/* Push Notification Banner */}
       <PushNotificationBanner />
 
+      {/* Smart Nudges row — premium only, agentic Copilot suggestions */}
+      {hasCopilot && (
+        <SmartNudgesRow
+          input={{
+            todayTimetable,
+            pastUnconfirmedCount: pastUnconfirmedSlots.length,
+            recentLowScoreQuiz: {
+              name: "Newton's Laws Quiz",
+              avgPercent: 52,
+              strugglingCount: 6,
+              examId: "exam-newton-q1",
+            },
+            underCoveredUpcomingChapter: {
+              chapterName: "Thermodynamics",
+              coveragePercent: 30,
+            },
+          }}
+          maxVisible={2}
+        />
+      )}
+
       {/* Pending Confirmations Alert Banner - Premium amber gradient */}
       {totalPendingConfirmations > 0 && (
         <Card className="border-amber-200/50 bg-gradient-to-r from-amber-50 via-orange-50/50 to-amber-50 overflow-hidden">
@@ -300,6 +321,9 @@ const TeacherDashboard = () => {
               </Card>
             )}
           </div>
+
+          {/* Mandatory syllabus tracker — shown for everyone */}
+          <SyllabusTrackerMini hasCopilot={hasCopilot} />
         </div>
 
         {/* Sidebar - Mobile: Horizontal scroll cards, Desktop: Vertical stack */}
