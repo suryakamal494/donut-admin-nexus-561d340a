@@ -265,21 +265,24 @@ const LifecycleSection: React.FC<LifecycleSectionProps> = ({
   const styles = TONE_STYLES[tone];
 
   return (
-    <div className="rounded-lg border border-border/60 overflow-hidden bg-card">
+    <div
+      className={cn(
+        "rounded-lg border border-border/60 overflow-hidden bg-card transition-shadow",
+        isOpen && "shadow-sm",
+      )}
+    >
       <button
         onClick={onToggle}
-        disabled={isEmpty}
         className={cn(
           "flex items-center gap-2 w-full px-3 py-2.5 text-left transition-colors",
           isOpen ? "bg-muted/70" : "bg-muted/30 hover:bg-muted/50",
-          isEmpty && "opacity-60 cursor-not-allowed hover:bg-muted/30",
         )}
       >
         <ChevronRight
           className={cn(
             "w-4 h-4 flex-shrink-0 text-foreground transition-transform",
             isOpen && "rotate-90",
-            isEmpty && "opacity-40",
+            isEmpty && "opacity-50",
           )}
         />
         <span className={cn("w-1.5 h-1.5 rounded-full flex-shrink-0", styles.dot)} />
