@@ -80,6 +80,42 @@ export type Database = {
         }
         Relationships: []
       }
+      router_decisions: {
+        Row: {
+          confidence: number | null
+          created_at: string
+          decision: string
+          id: string
+          message_preview: string | null
+          scope_key: string | null
+          student_id: string
+          thread_id: string | null
+          tool: string | null
+        }
+        Insert: {
+          confidence?: number | null
+          created_at?: string
+          decision: string
+          id?: string
+          message_preview?: string | null
+          scope_key?: string | null
+          student_id: string
+          thread_id?: string | null
+          tool?: string | null
+        }
+        Update: {
+          confidence?: number | null
+          created_at?: string
+          decision?: string
+          id?: string
+          message_preview?: string | null
+          scope_key?: string | null
+          student_id?: string
+          thread_id?: string | null
+          tool?: string | null
+        }
+        Relationships: []
+      }
       rp_artifacts: {
         Row: {
           batch_id: string
@@ -409,31 +445,49 @@ export type Database = {
       }
       student_copilot_threads: {
         Row: {
+          archived_at: string | null
           created_at: string
           id: string
+          last_activity_at: string
           last_message_at: string
           routine_key: string
+          scope_key: string | null
+          scope_meta: Json
+          status: string
           student_id: string
           subject: string | null
           title: string
+          tool: string | null
         }
         Insert: {
+          archived_at?: string | null
           created_at?: string
           id?: string
+          last_activity_at?: string
           last_message_at?: string
           routine_key: string
+          scope_key?: string | null
+          scope_meta?: Json
+          status?: string
           student_id: string
           subject?: string | null
           title?: string
+          tool?: string | null
         }
         Update: {
+          archived_at?: string | null
           created_at?: string
           id?: string
+          last_activity_at?: string
           last_message_at?: string
           routine_key?: string
+          scope_key?: string | null
+          scope_meta?: Json
+          status?: string
           student_id?: string
           subject?: string | null
           title?: string
+          tool?: string | null
         }
         Relationships: []
       }
