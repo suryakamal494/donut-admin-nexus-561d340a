@@ -287,3 +287,59 @@ const StudentChatPane: React.FC<Props> = ({
 };
 
 export default React.memo(StudentChatPane);
+
+// ─── Shared top bar ─────────────────────────────────────────────────────
+// Profile + new-chat + panel toggles. Lives at the top of the chat pane
+// (welcome and in-thread alike) so the left rail can stay slim.
+interface TopBarProps {
+  onToggleLeft: () => void;
+  onToggleRight: () => void;
+  onNewThread: () => void;
+}
+
+const CopilotTopBar: React.FC<TopBarProps> = ({ onToggleLeft, onToggleRight, onNewThread }) => {
+  return (
+    <div className="h-14 px-3 border-b bg-card/30 flex items-center gap-2 flex-shrink-0">
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={onToggleLeft}
+        className="h-9 w-9 p-0 flex-shrink-0"
+        aria-label="Toggle history"
+      >
+        <Menu className="w-4 h-4" />
+      </Button>
+
+      <div className="flex items-center gap-2.5 min-w-0 flex-1">
+        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-donut-coral to-donut-orange flex items-center justify-center flex-shrink-0">
+          <GraduationCap className="w-4 h-4 text-white" />
+        </div>
+        <div className="min-w-0 leading-tight">
+          <p className="text-sm font-semibold truncate">{studentProfile.name}</p>
+          <p className="text-[11px] text-muted-foreground truncate">{studentProfile.grade}</p>
+        </div>
+      </div>
+
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={onNewThread}
+        className="h-9 w-9 p-0 flex-shrink-0 text-foreground hover:bg-donut-coral/10 hover:text-donut-coral"
+        aria-label="Start new chat"
+        title="New chat (⌘K)"
+      >
+        <Plus className="w-4 h-4" />
+      </Button>
+
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={onToggleRight}
+        className="h-9 w-9 p-0 flex-shrink-0 hidden lg:inline-flex"
+        aria-label="Toggle artifact panel"
+      >
+        <PanelRight className="w-4 h-4" />
+      </Button>
+    </div>
+  );
+};
