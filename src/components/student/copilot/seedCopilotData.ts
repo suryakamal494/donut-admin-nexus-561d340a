@@ -12,6 +12,7 @@ import {
 
 const SEED_KEY = "copilot_mock_seeded_v3";
 const SEED_KEY_V4 = "copilot_mock_seeded_v4";
+const SEED_KEY_V5 = "copilot_mock_seeded_v5";
 
 /** Throws on DB error so the caller can abort seeding */
 async function insertOrSkip(
@@ -32,8 +33,9 @@ export async function seedCopilotDataIfNeeded(): Promise<void> {
   localStorage.removeItem("copilot_mock_seeded_v1");
   localStorage.removeItem("copilot_mock_seeded_v2");
   localStorage.removeItem(SEED_KEY); // clear v3 to force re-seed
+  localStorage.removeItem(SEED_KEY_V4); // clear v4 — v5 introduces lifecycle buckets
 
-  if (localStorage.getItem(SEED_KEY_V4) === "true") return;
+  if (localStorage.getItem(SEED_KEY_V5) === "true") return;
 
   try {
     // 1. Routines — check first
@@ -47,15 +49,41 @@ export async function seedCopilotDataIfNeeded(): Promise<void> {
       await insertOrSkip("rp_routines", MOCK_ROUTINES as any[], "routines");
     }
 
-    // 2. Threads — check if our SPECIFIC mock threads exist
+    // 2. Threads — v5 reshapes the lifecycle (active / recent / archived).
+    // For every mock thread: upsert by id so existing rows from v4 get the new
+    // tool / scope_key / status / last_activity_at / archived_at backfilled.
     const { data: existingMockThreads } = await supabase
       .from("student_copilot_threads" as any)
       .select("id")
-      .in("id", MOCK_THREADS.map(t => t.id))
-      .limit(1);
+      .in("id", MOCK_THREADS.map(t => t.id));
 
-    if (!existingMockThreads || existingMockThreads.length === 0) {
-      await insertOrSkip("student_copilot_threads", MOCK_THREADS as any[], "threads");
+    const existingIds = new Set((existingMockThreads ?? []).map((r: any) => r.id));
+    const toInsert = MOCK_THREADS.filter(t => !existingIds.has(t.id));
+    const toUpdate = MOCK_THREADS.filter(t => existingIds.has(t.id));
+
+    if (toInsert.length > 0) {
+      await insertOrSkip("student_copilot_threads", toInsert as any[], "threads (insert)");
+    }
+
+    // Backfill the lifecycle columns on every existing row.
+    for (const t of toUpdate) {
+      const { error } = await supabase
+        .from("student_copilot_threads" as any)
+        .update({
+          tool: (t as any).tool,
+          scope_key: (t as any).scope_key,
+          scope_meta: (t as any).scope_meta,
+          status: (t as any).status,
+          last_activity_at: (t as any).last_activity_at,
+          archived_at: (t as any).archived_at,
+          title: t.title,
+        })
+        .eq("id", t.id);
+      if (error) console.warn("Thread backfill warn:", t.id, error.message);
+    }
+
+    // Seed messages only when the original 6 mock threads are first inserted.
+    if (toInsert.some(t => ["a0a0a0a0-1111-4000-8000-000000000001"].includes(t.id))) {
       await insertOrSkip("student_copilot_messages", MOCK_MESSAGES as any[], "messages");
     }
 
@@ -105,7 +133,7 @@ export async function seedCopilotDataIfNeeded(): Promise<void> {
     }
 
     // Only mark as seeded if we got here without throwing
-    localStorage.setItem(SEED_KEY_V4, "true");
+    localStorage.setItem(SEED_KEY_V5, "true");
     console.log("✅ Copilot mock data seeded successfully");
   } catch (err) {
     console.error("❌ Copilot seeder error (will retry next load):", err);

@@ -168,22 +168,22 @@ const StudentLeftRail: React.FC<Props> = ({
             </p>
           )}
 
-          {grouped.active.length > 0 && (
-            <ThreadGroup
-              label={`Active (${grouped.active.length})`}
-              threads={grouped.active}
-              currentThreadId={currentThreadId}
-              onSelect={handleThreadClick}
-            />
-          )}
-          {grouped.recent.length > 0 && (
-            <ThreadGroup
-              label="Recent"
-              threads={grouped.recent}
-              currentThreadId={currentThreadId}
-              onSelect={handleThreadClick}
-            />
-          )}
+          {/* Always render Active + Recent headers so the lifecycle structure
+              (Rule 5) is visible even when one bucket is empty. */}
+          <ThreadGroup
+            label={`Active (${grouped.active.length})`}
+            threads={grouped.active}
+            currentThreadId={currentThreadId}
+            onSelect={handleThreadClick}
+            emptyHint="No active sessions — start a chat to begin."
+          />
+          <ThreadGroup
+            label={`Recent (${grouped.recent.length})`}
+            threads={grouped.recent}
+            currentThreadId={currentThreadId}
+            onSelect={handleThreadClick}
+            emptyHint="Nothing in the last 7 days."
+          />
           {grouped.archived.length > 0 && (
             <div>
               <button
@@ -233,13 +233,19 @@ interface GroupProps {
   threads: StudentThread[];
   currentThreadId: string | null;
   onSelect: (id: string) => void;
+  emptyHint?: string;
 }
 
-const ThreadGroup: React.FC<GroupProps> = ({ label, threads, currentThreadId, onSelect }) => (
+const ThreadGroup: React.FC<GroupProps> = ({ label, threads, currentThreadId, onSelect, emptyHint }) => (
   <div>
     {label && (
       <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-2 mb-1">
         {label}
+      </p>
+    )}
+    {threads.length === 0 && emptyHint && (
+      <p className="text-[11px] text-muted-foreground/70 px-2 py-1 italic">
+        {emptyHint}
       </p>
     )}
     {threads.map((t) => (

@@ -1,195 +1,96 @@
-# Student Copilot — Session Continuity Rulebook + Implementation Plan
+# Audit & Mock Data Fix — Session Continuity
 
-## The core problem (in one line)
+## Audit results vs. the 10 rules in `docs/04-student/copilot-session-continuity.md`
 
-Today every dashboard CTA and every chat message creates a **new thread**. The student has to hunt through history to resume work. We must flip this: **the system finds the right thread automatically; the student never searches.**
+| # | Rule | Status | Notes |
+|---|---|---|---|
+| 1 | One global chat, no manual picking | Done | "+ New chat" demoted to dropdown menu |
+| 2 | Session identity = Tool + Scope | **Schema only** | Columns exist (`tool`, `scope_key`), but mock threads were seeded **without** them — that's why every thread shows up as `active` |
+| 3 | Router decides | Done | `sessionRouter.ts` has `classifyIntent`, `extractScope`, `findActiveSession`, `route` |
+| 4 | Continuation banner | Done | `ContinuationBanner.tsx` rendered above replies |
+| 5 | Active / Recent / Archived grouping | **Logic done, data missing** | `StudentLeftRail` groups correctly, but every seeded thread defaults to `active` so only one bucket shows |
+| 6 | Artifact reuse | Done | Reuse guard injected into the `student-copilot-chat` system prompt |
+| 7 | Dashboard CTAs use `?intent=` | Done | All 7 cards refactored |
+| 8 | Auto-archive | **Half** | Client-side sweep runs on copilot mount; the documented `copilot-archive-sweep` edge function is **not built** |
+| 9 | Escape hatches | Done | "Start fresh" in dropdown, "Show archived" toggle, banner override |
+| 10 | Determinism & traceability | Done | `router_decisions` table + insert path |
 
-The solution has two halves:
-
-1. A **single global chat** is the only entry point a student sees.
-2. A **router** behind that chat decides — silently — whether the message belongs to an existing session or a new one, and opens the right artifact.
-
-The student never picks a thread. Ever.
-
----
-
-## Part 1 — The Rulebook (canonical, will be documented)
-
-### Rule 1 — One global chat, no manual thread picking
-- Dashboard, FAB, deep-links and the copilot page all open the **same global chat input**.
-- The "thread list" in the left rail becomes a **read-only history view** (collapsed by default), not a picker the student must use to continue work.
-- "New chat" button is removed from the primary flow. It moves to a secondary "Start fresh" menu item.
-
-### Rule 2 — Session identity = Tool + Scope (not timestamp)
-A "session" is defined by **what tool** + **what scope**, not by when it was created.
-
-| Tool | Scope key (what makes it the same session) | Lifetime |
-|---|---|---|
-| Doubt / Concept (`s_doubt`) | subject + chapter + concept-cluster | Rolling 7 days, then archived |
-| Practice (`s_practice`) | subject + chapter | Until student marks "done" or 14 days idle |
-| Study Plan (`s_roadmap`) | plan duration window (e.g. "Week of Apr 22") | Until plan end-date |
-| Exam Target (`s_exam_prep`) | exam_id (e.g. JEE Main 2026) | Until exam_date |
-| Test Debrief | test_attempt_id | Permanent (one per attempt) |
-| Progress (`s_progress`) | rolling weekly window | 7 days |
-
-Two messages with the same Tool+Scope → **same thread**. Different scope → **new thread, automatically**.
-
-### Rule 3 — The Router decides; the student does not
-When a message is sent from the global chat:
-
-```text
-incoming message
-    │
-    ▼
-1. Classify intent  (doubt | practice | plan | exam | progress | debrief)
-2. Extract scope    (subject, chapter, exam_id, plan_window …)
-3. Lookup           findActiveSession(tool, scope)
-    │
-    ├── found  → append message to that thread, open its artifact
-    └── none   → create thread silently, open fresh artifact
-```
-
-The student sees only: their message, the answer, and the relevant artifact opening on the right. No "which chat?" prompt.
-
-### Rule 4 — Surface continuation, don't ask for it
-- When a match is found, show a small inline banner above the AI reply: *"Continuing your Physics Ch. 4 practice — 6/10 done."* with a single "Start fresh instead" link (escape hatch only).
-- Never block the student to confirm.
-
-### Rule 5 — Active vs Recent vs Archived (history view)
-The history rail (now secondary) groups threads by status, not by routine:
-- **Active** — has activity in last 48h OR has an unfinished artifact (incomplete practice, unfinished plan day, exam not yet passed).
-- **Recent** — last 7 days, no unfinished work.
-- **Archived** — older or explicitly closed. Hidden behind "Show all".
-
-This keeps the surface clean even after months of use.
-
-### Rule 6 — Artifact reuse beats artifact creation
-Before any tool fires (`create_practice_session`, `create_study_plan`, `create_target_tracker`):
-- The router checks if a live artifact of that type already exists for the scope.
-- If yes → reopen and continue (e.g. resume question 7/10) instead of generating a new one.
-- The AI is told via system prompt: *"An active practice for Physics/Newton's Laws exists at 6/10 — continue it; do not create a new one."*
-
-### Rule 7 — Dashboard CTAs are scope hints, not thread creators
-Today, clicking "Practice Physics" calls `createThread`. New rule:
-- CTAs send a **scope-hinted message** into the global chat (e.g. `"Continue practice: Physics — Newton's Laws"`) and let the Router decide.
-- This guarantees the same continuation logic from any entry point.
-
-### Rule 8 — Auto-archive (so history never bloats)
-- Practice with no activity for 14 days → archived.
-- Study plan past its end-date → archived (kept readable).
-- Exam target past exam_date → archived.
-- Doubt threads with no follow-up for 7 days → archived.
-
-### Rule 9 — Escape hatches (always available, never primary)
-- "Start fresh" link inside the continuation banner.
-- "Show archived" toggle in history.
-- "Open in new chat" on any artifact.
-
-These exist for power users; defaults are zero-friction.
-
-### Rule 10 — Determinism & traceability
-- Every routing decision is logged (`thread_id`, `decision: matched|new`, `scope_key`, `confidence`) for debugging and future tuning.
-- The scope key is deterministic (`tool:subject:chapter` style string) so the same input always routes the same way.
+**Why you only see "Active 41":** the grouping UI is correct. The mock data is wrong — every thread was inserted with the column default `status='active'`, no `tool`, no `scope_key`, no `last_activity_at` distribution. The buckets have nothing to fill them.
 
 ---
 
-## Part 2 — Documentation deliverables
+## What this plan fixes
 
-A new file: **`docs/04-student/copilot-session-continuity.md`** containing:
+### 1. Rebuild mock thread data so all three buckets render
 
-1. **Philosophy** — "Zero-search copilot" principle.
-2. **The 10 rules** above, verbatim, with examples.
-3. **Session identity matrix** — the table from Rule 2, with example scope keys.
-4. **Router flow** — the ASCII diagram + a worked example for each tool type.
-5. **Lifecycle states** — Active / Recent / Archived definitions and triggers.
-6. **Data model reference** — which fields on `student_copilot_threads` carry scope.
-7. **Dashboard CTA contract** — how every card must hand off to the router.
-8. **Escape hatches** — when and how the student can override.
-9. **Logging & debugging** — how to read router decisions.
-10. **Future-proofing checklist** — what to update when adding a new routine.
+Update `src/data/student/copilotMockData.ts` so the seeded threads cover the full lifecycle:
 
-Updates to existing docs:
-- `docs/04-student/dashboard.md` — note that all CTAs now route through the global chat router.
-- `docs/04-student/README.md` — link to the new continuity doc.
-- `docs/07-technical/data-layer.md` — add the session-scope schema additions.
-- `.lovable/memory/features/student-copilot-architecture.md` — append a "Session Continuity (Phase 2)" section summarising the rulebook.
+- **Active (5–6 threads)** — `last_activity_at` within 48 h, or unfinished artifact. Examples:
+  - Physics — Newton's Laws (practice, 6/10 done)
+  - Chemistry — Acids & Bases (doubt, today)
+  - JEE Main 2026 prep (exam)
+  - Week of Apr 22 plan (plan)
+- **Recent (5–6 threads)** — `last_activity_at` 3–7 days ago, no unfinished work. Examples:
+  - Math — Trigonometry doubt (4 days ago)
+  - Biology — Cell structure practice (5 days ago, completed)
+  - Last week's progress report
+- **Archived (4–5 threads)** — `last_activity_at` >14 days, `archived_at` set. Examples:
+  - Old Physics chapter (kinematics, 30 days)
+  - Closed exam debrief (Unit Test 2, 21 days)
+  - Old weekly plan (Mar 15)
 
----
+Each thread also gets:
+- `tool` — `doubt` | `practice` | `plan` | `exam` | `debrief` | `progress`
+- `scope_key` — deterministic, e.g. `practice:physics:newtons-laws`
+- `scope_meta` — `{ subject, chapter }` JSON
+- `status` — `active` | `recent` | `archived`
+- `last_activity_at` — staggered timestamps so sorting/grouping look natural
+- `archived_at` — non-null for archived rows
 
-## Part 3 — Implementation Plan
+### 2. Force a re-seed so the new data actually lands
 
-### Phase A — Schema additions (one migration)
+The seeder skips when the localStorage flag is set. Bump the seed key to `copilot_mock_seeded_v5` and clear v4 on load, so existing browsers re-seed once.
 
-Add scope fields to `student_copilot_threads` so the router can match without re-parsing messages:
+Because the same fixed UUIDs are reused, the existing rows in the DB must be updated (not duplicated). The seeder will:
+1. Detect existing v4 rows for the same IDs.
+2. Run an `update` to backfill `tool`, `scope_key`, `scope_meta`, `status`, `last_activity_at`, `archived_at`.
+3. Insert any new mock threads that don't yet exist.
 
-| Column | Type | Purpose |
-|---|---|---|
-| `tool` | text | normalized tool name (`doubt`, `practice`, `plan`, `exam`, `progress`, `debrief`) |
-| `scope_key` | text | deterministic key, e.g. `practice:Physics:Newtons-Laws` |
-| `scope_meta` | jsonb | `{ subject, chapter, exam_id, plan_window, … }` |
-| `status` | text | `active` \| `recent` \| `archived` (default `active`) |
-| `archived_at` | timestamptz | nullable |
+### 3. Build the missing `copilot-archive-sweep` edge function (Rule 8)
 
-Index: `(student_id, tool, scope_key, status)` for fast router lookup.
+Currently only the client sweep exists. Add a thin edge function that runs the same archive logic server-side so it can later be scheduled. It will:
+- Move `practice` threads with no activity for 14 days → `archived`.
+- Move `doubt` threads with no follow-up for 7 days → `archived`.
+- Move `plan` threads past `plan_window.end_date` → `archived`.
+- Move `exam` threads past `exam_date` → `archived` (but keep readable).
+- Set `archived_at = now()` on each archived row.
 
-Add `router_decisions` table for traceability:
-- `id, student_id, message_preview, tool, scope_key, decision (matched|new), thread_id, confidence, created_at`.
+This makes Rule 8 truly complete and unblocks scheduled cleanup later.
 
-No data loss for existing threads — backfill `tool` from `routine_key` and leave `scope_key` null until first new message routes them.
+### 4. Small UX polish to make the new buckets visible
 
-### Phase B — The Router module
-
-New file: `src/components/student/copilot/router/sessionRouter.ts`
-
-Exports:
-- `classifyIntent(text, context) → { tool, confidence }` — keyword + light LLM classification (reuse Lovable AI Gateway, `gemini-2.5-flash-lite` for speed).
-- `extractScope(text, tool, context) → { scope_key, scope_meta }` — uses existing `classifySubject` + chapter detection from timetable context.
-- `findActiveSession(studentId, tool, scope_key)` — Supabase query against new index.
-- `route(text, context) → { threadId, isNew, banner }` — the orchestrator. Logs decision to `router_decisions`.
-
-### Phase C — Wire the global chat
-
-In `StudentCopilotPage.tsx`:
-- Replace the current "create thread per CTA" logic in `handleSend` with a single call to `route()`.
-- If `isNew` → silently create thread with `tool` + `scope_key` populated.
-- If matched → set `currentThreadId` to the matched thread, append the message, render the continuation banner.
-- Remove auto-create-thread from query-param handler; instead pass the deep-link prompt through `route()`.
-
-### Phase D — Dashboard CTA refactor
-
-All 7 dashboard cards (`ExamTargetCard`, `LastTestResultCard`, `DailyStudyGoalRing`, `HomeworkSection`, `RecentCopilotCard`, `UpcomingTestCard`, `AIRecommendationCard`):
-- Stop building `?routine=...&prompt=...` URLs that imply thread creation.
-- Instead navigate to `/student/copilot?intent=<scope-hinted-prompt>` and let the router handle it.
-- `RecentCopilotCard` becomes "Resume" — directly opens the most recent active thread by scope, no picker.
-
-### Phase E — UI: Continuation banner + simplified left rail
-
-- New `ContinuationBanner.tsx` — small chip above AI reply with progress (e.g. "6/10 done") and "Start fresh" link.
-- `StudentLeftRail.tsx` — collapse history by default, group by Active/Recent/Archived, demote "New chat" to a "⋯" menu item.
-
-### Phase F — Lifecycle automation
-
-A lightweight client-side sweep (runs on copilot page load) + an edge function `copilot-archive-sweep` (callable, also schedulable later):
-- Mark threads `archived` per Rule 8 thresholds.
-- Update `last_activity_at` on every message/practice answer.
-
-### Phase G — Tool reuse guard
-
-In `student-copilot-chat` edge function, prepend to the system prompt:
-- The list of live artifacts for the current scope (`"Active practice for Physics/Newton's Laws: 6/10 done — continue, do not create new"`).
-- The model is instructed to call `resume_*` semantics (just append questions / next steps) rather than `create_*` when a live artifact exists.
-
-### Phase H — Documentation
-
-Create `docs/04-student/copilot-session-continuity.md` with all content from Part 2. Register it in `src/data/docsNavigation.ts`. Update related docs and the memory file.
+- Always render the "Active" / "Recent" headers (even when one bucket has 0) so the structure is visible at a glance — current code hides empty buckets.
+- Show a count next to "Recent" too (currently only "Active" shows a count).
 
 ---
 
-## What the student experiences after this ships
+## Files touched
 
-- Opens dashboard, taps **"Practice Physics"** → global chat opens, sees their previous practice resume at Q7/10 with a tiny "Continuing — start fresh?" link. No picker.
-- Types **"explain dot product again"** in the chat → router finds their open Math/Vectors doubt thread, appends the question, opens the existing concept explainer. No new thread spawned.
-- Types **"give me a JEE plan for next week"** → no existing plan in that window, router creates one silently and opens it.
-- Goes to history → sees just **"Active (3)"** with progress chips. Everything else tucked under "Recent" / "Archived".
+| File | Change |
+|---|---|
+| `src/data/student/copilotMockData.ts` | Expand `MOCK_THREADS` to ~16 threads spread across active/recent/archived with `tool`, `scope_key`, `scope_meta`, `status`, `last_activity_at`, `archived_at` |
+| `src/components/student/copilot/seedCopilotData.ts` | Bump to `copilot_mock_seeded_v5`; add an `update` pass that backfills the new columns on existing rows |
+| `src/components/student/copilot/StudentLeftRail.tsx` | Show "Recent" count; render headers consistently |
+| `supabase/functions/copilot-archive-sweep/index.ts` | New edge function implementing Rule 8 server-side |
+| `docs/04-student/copilot-session-continuity.md` | Mark §7 (lifecycle) and §11 (audit appendix) as fully implemented; add a note that the seed data now covers all three buckets |
+| `.lovable/memory/features/student-copilot-architecture.md` | Note that Session Continuity is now end-to-end complete with seeded mock buckets |
 
-Zero searching, zero choosing, full continuity.
+## Out of scope (intentionally)
+
+- Real-data scope inference from existing message bodies — the seeder writes scope keys directly; back-classifying historical messages isn't needed for the demo.
+- A scheduled cron for the new edge function — Lovable Cloud doesn't expose cron yet; the function is callable manually and will be wired to a schedule later.
+- Changing the router itself — its logic already matches the rulebook.
+
+## Result you'll see after approval
+
+The left rail will show three labelled groups with realistic counts (e.g. **Active (6) · Recent (5) · Archived (5)**), threads will carry the new `tool` + `scope_key` so the router can actually match them, the archive sweep is callable from the server, and every rule in the rulebook moves to "done."

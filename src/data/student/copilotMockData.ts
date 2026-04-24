@@ -69,6 +69,17 @@ const T3 = "a0a0a0a0-1111-4000-8000-000000000003";
 const T4 = "a0a0a0a0-1111-4000-8000-000000000004";
 const T5 = "a0a0a0a0-1111-4000-8000-000000000005";
 const T6 = "a0a0a0a0-1111-4000-8000-000000000006";
+// New threads added in v5 to populate Recent + Archived buckets (Rule 5).
+const T7 = "a0a0a0a0-1111-4000-8000-000000000007";
+const T8 = "a0a0a0a0-1111-4000-8000-000000000008";
+const T9 = "a0a0a0a0-1111-4000-8000-000000000009";
+const T10 = "a0a0a0a0-1111-4000-8000-000000000010";
+const T11 = "a0a0a0a0-1111-4000-8000-000000000011";
+const T12 = "a0a0a0a0-1111-4000-8000-000000000012";
+const T13 = "a0a0a0a0-1111-4000-8000-000000000013";
+const T14 = "a0a0a0a0-1111-4000-8000-000000000014";
+const T15 = "a0a0a0a0-1111-4000-8000-000000000015";
+const T16 = "a0a0a0a0-1111-4000-8000-000000000016";
 
 // ─── Deterministic UUIDs for artifacts ───
 const A1 = "b0b0b0b0-2222-4000-8000-000000000001";
@@ -86,12 +97,187 @@ const E1 = "e0e0e0e0-3333-4000-8000-000000000001";
 const E2 = "e0e0e0e0-3333-4000-8000-000000000002";
 
 export const MOCK_THREADS = [
-  { id: T1, student_id: STUDENT_ID, routine_key: "s_doubt", title: "Newton's Laws of Motion", subject: "Physics", last_message_at: new Date(Date.now() - 3600000).toISOString(), created_at: new Date(Date.now() - 7200000).toISOString() },
-  { id: T2, student_id: STUDENT_ID, routine_key: "s_doubt", title: "Acids, Bases and Salts", subject: "Chemistry", last_message_at: new Date(Date.now() - 86400000).toISOString(), created_at: new Date(Date.now() - 172800000).toISOString() },
-  { id: T3, student_id: STUDENT_ID, routine_key: "s_practice", title: "Mechanics MCQ Practice", subject: "Physics", last_message_at: new Date(Date.now() - 43200000).toISOString(), created_at: new Date(Date.now() - 86400000).toISOString() },
-  { id: T4, student_id: STUDENT_ID, routine_key: "s_exam_prep", title: "Unit Test 3 Preparation", subject: null, last_message_at: new Date(Date.now() - 129600000).toISOString(), created_at: new Date(Date.now() - 259200000).toISOString() },
-  { id: T5, student_id: STUDENT_ID, routine_key: "s_roadmap", title: "Physics Chapter 1-4 Revision", subject: "Physics", last_message_at: new Date(Date.now() - 172800000).toISOString(), created_at: new Date(Date.now() - 345600000).toISOString() },
-  { id: T6, student_id: STUDENT_ID, routine_key: "s_progress", title: "Weekly Progress Check", subject: null, last_message_at: new Date(Date.now() - 259200000).toISOString(), created_at: new Date(Date.now() - 432000000).toISOString() },
+  // ─── ACTIVE (within 48 h or unfinished work) ───
+  {
+    id: T1, student_id: STUDENT_ID, routine_key: "s_doubt",
+    tool: "doubt", scope_key: "doubt:physics:newtons-laws",
+    scope_meta: { subject: "Physics", chapter: "Newton's Laws" },
+    status: "active",
+    title: "Newton's Laws of Motion", subject: "Physics",
+    last_message_at: new Date(Date.now() - 3600000).toISOString(),
+    last_activity_at: new Date(Date.now() - 3600000).toISOString(),
+    created_at: new Date(Date.now() - 7200000).toISOString(),
+    archived_at: null,
+  },
+  {
+    id: T2, student_id: STUDENT_ID, routine_key: "s_doubt",
+    tool: "doubt", scope_key: "doubt:chemistry:acids-bases-salts",
+    scope_meta: { subject: "Chemistry", chapter: "Acids, Bases and Salts" },
+    status: "active",
+    title: "Acids, Bases and Salts", subject: "Chemistry",
+    last_message_at: new Date(Date.now() - 1800000).toISOString(),
+    last_activity_at: new Date(Date.now() - 1800000).toISOString(),
+    created_at: new Date(Date.now() - 86400000).toISOString(),
+    archived_at: null,
+  },
+  {
+    id: T3, student_id: STUDENT_ID, routine_key: "s_practice",
+    tool: "practice", scope_key: "practice:physics:mechanics",
+    scope_meta: { subject: "Physics", chapter: "Mechanics" },
+    status: "active",
+    title: "Mechanics MCQ Practice (6/10)", subject: "Physics",
+    last_message_at: new Date(Date.now() - 7200000).toISOString(),
+    last_activity_at: new Date(Date.now() - 7200000).toISOString(),
+    created_at: new Date(Date.now() - 86400000).toISOString(),
+    archived_at: null,
+  },
+  {
+    id: T4, student_id: STUDENT_ID, routine_key: "s_exam_prep",
+    tool: "exam", scope_key: "exam:jee-main-2026",
+    scope_meta: { exam_id: "jee-main-2026", exam_name: "JEE Main 2026" },
+    status: "active",
+    title: "JEE Main 2026 — Target Tracker", subject: null,
+    last_message_at: new Date(Date.now() - 21600000).toISOString(),
+    last_activity_at: new Date(Date.now() - 21600000).toISOString(),
+    created_at: new Date(Date.now() - 1209600000).toISOString(),
+    archived_at: null,
+  },
+  {
+    id: T5, student_id: STUDENT_ID, routine_key: "s_roadmap",
+    tool: "plan", scope_key: "plan:physics:week-2026-04-21",
+    scope_meta: { subject: "Physics", plan_window: { start_date: "2026-04-21", end_date: "2026-04-27" } },
+    status: "active",
+    title: "This week's Physics plan", subject: "Physics",
+    last_message_at: new Date(Date.now() - 36000000).toISOString(),
+    last_activity_at: new Date(Date.now() - 36000000).toISOString(),
+    created_at: new Date(Date.now() - 259200000).toISOString(),
+    archived_at: null,
+  },
+  {
+    id: T6, student_id: STUDENT_ID, routine_key: "s_progress",
+    tool: "progress", scope_key: "progress:week-2026-04-21",
+    scope_meta: { plan_window: { start_date: "2026-04-21", end_date: "2026-04-27" } },
+    status: "active",
+    title: "This week's progress", subject: null,
+    last_message_at: new Date(Date.now() - 43200000).toISOString(),
+    last_activity_at: new Date(Date.now() - 43200000).toISOString(),
+    created_at: new Date(Date.now() - 86400000).toISOString(),
+    archived_at: null,
+  },
+
+  // ─── RECENT (3–7 days idle, no unfinished work) ───
+  {
+    id: T7, student_id: STUDENT_ID, routine_key: "s_doubt",
+    tool: "doubt", scope_key: "doubt:math:trigonometry",
+    scope_meta: { subject: "Math", chapter: "Trigonometry" },
+    status: "recent",
+    title: "Trigonometric identities", subject: "Math",
+    last_message_at: new Date(Date.now() - 4 * 86400000).toISOString(),
+    last_activity_at: new Date(Date.now() - 4 * 86400000).toISOString(),
+    created_at: new Date(Date.now() - 5 * 86400000).toISOString(),
+    archived_at: null,
+  },
+  {
+    id: T8, student_id: STUDENT_ID, routine_key: "s_practice",
+    tool: "practice", scope_key: "practice:biology:cell-structure",
+    scope_meta: { subject: "Biology", chapter: "Cell Structure" },
+    status: "recent",
+    title: "Cell Structure quiz (10/10)", subject: "Biology",
+    last_message_at: new Date(Date.now() - 5 * 86400000).toISOString(),
+    last_activity_at: new Date(Date.now() - 5 * 86400000).toISOString(),
+    created_at: new Date(Date.now() - 6 * 86400000).toISOString(),
+    archived_at: null,
+  },
+  {
+    id: T9, student_id: STUDENT_ID, routine_key: "s_progress",
+    tool: "progress", scope_key: "progress:week-2026-04-14",
+    scope_meta: { plan_window: { start_date: "2026-04-14", end_date: "2026-04-20" } },
+    status: "recent",
+    title: "Last week's progress report", subject: null,
+    last_message_at: new Date(Date.now() - 6 * 86400000).toISOString(),
+    last_activity_at: new Date(Date.now() - 6 * 86400000).toISOString(),
+    created_at: new Date(Date.now() - 7 * 86400000).toISOString(),
+    archived_at: null,
+  },
+  {
+    id: T10, student_id: STUDENT_ID, routine_key: "s_doubt",
+    tool: "doubt", scope_key: "doubt:chemistry:periodic-table",
+    scope_meta: { subject: "Chemistry", chapter: "Periodic Table" },
+    status: "recent",
+    title: "Periodic trends explained", subject: "Chemistry",
+    last_message_at: new Date(Date.now() - 3 * 86400000).toISOString(),
+    last_activity_at: new Date(Date.now() - 3 * 86400000).toISOString(),
+    created_at: new Date(Date.now() - 4 * 86400000).toISOString(),
+    archived_at: null,
+  },
+  {
+    id: T11, student_id: STUDENT_ID, routine_key: "s_doubt",
+    tool: "debrief", scope_key: "debrief:unit-test-3",
+    scope_meta: { test_attempt_id: "unit-test-3" },
+    status: "recent",
+    title: "Unit Test 3 — Debrief", subject: null,
+    last_message_at: new Date(Date.now() - 5 * 86400000).toISOString(),
+    last_activity_at: new Date(Date.now() - 5 * 86400000).toISOString(),
+    created_at: new Date(Date.now() - 5 * 86400000).toISOString(),
+    archived_at: null,
+  },
+
+  // ─── ARCHIVED (older or explicitly closed) ───
+  {
+    id: T12, student_id: STUDENT_ID, routine_key: "s_practice",
+    tool: "practice", scope_key: "practice:physics:kinematics",
+    scope_meta: { subject: "Physics", chapter: "Kinematics" },
+    status: "archived",
+    title: "Kinematics drill set", subject: "Physics",
+    last_message_at: new Date(Date.now() - 30 * 86400000).toISOString(),
+    last_activity_at: new Date(Date.now() - 30 * 86400000).toISOString(),
+    created_at: new Date(Date.now() - 35 * 86400000).toISOString(),
+    archived_at: new Date(Date.now() - 16 * 86400000).toISOString(),
+  },
+  {
+    id: T13, student_id: STUDENT_ID, routine_key: "s_doubt",
+    tool: "debrief", scope_key: "debrief:unit-test-2",
+    scope_meta: { test_attempt_id: "unit-test-2" },
+    status: "archived",
+    title: "Unit Test 2 — Debrief", subject: null,
+    last_message_at: new Date(Date.now() - 21 * 86400000).toISOString(),
+    last_activity_at: new Date(Date.now() - 21 * 86400000).toISOString(),
+    created_at: new Date(Date.now() - 22 * 86400000).toISOString(),
+    archived_at: new Date(Date.now() - 21 * 86400000).toISOString(),
+  },
+  {
+    id: T14, student_id: STUDENT_ID, routine_key: "s_roadmap",
+    tool: "plan", scope_key: "plan:chemistry:week-2026-03-15",
+    scope_meta: { subject: "Chemistry", plan_window: { start_date: "2026-03-15", end_date: "2026-03-21" } },
+    status: "archived",
+    title: "Chemistry plan — Mar 15 week", subject: "Chemistry",
+    last_message_at: new Date(Date.now() - 38 * 86400000).toISOString(),
+    last_activity_at: new Date(Date.now() - 38 * 86400000).toISOString(),
+    created_at: new Date(Date.now() - 40 * 86400000).toISOString(),
+    archived_at: new Date(Date.now() - 32 * 86400000).toISOString(),
+  },
+  {
+    id: T15, student_id: STUDENT_ID, routine_key: "s_doubt",
+    tool: "doubt", scope_key: "doubt:math:integration",
+    scope_meta: { subject: "Math", chapter: "Integration" },
+    status: "archived",
+    title: "Integration by parts", subject: "Math",
+    last_message_at: new Date(Date.now() - 25 * 86400000).toISOString(),
+    last_activity_at: new Date(Date.now() - 25 * 86400000).toISOString(),
+    created_at: new Date(Date.now() - 25 * 86400000).toISOString(),
+    archived_at: new Date(Date.now() - 18 * 86400000).toISOString(),
+  },
+  {
+    id: T16, student_id: STUDENT_ID, routine_key: "s_practice",
+    tool: "practice", scope_key: "practice:biology:photosynthesis",
+    scope_meta: { subject: "Biology", chapter: "Photosynthesis" },
+    status: "archived",
+    title: "Photosynthesis MCQs", subject: "Biology",
+    last_message_at: new Date(Date.now() - 45 * 86400000).toISOString(),
+    last_activity_at: new Date(Date.now() - 45 * 86400000).toISOString(),
+    created_at: new Date(Date.now() - 46 * 86400000).toISOString(),
+    archived_at: new Date(Date.now() - 31 * 86400000).toISOString(),
+  },
 ];
 
 export const MOCK_MESSAGES = [
