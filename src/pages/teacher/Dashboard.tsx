@@ -31,7 +31,6 @@ import {
   UnlockCopilotCard,
 } from "@/components/teacher/dashboard";
 import { useTeacherFeatures } from "@/config/featureFlags";
-import { useCopilot } from "@/components/teacher/routine-pilot/CopilotContext";
 import { 
   currentTeacher, 
   teacherPendingActions,
