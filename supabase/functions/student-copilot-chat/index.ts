@@ -563,6 +563,52 @@ Deno.serve(async (req) => {
       systemPrompt += `\n\n${extra_system}`;
     }
 
+    // ========== TOOL REUSE GUARD (Rule 7 — Session Continuity) ==========
+    // Look up the most recent artifact on this thread. If one exists, instruct
+    // the model to EXTEND/UPDATE it rather than spawn a new artifact for the
+    // same scope. This prevents "duplicate practice session" / "duplicate
+    // study plan" sprawl when a student returns to the same session.
+    try {
+      const { data: recentArtifact } = await supabase
+        .from("student_copilot_artifacts")
+        .select("id, type, title, content, created_at")
+        .eq("thread_id", thread_id)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      // Also fetch the parent thread's tool + scope for context.
+      const { data: thread } = await supabase
+        .from("student_copilot_threads")
+        .select("tool, scope_key, scope_meta")
+        .eq("id", thread_id)
+        .maybeSingle();
+
+      if (recentArtifact) {
+        // Compact the artifact content so we don't blow the prompt budget.
+        const contentPreview = JSON.stringify(recentArtifact.content ?? {}).slice(0, 1500);
+        systemPrompt += `\n\n========== ARTIFACT REUSE GUARD ==========
+This thread already has an active artifact. DO NOT create a new artifact of the same type for the same scope — extend or refine the existing one in conversation instead.
+
+EXISTING ARTIFACT:
+- id: ${recentArtifact.id}
+- type: ${recentArtifact.type}
+- title: ${recentArtifact.title}
+- created_at: ${recentArtifact.created_at}
+- thread tool: ${thread?.tool ?? "unknown"}
+- thread scope: ${thread?.scope_key ?? "unknown"}
+- content preview: ${contentPreview}
+
+REUSE RULES:
+1. If the student's request is a CONTINUATION of the same scope (e.g. "next question", "explain this answer", "make it harder", "add 5 more"), respond conversationally and reference the existing artifact. Do NOT call any artifact-creation tool.
+2. If the student wants something MEANINGFULLY DIFFERENT (a different chapter, a different tool type, a fresh topic), you MAY create a new artifact.
+3. When in doubt, ASK the student: "Should I extend your existing ${recentArtifact.type} or start a fresh one?"
+4. Never silently duplicate the same tool + scope.`;
+      }
+    } catch (guardErr) {
+      console.error("Reuse guard lookup failed (non-fatal):", guardErr);
+    }
+
     // Reshape messages with image support
     const apiMessages: any[] = [{ role: "system", content: systemPrompt }];
 
