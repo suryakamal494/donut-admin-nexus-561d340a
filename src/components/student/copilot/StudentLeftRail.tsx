@@ -3,7 +3,8 @@ import React, { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   MessageSquare, Dumbbell, Target, Map, TrendingUp,
-  Plus, GraduationCap, ArrowLeft, MoreHorizontal, type LucideIcon,
+  Plus, GraduationCap, ArrowLeft, MoreHorizontal, ChevronRight,
+  type LucideIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -79,6 +80,18 @@ const StudentLeftRail: React.FC<Props> = ({
   }, [filteredThreads]);
 
   const [showArchived, setShowArchived] = React.useState(false);
+
+  // Single-expand accordion state for the lifecycle buckets (Rule 5).
+  // Default to whichever bucket has content, preferring active → recent → archived.
+  type Bucket = "active" | "recent" | "archived";
+  const [expandedBucket, setExpandedBucket] = React.useState<Bucket>(() => {
+    if (grouped.active.length > 0) return "active";
+    if (grouped.recent.length > 0) return "recent";
+    return "archived";
+  });
+
+  const toggleBucket = (b: Bucket) =>
+    setExpandedBucket((prev) => (prev === b ? prev : b));
 
   const handleThreadClick = (id: string) => {
     onSelectThread(id);
@@ -161,53 +174,55 @@ const StudentLeftRail: React.FC<Props> = ({
 
       {/* History — grouped by lifecycle status (Rule 5). */}
       <ScrollArea className="flex-1 min-h-0">
-        <div className="px-3 py-2 space-y-3">
+        <div className="px-2 py-2 space-y-1.5">
           {filteredThreads.length === 0 && (
             <p className="text-xs text-muted-foreground px-2 py-4 text-center">
               No conversations yet
             </p>
           )}
 
-          {/* Always render Active + Recent headers so the lifecycle structure
-              (Rule 5) is visible even when one bucket is empty. */}
-          <ThreadGroup
-            label={`Active (${grouped.active.length})`}
+          {/* Single-expand accordion. Clicking another bucket auto-collapses the open one. */}
+          <LifecycleSection
+            bucket="active"
+            label="Active"
+            tone="active"
             threads={grouped.active}
+            isOpen={expandedBucket === "active"}
+            onToggle={() => toggleBucket("active")}
             currentThreadId={currentThreadId}
             onSelect={handleThreadClick}
             emptyHint="No active sessions — start a chat to begin."
           />
-          <ThreadGroup
-            label={`Recent (${grouped.recent.length})`}
+          <LifecycleSection
+            bucket="recent"
+            label="Recent"
+            tone="recent"
             threads={grouped.recent}
+            isOpen={expandedBucket === "recent"}
+            onToggle={() => toggleBucket("recent")}
             currentThreadId={currentThreadId}
             onSelect={handleThreadClick}
             emptyHint="Nothing in the last 7 days."
           />
-          {grouped.archived.length > 0 && (
-            <div>
-              <button
-                onClick={() => setShowArchived((v) => !v)}
-                className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-2 mb-1 hover:text-foreground"
-              >
-                {showArchived ? "Hide" : "Show"} archived ({grouped.archived.length})
-              </button>
-              {showArchived && (
-                <ThreadGroup
-                  label=""
-                  threads={grouped.archived}
-                  currentThreadId={currentThreadId}
-                  onSelect={handleThreadClick}
-                />
-              )}
-            </div>
-          )}
+          <LifecycleSection
+            bucket="archived"
+            label="Archived"
+            tone="archived"
+            threads={grouped.archived}
+            isOpen={expandedBucket === "archived"}
+            onToggle={() => toggleBucket("archived")}
+            currentThreadId={currentThreadId}
+            onSelect={handleThreadClick}
+            emptyHint="No archived sessions yet."
+          />
         </div>
       </ScrollArea>
 
-      {/* Tools — quiet footer (no longer the primary path). */}
-      <div className="border-t px-3 py-2 space-y-0.5 bg-muted/20">
-        <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-2 mb-1">
+      {/* Quick Tools — escape hatch for direct tool access.
+          Stays at the bottom by design (Rule 1: chat is the primary path),
+          but styled to look intentional, not faded. */}
+      <div className="border-t-2 border-border px-3 pt-2.5 pb-3 bg-background space-y-0.5">
+        <p className="text-[11px] font-bold text-foreground uppercase tracking-wider px-2 mb-1.5">
           Quick tools
         </p>
         {toolRoutines.map((r) => {
@@ -216,56 +231,123 @@ const StudentLeftRail: React.FC<Props> = ({
             <button
               key={r.key}
               onClick={() => { onNewThread(r.key); onClose?.(); }}
-              className="flex items-center gap-2 w-full px-2 py-1.5 rounded-lg text-xs text-muted-foreground hover:bg-muted/50 hover:text-foreground transition-colors"
+              className="flex items-center gap-2.5 w-full px-2 py-1.5 rounded-md text-sm text-foreground/90 hover:bg-donut-coral/10 hover:text-foreground transition-colors"
             >
-              <Icon className="w-3.5 h-3.5 flex-shrink-0" />
-              <span className="truncate">{r.label}</span>
+              <Icon className="w-4 h-4 flex-shrink-0 text-donut-coral/80" />
+              <span className="truncate font-medium">{r.label}</span>
             </button>
           );
         })}
+        <p className="text-[10px] text-muted-foreground/80 px-2 pt-1.5 leading-snug">
+          Skip the router and start a tool directly.
+        </p>
       </div>
     </div>
   );
 };
 
-interface GroupProps {
+// ─── Lifecycle accordion section ───
+interface LifecycleSectionProps {
+  bucket: "active" | "recent" | "archived";
   label: string;
+  tone: "active" | "recent" | "archived";
   threads: StudentThread[];
+  isOpen: boolean;
+  onToggle: () => void;
   currentThreadId: string | null;
   onSelect: (id: string) => void;
   emptyHint?: string;
 }
 
-const ThreadGroup: React.FC<GroupProps> = ({ label, threads, currentThreadId, onSelect, emptyHint }) => (
-  <div>
-    {label && (
-      <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-2 mb-1">
-        {label}
-      </p>
-    )}
-    {threads.length === 0 && emptyHint && (
-      <p className="text-[11px] text-muted-foreground/70 px-2 py-1 italic">
-        {emptyHint}
-      </p>
-    )}
-    {threads.map((t) => (
+const TONE_STYLES: Record<
+  "active" | "recent" | "archived",
+  { dot: string; pillBg: string; pillText: string }
+> = {
+  active:   { dot: "bg-emerald-500", pillBg: "bg-emerald-500/15",  pillText: "text-emerald-700 dark:text-emerald-400" },
+  recent:   { dot: "bg-amber-500",   pillBg: "bg-amber-500/15",    pillText: "text-amber-700 dark:text-amber-400" },
+  archived: { dot: "bg-muted-foreground/50", pillBg: "bg-muted",  pillText: "text-muted-foreground" },
+};
+
+const LifecycleSection: React.FC<LifecycleSectionProps> = ({
+  bucket,
+  label,
+  tone,
+  threads,
+  isOpen,
+  onToggle,
+  currentThreadId,
+  onSelect,
+  emptyHint,
+}) => {
+  const isEmpty = threads.length === 0;
+  const styles = TONE_STYLES[tone];
+
+  return (
+    <div className="rounded-lg border border-border/60 overflow-hidden bg-card">
       <button
-        key={t.id}
-        onClick={() => onSelect(t.id)}
+        onClick={onToggle}
+        disabled={isEmpty}
         className={cn(
-          "flex items-center gap-2 w-full px-2 py-2 rounded-lg text-sm transition-colors text-left",
-          t.id === currentThreadId
-            ? "bg-donut-coral/10 text-foreground font-medium"
-            : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+          "flex items-center gap-2 w-full px-3 py-2.5 text-left transition-colors",
+          isOpen ? "bg-muted/70" : "bg-muted/30 hover:bg-muted/50",
+          isEmpty && "opacity-60 cursor-not-allowed hover:bg-muted/30",
         )}
       >
-        {t.subject && (
-          <span className={cn("w-2 h-2 rounded-full flex-shrink-0", SUBJECT_COLORS[t.subject] ?? "bg-muted")} />
-        )}
-        <span className="truncate">{t.title}</span>
+        <ChevronRight
+          className={cn(
+            "w-4 h-4 flex-shrink-0 text-foreground transition-transform",
+            isOpen && "rotate-90",
+            isEmpty && "opacity-40",
+          )}
+        />
+        <span className={cn("w-1.5 h-1.5 rounded-full flex-shrink-0", styles.dot)} />
+        <span className="text-sm font-bold text-foreground tracking-tight">
+          {label}
+        </span>
+        <span
+          className={cn(
+            "ml-auto text-[11px] font-semibold rounded-full px-2 py-0.5 min-w-[24px] text-center",
+            styles.pillBg,
+            styles.pillText,
+          )}
+        >
+          {threads.length}
+        </span>
       </button>
-    ))}
-  </div>
-);
+
+      {isOpen && (
+        <div className="px-1.5 py-1.5 space-y-0.5 bg-background">
+          {isEmpty ? (
+            <p className="text-[11px] text-muted-foreground/70 px-2 py-2 italic">
+              {emptyHint}
+            </p>
+          ) : (
+            threads.map((t) => {
+              const isCurrent = t.id === currentThreadId;
+              return (
+                <button
+                  key={t.id}
+                  onClick={() => onSelect(t.id)}
+                  className={cn(
+                    "flex items-center gap-2 w-full px-2 py-1.5 rounded-md text-sm transition-colors text-left",
+                    isCurrent
+                      ? "bg-donut-coral/10 text-foreground font-medium border-l-2 border-donut-coral"
+                      : "text-foreground/85 hover:bg-muted/60 hover:text-foreground",
+                    bucket === "active" && !isCurrent && "border-l-2 border-transparent hover:border-donut-coral/40",
+                  )}
+                >
+                  {t.subject && (
+                    <span className={cn("w-2 h-2 rounded-full flex-shrink-0", SUBJECT_COLORS[t.subject] ?? "bg-muted")} />
+                  )}
+                  <span className="truncate">{t.title}</span>
+                </button>
+              );
+            })
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
 
 export default React.memo(StudentLeftRail);
