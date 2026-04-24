@@ -8,8 +8,10 @@ interface RecentThread {
   id: string;
   title: string;
   routine_key: string;
+  tool: string | null;
   subject: string | null;
   last_message_at: string;
+  last_activity_at: string | null;
 }
 
 const routineLabels: Record<string, { label: string; color: string }> = {
@@ -27,10 +29,14 @@ const RecentCopilotCard = () => {
   useEffect(() => {
     const fetchRecent = async () => {
       try {
+        // Show the most recent ACTIVE thread (Rule 5). Archived/recent threads
+        // are intentionally excluded so the dashboard stays focused on work
+        // the student is mid-flow on.
         const { data } = await supabase
           .from('student_copilot_threads')
-          .select('id, title, routine_key, subject, last_message_at')
-          .order('last_message_at', { ascending: false })
+          .select('id, title, routine_key, tool, subject, last_message_at, last_activity_at')
+          .eq('status', 'active')
+          .order('last_activity_at', { ascending: false })
           .limit(1)
           .single();
         
@@ -55,6 +61,7 @@ const RecentCopilotCard = () => {
 
   const handleContinue = () => {
     if (thread) {
+      // Direct thread deep-link — page reads ?thread=<id> and switches to it.
       navigate(`/student/copilot?thread=${thread.id}`);
     } else {
       navigate('/student/copilot');
@@ -74,7 +81,7 @@ const RecentCopilotCard = () => {
         <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-donut-coral to-donut-orange flex items-center justify-center shadow-md shadow-orange-300/40">
           <Sparkles className="w-4 h-4 text-white" />
         </div>
-        <h3 className="text-sm font-semibold text-foreground">Recent Study Session</h3>
+        <h3 className="text-sm font-semibold text-foreground">Resume Where You Left Off</h3>
       </div>
 
       {loading ? (
