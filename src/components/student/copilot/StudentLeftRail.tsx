@@ -79,8 +79,6 @@ const StudentLeftRail: React.FC<Props> = ({
     return buckets;
   }, [filteredThreads]);
 
-  const [showArchived, setShowArchived] = React.useState(false);
-
   // Single-expand accordion state for the lifecycle buckets (Rule 5).
   // Default to whichever bucket has content, preferring active → recent → archived.
   type Bucket = "active" | "recent" | "archived";
