@@ -33,6 +33,9 @@ interface Props {
   notifications?: StudentNotification[];
   onNotificationAction?: (notif: StudentNotification) => void;
   onNotificationDismiss?: (notifId: string) => void;
+  /** Optional continuation banner rendered above the message list when the
+   *  router resumed an existing session. */
+  continuationBanner?: React.ReactNode;
 }
 
 const MAX_IMAGES = 3;
@@ -59,6 +62,7 @@ const StudentChatPane: React.FC<Props> = ({
   notifications = [],
   onNotificationAction,
   onNotificationDismiss,
+  continuationBanner,
 }) => {
   const [input, setInput] = useState("");
   const navigate = useNavigate();
@@ -212,6 +216,7 @@ const StudentChatPane: React.FC<Props> = ({
         onDragOver={(e) => e.preventDefault()}
         onDrop={handleDrop}
       >
+        {continuationBanner}
         <ChatMessageList
           messages={messages}
           streaming={streaming}
