@@ -4,16 +4,13 @@ import {
   Plus, 
   CheckCircle2,
   MapPin,
-  Clock,
-  Sparkles
+  Clock
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { type TeacherTimetableSlot } from "@/data/teacherData";
-import { useTeacherFeatures } from "@/config/featureFlags";
-import { useCopilot } from "@/components/teacher/routine-pilot/CopilotContext";
 
 interface ClassCardProps {
   slot: TeacherTimetableSlot;
@@ -25,8 +22,6 @@ interface ClassCardProps {
 
 export const ClassCard = ({ slot, index, isSelected, onSelect, onConfirm }: ClassCardProps) => {
   const navigate = useNavigate();
-  const { hasCopilot } = useTeacherFeatures();
-  const { openCopilot } = useCopilot();
   const now = new Date();
   const currentTime = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
   
@@ -156,32 +151,18 @@ export const ClassCard = ({ slot, index, isSelected, onSelect, onConfirm }: Clas
                 </span>
               </Badge>
             ) : (
-              hasCopilot && !isLive ? (
-                <Button
-                  size="sm"
-                  className="h-8 sm:h-9 px-2.5 sm:px-3 text-xs font-semibold bg-gradient-to-r from-violet-500 to-fuchsia-500 hover:from-violet-600 hover:to-fuchsia-600 text-white border-0 shadow-md shadow-violet-500/25"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    openCopilot({ routineKey: "lesson_prep", batchId: slot.batchId });
-                  }}
-                >
-                  <Sparkles className="w-3.5 h-3.5 sm:mr-1" />
-                  <span className="hidden sm:inline">Generate</span>
-                </Button>
-              ) : (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="h-8 sm:h-9 px-2.5 sm:px-3 text-xs font-medium border-dashed border-teal-300 text-teal-600 hover:bg-teal-50 hover:border-teal-400"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    navigate("/teacher/lesson-plans/new");
-                  }}
-                >
-                  <Plus className="w-3.5 h-3.5 sm:mr-1" />
-                  <span className="hidden sm:inline">Add Plan</span>
-                </Button>
-              )
+              <Button 
+                size="sm"
+                variant="outline"
+                className="h-8 sm:h-9 px-2.5 sm:px-3 text-xs font-medium border-dashed border-teal-300 text-teal-600 hover:bg-teal-50 hover:border-teal-400"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigate("/teacher/lesson-plans/new");
+                }}
+              >
+                <Plus className="w-3.5 h-3.5 sm:mr-1" />
+                <span className="hidden sm:inline">Add Plan</span>
+              </Button>
             )}
           </div>
         </div>

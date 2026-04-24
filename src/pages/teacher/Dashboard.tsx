@@ -10,6 +10,7 @@ import {
   CheckCircle2,
   ClipboardCheck,
   FileText,
+  Sparkles,
   TrendingUp,
   Bell,
   AlertTriangle,
@@ -24,13 +25,6 @@ import { TeachingConfirmationDialog } from "@/components/teacher/TeachingConfirm
 import { ClassCard } from "@/components/teacher/ClassCard";
 import { TeacherNotificationCard, PushNotificationBanner } from "@/components/teacher/notifications";
 import { useTeacherNotifications } from "@/hooks/useTeacherNotifications";
-import {
-  SmartNudgesRow,
-  RecentArtifactsCard,
-  SyllabusTrackerMini,
-  UnlockCopilotCard,
-} from "@/components/teacher/dashboard";
-import { useTeacherFeatures } from "@/config/featureFlags";
 import { 
   currentTeacher, 
   teacherPendingActions,
@@ -50,9 +44,6 @@ const TeacherDashboard = () => {
   
   // Get urgent alerts from notifications
   const { urgentAlerts, markAsRead } = useTeacherNotifications();
-
-  // Premium AI surfaces gate
-  const { hasCopilot } = useTeacherFeatures();
 
   // Get greeting based on time
   const getGreeting = () => {
@@ -169,27 +160,6 @@ const TeacherDashboard = () => {
 
       {/* Push Notification Banner */}
       <PushNotificationBanner />
-
-      {/* Smart Nudges row — premium only, agentic Copilot suggestions */}
-      {hasCopilot && (
-        <SmartNudgesRow
-          input={{
-            todayTimetable,
-            pastUnconfirmedCount: pastUnconfirmedSlots.length,
-            recentLowScoreQuiz: {
-              name: "Newton's Laws Quiz",
-              avgPercent: 52,
-              strugglingCount: 6,
-              examId: "exam-newton-q1",
-            },
-            underCoveredUpcomingChapter: {
-              chapterName: "Thermodynamics",
-              coveragePercent: 30,
-            },
-          }}
-          maxVisible={2}
-        />
-      )}
 
       {/* Pending Confirmations Alert Banner - Premium amber gradient */}
       {totalPendingConfirmations > 0 && (
@@ -318,7 +288,6 @@ const TeacherDashboard = () => {
               </Card>
             )}
           </div>
-
         </div>
 
         {/* Sidebar - Mobile: Horizontal scroll cards, Desktop: Vertical stack */}
@@ -414,8 +383,28 @@ const TeacherDashboard = () => {
             </CardContent>
           </Card>
 
-          {/* AI surface — premium shows Recent Artifacts; free shows the upsell */}
-          {hasCopilot ? <RecentArtifactsCard /> : <UnlockCopilotCard />}
+          {/* AI Assist Card - Premium gradient */}
+          <Card className="bg-gradient-to-br from-teal-500/10 via-cyan-500/5 to-teal-500/10 border-teal-200/50 overflow-hidden shadow-lg shadow-teal-500/5">
+            <CardContent className="p-3 sm:p-4">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-teal-500 to-cyan-500 flex items-center justify-center flex-shrink-0 shadow-lg shadow-teal-500/25">
+                  <Sparkles className="w-5 h-5 text-white" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-semibold text-sm">AI Teaching Assistant</h3>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Create lesson plans, quizzes with AI help
+                  </p>
+                  <Button 
+                    size="sm" 
+                    className="mt-2.5 sm:mt-3 h-9 bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 text-white border-0 shadow-md shadow-teal-500/20"
+                  >
+                    Try AI Assist
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
         </div>
       </div>
