@@ -7,6 +7,40 @@ export type Subject = (typeof SUBJECTS)[number];
 export const TOOL_ROUTINE_KEYS = ["s_practice", "s_exam_prep", "s_roadmap", "s_progress"] as const;
 export const DEFAULT_ROUTINE_KEY = "s_doubt";
 
+// ---------- Session continuity (Phase 7) ----------
+
+export const ROUTER_TOOLS = ["doubt", "practice", "plan", "exam", "debrief", "progress"] as const;
+export type RouterTool = (typeof ROUTER_TOOLS)[number];
+
+export const TOOL_TO_ROUTINE: Record<RouterTool, string> = {
+  doubt: "s_doubt",
+  practice: "s_practice",
+  plan: "s_roadmap",
+  exam: "s_exam_prep",
+  debrief: "s_progress",
+  progress: "s_progress",
+};
+
+export const ROUTINE_TO_TOOL: Record<string, RouterTool> = {
+  s_doubt: "doubt",
+  s_practice: "practice",
+  s_roadmap: "plan",
+  s_exam_prep: "exam",
+  s_progress: "progress",
+};
+
+export type ThreadStatus = "active" | "recent" | "archived";
+
+export interface RouteDecision {
+  threadId: string;
+  isNew: boolean;
+  tool: RouterTool;
+  scopeKey: string;
+  scopeMeta: Record<string, any>;
+  matchedThreadTitle?: string;
+  confidence: number;
+}
+
 export type MasteryBand = "mastery_ready" | "stable" | "reinforcement" | "foundational_risk" | "unknown";
 
 export type StudentArtifactType =
@@ -31,6 +65,12 @@ export interface StudentThread {
   subject: string | null;
   last_message_at: string;
   created_at: string;
+  tool?: string | null;
+  scope_key?: string | null;
+  scope_meta?: Record<string, any> | null;
+  status?: ThreadStatus | string;
+  last_activity_at?: string;
+  archived_at?: string | null;
 }
 
 export interface StudentMessage {

@@ -44,17 +44,19 @@ const ExamTargetCard = () => {
 
   const handleStudyPlan = () => {
     if (exam) {
+      // Scope-rich intent so the router resumes the existing exam-prep session.
       const params = new URLSearchParams();
-      params.set('routine', 's_exam_prep');
-      params.set('prompt', `Help me prepare for ${exam.name}. Target: ${exam.target_score}/${exam.max_score}`);
+      params.set(
+        'intent',
+        `Resume exam prep for ${exam.name}. Target: ${exam.target_score}/${exam.max_score}`,
+      );
       navigate(`/student/copilot?${params.toString()}`);
     }
   };
 
   const handleSetTarget = () => {
     const params = new URLSearchParams();
-    params.set('routine', 's_roadmap');
-    params.set('prompt', 'Help me set my exam target and create a study plan');
+    params.set('intent', "Help me set my exam target and create this week's study plan");
     navigate(`/student/copilot?${params.toString()}`);
   };
 

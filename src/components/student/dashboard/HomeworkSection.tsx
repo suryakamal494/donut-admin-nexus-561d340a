@@ -113,9 +113,8 @@ const HomeworkSection = () => {
                     onClick={(e) => {
                       e.stopPropagation();
                       const params = new URLSearchParams();
-                      params.set('routine', 's_doubt');
                       params.set('subject', hw.subject);
-                      params.set('prompt', `Help me with my homework: ${hw.title}`);
+                      params.set('intent', `Help me with my homework: ${hw.title}`);
                       navigate(`/student/copilot?${params.toString()}`);
                     }}
                     className="px-2 py-0.5 rounded-full bg-donut-coral/10 text-donut-coral text-[10px] font-medium flex items-center gap-1 hover:bg-donut-coral/20 transition-colors"

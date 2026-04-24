@@ -28,11 +28,11 @@ const AIRecommendationCard = memo(function AIRecommendationCard({ recommendation
   const navigate = useNavigate();
 
   const handleClick = () => {
-    if (recommendation.copilotRoutine) {
+    // The router classifies intent automatically; we just hand it the prompt.
+    if (recommendation.copilotPrompt) {
       const params = new URLSearchParams();
-      params.set('routine', recommendation.copilotRoutine);
       if (recommendation.subject) params.set('subject', recommendation.subject);
-      if (recommendation.copilotPrompt) params.set('prompt', recommendation.copilotPrompt);
+      params.set('intent', recommendation.copilotPrompt);
       navigate(`/student/copilot?${params.toString()}`);
     } else {
       navigate('/student/copilot');

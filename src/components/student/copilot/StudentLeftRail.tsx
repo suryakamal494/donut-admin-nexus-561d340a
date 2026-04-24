@@ -3,10 +3,16 @@ import React, { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   MessageSquare, Dumbbell, Target, Map, TrendingUp,
-  Plus, GraduationCap, ArrowLeft, type LucideIcon,
+  Plus, GraduationCap, ArrowLeft, MoreHorizontal, type LucideIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import { studentProfile } from "@/data/student/profile";
 import type { StudentThread, StudentRoutine } from "./types";
@@ -57,6 +63,23 @@ const StudentLeftRail: React.FC<Props> = ({
     return threads.filter((t) => t.subject === subjectFilter);
   }, [threads, subjectFilter]);
 
+  // Group by lifecycle status (Rule 5). Threads without a `status` are
+  // treated as `active` for backward compatibility.
+  const grouped = useMemo(() => {
+    const buckets: Record<"active" | "recent" | "archived", StudentThread[]> = {
+      active: [],
+      recent: [],
+      archived: [],
+    };
+    for (const t of filteredThreads) {
+      const s = (t.status as "active" | "recent" | "archived") ?? "active";
+      (buckets[s] ?? buckets.active).push(t);
+    }
+    return buckets;
+  }, [filteredThreads]);
+
+  const [showArchived, setShowArchived] = React.useState(false);
+
   const handleThreadClick = (id: string) => {
     onSelectThread(id);
     onClose?.();
@@ -85,44 +108,27 @@ const StudentLeftRail: React.FC<Props> = ({
             <p className="text-sm font-semibold truncate">{studentProfile.name}</p>
             <p className="text-xs text-muted-foreground">{studentProfile.grade}</p>
           </div>
+          {/* Demoted: "Start fresh" lives in a secondary menu. The router
+              handles continuation by default — see Rule 1. */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="sm" className="h-8 w-8 p-0 ml-auto">
+                <MoreHorizontal className="w-4 h-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => { onNewThread(); onClose?.(); }}>
+                <Plus className="w-4 h-4 mr-2" />
+                Start fresh chat
+                <span className="ml-auto text-[10px] opacity-60">⌘K</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 
-      {/* New chat button */}
-      <div className="px-3 pt-3 pb-1">
-        <Button
-          onClick={() => { onNewThread(); onClose?.(); }}
-          className="w-full bg-gradient-to-r from-donut-coral to-donut-orange text-white hover:opacity-90"
-          size="sm"
-        >
-          <Plus className="w-4 h-4 mr-1.5" />
-          New chat
-          <span className="ml-auto text-[10px] opacity-70">⌘K</span>
-        </Button>
-      </div>
-
-      {/* Tool shortcuts */}
-      <div className="px-3 py-2 space-y-0.5">
-        <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-2 mb-1">
-          Tools
-        </p>
-        {toolRoutines.map((r) => {
-          const Icon = ICON_MAP[r.icon] ?? MessageSquare;
-          return (
-            <button
-              key={r.key}
-              onClick={() => { onNewThread(r.key); onClose?.(); }}
-              className="flex items-center gap-2 w-full px-2 py-1.5 rounded-lg text-sm text-muted-foreground hover:bg-muted/50 hover:text-foreground transition-colors"
-            >
-              <Icon className="w-4 h-4 flex-shrink-0" />
-              <span className="truncate">{r.label}</span>
-            </button>
-          );
-        })}
-      </div>
-
       {/* Subject filter chips */}
-      <div className="px-3 py-2 border-t">
+      <div className="px-3 py-2">
         <div className="flex flex-wrap gap-1.5">
           <button
             onClick={() => onSubjectFilter(null)}
@@ -153,38 +159,107 @@ const StudentLeftRail: React.FC<Props> = ({
         </div>
       </div>
 
-      {/* Recent threads */}
+      {/* History — grouped by lifecycle status (Rule 5). */}
       <ScrollArea className="flex-1 min-h-0">
-        <div className="px-3 py-2">
-          <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-2 mb-1">
-            Recent
-          </p>
+        <div className="px-3 py-2 space-y-3">
           {filteredThreads.length === 0 && (
             <p className="text-xs text-muted-foreground px-2 py-4 text-center">
               No conversations yet
             </p>
           )}
-          {filteredThreads.map((t) => (
-            <button
-              key={t.id}
-              onClick={() => handleThreadClick(t.id)}
-              className={cn(
-                "flex items-center gap-2 w-full px-2 py-2 rounded-lg text-sm transition-colors text-left",
-                t.id === currentThreadId
-                  ? "bg-donut-coral/10 text-foreground font-medium"
-                  : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+
+          {grouped.active.length > 0 && (
+            <ThreadGroup
+              label={`Active (${grouped.active.length})`}
+              threads={grouped.active}
+              currentThreadId={currentThreadId}
+              onSelect={handleThreadClick}
+            />
+          )}
+          {grouped.recent.length > 0 && (
+            <ThreadGroup
+              label="Recent"
+              threads={grouped.recent}
+              currentThreadId={currentThreadId}
+              onSelect={handleThreadClick}
+            />
+          )}
+          {grouped.archived.length > 0 && (
+            <div>
+              <button
+                onClick={() => setShowArchived((v) => !v)}
+                className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-2 mb-1 hover:text-foreground"
+              >
+                {showArchived ? "Hide" : "Show"} archived ({grouped.archived.length})
+              </button>
+              {showArchived && (
+                <ThreadGroup
+                  label=""
+                  threads={grouped.archived}
+                  currentThreadId={currentThreadId}
+                  onSelect={handleThreadClick}
+                />
               )}
-            >
-              {t.subject && (
-                <span className={cn("w-2 h-2 rounded-full flex-shrink-0", SUBJECT_COLORS[t.subject] ?? "bg-muted")} />
-              )}
-              <span className="truncate">{t.title}</span>
-            </button>
-          ))}
+            </div>
+          )}
         </div>
       </ScrollArea>
+
+      {/* Tools — quiet footer (no longer the primary path). */}
+      <div className="border-t px-3 py-2 space-y-0.5 bg-muted/20">
+        <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-2 mb-1">
+          Quick tools
+        </p>
+        {toolRoutines.map((r) => {
+          const Icon = ICON_MAP[r.icon] ?? MessageSquare;
+          return (
+            <button
+              key={r.key}
+              onClick={() => { onNewThread(r.key); onClose?.(); }}
+              className="flex items-center gap-2 w-full px-2 py-1.5 rounded-lg text-xs text-muted-foreground hover:bg-muted/50 hover:text-foreground transition-colors"
+            >
+              <Icon className="w-3.5 h-3.5 flex-shrink-0" />
+              <span className="truncate">{r.label}</span>
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 };
+
+interface GroupProps {
+  label: string;
+  threads: StudentThread[];
+  currentThreadId: string | null;
+  onSelect: (id: string) => void;
+}
+
+const ThreadGroup: React.FC<GroupProps> = ({ label, threads, currentThreadId, onSelect }) => (
+  <div>
+    {label && (
+      <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-2 mb-1">
+        {label}
+      </p>
+    )}
+    {threads.map((t) => (
+      <button
+        key={t.id}
+        onClick={() => onSelect(t.id)}
+        className={cn(
+          "flex items-center gap-2 w-full px-2 py-2 rounded-lg text-sm transition-colors text-left",
+          t.id === currentThreadId
+            ? "bg-donut-coral/10 text-foreground font-medium"
+            : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+        )}
+      >
+        {t.subject && (
+          <span className={cn("w-2 h-2 rounded-full flex-shrink-0", SUBJECT_COLORS[t.subject] ?? "bg-muted")} />
+        )}
+        <span className="truncate">{t.title}</span>
+      </button>
+    ))}
+  </div>
+);
 
 export default React.memo(StudentLeftRail);

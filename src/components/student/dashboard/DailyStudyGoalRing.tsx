@@ -18,8 +18,7 @@ const DailyStudyGoalRing = ({ compact = false }: DailyStudyGoalRingProps) => {
 
   const handleClick = () => {
     const params = new URLSearchParams();
-    params.set('routine', 's_practice');
-    params.set('prompt', "Let's continue my daily study goal");
+    params.set('intent', "Continue today's practice for my daily study goal");
     navigate(`/student/copilot?${params.toString()}`);
   };
 
